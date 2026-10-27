@@ -23,6 +23,10 @@ coisa, feche com o usuário (em poucas perguntas, não um formulário):
 Se o indicador já existe em outro painel ou planilha, peça a definição de lá:
 número igual com definição diferente é o pior defeito de um painel.
 
+Atalho para os passos 2 e 3: `deidara.py novo <pasta>` (pasta com as receitas
+e um roteiro) e, com os catálogos prontos, `deidara.py esbocar <pasta> --pedido
+"..."` (o primeiro argila.json). A qualquer momento: `deidara.py situacao`.
+
 ## Passo 2 — Receita e catálogo de cada fonte
 
 ```bash

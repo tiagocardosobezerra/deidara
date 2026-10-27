@@ -1,78 +1,459 @@
 {
  "formato": "deidara-padroes/1",
  "onde_criar": [
-  {"meio": "medida DAX", "quando": "todo número que precisa responder aos filtros (segmentador, linha da matriz, período): somas, contagens, taxas, comparações no tempo", "no_deidara": "medidas do argila.json (tipos prontos ou \"dax\")", "evite": "coluna calculada fazendo papel de medida"},
-  {"meio": "cálculo visual (visual calculation)", "quando": "cálculo que só faz sentido dentro de um visual: acumulado ao longo do eixo, média móvel do gráfico, % do total do próprio visual", "no_deidara": "ainda não gerado; crie no Desktop depois (Página Inicial > Novo cálculo visual). Prefira medida se o número aparece em mais de um lugar", "evite": "usar quando o número precisa entrar no dicionário de indicadores"},
-  {"meio": "grupo de cálculo (calculation group)", "quando": "a mesma transformação para muitas medidas: acumulado no ano, ano anterior e variação para 10 indicadores", "no_deidara": "ainda não gerado; com poucas medidas, os tipos de tempo do argila.json resolvem", "evite": "com 2 ou 3 medidas: complica a manutenção sem ganho"},
-  {"meio": "coluna no Power Query (M)", "quando": "regra por linha que não depende de filtro: faixa etária, classificação, chave, limpeza de código, tipos; dados de planilha/SharePoint", "no_deidara": "o Deidara já gera seleção, nomes, tipos e chaves compostas; regras próprias entram na consulta de origem antes do catalogar", "evite": "agregar no Power Query o que precisa ser filtrado no painel"},
-  {"meio": "view SQL", "quando": "regra por linha e filtro de origem em banco, que outros sistemas também devem usar igual (ex.: 'colaborador ativo')", "no_deidara": "\"filtro\" da tabela (WHERE da view) e as colunas da view", "evite": "lógica de período/comparação: ela precisa responder ao filtro do painel, é medida"},
-  {"meio": "coluna calculada DAX", "quando": "último recurso: atributo por linha que depende de outra tabela do modelo e não dá para trazer da origem", "no_deidara": "não gerado de propósito", "evite": "sempre que der para fazer no Power Query ou na view"}
+  {
+   "meio": "medida DAX",
+   "quando": "todo número que precisa responder aos filtros (segmentador, linha da matriz, período): somas, contagens, taxas, comparações no tempo",
+   "no_deidara": "medidas do argila.json (tipos prontos ou \"dax\")",
+   "evite": "coluna calculada fazendo papel de medida"
+  },
+  {
+   "meio": "cálculo visual (visual calculation)",
+   "quando": "cálculo que só faz sentido dentro de um visual: acumulado ao longo do eixo, média móvel do gráfico, % do total do próprio visual",
+   "no_deidara": "ainda não gerado; crie no Desktop depois (Página Inicial > Novo cálculo visual). Prefira medida se o número aparece em mais de um lugar",
+   "evite": "usar quando o número precisa entrar no dicionário de indicadores"
+  },
+  {
+   "meio": "grupo de cálculo (calculation group)",
+   "quando": "a mesma transformação para muitas medidas: acumulado no ano, ano anterior e variação para 10 indicadores",
+   "no_deidara": "ainda não gerado; com poucas medidas, os tipos de tempo do argila.json resolvem",
+   "evite": "com 2 ou 3 medidas: complica a manutenção sem ganho"
+  },
+  {
+   "meio": "coluna no Power Query (M)",
+   "quando": "regra por linha que não depende de filtro: faixa etária, classificação, chave, limpeza de código, tipos; dados de planilha/SharePoint",
+   "no_deidara": "o Deidara já gera seleção, nomes, tipos e chaves compostas; regras próprias entram na consulta de origem antes do catalogar",
+   "evite": "agregar no Power Query o que precisa ser filtrado no painel"
+  },
+  {
+   "meio": "view SQL",
+   "quando": "regra por linha e filtro de origem em banco, que outros sistemas também devem usar igual (ex.: 'colaborador ativo')",
+   "no_deidara": "\"filtro\" da tabela (WHERE da view) e as colunas da view",
+   "evite": "lógica de período/comparação: ela precisa responder ao filtro do painel, é medida"
+  },
+  {
+   "meio": "coluna calculada DAX",
+   "quando": "último recurso: atributo por linha que depende de outra tabela do modelo e não dá para trazer da origem",
+   "no_deidara": "não gerado de propósito",
+   "evite": "sempre que der para fazer no Power Query ou na view"
+  }
  ],
  "padroes": [
-  {"id": "total", "nome": "Total aditivo (soma ou contagem)", "termos": ["total", "soma", "quantidade", "contagem", "volume"],
-   "argila": {"nome": "Desligamentos", "agregacao": "contagem_linhas", "tabela": "fDesligamento"},
-   "dax": "COUNTROWS(fDesligamento)", "funcoes": ["SUM", "COUNTROWS"],
-   "armadilhas": ["contar a tabela de cadastro inteira não é estoque (use estoque_na_data)"]},
-  {"id": "distintos", "nome": "Contagem de distintos", "termos": ["distintos", "únicos", "clientes ativos", "pessoas"],
-   "argila": {"nome": "Clientes", "agregacao": "contagem_distinta", "coluna": "fVenda[Cód. Cliente]"},
-   "dax": "DISTINCTCOUNTNOBLANK(fVenda[Cód. Cliente])", "funcoes": ["DISTINCTCOUNTNOBLANK"],
-   "armadilhas": ["distintos não somam: a soma das linhas pode passar do total (correto)"]},
-  {"id": "taxa", "nome": "Taxa / razão", "termos": ["taxa", "percentual", "índice", "razão", "turnover", "conversão"],
-   "argila": {"nome": "Turnover", "tipo": "divisao", "numerador": "Desligamentos", "denominador": "HC Médio", "formato": "percentual"},
-   "dax": "DIVIDE([Desligamentos], [HC Médio])", "funcoes": ["DIVIDE"],
-   "armadilhas": ["numerador e denominador precisam responder aos MESMOS filtros (o validar avisa)", "taxa nunca se soma: a do total é recalculada"]},
-  {"id": "participacao", "nome": "Participação no total (% do total)", "termos": ["participação", "share", "% do total", "representatividade"],
-   "argila": {"nome": "% do Total", "dax": "DIVIDE([Vendas], CALCULATE([Vendas], ALLSELECTED(dProduto)))", "formato": "percentual"},
-   "dax": "DIVIDE([Vendas], CALCULATE([Vendas], ALLSELECTED(dProduto)))", "funcoes": ["DIVIDE", "CALCULATE", "ALLSELECTED", "ALL"],
+  {
+   "id": "turnover",
+   "nome": "Turnover completo (a cadeia inteira, na ordem)",
+   "termos": [
+    "turnover",
+    "rotatividade",
+    "giro"
+   ],
+   "cadeia": [
+    {
+     "nome": "Desligamentos",
+     "agregacao": "contagem_linhas",
+     "tabela": "fDesligamento",
+     "descricao": "Quantidade de desligamentos no período."
+    },
+    {
+     "nome": "Headcount",
+     "tipo": "estoque_na_data",
+     "entradas": "dColaborador[Data de Admissão]",
+     "saidas": "fDesligamento[Data do Desligamento]",
+     "tabela": "dColaborador",
+     "descricao": "Ativos no último dia do período."
+    },
+    {
+     "nome": "HC Médio",
+     "tipo": "media_mensal",
+     "base": "Headcount",
+     "descricao": "Média do headcount de fim de mês no período."
+    },
+    {
+     "nome": "Turnover",
+     "tipo": "divisao",
+     "numerador": "Desligamentos",
+     "denominador": "HC Médio",
+     "formato": "percentual",
+     "polaridade": "menor_melhor",
+     "descricao": "Desligamentos do período divididos pelo headcount médio do período."
+    }
+   ],
+   "onde": "cole as quatro em \"medidas\" do argila.json (troque os nomes de tabela/coluna pelos do seu modelo) e rode validar",
+   "funcoes": [
+    "COUNTROWS",
+    "CALCULATE",
+    "AVERAGEX",
+    "DIVIDE"
+   ],
+   "armadilhas": [
+    "precisa de calendário (\"calendario\" no argila.json): o HC médio é a média dos fins de mês",
+    "a data de admissão costuma estar no cadastro (dimensão de pessoas): se o validar não a achar, ele diz como trazê-la do catálogo",
+    "existem outras fórmulas (desligamentos ÷ HC inicial; (admissões+desligamentos)/2 ÷ HC médio): registre na descrição qual foi combinada com o RH"
+   ]
+  },
+  {
+   "id": "total",
+   "nome": "Total aditivo (soma ou contagem)",
+   "termos": [
+    "total",
+    "soma",
+    "quantidade",
+    "contagem",
+    "volume"
+   ],
+   "argila": {
+    "nome": "Desligamentos",
+    "agregacao": "contagem_linhas",
+    "tabela": "fDesligamento"
+   },
+   "dax": "COUNTROWS(fDesligamento)",
+   "funcoes": [
+    "SUM",
+    "COUNTROWS"
+   ],
+   "armadilhas": [
+    "contar a tabela de cadastro inteira não é estoque (use estoque_na_data)"
+   ]
+  },
+  {
+   "id": "distintos",
+   "nome": "Contagem de distintos",
+   "termos": [
+    "distintos",
+    "únicos",
+    "clientes ativos",
+    "pessoas"
+   ],
+   "argila": {
+    "nome": "Clientes",
+    "agregacao": "contagem_distinta",
+    "coluna": "fVenda[Cód. Cliente]"
+   },
+   "dax": "DISTINCTCOUNTNOBLANK(fVenda[Cód. Cliente])",
+   "funcoes": [
+    "DISTINCTCOUNTNOBLANK"
+   ],
+   "armadilhas": [
+    "distintos não somam: a soma das linhas pode passar do total (correto)"
+   ]
+  },
+  {
+   "id": "taxa",
+   "nome": "Taxa / razão",
+   "termos": [
+    "taxa",
+    "percentual",
+    "índice",
+    "razão",
+    "turnover",
+    "conversão"
+   ],
+   "argila": {
+    "nome": "Turnover",
+    "tipo": "divisao",
+    "numerador": "Desligamentos",
+    "denominador": "HC Médio",
+    "formato": "percentual"
+   },
+   "dax": "DIVIDE([Desligamentos], [HC Médio])",
+   "funcoes": [
+    "DIVIDE"
+   ],
+   "armadilhas": [
+    "numerador e denominador precisam responder aos MESMOS filtros (o validar avisa)",
+    "taxa nunca se soma: a do total é recalculada"
+   ]
+  },
+  {
+   "id": "participacao",
+   "nome": "Participação no total (% do total)",
+   "termos": [
+    "participação",
+    "share",
+    "% do total",
+    "representatividade"
+   ],
+   "argila": {
+    "nome": "% do Total",
+    "dax": "DIVIDE([Vendas], CALCULATE([Vendas], ALLSELECTED(dProduto)))",
+    "formato": "percentual"
+   },
+   "dax": "DIVIDE([Vendas], CALCULATE([Vendas], ALLSELECTED(dProduto)))",
+   "funcoes": [
+    "DIVIDE",
+    "CALCULATE",
+    "ALLSELECTED",
+    "ALL"
+   ],
    "alternativa": "cálculo visual, se só um visual usa",
-   "armadilhas": ["ALL ignora também os segmentadores; ALLSELECTED respeita"]},
-  {"id": "filtrada", "nome": "Medida com recorte (ex.: só voluntários)", "termos": ["só", "apenas", "voluntário", "ativos", "recorte"],
-   "argila": {"nome": "Desligamentos Voluntários", "dax": "CALCULATE([Desligamentos], dMotivo[Tipo] = \"Voluntário\")"},
-   "dax": "CALCULATE([Desligamentos], dMotivo[Tipo] = \"Voluntário\")", "funcoes": ["CALCULATE", "KEEPFILTERS"],
+   "armadilhas": [
+    "ALL ignora também os segmentadores; ALLSELECTED respeita"
+   ]
+  },
+  {
+   "id": "filtrada",
+   "nome": "Medida com recorte (ex.: só voluntários)",
+   "termos": [
+    "só",
+    "apenas",
+    "voluntário",
+    "ativos",
+    "recorte"
+   ],
+   "argila": {
+    "nome": "Desligamentos Voluntários",
+    "dax": "CALCULATE([Desligamentos], dMotivo[Tipo] = \"Voluntário\")"
+   },
+   "dax": "CALCULATE([Desligamentos], dMotivo[Tipo] = \"Voluntário\")",
+   "funcoes": [
+    "CALCULATE",
+    "KEEPFILTERS"
+   ],
    "alternativa": "classificação como coluna na view ou no Power Query + medida filtrada por ela",
-   "armadilhas": ["o valor do filtro (\"Voluntário\") é regra de negócio: confirme a grafia com o dono do dado"]},
-  {"id": "estoque", "nome": "Estoque na data (headcount, vigentes)", "termos": ["headcount", "ativos", "estoque", "vigentes", "carteira", "saldo"],
-   "argila": {"nome": "Headcount", "tipo": "estoque_na_data", "entradas": "dColaborador[Data de Admissão]", "saidas": "fDesligamento[Data do Desligamento]"},
-   "funcoes": ["CALCULATE", "COUNTROWS", "MAX", "REMOVEFILTERS"],
-   "armadilhas": ["estoque não soma no tempo: o total do ano é o do último dia, não a soma dos meses"]},
-  {"id": "media_periodo", "nome": "Média do período (HC médio)", "termos": ["médio", "média do período", "hc médio"],
-   "argila": {"nome": "HC Médio", "tipo": "media_mensal", "base": "Headcount"},
-   "dax": "AVERAGEX(VALUES(dCalendario[Ano-Mês]), [Headcount])", "funcoes": ["AVERAGEX", "VALUES"]},
-  {"id": "ytd", "nome": "Acumulado no ano", "termos": ["acumulado", "ytd", "no ano", "até o mês"],
-   "argila": {"nome": "Desligamentos Acum. Ano", "tipo": "acumulado_ano", "base": "Desligamentos"},
-   "dax": "TOTALYTD([Desligamentos], dCalendario[Data])", "funcoes": ["TOTALYTD", "DATESYTD"],
+   "armadilhas": [
+    "o valor do filtro (\"Voluntário\") é regra de negócio: confirme a grafia com o dono do dado"
+   ]
+  },
+  {
+   "id": "estoque",
+   "nome": "Estoque na data (headcount, vigentes)",
+   "termos": [
+    "headcount",
+    "ativos",
+    "estoque",
+    "vigentes",
+    "carteira",
+    "saldo"
+   ],
+   "argila": {
+    "nome": "Headcount",
+    "tipo": "estoque_na_data",
+    "entradas": "dColaborador[Data de Admissão]",
+    "saidas": "fDesligamento[Data do Desligamento]"
+   },
+   "funcoes": [
+    "CALCULATE",
+    "COUNTROWS",
+    "MAX",
+    "REMOVEFILTERS"
+   ],
+   "armadilhas": [
+    "estoque não soma no tempo: o total do ano é o do último dia, não a soma dos meses"
+   ]
+  },
+  {
+   "id": "media_periodo",
+   "nome": "Média do período (HC médio)",
+   "termos": [
+    "médio",
+    "média do período",
+    "hc médio"
+   ],
+   "argila": {
+    "nome": "HC Médio",
+    "tipo": "media_mensal",
+    "base": "Headcount"
+   },
+   "dax": "AVERAGEX(VALUES(dCalendario[Ano-Mês]), [Headcount])",
+   "funcoes": [
+    "AVERAGEX",
+    "VALUES"
+   ]
+  },
+  {
+   "id": "ytd",
+   "nome": "Acumulado no ano",
+   "termos": [
+    "acumulado",
+    "ytd",
+    "no ano",
+    "até o mês"
+   ],
+   "argila": {
+    "nome": "Desligamentos Acum. Ano",
+    "tipo": "acumulado_ano",
+    "base": "Desligamentos"
+   },
+   "dax": "TOTALYTD([Desligamentos], dCalendario[Data])",
+   "funcoes": [
+    "TOTALYTD",
+    "DATESYTD"
+   ],
    "alternativa": "cálculo visual RUNNINGSUM (só no gráfico); grupo de cálculo se muitas medidas precisam",
-   "armadilhas": ["ano fiscal diferente do civil pede o 3º argumento do TOTALYTD"]},
-  {"id": "ano_anterior", "nome": "Ano anterior e variação", "termos": ["ano anterior", "a/a", "yoy", "variação", "crescimento"],
-   "argila": {"nome": "Var. Desligamentos A/A", "tipo": "variacao_ano_anterior", "base": "Desligamentos"},
-   "dax": "VAR _atual = [X] VAR _anterior = CALCULATE([X], SAMEPERIODLASTYEAR(dCalendario[Data])) RETURN DIVIDE(_atual - _anterior, _anterior)", "funcoes": ["SAMEPERIODLASTYEAR", "DATEADD", "CALCULATE", "DIVIDE"],
-   "armadilhas": ["mês corrente incompleto contra mês cheio do ano anterior: deixe claro no título"]},
-  {"id": "movel", "nome": "Móvel 12 meses", "termos": ["móvel", "12 meses", "rolling", "últimos 12"],
-   "argila": {"nome": "Desligamentos 12m", "tipo": "movel_12m", "base": "Desligamentos"},
-   "dax": "CALCULATE([X], DATESINPERIOD(dCalendario[Data], MAX(dCalendario[Data]), -12, MONTH))", "funcoes": ["DATESINPERIOD"],
-   "alternativa": "cálculo visual MOVINGAVERAGE para média móvel só no gráfico"},
-  {"id": "ultimo_valor", "nome": "Último valor do período (semiaditivo)", "termos": ["saldo", "posição", "último", "fechamento"],
-   "argila": {"nome": "Saldo", "dax": "CALCULATE(SUM(fSaldo[Valor]), LASTDATE(dCalendario[Data]))"},
-   "dax": "CALCULATE(SUM(fSaldo[Valor]), LASTDATE(dCalendario[Data]))", "funcoes": ["LASTDATE", "LASTNONBLANK", "CALCULATE"],
-   "armadilhas": ["se o último dia não tem registro, use LASTNONBLANK"]},
-  {"id": "ranking", "nome": "Ranking / top N", "termos": ["ranking", "top", "maiores", "posição"],
-   "argila": {"nome": "Posição", "dax": "RANKX(ALLSELECTED(dLoja[Loja]), [Vendas])", "formato": "inteiro"},
-   "dax": "RANKX(ALLSELECTED(dLoja[Loja]), [Vendas])", "funcoes": ["RANKX", "TOPN", "RANK"],
-   "alternativa": "filtro Top N do próprio visual, se for só para exibir"},
-  {"id": "prazo", "nome": "Prazo médio entre duas datas", "termos": ["prazo", "tempo médio", "lead time", "sla", "dias"],
-   "dax": "AVERAGEX(fChamado, DATEDIFF(fChamado[Abertura], fChamado[Fechamento], DAY))", "funcoes": ["AVERAGEX", "DATEDIFF"],
+   "armadilhas": [
+    "ano fiscal diferente do civil pede o 3º argumento do TOTALYTD"
+   ]
+  },
+  {
+   "id": "ano_anterior",
+   "nome": "Ano anterior e variação",
+   "termos": [
+    "ano anterior",
+    "a/a",
+    "yoy",
+    "variação",
+    "crescimento"
+   ],
+   "argila": {
+    "nome": "Var. Desligamentos A/A",
+    "tipo": "variacao_ano_anterior",
+    "base": "Desligamentos"
+   },
+   "dax": "VAR _atual = [X] VAR _anterior = CALCULATE([X], SAMEPERIODLASTYEAR(dCalendario[Data])) RETURN DIVIDE(_atual - _anterior, _anterior)",
+   "funcoes": [
+    "SAMEPERIODLASTYEAR",
+    "DATEADD",
+    "CALCULATE",
+    "DIVIDE"
+   ],
+   "armadilhas": [
+    "mês corrente incompleto contra mês cheio do ano anterior: deixe claro no título"
+   ]
+  },
+  {
+   "id": "movel",
+   "nome": "Móvel 12 meses",
+   "termos": [
+    "móvel",
+    "12 meses",
+    "rolling",
+    "últimos 12"
+   ],
+   "argila": {
+    "nome": "Desligamentos 12m",
+    "tipo": "movel_12m",
+    "base": "Desligamentos"
+   },
+   "dax": "CALCULATE([X], DATESINPERIOD(dCalendario[Data], MAX(dCalendario[Data]), -12, MONTH))",
+   "funcoes": [
+    "DATESINPERIOD"
+   ],
+   "alternativa": "cálculo visual MOVINGAVERAGE para média móvel só no gráfico"
+  },
+  {
+   "id": "ultimo_valor",
+   "nome": "Último valor do período (semiaditivo)",
+   "termos": [
+    "saldo",
+    "posição",
+    "último",
+    "fechamento"
+   ],
+   "argila": {
+    "nome": "Saldo",
+    "dax": "CALCULATE(SUM(fSaldo[Valor]), LASTDATE(dCalendario[Data]))"
+   },
+   "dax": "CALCULATE(SUM(fSaldo[Valor]), LASTDATE(dCalendario[Data]))",
+   "funcoes": [
+    "LASTDATE",
+    "LASTNONBLANK",
+    "CALCULATE"
+   ],
+   "armadilhas": [
+    "se o último dia não tem registro, use LASTNONBLANK"
+   ]
+  },
+  {
+   "id": "ranking",
+   "nome": "Ranking / top N",
+   "termos": [
+    "ranking",
+    "top",
+    "maiores",
+    "posição"
+   ],
+   "argila": {
+    "nome": "Posição",
+    "dax": "RANKX(ALLSELECTED(dLoja[Loja]), [Vendas])",
+    "formato": "inteiro"
+   },
+   "dax": "RANKX(ALLSELECTED(dLoja[Loja]), [Vendas])",
+   "funcoes": [
+    "RANKX",
+    "TOPN",
+    "RANK"
+   ],
+   "alternativa": "filtro Top N do próprio visual, se for só para exibir"
+  },
+  {
+   "id": "prazo",
+   "nome": "Prazo médio entre duas datas",
+   "termos": [
+    "prazo",
+    "tempo médio",
+    "lead time",
+    "sla",
+    "dias"
+   ],
+   "dax": "AVERAGEX(fChamado, DATEDIFF(fChamado[Abertura], fChamado[Fechamento], DAY))",
+   "funcoes": [
+    "AVERAGEX",
+    "DATEDIFF"
+   ],
    "alternativa": "coluna de duração na view/Power Query + agregacao media (mais rápido e conferível em SQL)",
-   "armadilhas": ["registros em aberto (sem fechamento) entram como branco: decida se contam"]},
-  {"id": "faixa", "nome": "Faixa / classificação", "termos": ["faixa", "classe", "bucket", "categoria", "segmento"],
-   "onde": "coluna no Power Query ou na view (não é medida)", "funcoes": ["SWITCH"],
-   "armadilhas": ["faixa calculada em medida não vira eixo de gráfico"]},
-  {"id": "segunda_data", "nome": "Segunda data da fato (relação inativa)", "termos": ["data de aviso", "outra data", "relação inativa"],
-   "argila": {"nome": "Avisos", "dax": "CALCULATE([Desligamentos], USERELATIONSHIP(fDesligamento[Data do Aviso], dCalendario[Data]))"},
-   "funcoes": ["USERELATIONSHIP"],
-   "armadilhas": ["declare a segunda data em calendario.datas com \"ativo\": false"]},
-  {"id": "meta", "nome": "Meta e status", "termos": ["meta", "objetivo", "farol", "semáforo", "status"],
-   "argila": {"nome": "Turnover", "meta": 0.05, "polaridade": "menor_melhor"},
-   "funcoes": ["IF", "ISBLANK"],
-   "armadilhas": ["meta por período ou por área vem de planilha: use uma fonte Power Query e \"meta\": \"<medida da meta>\""]}
+   "armadilhas": [
+    "registros em aberto (sem fechamento) entram como branco: decida se contam"
+   ]
+  },
+  {
+   "id": "faixa",
+   "nome": "Faixa / classificação",
+   "termos": [
+    "faixa",
+    "classe",
+    "bucket",
+    "categoria",
+    "segmento"
+   ],
+   "onde": "coluna no Power Query ou na view (não é medida)",
+   "funcoes": [
+    "SWITCH"
+   ],
+   "armadilhas": [
+    "faixa calculada em medida não vira eixo de gráfico"
+   ]
+  },
+  {
+   "id": "segunda_data",
+   "nome": "Segunda data da fato (relação inativa)",
+   "termos": [
+    "data de aviso",
+    "outra data",
+    "relação inativa"
+   ],
+   "argila": {
+    "nome": "Avisos",
+    "dax": "CALCULATE([Desligamentos], USERELATIONSHIP(fDesligamento[Data do Aviso], dCalendario[Data]))"
+   },
+   "funcoes": [
+    "USERELATIONSHIP"
+   ],
+   "armadilhas": [
+    "declare a segunda data em calendario.datas com \"ativo\": false"
+   ]
+  },
+  {
+   "id": "meta",
+   "nome": "Meta e status",
+   "termos": [
+    "meta",
+    "objetivo",
+    "farol",
+    "semáforo",
+    "status"
+   ],
+   "argila": {
+    "nome": "Turnover",
+    "meta": 0.05,
+    "polaridade": "menor_melhor"
+   },
+   "funcoes": [
+    "IF",
+    "ISBLANK"
+   ],
+   "armadilhas": [
+    "meta por período ou por área vem de planilha: use uma fonte Power Query e \"meta\": \"<medida da meta>\""
+   ]
+  }
  ]
 }

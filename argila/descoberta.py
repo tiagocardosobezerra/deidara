@@ -20,7 +20,8 @@ import json
 import math
 import os
 import re
-from collections import Counter
+from collections import Counter, defaultdict
+from functools import lru_cache
 
 from .util import sem_acento
 
@@ -39,6 +40,7 @@ VAZIAS = {'de', 'da', 'do', 'das', 'dos', 'e', 'a', 'o', 'as', 'os', 'por', 'com
           'n', 't', 's'}
 
 
+@lru_cache(maxsize=1)
 def _sinonimos():
     arq = os.path.join(PASTA_DICIONARIO, 'sinonimos.json')
     if not os.path.exists(arq):
@@ -66,23 +68,29 @@ def _raiz(p):
 
 def tokens(texto):
     """'CODEMPRESA' -> ['cod', 'empresa']; 'Cód. Empresa' -> ['cod', 'empresa']; 'dCargo' -> ['cargo']."""
+    return list(_tokens(texto or ''))
+
+
+@lru_cache(maxsize=200000)
+def _tokens(texto):
     texto = re.sub(r'([a-z])([A-Z])', r'\1 \2', texto or '')
     out = []
     for p in re.split(r'[^a-z0-9]+', sem_acento(texto).lower()):
         if not p:
             continue
-        for pre in PREFIXOS_COLADOS:
+        for pre in sorted(PREFIXOS_COLADOS, key=len, reverse=True):     # descricao antes de desc
             if p.startswith(pre) and len(p) - len(pre) >= 3 and p != pre:
                 out += [pre, _raiz(p[len(pre):])]
                 break
         else:
             out.append(_raiz(p))
-    return [t for t in out if t not in VAZIAS]
+    return tuple(t for t in out if t not in VAZIAS)
 
 
+@lru_cache(maxsize=200000)
 def nucleo(nome_coluna):
     """O que a coluna identifica, sem as marcas de chave: 'CODEMPRESA_FK' -> {'empresa'}."""
-    return {t for t in tokens(nome_coluna) if t not in MARCAS_CHAVE and t not in GENERICAS}
+    return frozenset(t for t in tokens(nome_coluna) if t not in MARCAS_CHAVE and t not in GENERICAS)
 
 
 def tem_marca_de_chave(nome_coluna):
@@ -90,6 +98,15 @@ def tem_marca_de_chave(nome_coluna):
 
 
 def _expandir(conj, sin):
+    return _expandir_cache(frozenset(conj)) if sin is _sinonimos() else _expandir_sem_cache(conj, sin)
+
+
+@lru_cache(maxsize=200000)
+def _expandir_cache(conj):
+    return frozenset(_expandir_sem_cache(conj, _sinonimos()))
+
+
+def _expandir_sem_cache(conj, sin):
     out = set(conj)
     for t in conj:
         out |= sin.get(t, set())
@@ -219,24 +236,38 @@ def relacionar(catalogos, tabelas, ja_ligadas=(), por_par=2):
         t = f.tabela(origem)
         if t:
             itens.append((f, t, nome))
+    indice = defaultdict(list)                 # termo (com sinônimos) -> [(item, coluna)]
+    for k, (f, t, nome) in enumerate(itens):
+        for c in t['colunas'].values():
+            for termo in _expandir(nucleo(c['coluna']), sin):
+                indice[termo].append((k, c))
+    por_par_tab = defaultdict(list)
+    for ka, (fa, ta, nome_a) in enumerate(itens):
+        for ca in ta['colunas'].values():
+            vistos = set()
+            for termo in _expandir(nucleo(ca['coluna']), sin):
+                for kb, cb in indice.get(termo, ()):
+                    if kb == ka or (kb, cb['coluna']) in vistos:
+                        continue
+                    vistos.add((kb, cb['coluna']))
+                    por_par_tab[(ka, kb)].append((ca, cb))
     out = []
-    for fa, ta, nome_a in itens:
-        for fb, tb, nome_b in itens:
-            if nome_a == nome_b or (nome_a.upper(), nome_b.upper()) in ja or (nome_b.upper(), nome_a.upper()) in ja:
-                continue
-            provada = fa is fb and bool(fa.fks_entre(ta['nome'], tb['nome']))
-            cands = []
-            for ca in ta['colunas'].values():
-                for cb in tb['colunas'].values():
-                    pts, mot = _pontuar(fa, ta, ca, fb, tb, cb, sin)
-                    if confianca(pts):
-                        cands.append({'de': nome_a, 'para': nome_b, 'campo_filho': ca['coluna'],
-                                      'campo_mae': cb['coluna'], 'pontos': pts, 'confianca': confianca(pts),
-                                      'motivos': mot, 'fonte_de': fa.nome, 'fonte_para': fb.nome,
-                                      'origem_de': ta['nome'], 'origem_para': tb['nome'],
-                                      'provada_no_catalogo': provada})
-            cands.sort(key=lambda x: -x['pontos'])
-            out += cands[:por_par]
+    for (ka, kb), pares in por_par_tab.items():
+        (fa, ta, nome_a), (fb, tb, nome_b) = itens[ka], itens[kb]
+        if (nome_a.upper(), nome_b.upper()) in ja or (nome_b.upper(), nome_a.upper()) in ja:
+            continue
+        provada = fa is fb and bool(fa.fks_entre(ta['nome'], tb['nome']))
+        cands = []
+        for ca, cb in pares:
+            pts, mot = _pontuar(fa, ta, ca, fb, tb, cb, sin)
+            if confianca(pts):
+                cands.append({'de': nome_a, 'para': nome_b, 'campo_filho': ca['coluna'],
+                              'campo_mae': cb['coluna'], 'pontos': pts, 'confianca': confianca(pts),
+                              'motivos': mot, 'fonte_de': fa.nome, 'fonte_para': fb.nome,
+                              'origem_de': ta['nome'], 'origem_para': tb['nome'],
+                              'provada_no_catalogo': provada})
+        cands.sort(key=lambda x: -x['pontos'])
+        out += cands[:por_par]
     # por par de tabelas: a melhor e só as alternativas que chegam perto dela (as outras são ruído)
     melhor = {}
     for s in out:

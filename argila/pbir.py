@@ -76,7 +76,9 @@ def visual(m, v, pos, nome, ordem):
         vis['objects'] = {'data': [{'properties': {'mode': _lit('Dropdown')}}]}
     if tipo == 'card':
         meta = titulo_do_cartao(m, v)
-        container['title'] = [{'properties': {'show': _lit(bool(meta)), **({'text': _lit(meta)} if meta else {})}}]
+        rotulo = (medida(m, v['valores'][0]['nome']) or {}).get('rotulo_meta')
+        texto = _cor_da_medida(m, rotulo)['solid']['color'] if rotulo else (_lit(meta) if meta else None)
+        container['title'] = [{'properties': {'show': _lit(bool(meta)), **({'text': texto} if texto else {})}}]
         cor = (medida(m, v['valores'][0]['nome']) or {}).get('cor_medida')
         if cor:
             vis['objects'] = {'labels': [{'properties': {'color': _cor_da_medida(m, cor)}}]}

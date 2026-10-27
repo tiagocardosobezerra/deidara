@@ -129,12 +129,12 @@ def main():
         n, erros = 0, []
     nt, tabelas, colunas, medidas, et = validar_tmdl(pasta)
     ev = validar_visuais(pasta, tabelas, colunas, medidas)
-    print(f'JSON conferidos contra o schema da Microsoft: {n}')
+    print(f'JSON conferidos contra o schema da Microsoft: {n}' + ('' if n else ' (instale `jsonschema` para conferir)'))
     print(f'TMDL: {nt} arquivo(s), {len(tabelas)} tabela(s), {len(colunas)} coluna(s), {len(medidas)} medida(s)')
     todos = erros + et + ev
     for e in todos:
         print(f'  ERRO  {e}')
-    print('OK' if not todos else f'{len(todos)} erro(s)')
+    print(('OK' if n else 'OK parcial (só TMDL e campos; os JSON não foram conferidos)') if not todos else f'{len(todos)} erro(s)')
     return 1 if todos else 0
 
 

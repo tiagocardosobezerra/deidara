@@ -44,7 +44,7 @@ from .util import chave, gravar_json, gravar_texto, ler_json, sem_acento
 NOME_PADRAO = 'memory-card'
 SECAO = 'deidara'
 RAIZ_SKILL = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-CONFIG = os.path.join(RAIZ_SKILL, 'local', 'memory_card.json')
+CONFIG = os.path.join(os.path.expanduser('~'), '.deidara', 'memory_card.json')      # sobrevive a atualizar a skill
 STATUS = ('rascunho', 'em-uso')
 STATUS_INDICADOR = STATUS + ('oficial',)
 CORPO_INI, CORPO_FIM = '<!-- corpo -->', '<!-- /corpo -->'
@@ -224,8 +224,17 @@ def diferencas_indicador(antes, depois):
     return out
 
 
+def desligar():
+    if os.path.exists(CONFIG):
+        os.remove(CONFIG)
+        return f'Memory Card desligado nesta máquina ({CONFIG} removido; o cartão em si não foi tocado)'
+    return 'nenhum Memory Card configurado nesta máquina'
+
+
 def _medidas_reais(modelo):
-    return [md for md in modelo['medidas'] if md['tipo'] not in ('cor', 'meta')]
+    """Indicadores de verdade: sem as medidas técnicas e sem as que só servem de meta a outro indicador."""
+    metas = {chave(md['meta_medida']) for md in modelo['medidas'] if md.get('meta_medida')}
+    return [md for md in modelo['medidas'] if md['tipo'] not in ('cor', 'meta') and chave(md['nome']) not in metas]
 
 
 def avisos_do_modelo(pasta, modelo):

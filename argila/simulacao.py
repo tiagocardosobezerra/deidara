@@ -138,6 +138,15 @@ class Simulador:
             return anterior
         return (atual - anterior) / anterior if anterior else 0
 
+    def aditiva(self, md):
+        """A medida soma por linha (o total é a soma das linhas)?"""
+        if not md:
+            return False
+        if md['tipo'] == 'estoque_na_data':
+            return True
+        return md['tipo'] == 'agregacao' and md['dax'].split('(')[0] in ('SUM', 'COUNT', 'COUNTROWS') \
+            and md['formato'] != 'percentual'
+
     def status(self, nome, filtros=()):
         """True = bateu a meta, False = não bateu, None = sem meta."""
         md = medida(self.m, nome)

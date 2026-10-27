@@ -66,7 +66,7 @@ percentuais arredondados e sim/não, nunca um código ou um valor:
 | `mae_unica` | sim/não: o código é único na mãe |
 
 ```bash
-python3 deidara.py provar --de resultado.txt
+python3 deidara.py provar --de resultado.txt --argila meu_painel/argila.json
 ```
 
 | Veredito | Quando | No argila.json |
@@ -76,7 +76,7 @@ python3 deidara.py provar --de resultado.txt
 | fraca | menos de 90% | aviso: provavelmente não é esta a ligação |
 | reprovada | código repetido na mãe | **erro**: o Power BI recusa a relação 1:* |
 
-O `provar` imprime o bloco `"prova": {...}` para colar dentro da `"declarada"`:
+Com `--argila`, o `provar` grava o bloco `"prova": {...}` dentro da `"declarada"` correspondente (confirme a ligação antes com `deidara.py confirmar`):
 
 ```json
 {"de": "fMeta", "para": "dEmpresa",

@@ -39,17 +39,90 @@ LIMITE_VISUAIS_POR_PAGINA = 12
 
 
 class Problemas:
+    """Erros (bloqueiam), avisos (decisão do usuário) e consequências: erros que
+    só existem porque outro erro (a raiz) quebrou uma tabela ou coluna. As
+    consequências não entram em `erros`: somem sozinhas quando a raiz é corrigida."""
+
     def __init__(self):
         self.erros, self.avisos = [], []
+        self.raizes = {}            # chave -> texto do erro raiz
+        self.consequencias = {}     # texto do erro raiz -> [consequências]
 
-    def erro(self, onde, msg):
-        self.erros.append(f'{onde}: {msg}')
+    def erro(self, onde, msg, raiz=None, depende=()):
+        texto = f'{onde}: {msg}'
+        for d in depende:
+            if d in self.raizes:
+                self.consequencias.setdefault(self.raizes[d], []).append(texto)
+                return
+        self.erros.append(texto)
+        if raiz:
+            self.raizes[raiz] = texto
 
     def aviso(self, onde, msg):
         self.avisos.append(f'{onde}: {msg}')
 
 
 # ============================================================================
+def _pista_medida(nome, nomes):
+    import difflib
+    todas = [x.get('nome', '') for x in nomes.values()]
+    parecidas = difflib.get_close_matches(nome or '', todas, n=3, cutoff=0.5)
+    if parecidas:
+        return f'; parecidas: {", ".join(parecidas)}'
+    return f'; medidas do modelo: {", ".join(todas[:10])}' if todas else ''
+
+
+def pista_coluna(m, ref, familias=None):
+    """O que existe para 'Tabela[Coluna]': colunas do modelo e as do catálogo que ainda não entraram nele."""
+    import difflib
+    mt = re.fullmatch(r"\s*'?(.+?)'?\[(.+)\]\s*", ref or '')
+    if not mt:
+        return ' (use Tabela[Coluna])'
+    t = tabela_do_modelo(m, mt.group(1))
+    if not t:
+        return f'; tabelas do modelo: {", ".join(x["nome"] for x in m["tabelas"])}'
+    do_modelo = [c['nome'] for c in t['colunas'] if not c['oculta'] and (not familias or c['familia'] in familias)]
+    texto = ''
+    parecidas = difflib.get_close_matches(mt.group(2), do_modelo, n=3, cutoff=0.5)
+    if parecidas:
+        texto = f'; parecidas em {t["nome"]}: {", ".join(parecidas)}'
+    elif do_modelo:
+        texto = f'; em {t["nome"]}: {", ".join(do_modelo[:8])}'
+    fonte = (m.get('_catalogos') or {}).get(t.get('fonte'))
+    if fonte and t.get('origem'):
+        cat = fonte.tabela(t['origem'])
+        no_modelo = {chave(c['origem']) for c in t['colunas'] if c['origem']}
+        fora = [c for c in cat['colunas'].values() if chave(c['coluna']) not in no_modelo
+                and (not familias or c.get('familia') in familias)]
+        alvo = difflib.get_close_matches(chave(mt.group(2)), [chave(c['coluna']) for c in fora] +
+                                         [chave(c.get('descricao') or '') for c in fora], n=1, cutoff=0.3)
+        escolhida = next((c for c in fora if alvo and alvo[0] in (chave(c['coluna']), chave(c.get('descricao') or ''))),
+                         fora[0] if len(fora) == 1 else None)
+        if escolhida:
+            texto += (f'. No catálogo, {t["origem"]}.{escolhida["coluna"]} ("{escolhida.get("descricao") or ""}") ainda não '
+                      f'está no modelo: acrescente em tabelas[{t["nome"]}].colunas: '
+                      f'{{"coluna": "{escolhida["coluna"]}", "nome": "{mt.group(2)}"}}')
+        elif fora:
+            texto += f'. No catálogo, fora do modelo: {", ".join(c["coluna"] for c in fora[:8])}'
+    return texto
+
+
+def chave_tabela(tabela):
+    return ('tabela', chave(tabela))
+
+
+def chave_coluna(tabela, coluna):
+    return ('coluna', chave(tabela), chave(coluna))
+
+
+def _depende_de(ref):
+    """Chaves de raiz de que uma referência 'Tabela[Coluna]' depende."""
+    mt = re.fullmatch(r"\s*'?(.+?)'?\[(.+)\]\s*", ref or '') or re.fullmatch(r'([^.\[]+)\.(.+)', ref or '')
+    if not mt:
+        return ()
+    return (chave_tabela(mt.group(1)), chave_coluna(mt.group(1), mt.group(2)))
+
+
 def _familia(oc):
     return oc.get('familia') or familia_da_coluna(oc)
 
@@ -65,9 +138,10 @@ def resolver(argila, catalogos):
         'responsavel': argila.get('responsavel', ''),
         'versao': str(argila.get('versao', '')),
         'fontes': _fontes(argila, catalogos, p),
+        '_catalogos': catalogos,
         'tema': {'cores': ['#118DFF', '#12239E', '#E66C37', '#6B007B', '#E044A7', '#744EC2', '#D9B300',
                            '#D64550'], 'fundo': '#FFFFFF', 'texto': '#252423', **(argila.get('tema') or {})},
-        'tabelas': [], 'relacionamentos': [], 'medidas': [], 'paginas': [], 'seguranca': [],
+        'tabelas': [], 'relacionamentos': [], 'medidas': [], 'paginas': [], 'seguranca': [], 'pendencias': [],
     }
     if not m['projeto']:
         p.erro('projeto', 'informe o nome do projeto')
@@ -77,8 +151,19 @@ def resolver(argila, catalogos):
     _medidas(argila, m, p)
     _seguranca(argila, m, p)
     _paginas(argila, m, p)
+    _privacidade(m, p)
     if not m['versao']:
         p.aviso('versao', 'sem "versao" no argila.json: informe (ex.: "1.0") para o histórico de mudanças')
+    for campo in ('descricao', 'publico'):
+        if not (m[campo] or '').strip() or m[campo].strip().upper().startswith('A DEFINIR'):
+            m['pendencias'].append(f'painel: "{campo}" pendente')
+            p.aviso(f'painel {campo}', f'definição pendente: escreva {"para que serve o painel" if campo == "descricao" else "para quem é o painel"} '
+                                       '(aparece no protótipo e no Memory Card); o aprovar recusa sem ela')
+    for f in m['fontes'].values():
+        if f['tipo'] == 'sqlserver' and any(t.get('fonte') == f['nome'] for t in m['tabelas']) and \
+                ('SEU_' in str(f.get('servidor')) or 'SEU_' in str(f.get('banco'))):
+            p.aviso(f'fonte {f["nome"]}', 'servidor/banco ainda de exemplo (SEU_SERVIDOR/SEU_BANCO): informe em "fontes" '
+                                         '(são os valores iniciais dos parâmetros do Power BI e aparecem no LEIA-ME)')
     return m, p
 
 
@@ -92,6 +177,33 @@ def _fontes(argila, catalogos, p):
             f = {'servidor': 'SEU_SERVIDOR', 'banco': 'SEU_BANCO', 'esquema_origem': 'dbo', 'esquema_views': 'bi', **f}
         out[nome] = f
     return out
+
+
+def _privacidade(m, p):
+    """Dado pessoal (CPF, e-mail, nome de pessoa...) no modelo sem nenhum uso: aviso."""
+    from .esboco import _pessoal
+    usados = set()
+    for pg in m['paginas']:
+        for v in pg['visuais']:
+            for x in [v['categoria'], v['legenda']] + v['linhas'] + v['colunas'] + v['campos']:
+                if x and x['tipo'] == 'coluna':
+                    usados.add((x['tabela'], x['nome']))
+    for md in m['medidas']:
+        for tn, n in referencias_dax(md.get('dax') or ''):
+            if tn:
+                usados.add((tn, n))
+    for papel in m.get('seguranca', []):
+        for r in papel['regras']:
+            for tn, n in referencias_dax(r['filtro']):
+                usados.add((tn or r['tabela'], n))
+    for t in m['tabelas']:
+        if not t.get('origem'):
+            continue
+        for c in t['colunas']:
+            if c['origem'] and not c['oculta'] and (t['nome'], c['nome']) not in usados and \
+                    _pessoal({'nome': t['origem']}, {'coluna': c['origem']}):
+                p.aviso(f'tabela {t["nome"]}', f'[Privacidade] "{c["nome"]}" identifica uma pessoa e não é usada em '
+                                              'nenhum visual: tire do modelo (LGPD: só o necessário)')
 
 
 def _seguranca(argila, m, p):
@@ -154,7 +266,7 @@ def _tabelas(argila, catalogos, m, p):
             sug = fonte.parecidas(t.get('origem', ''))
             p.erro(onde, f'origem "{t.get("origem")}" não está no catálogo da fonte {fonte.nome}'
                          + (f'; parecidas: {", ".join(sug)}' if sug else
-                            '; rode a receita com essa tabela e o `catalogar` de novo'))
+                            '; rode a receita com essa tabela e o `catalogar` de novo'), raiz=chave_tabela(nome))
             continue
         tab = {'nome': nome, 'tipo': tipo, 'origem': origem['nome'], 'fonte': fonte.nome, 'fonte_tipo': fonte.tipo,
                'expressao_m': origem['expressao_m'], 'descricao': t.get('descricao') or origem['descricao'] or '',
@@ -175,7 +287,8 @@ def _tabelas(argila, catalogos, m, p):
             if not oc:
                 sug = fonte.colunas_parecidas(origem['nome'], c.get('coluna', ''))
                 p.erro(ondec, f'coluna "{c.get("coluna")}" não existe em {origem["nome"]}'
-                              + (f'; parecidas: {", ".join(sug)}' if sug else ''))
+                              + (f'; parecidas: {", ".join(sug)}' if sug else ''),
+                       raiz=chave_coluna(nome, c.get('nome') or c.get('coluna', '')))
                 continue
             familia = _familia(oc)
             if c.get('tipo'):
@@ -186,7 +299,7 @@ def _tabelas(argila, catalogos, m, p):
                                'texto; defina o tipo na consulta de origem ou informe "tipo" aqui')
             col = _coluna(c.get('nome') or oc['coluna'], oc['coluna'], familia,
                           descricao=c.get('descricao') or oc.get('descricao') or '',
-                          oculta=bool(c.get('oculta')), formato=c.get('formato'))
+                          oculta=bool(c.get('oculta')), formato=c.get('formato') or oc.get('formato_sugerido'))
             col['sql_tipo'] = sql_tipo(oc) if fonte.tipo == 'sqlserver' else None
             if chave(col['nome']) in cols:
                 p.erro(ondec, f'nome de coluna "{col["nome"]}" repetido')
@@ -266,7 +379,8 @@ def _calendario(argila, m, p):
         t = tabela_do_modelo(m, d.get('tabela', ''))
         c = coluna_do_modelo(t, d.get('coluna', '')) if t else None
         if not c:
-            p.erro(onde, f'{d.get("tabela")}[{d.get("coluna")}] não está no modelo')
+            p.erro(onde, f'{d.get("tabela")}[{d.get("coluna")}] não está no modelo',
+                   depende=_depende_de(f'{d.get("tabela")}[{d.get("coluna")}]'))
             continue
         if c['familia'] not in ('data', 'datahora'):
             p.erro(onde, f'{t["nome"]}[{c["nome"]}] não é data ({c["familia"]})')
@@ -293,7 +407,8 @@ def _relacionamentos(argila, catalogos, m, p):
         onde = f'relacionamentos[{i}] {r.get("de")} -> {r.get("para")}'
         de, para = tabela_do_modelo(m, r.get('de', '')), tabela_do_modelo(m, r.get('para', ''))
         if not de or not para:
-            p.erro(onde, 'as duas pontas precisam ser tabelas do modelo ("de" = lado muitos, "para" = lado um)')
+            p.erro(onde, 'as duas pontas precisam ser tabelas do modelo ("de" = lado muitos, "para" = lado um)',
+                   depende=(chave_tabela(r.get('de', '')), chave_tabela(r.get('para', ''))))
             continue
         if not de['origem'] or not para['origem']:
             p.erro(onde, 'use "calendario.datas" para ligar ao calendário')
@@ -338,6 +453,11 @@ def _declarada(catalogos, m, de, para, r, p, onde):
     campos = [tuple(x) for x in d.get('campos') or [] if isinstance(x, (list, tuple)) and len(x) == 2]
     if not campos or not d.get('por'):
         p.erro(onde, '"declarada" pede "campos" ([["CAMPO_DA_FILHA", "CAMPO_DA_MAE"]]) e "por" (quem confirmou)')
+        return
+    if d['por'].strip().upper() == 'A CONFIRMAR':
+        p.erro(onde, f'ligação sugerida ainda não confirmada: confira os campos com o dono do dado e rode '
+                     f'`deidara.py confirmar <argila> --ligacao {de["nome"]}->{para["nome"]} --por "<quem confirmou>"` '
+                     '(ou --remover)')
         return
     ok = True
     for filho, mae in campos:
@@ -493,7 +613,7 @@ def _medidas(argila, m, p):
                 r['tipo'] = 'divisao'
                 for k in ('numerador', 'denominador'):
                     if chave(md.get(k, '')) not in nomes:
-                        p.erro(onde, f'{k} "{md.get(k)}" não é uma medida do modelo')
+                        p.erro(onde, f'{k} "{md.get(k)}" não é uma medida do modelo' + _pista_medida(md.get(k), nomes))
                 r['dax'] = f'DIVIDE({dax_medida(md.get("numerador", ""))}, {dax_medida(md.get("denominador", ""))})'
                 r['depende'] = [md.get('numerador'), md.get('denominador')]
             elif md.get('tipo') in TEMPO:
@@ -523,6 +643,12 @@ def _medidas(argila, m, p):
         m['medidas'].append(r)
     _metas(m, p)
     _ciclos(m, p)
+    for md in m['medidas']:
+        if md.get('tipo') not in ('cor', 'meta') and (not (md.get('descricao') or '').strip()
+                                                      or md['descricao'].strip().upper().startswith('A DEFINIR')):
+            m['pendencias'].append(f'medida {md["nome"]}: definição de negócio pendente')
+            p.aviso(f'medida {md["nome"]}', 'definição pendente: escreva o que o número significa (numerador, '
+                                            'filtro, período) antes de mostrar ao gestor; o aprovar recusa sem ela')
 
 
 COR_BOA, COR_RUIM = '#107C10', '#D13438'
@@ -565,6 +691,17 @@ def _metas(m, p):
             'depende': [md['nome'], nome_meta], 'meta': None, 'polaridade': md['polaridade'], 'oculta': True,
             'meta_medida': None, 'cor_medida': None, 'conferencia_sql': None})
         md['meta_medida'], md['cor_medida'] = nome_meta, cor
+        alvo = medida(m, nome_meta)
+        if alvo and alvo.get('tipo') != 'meta':             # meta de outra medida: o título do cartão mostra o valor
+            fmt = {'percentual': '0.0%', 'inteiro': '#,0', 'moeda': '"R$" #,0.00'}.get(alvo.get('formato'), '#,0.00')
+            rotulo = f'Rótulo {cor}'
+            m['medidas'].append({
+                'nome': rotulo, 'tipo': 'cor', 'formato': None, 'pasta': 'Metas', 'tabela': md['tabela'],
+                'descricao': f'Texto "Meta: ..." do cartão de {md["nome"]}.',
+                'dax': f'"Meta: " & FORMAT({dax_medida(nome_meta)}, "{fmt}")', 'depende': [nome_meta], 'meta': None,
+                'polaridade': md['polaridade'], 'oculta': True, 'meta_medida': None, 'cor_medida': None,
+                'conferencia_sql': None})
+            md['rotulo_meta'] = rotulo
 
 
 def _formato_padrao(md, nomes, vistos=()):
@@ -608,7 +745,12 @@ def _medida_agregacao(m, md, r, p, onde):
         return
     t, c = _resolver_coluna(m, md.get('coluna'), md.get('tabela'))
     if not c:
-        p.erro(onde, f'coluna "{md.get("coluna")}" não está no modelo (use Tabela[Coluna])')
+        dep = _depende_de(md.get('coluna')) or ((chave_coluna(md.get('tabela') or '', md.get('coluna') or ''),))
+        p.erro(onde, f'coluna "{md.get("coluna")}" não está no modelo (use Tabela[Coluna])', depende=dep,
+               raiz=('medida', chave(md.get('nome', ''))))
+        origem_raiz = next((p.raizes[d] for d in dep if d in p.raizes), None)
+        if origem_raiz:
+            p.raizes.setdefault(('medida', chave(md.get('nome', ''))), origem_raiz)
         return
     if ag in AGREGACOES_NUMERICAS and c['familia'] not in NUMERICAS:
         p.erro(onde, f'{ag} pede coluna numérica; {t["nome"]}[{c["nome"]}] é {c["familia"]}')
@@ -626,7 +768,7 @@ def _medida_tempo(m, md, r, p, onde, nomes):
     r['tipo'] = md['tipo']
     base = md.get('base', '')
     if chave(base) not in nomes:
-        p.erro(onde, f'base "{base}" não é uma medida do modelo')
+        p.erro(onde, f'base "{base}" não é uma medida do modelo' + _pista_medida(base, nomes))
     if not m.get('calendario'):
         p.erro(onde, 'medida de tempo pede "calendario" no argila.json')
         return
@@ -661,8 +803,17 @@ def _medida_estoque(m, md, r, p, onde):
         return
     cal = m['calendario']['tabela']
     te, ce = _resolver_coluna(m, md.get('entradas'))
-    if not ce or ce['familia'] not in ('data', 'datahora'):
-        p.erro(onde, f'"entradas" ("{md.get("entradas")}") precisa ser uma coluna de data do modelo (Tabela[Coluna])')
+    datas = ('data', 'datahora')
+    if md.get('saidas'):                                   # as duas pontas no mesmo relatório, não uma por vez
+        ts0, cs0 = _resolver_coluna(m, md['saidas'])
+        if not cs0 or cs0['familia'] not in datas:
+            p.erro(onde, f'"saidas" ("{md.get("saidas")}") precisa ser uma coluna de data do modelo'
+                         + pista_coluna(m, md['saidas'], datas))
+            if ce and ce['familia'] in datas:
+                return
+    if not ce or ce['familia'] not in datas:
+        p.erro(onde, f'"entradas" ("{md.get("entradas")}") precisa ser uma coluna de data do modelo'
+                     + pista_coluna(m, md.get('entradas'), datas))
         return
     lidas = [te['nome']]
     fim_ref = ''
@@ -679,8 +830,7 @@ def _medida_estoque(m, md, r, p, onde):
     if md.get('saidas'):
         ts, cs = _resolver_coluna(m, md['saidas'])
         if not cs or cs['familia'] not in ('data', 'datahora'):
-            p.erro(onde, f'"saidas" ("{md.get("saidas")}") precisa ser uma coluna de data do modelo (Tabela[Coluna])')
-            return
+            return                                          # já relatado acima
         if not _alcanca(_grafo_de_filtro(m), te['nome'], ts['nome']):
             p.aviso(onde, f'{te["nome"]} não filtra {ts["nome"]}: um corte por {te["nome"]} vai tirar as saídas de '
                           'todo mundo; confira o relacionamento')
@@ -690,6 +840,9 @@ def _medida_estoque(m, md, r, p, onde):
                 'RETURN\n    IF(MIN(' + dax_coluna(cal, 'Data') + ') > TODAY(), BLANK(), _entradas - _saidas)')
     else:
         dax += 'RETURN\n    IF(MIN(' + dax_coluna(cal, 'Data') + ') > TODAY(), BLANK(), _entradas)'
+    r['estoque'] = {'entradas': (te['nome'], ce['nome']),
+                    'fim': (tf['nome'], cf['nome']) if md.get('fim') else None,
+                    'saidas': (ts['nome'], cs['nome']) if md.get('saidas') else None}
     r['dax'], r['tabela'] = dax, md.get('tabela') or te['nome']
     r['tabelas_lidas'], r['le_calendario'], r['depende'] = lidas, True, []
 
@@ -710,7 +863,7 @@ def _conferir_refs(m, r, nomes, p, onde):
             if not t:
                 p.erro(onde, f'tabela "{tn}" do DAX não está no modelo')
             elif not coluna_do_modelo(t, n) and chave(n) not in nomes:
-                p.erro(onde, f'coluna "{tn}[{n}]" do DAX não está no modelo')
+                p.erro(onde, f'coluna "{tn}[{n}]" do DAX não está no modelo', depende=_depende_de(f'{tn}[{n}]'))
         elif chave(n) in nomes:
             deps.append(n)
         elif not any(coluna_do_modelo(t, n) for t in m['tabelas']):
@@ -842,7 +995,10 @@ def _visual(m, v, p, onde, filtra):
         nonlocal ok
         c = _campo(m, ref)
         if not c:
-            p.erro(onde, f'{rotulo} "{ref}" não é {"coluna (Tabela[Coluna])" if quer == "coluna" else "medida"} do modelo')
+            p.erro(onde, f'{rotulo} "{ref}" não é {"coluna (Tabela[Coluna])" if quer == "coluna" else "medida"} do modelo'
+                   + (pista_coluna(m, ref) if '[' in (ref or '') else _pista_medida(ref, {chave(x['nome']): x for x in m['medidas']
+                                                                                            if x['tipo'] != 'cor'})),
+                   depende=_depende_de(ref) + tuple(('medida', chave(ref)) for _ in [0] if ref))
             ok = False
         elif quer and c['tipo'] != quer:
             p.erro(onde, f'{rotulo} "{ref}" precisa ser {quer}, veio {c["tipo"]}')

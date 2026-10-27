@@ -43,6 +43,12 @@ def _resolver(argila):
     return resolver(argila, CATALOGOS)
 
 
+def _aprovar_com_prototipo(argv):
+    """O fluxo real: o gestor vê o protótipo atual e então aprova."""
+    deidara.main(['prototipar', argv[1]])
+    return deidara.main(argv)
+
+
 def _calado(fn, *args):
     with redirect_stdout(io.StringIO()) as out, redirect_stderr(io.StringIO()):
         codigo = fn(*args)
@@ -136,6 +142,23 @@ class TestValidacao(unittest.TestCase):
         self.assertIn('fDesligamento[Data do Desligamento] <= _fim', hc['dax'])
         self.assertEqual(hc['formato'], 'inteiro')
         self.assertIn("AVERAGEX(VALUES(dCalendario[Ano-Mês]), [Headcount])", medida(m, 'HC Médio')['dax'])
+
+    def test_estoque_relata_as_duas_pontas_e_aponta_o_catalogo(self):
+        a = _base()
+        t = next(t for t in a['tabelas'] if t['nome'] == 'dColaborador')
+        t['colunas'] = [c for c in t['colunas'] if c.get('coluna') != 'DATAADMISSAO']
+        _md(a, 'Headcount')['saidas'] = 'fDesligamento[Data Errada]'
+        _, p = _resolver(a)
+        texto = '\n'.join(p.erros)
+        self.assertIn('"saidas"', texto)
+        self.assertIn('"entradas"', texto)
+        self.assertIn('{"coluna": "DATAADMISSAO", "nome": "Data de Admissão"}', texto)
+
+    def test_medida_inexistente_sugere_parecida(self):
+        a = _base()
+        _md(a, 'Turnover')['numerador'] = 'Desligamento'
+        _, p = _resolver(a)
+        self.assertTrue(any('parecidas: Desligamentos' in e for e in p.erros), p.erros)
 
     def test_medida_de_tempo_nao_mostra_futuro(self):
         m, _ = _resolver(_base())
@@ -550,6 +573,19 @@ class TestProva(unittest.TestCase):
         r = next(r for r in m['relacionamentos'] if r['de'] == 'fMeta')
         self.assertIn('provada em 27/10/2026: 100,0% com par, chave única', r['prova'])
 
+    def test_provar_grava_na_ligacao(self):
+        d = tempfile.mkdtemp(prefix='ddp')
+        arq, res = os.path.join(d, 'argila.json'), os.path.join(d, 'r.txt')
+        shutil.copy(os.path.join(EXEMPLO, 'argila.json'), arq)
+        with open(res, 'w', encoding='utf-8') as f:
+            f.write('de\tpara\tpct_nulos_filha\tpct_linhas_com_par\tpct_codigos_com_par\tmae_unica\n'
+                    'fMeta[Cód. Empresa]\tdEmpresa[CODEMPRESA]\t0\t100\t100\tsim\n')
+        codigo, out = _calado(deidara.main, ['provar', '--de', res, '--argila', arq])
+        self.assertEqual(codigo, 0, out)
+        r = next(r for r in deidara.ler_json(arq)['relacionamentos'] if r['de'] == 'fMeta')
+        self.assertEqual(r['declarada']['prova']['pct_linhas_com_par'], 100.0)
+        shutil.rmtree(d, ignore_errors=True)
+
     def test_prova_com_chave_repetida_e_erro(self):
         _, p = self._com_prova(mae_unica=False)
         self.assertTrue(any('reprovou' in e for e in p.erros), p.erros)
@@ -586,7 +622,7 @@ class TestMemoryCard(unittest.TestCase):
                                       '--secao', 'Turnover', '--por', 'Teste', *extra])
 
     def _aprovado_e_enviado(self):
-        _calado(deidara.main, ['aprovar', self.argila, '--por', 'Ana'])
+        _calado(_aprovar_com_prototipo, ['aprovar', self.argila, '--por', 'Ana'])
         return self._enviar('--confirmar')
 
     def test_estrutura_padrao_na_secao_deidara(self):
@@ -631,8 +667,8 @@ class TestMemoryCard(unittest.TestCase):
     def test_enviar_pede_aprovacao_e_previa_nao_grava(self):
         codigo, out = self._enviar()
         self.assertEqual(codigo, 1)
-        self.assertIn('sem aprovação', out)
-        _calado(deidara.main, ['aprovar', self.argila, '--por', 'Ana'])
+        self.assertIn('Só painel aprovado entra no cartão', out)
+        _calado(_aprovar_com_prototipo, ['aprovar', self.argila, '--por', 'Ana'])
         codigo, out = self._enviar()
         self.assertEqual(codigo, 0)
         self.assertIn('saves/recursos-humanos/turnover/quadro-e-turnover', out)
@@ -661,7 +697,7 @@ class TestMemoryCard(unittest.TestCase):
         a = _base()
         _md(a, 'Turnover')['denominador'] = 'Headcount'
         self._gravar(a)
-        _calado(deidara.main, ['aprovar', self.argila, '--por', 'Ana'])
+        _calado(_aprovar_com_prototipo, ['aprovar', self.argila, '--por', 'Ana'])
         codigo, out = self._enviar('--confirmar')
         self.assertEqual(codigo, 1)
         self.assertIn('--motivo', out)
@@ -682,7 +718,7 @@ class TestMemoryCard(unittest.TestCase):
         self._gravar(a)
         _, out = _calado(deidara.main, ['validar', self.argila])
         self.assertIn('difere do indicador OFICIAL', out)
-        _calado(deidara.main, ['aprovar', self.argila, '--por', 'Ana'])
+        _calado(_aprovar_com_prototipo, ['aprovar', self.argila, '--por', 'Ana'])
         codigo, out = self._enviar('--confirmar', '--motivo', 'x')
         self.assertEqual(codigo, 1)
         self.assertIn('é OFICIAL', out)
@@ -707,6 +743,184 @@ class TestMemoryCard(unittest.TestCase):
         sit, det = self.mc.conferir(self.cartao, cats, resolver)['recursos-humanos/turnover/quadro-e-turnover']
         self.assertEqual(sit, 'quebrado')
         self.assertTrue(any('DESCRICAOCARGO' in d for d in det))
+
+
+class TestExperiencia(unittest.TestCase):
+    def test_sem_argumentos_mostra_o_roteiro(self):
+        codigo, out = _calado(deidara.main, [])
+        self.assertEqual(codigo, 0)
+        self.assertIn('Por onde começar', out)
+
+    def test_erro_em_cascata_vira_uma_causa_so(self):
+        a = _base()
+        a['tabelas'][1]['colunas'][1]['coluna'] = 'DESCRICAO_CARGO'
+        _, p = _resolver(a)
+        self.assertEqual(len(p.erros), 1, p.erros)
+        self.assertEqual(len(p.consequencias[p.erros[0]]), 5)
+
+    def test_relatorio_tem_proximo_passo(self):
+        from argila import relato
+        m, p = _resolver(_base())
+        texto = relato.validacao(m, p, 'x.json')
+        self.assertIn('Próximo passo', texto)
+        self.assertIn('[Ligações]', texto)
+
+
+class TestComeco(unittest.TestCase):
+    def setUp(self):
+        self.dir = tempfile.mkdtemp(prefix='ddn')
+        self.pasta = os.path.join(self.dir, 'painel')
+
+    def tearDown(self):
+        shutil.rmtree(self.dir, ignore_errors=True)
+
+    def test_novo_cria_pasta_com_receitas_e_roteiro(self):
+        codigo, _ = _calado(deidara.main, ['novo', self.pasta, '--projeto', 'Turnover'])
+        self.assertEqual(codigo, 0)
+        for x in ('ROTEIRO.md', 'receitas/receita_sql.sql', 'receitas/receita_dax.dax', 'receitas/receita_m.pq',
+                  'catalogos', 'colado/m'):
+            self.assertTrue(os.path.exists(os.path.join(self.pasta, x)), x)
+        self.assertEqual(_calado(deidara.main, ['novo', self.pasta])[0], 1)           # não sobrescreve
+
+    def _esboco(self):
+        _calado(deidara.main, ['novo', self.pasta])
+        for f in ('erp.json', 'metas.json'):
+            shutil.copy(os.path.join(EXEMPLO, 'catalogos', f), os.path.join(self.pasta, 'catalogos'))
+        codigo, out = _calado(deidara.main, ['esbocar', self.pasta, '--pedido', 'desligamentos por motivo e cargo com a meta por empresa'])
+        self.assertEqual(codigo, 0, out)
+        arq = os.path.join(self.pasta, 'argila.json')
+        with open(arq, encoding='utf-8') as f:
+            return arq, json.load(f)
+
+    def test_esboco_classifica_e_marca_o_que_e_de_gente(self):
+        arq, a = self._esboco()
+        tipos = {t['origem']: t['tipo'] for t in a['tabelas']}
+        self.assertEqual(tipos['F_DESLIGAMENTO'], 'fato')
+        self.assertEqual(tipos['F_FUNCIONARIO'], 'dimensao')
+        self.assertEqual(tipos['F_MOTIVO_DESLIGAMENTO'], 'dimensao')
+        decl = [r for r in a['relacionamentos'] if 'declarada' in r]
+        self.assertTrue(decl and all(r['declarada']['por'] == 'A CONFIRMAR' for r in decl))
+        self.assertTrue(all(m['descricao'].startswith('A DEFINIR') for m in a['medidas']))
+        meta = next(m for m in a['medidas'] if 'Meta' in m['nome'])
+        self.assertEqual((meta['agregacao'], meta['formato']), ('media', 'percentual'))
+        self.assertTrue(meta['nome'].startswith('Meta de '), meta['nome'])
+
+    def test_esboco_valida_e_so_bloqueia_o_que_precisa_de_gente(self):
+        arq, a = self._esboco()
+        codigo, out = _calado(deidara.main, ['validar', arq])
+        self.assertEqual(codigo, 1)
+        self.assertIn('deidara.py confirmar', out)
+        for r in a['relacionamentos']:
+            if 'declarada' in r:
+                lig = f'{r["de"]}->{r["para"]}'
+                self.assertEqual(_calado(deidara.main, ['confirmar', arq, '--ligacao', lig, '--por', 'Ana (RH)'])[0], 0)
+        self.assertEqual(_calado(deidara.main, ['confirmar', arq, '--ligacao', 'X->Y', '--por', 'Ana'])[0], 1)
+        codigo, out = _calado(deidara.main, ['validar', arq])
+        self.assertEqual(codigo, 0, out)
+        self.assertEqual(_calado(deidara.main, ['prototipar', arq])[0], 0)
+        codigo, out = _calado(_aprovar_com_prototipo, ['aprovar', arq, '--por', 'Gestor'])
+        self.assertEqual(codigo, 1)
+        self.assertIn('sem definição', out)
+
+    def test_esboco_nao_sobrescreve(self):
+        self._esboco()
+        codigo, out = _calado(deidara.main, ['esbocar', self.pasta, '--pedido', 'x'])
+        self.assertEqual(codigo, 1)
+        self.assertIn('não sobrescreve', out)
+
+    def test_situacao_aponta_o_proximo_passo(self):
+        arq, _ = self._esboco()
+        codigo, out = _calado(deidara.main, ['situacao', arq])
+        self.assertEqual(codigo, 0)
+        self.assertIn('Próximo passo: deidara.py validar', out)
+
+
+class TestPrototipoParaAprovar(unittest.TestCase):
+    def setUp(self):
+        from argila import prototipo
+        a = _base()
+        _md(a, 'Turnover')['meta'] = 0.05
+        self.m, self.p = _resolver(a)
+        self.html = prototipo.gerar_html(self.m, self.p, '0.0')
+
+    def test_cada_visual_tem_o_que_e(self):
+        n = sum(len(pg['visuais']) for pg in self.m['paginas'])
+        self.assertEqual(self.html.count('class="info"'), n)
+        self.assertIn('Desligamentos do período divididos pelo headcount médio do período', self.html)
+
+    def test_aba_para_aprovar_com_checklist_e_comentarios(self):
+        self.assertIn('id="aprovar"', self.html)
+        self.assertIn('Copiar resumo do aceite', self.html)
+        self.assertEqual(self.html.count('data-guardar="c:'), len(self.m['paginas']))
+
+    def test_status_nao_depende_so_da_cor(self):
+        self.assertTrue('na meta' in self.html or 'fora da meta' in self.html)
+
+    def test_versao_do_painel_no_cabecalho(self):
+        self.assertIn('painel v1.1', self.html)
+
+    def test_javascript_sem_quebra_de_linha_em_string(self):
+        js = self.html.split('<script>')[1].split('</script>')[0]
+        # a quebra de linha do resumo vem de String.fromCharCode(10): nenhuma string do JS pode quebrar
+        self.assertIn('const NL=String.fromCharCode(10)', js)
+        self.assertNotIn("b.versao+')\n", js)
+
+    def test_resumo_traz_codigo_decisao_e_aprovador(self):
+        from argila import prototipo
+        self.assertIn(f'data-codigo="{prototipo.codigo_do_prototipo(self.m)}"', self.html)
+        self.assertIn('name="decisao" value="Aprovo"', self.html)
+        self.assertIn('id="aprovador"', self.html)
+
+    def test_pontos_de_atencao_em_linguagem_de_negocio(self):
+        secao = self.html.split('id="aprovar"')[1].split('</section>')[0]
+        self.assertIn('vêm de fontes diferentes', secao)
+        self.assertIn('mostra o cadastro de hoje', secao)
+        self.assertNotIn('relacionamentos[', secao)          # o texto técnico fica na aba do analista
+        self.assertIn('Pendências do analista', self.html)
+
+    def test_abas_acessiveis(self):
+        self.assertIn('aria-controls="aprovar"', self.html)
+        self.assertIn('role="tabpanel" tabindex="0" id="aprovar" aria-labelledby="aba-aprovar"', self.html)
+
+
+def _catalogo_grande(n=600, colunas=15):
+    """ERP sintético grande, como sairia da receita SQL."""
+    import random
+    r = random.Random(7)
+    dom = ['empresa', 'filial', 'cargo', 'setor', 'cliente', 'produto', 'pedido', 'nota', 'titulo', 'conta']
+    linhas = []
+    for i in range(n):
+        t = f'T{i:05d}'
+        linhas.append(_linha('coluna', t, 'ID', 'int', 4, 10, 0, 0, 1))
+        for j in range(colunas):
+            o = r.choice(dom)
+            linhas.append(_linha('coluna', t, f'COD{o.upper()}{j}', r.choice(['int', 'varchar', 'decimal']), 4, 10, 2, 1))
+    cat, _ = receitas.catalogo_de_sql(linhas, 'erp')
+    return catalogo.Fonte('erp', cat, '')
+
+
+class TestEscala(unittest.TestCase):
+    def test_relacionar_com_indice_e_rapido(self):
+        import time
+        from argila import descoberta
+        f = _catalogo_grande()
+        tabs = [('erp', t['nome'], t['nome']) for t in list(f.tabelas.values())[:40]]
+        inicio = time.time()
+        descoberta.relacionar({'erp': f}, tabs)
+        self.assertLess(time.time() - inicio, 15)
+
+    def test_relacionar_sem_foco_em_catalogo_grande_pede_assunto(self):
+        f = _catalogo_grande(120, 3)
+        d = tempfile.mkdtemp(prefix='ddg')
+        arq = os.path.join(d, 'erp.json')
+        with open(arq, 'w', encoding='utf-8') as fh:
+            json.dump({'formato': 'deidara-catalogo/1', 'fonte': 'erp', 'tipo': 'sqlserver',
+                       'tabelas': {t['nome']: {'pk': t['pk'], 'colunas': list(t['colunas'].values())}
+                                   for t in f.tabelas.values()}, 'fks': []}, fh)
+        codigo, out = _calado(deidara.main, ['relacionar', '--catalogos', arq])
+        self.assertEqual(codigo, 1)
+        self.assertIn('--pedido', out)
+        shutil.rmtree(d, ignore_errors=True)
 
 
 class TestSimulacao(unittest.TestCase):
@@ -749,7 +963,7 @@ class TestFluxo(unittest.TestCase):
         self.assertIn('Sem aprovação', out)
 
     def test_mudanca_depois_da_aprovacao_recusa(self):
-        _calado(deidara.main, ['aprovar', self.argila, '--por', 'Teste'])
+        _calado(_aprovar_com_prototipo, ['aprovar', self.argila, '--por', 'Teste'])
         a = _base()
         a['descricao'] = 'mudou'
         with open(self.argila, 'w', encoding='utf-8') as f:
@@ -761,7 +975,7 @@ class TestFluxo(unittest.TestCase):
     def test_fluxo_completo_gera_projeto_coerente(self):
         self.assertEqual(_calado(deidara.main, ['prototipar', self.argila])[0], 0)
         self.assertTrue(os.path.exists(os.path.join(self.dir, 'argila.prototipo.html')))
-        self.assertEqual(_calado(deidara.main, ['aprovar', self.argila, '--por', 'Teste'])[0], 0)
+        self.assertEqual(_calado(_aprovar_com_prototipo, ['aprovar', self.argila, '--por', 'Teste'])[0], 0)
         saida = os.path.join(self.dir, 'o')
         self.assertEqual(_calado(deidara.main, ['gerar', self.argila, '-o', saida])[0], 0)
         for arq in ['Quadro_e_Turnover.pbip', 'sql/erp/01_views.sql', 'sql/erp/03_qualidade.sql', 'LEIA-ME.md',
@@ -773,7 +987,7 @@ class TestFluxo(unittest.TestCase):
         self.assertEqual(validar_pbip.validar_visuais(saida, tabelas, colunas, medidas), [])
 
     def test_diff_mostra_mudanca_de_formula(self):
-        _calado(deidara.main, ['aprovar', self.argila, '--por', 'Teste'])
+        _calado(_aprovar_com_prototipo, ['aprovar', self.argila, '--por', 'Teste'])
         a = _base()
         _md(a, 'Turnover')['denominador'] = 'Headcount'
         with open(self.argila, 'w', encoding='utf-8') as f:
@@ -785,13 +999,13 @@ class TestFluxo(unittest.TestCase):
         self.assertIn('FÓRMULA mudou', out)
 
     def test_reaprovacao_grava_historico(self):
-        _calado(deidara.main, ['aprovar', self.argila, '--por', 'Ana'])
+        _calado(_aprovar_com_prototipo, ['aprovar', self.argila, '--por', 'Ana'])
         a = _base()
         a['versao'] = '1.2'
         a['paginas'][0]['visuais'].append({'tipo': 'cartao', 'medida': 'HC Médio'})
         with open(self.argila, 'w', encoding='utf-8') as f:
             json.dump(a, f, ensure_ascii=False)
-        _calado(deidara.main, ['aprovar', self.argila, '--por', 'Bia', '--observacao', 'pedido do RH'])
+        _calado(_aprovar_com_prototipo, ['aprovar', self.argila, '--por', 'Bia', '--observacao', 'pedido do RH'])
         with open(os.path.join(self.dir, 'argila.aprovacao.json'), encoding='utf-8') as f:
             hist = json.load(f)['historico']
         self.assertEqual([h['aprovado_por'] for h in hist], ['Ana', 'Bia'])
@@ -802,7 +1016,7 @@ class TestFluxo(unittest.TestCase):
             self.assertIn('pedido do RH', f.read())
 
     def test_versao_do_deidara_diferente_pede_novo_aceite(self):
-        _calado(deidara.main, ['aprovar', self.argila, '--por', 'Teste'])
+        _calado(_aprovar_com_prototipo, ['aprovar', self.argila, '--por', 'Teste'])
         arq = os.path.join(self.dir, 'argila.aprovacao.json')
         with open(arq, encoding='utf-8') as f:
             reg = json.load(f)
@@ -813,8 +1027,27 @@ class TestFluxo(unittest.TestCase):
         self.assertEqual(codigo, 1)
         self.assertIn('Deidara 0.0.1', out)
 
+    def test_entrega_com_homologacao_papeis_e_proximos_passos(self):
+        _calado(_aprovar_com_prototipo, ['aprovar', self.argila, '--por', 'Teste'])
+        saida = os.path.join(self.dir, 'o')
+        codigo, out = _calado(deidara.main, ['gerar', self.argila, '-o', saida])
+        self.assertEqual(codigo, 0)
+        self.assertIn('Agora:', out)
+        self.assertIn('[DBA] rodar sql/erp/01_views.sql', out)
+        with open(os.path.join(saida, 'HOMOLOGACAO.md'), encoding='utf-8') as f:
+            hom = f.read()
+        self.assertIn('| [ ] | HC Médio | apoia Turnover |', hom)
+        self.assertIn('| [ ] | Turnover | Turnover › Turnover | pelos componentes: Desligamentos, HC Médio |', hom)
+        self.assertIn('| [ ] | Meta de Turnover | cor/meta de Turnover | na própria fonte (metas: Metas) |', hom)
+        with open(os.path.join(saida, 'LEIA-ME.md'), encoding='utf-8') as f:
+            leia = f.read()
+        self.assertIn('Se algo der errado', leia)
+        self.assertIn('[DBA]', leia)
+        _, out = _calado(deidara.main, ['situacao', self.argila])
+        self.assertIn('projeto Power BI gerado em', out)
+
     def test_geracao_deterministica(self):
-        _calado(deidara.main, ['aprovar', self.argila, '--por', 'Teste'])
+        _calado(_aprovar_com_prototipo, ['aprovar', self.argila, '--por', 'Teste'])
         a, b = os.path.join(self.dir, 'a'), os.path.join(self.dir, 'b')
         _calado(deidara.main, ['gerar', self.argila, '-o', a])
         _calado(deidara.main, ['gerar', self.argila, '-o', b])

@@ -8,6 +8,7 @@ que o diff entre duas gerações mostre só o que mudou de verdade.
 
 import hashlib
 import json
+import os
 import re
 import unicodedata
 import uuid
@@ -154,9 +155,28 @@ def sha256_arquivo(caminho):
         return hashlib.sha256(f.read()).hexdigest()
 
 
+class ErroDeUso(Exception):
+    """Erro de quem usa (arquivo ausente, JSON quebrado): vira mensagem, nunca traceback."""
+
+
 def ler_json(caminho):
+    if not os.path.exists(caminho):
+        raise ErroDeUso(f'arquivo não encontrado: {caminho}')
     with open(caminho, encoding='utf-8-sig') as f:
-        return json.load(f)
+        texto = f.read()
+    try:
+        return json.loads(texto)
+    except json.JSONDecodeError as e:
+        linhas = texto.splitlines()
+        trecho = linhas[e.lineno - 1] if 0 < e.lineno <= len(linhas) else ''
+        anterior = linhas[e.lineno - 2] if e.lineno > 1 else ''
+        dica = ''
+        if trecho.strip().startswith(('}', ']')) and anterior.rstrip().endswith(','):
+            dica = ' (provável vírgula sobrando no fim da linha anterior)'
+        elif 'Expecting \',\' delimiter' in e.msg:
+            dica = ' (provável vírgula faltando entre dois itens)'
+        raise ErroDeUso(f'{caminho}: JSON inválido na linha {e.lineno}, coluna {e.colno}{dica}.\n'
+                        f'    {e.lineno - 1}: {anterior}\n  > {e.lineno}: {trecho}') from None
 
 
 def gravar_json(caminho, obj):

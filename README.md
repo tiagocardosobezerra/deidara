@@ -40,8 +40,11 @@ abre e salva como `.pbix` em um clique, e o `.pbip` fica versionável no git. Ve
 ## Comece
 
 ```bash
-python3 deidara.py receita sql --tabelas F_DESLIGAMENTO,F_FUNCIONARIO -o receita.sql   # ou: dax, m
-python3 deidara.py catalogar --de resultado.txt --fonte erp -o meu/catalogos/erp.json
+python3 deidara.py novo meu --projeto "Turnover RH"       # pasta com receitas e roteiro
+# ... a pessoa roda meu/receitas/receita_sql.sql e cola o resultado em meu/colado/erp.txt
+python3 deidara.py catalogar --de meu/colado/erp.txt --fonte erp -o meu/catalogos/erp.json
+python3 deidara.py esbocar meu --pedido "desligamentos por motivo e cargo"   # primeiro argila.json
+python3 deidara.py situacao meu/argila.json                # onde estou e o próximo passo
 python3 deidara.py buscar "turnover por cargo com meta" --catalogos meu/catalogos/*.json
 python3 deidara.py relacionar --catalogos meu/catalogos/*.json --json   # ligações que faltam, com evidência
 python3 deidara.py receita prova --argila meu/argila.json --de "fMeta[Cód. Empresa]" --para "dEmpresa[CODEMPRESA]"
@@ -54,7 +57,13 @@ python3 deidara.py gerar meu/argila.json -o C:/paineis/meu
 ```
 
 Exemplo completo, com um ERP fictício em SQL Server e uma planilha de metas no Excel, do
-resultado colado ao painel: [exemplos/aurora](exemplos/aurora).
+resultado colado ao painel: [exemplos/aurora](exemplos/aurora). Para aprender fazendo:
+[referencias/tutorial.md](referencias/tutorial.md) (15 minutos).
+
+A experiência foi pensada para cada pessoa do processo: o **analista** tem um roteiro, um
+esboço pronto e um "onde estou?"; o **dono do dado** recebe receitas que só devolvem estrutura;
+o **gestor** aprova num protótipo com a definição de cada número (ⓘ) e uma aba "Para aprovar";
+quem **publica** recebe LEIA-ME com papéis e "se algo der errado" e uma folha de homologação.
 
 ## O que mais vem junto
 

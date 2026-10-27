@@ -108,7 +108,39 @@ def conferencia(m, fonte):
     if por_ano:
         out.append('-- 2) Por ano (data ativa do calendário)\n' + '\nUNION ALL\n'.join(por_ano)
                    + '\nORDER BY indicador, ano;\n')
+    out += _conferencia_estoque(m, fonte)
     return '\n'.join(out) + '\n'
+
+
+def _conferencia_estoque(m, fonte):
+    """Estoque (headcount) no último dia de cada um dos últimos 24 meses, para comparar com o visual por mês."""
+    out = []
+    for md in m['medidas']:
+        e = md.get('estoque')
+        if not e:
+            continue
+        te = _tabela(m, e['entradas'][0])
+        ts = _tabela(m, e['saidas'][0]) if e['saidas'] else None
+        if te.get('fonte') != fonte['nome'] or (ts and ts.get('fonte') != fonte['nome']):
+            continue
+        ent = sql_nome(e['entradas'][1])
+        cond = f'e.{ent} <= f.fim_do_mes'
+        if e['fim']:
+            fim = sql_nome(e['fim'][1])
+            cond += f' AND (e.{fim} IS NULL OR e.{fim} > f.fim_do_mes)'
+        conta = f'(SELECT COUNT_BIG(*) FROM {nome_view(m, te)} AS e WHERE {cond})'
+        if ts:
+            conta += (f'\n     - (SELECT COUNT_BIG(*) FROM {nome_view(m, ts)} AS s '
+                      f'WHERE s.{sql_nome(e["saidas"][1])} <= f.fim_do_mes)')
+        out.append(f"""-- {len(out) + 3}) {md['nome']}: estoque no último dia de cada mês (compare com o visual por mês, mês a mês)
+WITH n AS (SELECT TOP (24) ROW_NUMBER() OVER (ORDER BY (SELECT NULL)) - 1 AS k FROM sys.all_objects),
+     f AS (SELECT EOMONTH(GETDATE(), -k) AS fim_do_mes FROM n)
+SELECT {_lit(md['nome'])} AS indicador, f.fim_do_mes,
+       {conta} AS total_no_banco
+FROM f
+ORDER BY f.fim_do_mes;
+""")
+    return out
 
 
 def qualidade(m, fonte):

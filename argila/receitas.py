@@ -38,7 +38,8 @@ def receita_sql(esquema='dbo', tabelas=()):
   1. Selecione o banco certo e ajuste @esquema e @tabelas (vazio = todas do esquema).
   2. Rode (F5) com o resultado em grade.
   3. Clique na grade, Ctrl+A, botão direito > "Copiar com Cabeçalhos" e cole num .txt.
-  4. python3 deidara.py catalogar --de resultado.txt --fonte NOME_DA_FONTE
+  4. Devolva o .txt a quem pediu (o analista do painel). Quem tem o Deidara roda:
+     python deidara.py catalogar --de colado/NOME_DA_FONTE.txt --fonte NOME_DA_FONTE
 */
 SET NOCOUNT ON;
 DECLARE @esquema sysname = N'{esquema.replace("'", "''")}';
@@ -107,7 +108,8 @@ def receita_dax():
 // 1. No Power BI Desktop, abra o .pbix que já carrega as fontes (Excel, SharePoint, banco...).
 // 2. Exibição de consulta DAX > nova consulta > cole tudo isto > Executar.
 // 3. Na grade do resultado: Copiar tabela; cole num .txt.
-// 4. python3 deidara.py catalogar --de resultado.txt --fonte NOME_DA_FONTE
+// 4. Devolva o .txt a quem pediu (o analista do painel). Quem tem o Deidara roda:
+//    python deidara.py catalogar --de colado/NOME_DA_FONTE.txt --fonte NOME_DA_FONTE
 // Quebras de linha das expressões vêm como {QUEBRA}: o Deidara desfaz.
 DEFINE
     VAR _ids = SELECTCOLUMNS(INFO.TABLES(), "IdTabela", [ID], "NomeTabela", [Name])
@@ -164,7 +166,8 @@ def receita_m(consultas=()):
 // 4. Para cada consulta, abra o Editor Avançado, copie o texto e salve como <Nome no Deidara>.m
 //    na mesma pasta do .txt (é a conexão que o painel vai reaproveitar). Parâmetros que ela usar:
 //    salve também, um .m por parâmetro, com o nome dele.
-// 5. python3 deidara.py catalogar --de resultado.txt --fonte NOME_DA_FONTE --m PASTA_DOS_.m
+// 5. Devolva o .txt e os .m a quem pediu (o analista do painel). Quem tem o Deidara roda:
+//    python deidara.py catalogar --de colado/NOME_DA_FONTE.txt --fonte NOME_DA_FONTE --m colado/m
 let
     Consultas = {{
 {itens}
@@ -446,6 +449,7 @@ def catalogo_de_m(linhas, fonte, pasta_m=None):
             'coluna': col, 'familia': fam or 'texto', 'tipo': l.get('typename') or l.get('kind'),
             'precisao': _int(l.get('numericprecision')), 'escala': _int(l.get('numericscale')),
             'tamanho': _int(l.get('maxlength')), 'nulo': 0 if chave(l.get('isnullable')) in ('false', 'falso') else 1,
+            'formato_sugerido': 'percentual' if 'percentage' in (l.get('typename') or '').lower() else None,
             'descricao': l.get('description', ''), 'tipo_indefinido': not fam})
     if pasta_m:
         for arq in sorted(os.listdir(pasta_m)):

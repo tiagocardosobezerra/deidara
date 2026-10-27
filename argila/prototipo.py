@@ -10,6 +10,7 @@ Deidara.
 """
 
 import html
+import json
 import math
 
 from .especificacao import COR_BOA, COR_RUIM, medida
@@ -57,22 +58,32 @@ def _cor_status(sim, nome, filtros=()):
     return '' if st is None else f' style="fill:{COR_BOA if st else COR_RUIM}"'
 
 
-def titulo_do_cartao(m, v):
-    """O mesmo texto vai para o título do cartão no Power BI."""
+def _simbolo(sim, nome, filtros=()):
+    st = sim.status(nome, filtros)
+    return '' if st is None else (' ✓' if st else ' ✗')
+
+
+def titulo_do_cartao(m, v, sim=None):
+    """O mesmo texto vai para o título do cartão no Power BI (meta numérica: fixo; meta medida: o valor dela)."""
     if not v.get('meta'):
         return None
     md = medida(m, v['meta']['nome'])
     if md and md['tipo'] == 'meta':
         return f'Meta: {formatar(float(md["dax"]), md["formato"], True)}'
+    if md and sim is not None:
+        return f'Meta: {formatar(sim.valor(md["nome"]), md["formato"], True)}'
     return f'Meta: {v["meta"]["nome"]}'
 
 
 def _cartao(sim, v, w, h, cores):
     md = v['valores'][0]
     val = sim.valor(md['nome'])
-    meta = titulo_do_cartao(sim.m, v)
+    meta = titulo_do_cartao(sim.m, v, sim)
     topo = f'<text x="12" y="20" class="sub">{_e(meta)}</text>' if meta else ''
-    return (topo + f'<text x="{w / 2}" y="{h / 2 + 8}" class="kpi" text-anchor="middle"{_cor_status(sim, md["nome"])}>'
+    st = sim.status(md['nome'])
+    selo = '' if st is None else (f'<text x="{w - 12}" y="20" class="sub" text-anchor="end"{_cor_status(sim, md["nome"])}>'
+                                  f'{"✓ na meta" if st else "✗ fora da meta"}</text>')
+    return (topo + selo + f'<text x="{w / 2}" y="{h / 2 + 8}" class="kpi" text-anchor="middle"{_cor_status(sim, md["nome"])}>'
             f'{_e(formatar(val, md["formato"], True))}</text>'
             f'<text x="{w / 2}" y="{h / 2 + 32}" class="sub" text-anchor="middle">{_e(_corta(v["titulo"], int(w / 6.5)))}</text>')
 
@@ -101,7 +112,7 @@ def _medidor(sim, v, w, h, cores):
 
 
 def _segmentador(sim, v, w, h, cores):
-    return (f'<text x="12" y="20" class="sub">{_e(_corta(v["titulo"], int(w / 6.5)))}</text>'
+    return (f'<text x="12" y="20" class="sub">{_e(_corta(v["titulo"], int(w / 6.5)))} · filtro ilustrativo</text>'
             f'<rect x="12" y="28" width="{w - 24}" height="22" rx="3" class="caixa"/>'
             f'<text x="20" y="43" class="cel">Tudo</text><text x="{w - 26}" y="43" class="cel">▾</text>')
 
@@ -111,6 +122,8 @@ def _tabela(sim, v, w, h, cores):
     chaves = [c for c in cols if c['tipo'] == 'coluna']
     linhas = [[(chaves[0], r)] for r in categorias(sim.m, chaves[0])] if chaves else [[]]
     n = max(1, min(len(linhas), int((h - 84) // 22)))
+    if len(linhas) > n:
+        n = max(1, n - 1)                            # espaço para a linha "Outros"
     cw = (w - 24) / len(cols)
     out = [_titulo(v, w)]
 
@@ -128,7 +141,7 @@ def _tabela(sim, v, w, h, cores):
         for k, c in enumerate(cols):
             cor = ''
             if c['tipo'] == 'medida':
-                txt = formatar(sim.valor(c['nome'], linhas[i]), c['formato'])
+                txt = formatar(sim.valor(c['nome'], linhas[i]), c['formato']) + _simbolo(sim, c['nome'], linhas[i])
                 cor = _cor_status(sim, c['nome'], linhas[i])
             elif linhas[i] and linhas[i][0][0] is c:
                 txt = linhas[i][0][1]
@@ -137,6 +150,21 @@ def _tabela(sim, v, w, h, cores):
                 txt = rot[i % len(rot)]
             anc = 'end' if c['tipo'] == 'medida' else 'start'
             out.append(f'<text x="{x_de(k, c):.1f}" y="{y}" class="cel" text-anchor="{anc}"{cor}>{_e(_corta(txt, int(cw / 6.5)))}</text>')
+    if len(linhas) > n and n > 1:                    # as linhas que não couberam viram "Outros", e o total fecha
+        y = 72 + n * 22
+        restantes = linhas[n:]
+        for k, c in enumerate(cols):
+            if c['tipo'] == 'medida':
+                md = medida(sim.m, c['nome'])
+                if sim.aditiva(md):
+                    resto = sum(sim.valor(c['nome'], l) for l in restantes)
+                    txt = formatar(resto, c['formato'])
+                else:
+                    txt = '…'
+                out.append(f'<text x="{x_de(k, c):.1f}" y="{y}" class="cel" text-anchor="end">{_e(txt)}</text>')
+            elif k == 0:
+                out.append(f'<text x="12" y="{y}" class="cel">Outros ({len(restantes)})</text>')
+        n += 1
     y = 72 + n * 22
     out.append(f'<line x1="12" x2="{w - 12}" y1="{y - 14}" y2="{y - 14}" class="grade"/>')
     for k, c in enumerate(cols):
@@ -173,7 +201,7 @@ def _matriz(sim, v, w, h, cores):
                 fmt = v['valores'][k]['formato']
             val = sim.valor(nome, filtros)
             out.append(f'<text x="{12 + (k + 3.5) * cw - 6:.1f}" y="{y}" class="cel" text-anchor="end"'
-                       f'{_cor_status(sim, nome, filtros)}>{_e(formatar(val, fmt, True))}</text>')
+                       f'{_cor_status(sim, nome, filtros)}>{_e(formatar(val, fmt, True) + _simbolo(sim, nome, filtros))}</text>')
         if colunas:
             tot = sim.valor(md['nome'], [(linha_c, linhas[i])])
             out.append(f'<text x="{12 + (len(heads) + 3.5) * cw - 6:.1f}" y="{y}" class="cab" text-anchor="end">'
@@ -402,7 +430,28 @@ table .sub{color:#605E5C}
 table{border-collapse:collapse;width:100%;font-size:13px;background:var(--pagina);color:#252423}th,td{text-align:left;padding:8px 10px;border-bottom:1px solid var(--borda);vertical-align:top}
 th{position:sticky;top:0;background:#F3F2F1}code,pre{font-family:Consolas,monospace;font-size:12px}pre{margin:0;white-space:pre-wrap}
 .tabela-rolagem{overflow-x:auto}ul.lista{padding-left:20px;line-height:1.6}.ok{color:#107C10}.erro{color:var(--erro)}
-@media (max-width:700px){header,main{padding-left:16px;padding-right:16px}nav{padding:0 8px}}
+@media (max-width:700px){header,main{padding-left:16px;padding-right:16px}nav{padding:0 8px}
+.palco{height:auto!important;overflow:visible}.pagina{transform:none!important;width:auto!important;height:auto!important;
+background:transparent;box-shadow:none}.pagina h2{position:static;margin:0 0 10px;color:var(--texto)}
+.vis{position:relative!important;left:auto!important;top:auto!important;width:auto!important;height:auto!important;margin:0 0 10px}
+.vis svg{width:100%;height:auto}}
+.decisao{display:flex;flex-direction:column;gap:6px;margin:6px 0 12px}.decisao label{display:flex;gap:8px;align-items:center}
+#aprovador{font:inherit;padding:6px 8px;border:1px solid var(--borda);border-radius:6px;margin-left:6px}
+.info{position:absolute;top:4px;right:4px;width:22px;height:22px;border-radius:50%;border:1px solid #C8C6C4;background:#fff;
+color:#605E5C;font:600 12px/20px "Segoe UI",sans-serif;cursor:pointer;padding:0;z-index:2}
+.info:hover,.info:focus{border-color:var(--destaque);color:var(--destaque);outline:none}
+#painel{position:fixed;right:16px;bottom:16px;max-width:420px;width:calc(100% - 32px);max-height:60vh;overflow:auto;background:var(--pagina);
+color:#252423;border:1px solid var(--borda);border-radius:8px;box-shadow:0 8px 24px rgba(0,0,0,.18);padding:14px 16px;display:none;z-index:10}
+#painel.aberto{display:block}#painel h3{margin:0 24px 8px 0;font-size:15px}#painel dl{margin:0}#painel dt{font-weight:600;margin-top:10px}
+#painel dd{margin:2px 0 0}#painel .fechar{position:absolute;top:8px;right:10px;border:0;background:none;font-size:18px;cursor:pointer;color:#605E5C}
+.aprovar{max-width:980px}.aprovar .ind{background:var(--pagina);color:#252423;border:1px solid var(--borda);border-radius:8px;padding:12px 14px;margin:10px 0}
+.aprovar label{display:flex;gap:10px;align-items:flex-start;cursor:pointer}.aprovar input[type=checkbox]{width:18px;height:18px;margin-top:2px}
+.aprovar .det{color:#605E5C;font-size:13px;margin:4px 0 0 28px}.aprovar textarea{width:100%;min-height:64px;font:inherit;padding:8px;
+border:1px solid var(--borda);border-radius:6px}.aprovar h3{margin:22px 0 6px}.botao{font:inherit;font-weight:600;border:0;border-radius:6px;
+background:var(--destaque);color:#fff;padding:10px 16px;cursor:pointer}.botao:focus{outline:2px solid #252423}
+.progresso{font-size:14px;margin:6px 0 12px}.copiado{color:#107C10;margin-left:10px}
+@media print{nav,.faixa .so-tela,.info,#painel,.botao{display:none!important}section{display:block!important;break-after:page}
+.palco{height:auto!important;overflow:visible}.pagina{transform:none!important;box-shadow:none;zoom:.62}body{background:#fff}}
 """
 
 JS = """
@@ -411,11 +460,125 @@ function abrir(id){botoes.forEach(b=>b.setAttribute('aria-selected',b.dataset.al
 document.querySelectorAll('section').forEach(s=>s.classList.toggle('ativa',s.id===id));escalar();
 try{history.replaceState(null,'','#'+id)}catch(e){}}
 botoes.forEach(b=>b.addEventListener('click',()=>abrir(b.dataset.alvo)));
-function escalar(){document.querySelectorAll('section.ativa .palco').forEach(p=>{const pg=p.firstElementChild;
+function escalar(){if(innerWidth<=700){document.querySelectorAll('.pagina').forEach(pg=>pg.style.transform='');return;}
+document.querySelectorAll('section.ativa .palco').forEach(p=>{const pg=p.firstElementChild;
 const k=Math.min(1,p.clientWidth/pg.offsetWidth);pg.style.transform='scale('+k+')';p.style.height=(pg.offsetHeight*k)+'px';});}
 addEventListener('resize',escalar);
 const h=location.hash.slice(1);abrir(botoes.some(b=>b.dataset.alvo===h)?h:botoes[0].dataset.alvo);
+const painel=document.getElementById('painel');
+function esc(s){return String(s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));}
+document.querySelectorAll('.info').forEach(b=>b.addEventListener('click',ev=>{ev.stopPropagation();
+const d=JSON.parse(b.dataset.info);let x='<button class="fechar" aria-label="Fechar">×</button><h3>'+esc(d.titulo)+'</h3><dl>';
+d.itens.forEach(i=>{x+='<dt>'+esc(i.nome)+'</dt><dd>'+esc(i.definicao||'Sem definição ainda.')+(i.meta?'<br><small>'+esc(i.meta)+'</small>':'')+'</dd>';});
+if(!d.itens.length)x+='<dd>Filtro da página (ilustrativo no protótipo): escolha um valor e os números da página respondem a ele.'+(d.excecoes&&d.excecoes.length?' <b>Não mudam com este filtro:</b> '+esc(d.excecoes.join(', '))+'.':'')+'</dd>';
+painel.innerHTML=x+'</dl>';painel.classList.add('aberto');painel.querySelector('.fechar').focus();
+painel.querySelector('.fechar').addEventListener('click',()=>{painel.classList.remove('aberto');b.focus();});}));
+document.addEventListener('keydown',e=>{if(e.key==='Escape')painel.classList.remove('aberto');});
+const CHAVE='deidara:'+document.body.dataset.chave;
+function ler(){try{return JSON.parse(localStorage.getItem(CHAVE)||'{}')}catch(e){return {}}}
+function gravar(v){try{localStorage.setItem(CHAVE,JSON.stringify(v))}catch(e){}}
+const estado=ler();
+document.querySelectorAll('[data-guardar]').forEach(el=>{const k=el.dataset.guardar;
+if(k in estado){if(el.type==='checkbox')el.checked=estado[k];else el.value=estado[k];}
+el.addEventListener('input',()=>{estado[k]=el.type==='checkbox'?el.checked:el.value;gravar(estado);progresso();});});
+function progresso(){const cs=[...document.querySelectorAll('.aprovar input[type=checkbox]')];const ok=cs.filter(c=>c.checked).length;
+const p=document.getElementById('progresso');if(p)p.textContent=ok+' de '+cs.length+' indicador(es) confirmado(s)';}
+progresso();
+const copiar=document.getElementById('copiar');
+if(copiar)copiar.addEventListener('click',()=>{const NL=String.fromCharCode(10);const b=document.body.dataset;
+const dec=document.querySelector('input[name=decisao]:checked');const nome=(document.getElementById('aprovador').value||'').trim();
+let t='Aceite do protótipo: '+b.projeto+' (versão '+b.versao+')'+NL+'Código: '+b.codigo+NL;
+t+='Decisão: '+(dec?dec.value:'(não marcada)')+NL+'Aprovador: '+(nome||'(não informado)')+NL;
+t+='Data: '+new Date().toLocaleDateString('pt-BR')+NL+NL+'Indicadores:'+NL;
+document.querySelectorAll('.aprovar .ind').forEach(d=>{const c=d.querySelector('input');t+=(c.checked?'  [x] ':'  [ ] ')+d.dataset.nome+NL;});
+document.querySelectorAll('.aprovar textarea').forEach(a=>{if(a.value.trim())t+=NL+a.dataset.rotulo+':'+NL+'  '+a.value.trim().split(NL).join(NL+'  ')+NL;});
+const fim=()=>{document.getElementById('copiado').textContent='Resumo copiado: cole no e-mail ou no chat para o analista.';};
+if(!dec||!nome){document.getElementById('copiado').textContent='Marque a decisão e escreva seu nome antes de copiar.';return;}
+if(navigator.clipboard)navigator.clipboard.writeText(t).then(fim,()=>{prompt('Copie o resumo:',t)});else prompt('Copie o resumo:',t);});
+document.querySelector('nav').addEventListener('keydown',e=>{const i=botoes.indexOf(document.activeElement);if(i<0)return;
+let j=null;if(e.key==='ArrowRight')j=(i+1)%botoes.length;if(e.key==='ArrowLeft')j=(i-1+botoes.length)%botoes.length;
+if(j!==null){e.preventDefault();botoes[j].focus();abrir(botoes[j].dataset.alvo);}});
 """
+
+
+def _texto_meta(m, md):
+    if not md.get('meta_medida'):
+        return ''
+    alvo = medida(m, md['meta_medida'])
+    valor = formatar(float(alvo['dax']), alvo['formato'], True) if alvo and alvo['tipo'] == 'meta' else md['meta_medida']
+    sentido = 'quanto maior, melhor' if md['polaridade'] == 'maior_melhor' else 'quanto menor, melhor'
+    return f'Meta: {valor} ({sentido})'
+
+
+def codigo_do_prototipo(m):
+    """Identifica o que o gestor viu: muda quando muda qualquer coisa que aparece no painel."""
+    import hashlib
+    from .governanca import retrato
+    return hashlib.sha1(json.dumps(retrato(m), sort_keys=True, ensure_ascii=False).encode('utf-8')).hexdigest()[:8]
+
+
+def _excecoes_do_filtro(m, v, pagina):
+    from .especificacao import _grafo_de_filtro, _tabelas_da_medida, chega
+    if v['tipo'] != 'segmentador' or not v.get('categoria'):
+        return []
+    g = _grafo_de_filtro(m)
+    nomes = {x['nome'] for o in pagina['visuais'] for x in o['valores'] + o['campos'] if x and x['tipo'] == 'medida'}
+    return sorted(n for n in nomes
+                  if not all(chega(m, g, v['categoria']['tabela'], a, n) for a in _tabelas_da_medida(m, n)))
+
+
+def _botao_info(m, v, pagina=None):
+    nomes = [x['nome'] for x in v['valores'] + v['campos'] + ([v['meta']] if v.get('meta') else []) if x and x['tipo'] == 'medida']
+    itens = []
+    for n in dict.fromkeys(nomes):
+        md = medida(m, n)
+        if md and md['tipo'] != 'cor':
+            itens.append({'nome': md['nome'], 'definicao': md['descricao'], 'meta': _texto_meta(m, md)})
+    excecoes = _excecoes_do_filtro(m, v, pagina) if pagina else []
+    dados = json.dumps({'titulo': v['titulo'], 'itens': itens, 'excecoes': excecoes}, ensure_ascii=False)
+    return f'<button type="button" class="info" aria-label="O que é: {_e(v["titulo"])}" data-info="{_e(dados)}">i</button>'
+
+
+def _secao_aprovar(m, problemas):
+    onde = {}
+    for pg in m['paginas']:
+        for v in pg['visuais']:
+            for x in v['valores'] + v['campos'] + ([v['meta']] if v.get('meta') else []):
+                if x and x['tipo'] == 'medida':
+                    onde.setdefault(x['nome'], []).append(pg['nome'])
+    inds = []
+    for md in m['medidas']:
+        if md['tipo'] in ('cor', 'meta') or md['nome'] not in onde:
+            continue
+        paginas = ', '.join(dict.fromkeys(onde[md['nome']]))
+        meta = _texto_meta(m, md)
+        inds.append(f'<div class="ind" data-nome="{_e(md["nome"])}"><label><input type="checkbox" data-guardar="ok:{_e(md["nome"])}">'
+                    f'<span><b>{_e(md["nome"])}</b> — {_e(md["descricao"] or "sem definição")}</span></label>'
+                    f'<div class="det">Aparece em: {_e(paginas)}{" · " + _e(meta) if meta else ""}</div></div>')
+    from .relato import para_gestor
+    traduzidos = [t for t in dict.fromkeys(para_gestor(a) for a in problemas.avisos) if t]
+    pontos = ''.join(f'<li>{_e(t)}</li>' for t in traduzidos) or '<li class="ok">Nenhum.</li>'
+    comentarios = ''.join(f'<h3>Comentários sobre a página {_e(pg["nome"])}</h3><textarea data-guardar="c:{_e(pg["nome"])}" '
+                          f'data-rotulo="Página {_e(pg["nome"])}" placeholder="O que mudar, tirar ou acrescentar?"></textarea>'
+                          for pg in m['paginas'])
+    return (f'<section id="aprovar" class="aprovar"><p>Antes de dizer "sim", confirme se cada número significa o que você '
+            f'espera. Os valores do protótipo são fictícios: aqui se aprova <b>o que</b> é medido e <b>como</b> aparece.</p>'
+            f'<div class="progresso" id="progresso"></div>{"".join(inds)}'
+            f'<h3>Pontos de atenção (converse com o analista)</h3><ul class="lista">{pontos}</ul>{comentarios}'
+            f'<h3>A sua decisão</h3><div class="decisao"><label><input type="radio" name="decisao" value="Aprovo" '
+            f'data-guardar="d:aprovo"> Aprovo este protótipo</label><label><input type="radio" name="decisao" '
+            f'value="Peço ajustes" data-guardar="d:ajustes"> Peço ajustes (veja os comentários)</label></div>'
+            f'<p><label>Seu nome <input type="text" id="aprovador" data-guardar="nome" autocomplete="name"></label></p>'
+            f'<p><button type="button" class="botao" id="copiar">Copiar resumo do aceite</button><span class="copiado" '
+            f'id="copiado" role="status"></span></p><p class="nota">As marcações ficam só neste navegador: mande o resumo '
+            f'copiado ao analista (e-mail ou chat). O aceite vale quando ele registra o seu "sim" no Deidara.</p></section>')
+
+
+def _rotular_secao(s):
+    """<section role=tabpanel ... aria-labelledby="aba-XYZ"> com id="XYZ" de volta."""
+    import re as _re
+    return _re.sub(r'<section role="tabpanel" tabindex="0" aria-labelledby="aba-([^"]+)"',
+                   r'<section role="tabpanel" tabindex="0" id="\1" aria-labelledby="aba-\1"', s, count=1)
 
 
 def gerar_html(m, problemas, versao):
@@ -429,10 +592,12 @@ def gerar_html(m, problemas, versao):
         alt = altura_da_pagina(posicoes)
         vis = ''.join(
             f'<div class="vis {v["tipo"]}" style="left:{p["x"]}px;top:{p["y"]}px;width:{p["w"]}px;height:{p["h"]}px">'
-            f'{svg_visual(sim, v, p, cores)}</div>' for v, p in posicoes)
+            f'{_botao_info(m, v, pg)}{svg_visual(sim, v, p, cores)}</div>' for v, p in posicoes)
         desc = f'<p class="nota">{_e(pg["descricao"])}</p>' if pg['descricao'] else ''
         secoes.append(f'<section id="{sid}"><div class="palco"><div class="pagina" style="width:{LARGURA}px;height:{alt}px">'
                       f'<h2>{_e(pg["nome"])}</h2>{vis}</div></div>{desc}</section>')
+    abas.append(('aprovar', 'Para aprovar'))
+    secoes.append(_secao_aprovar(m, problemas))
     abas.append(('modelo', 'Modelo de dados'))
     rels = ''.join(f'<tr><td>{_e(r["de"])}[{_e(r["de_coluna"])}]</td><td>{_e(r["para"])}[{_e(r["para_coluna"])}]</td>'
                    f'<td>{"ativa" if r["ativo"] else "inativa"}</td><td>{_e(r["prova"])}'
@@ -446,17 +611,27 @@ def gerar_html(m, problemas, versao):
                      if x['tipo'] != 'cor')
     secoes.append(f'<section id="indicadores"><div class="tabela-rolagem"><table><tr><th>Indicador</th><th>Definição</th>'
                   f'<th>Formato</th><th>DAX</th></tr>{linhas}</table></div></section>')
-    abas.append(('pendencias', f'Pendências ({len(problemas.avisos)})'))
+    abas.append(('pendencias', f'Pendências do analista ({len(problemas.avisos)})'))
     av = ''.join(f'<li>{_e(a)}</li>' for a in problemas.avisos) or '<li class="ok">Nenhuma pendência.</li>'
-    secoes.append(f'<section id="pendencias"><p>Itens para decidir antes de aprovar:</p><ul class="lista">{av}</ul></section>')
-    nav = ''.join(f'<button type="button" role="tab" data-alvo="{sid}">{_e(n)}</button>' for sid, n in abas)
+    secoes.append(f'<section id="pendencias"><p>Detalhe técnico dos pontos de atenção (para o analista):</p>'
+                  f'<ul class="lista">{av}</ul></section>')
+    secoes = [s.replace('<section id="', '<section role="tabpanel" tabindex="0" aria-labelledby="aba-', 1)
+              .replace('aria-labelledby="aba-', 'aria-labelledby="aba-', 1) for s in secoes]
+    secoes = [_rotular_secao(s) for s in secoes]
+    nav = ''.join(f'<button type="button" role="tab" id="aba-{sid}" aria-controls="{sid}" data-alvo="{sid}">{_e(n)}</button>'
+                  for sid, n in abas)
     meta = ' · '.join(x for x in [m['publico'] and f'Público: {m["publico"]}',
-                                  m['responsavel'] and f'Responsável: {m["responsavel"]}', f'versão {versao}'] if x)
+                                  m['responsavel'] and f'Responsável: {m["responsavel"]}',
+                                  m.get('versao') and f'painel v{m["versao"]}', f'Deidara {versao}'] if x)
+    chave_local = f'{m["projeto"]}|{m.get("versao") or versao}'
     return f"""<!doctype html>
 <html lang="pt-BR"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
 <title>{_e(m['projeto'])} · protótipo</title><style>{CSS}</style></head>
-<body><header><h1>{_e(m['projeto'])}</h1><span class="meta">{_e(meta)}</span></header>
-<div class="faixa">Protótipo gerado pelo Deidara. Os números são fictícios: valide layout, indicadores e navegação, não valores.</div>
+<body data-chave="{_e(chave_local)}" data-projeto="{_e(m['projeto'])}" data-versao="{_e(m.get('versao') or '—')}" data-codigo="{codigo_do_prototipo(m)}">
+<header><h1>{_e(m['projeto'])}</h1><span class="meta">{_e(meta)}</span></header>
+<div class="faixa">Protótipo gerado pelo Deidara. Os números são fictícios: valide layout, indicadores e navegação, não valores.
+<span class="so-tela">Clique em ⓘ para ver o que cada número significa; a aba <b>Para aprovar</b> reúne o que confirmar.</span></div>
 <nav role="tablist">{nav}</nav><main>{''.join(secoes)}</main>
+<aside id="painel" role="dialog" aria-live="polite"></aside>
 <script>{JS}</script></body></html>
 """
