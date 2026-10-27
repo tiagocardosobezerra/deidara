@@ -1,0 +1,82 @@
+{
+  "projeto": "Quadro e Turnover",
+  "versao": "1.0",
+  "descricao": "Acompanhamento do quadro de colaboradores, da remuneração e dos desligamentos por cargo, empresa e motivo.",
+  "publico": "Gestores de RH",
+  "responsavel": "Time de Indicadores",
+  "schema": ["schema.json"],
+  "fonte": {"servidor": "SERVIDOR-SQL", "banco": "AURORA", "esquema_origem": "dbo", "esquema_views": "bi"},
+  "tabelas": [
+    {"nome": "dColaborador", "tipo": "dimensao", "origem": "F_FUNCIONARIO",
+     "colunas": [
+       {"coluna": "MATRICULA", "nome": "Matrícula"},
+       {"coluna": "NOME", "nome": "Colaborador"},
+       {"coluna": "DATAADMISSAO", "nome": "Data de Admissão"},
+       {"coluna": "VALORREMUNERACAO", "nome": "Remuneração", "formato": "moeda"}
+     ]},
+    {"nome": "dCargo", "tipo": "dimensao", "origem": "F_CARGO",
+     "colunas": [{"coluna": "CODCARGO", "nome": "Cód. Cargo"}, {"coluna": "DESCRICAOCARGO", "nome": "Cargo"}]},
+    {"nome": "dEmpresa", "tipo": "dimensao", "origem": "N_EMPRESA",
+     "colunas": [{"coluna": "CODEMPRESA", "nome": "Cód. Empresa"}, {"coluna": "RAZAOSOCIAL", "nome": "Empresa"}]},
+    {"nome": "dMotivo", "tipo": "dimensao", "origem": "F_MOTIVO_DESLIGAMENTO",
+     "colunas": [{"coluna": "CODMOTIVO", "nome": "Cód. Motivo"}, {"coluna": "DESCRICAOMOTIVO", "nome": "Motivo"}]},
+    {"nome": "fDesligamento", "tipo": "fato", "origem": "F_DESLIGAMENTO",
+     "colunas": [{"coluna": "DATADESLIGAMENTO", "nome": "Data do Desligamento"}]}
+  ],
+  "relacionamentos": [
+    {"de": "dColaborador", "para": "dCargo"},
+    {"de": "dColaborador", "para": "dEmpresa"},
+    {"de": "fDesligamento", "para": "dColaborador"},
+    {"de": "fDesligamento", "para": "dMotivo"}
+  ],
+  "calendario": {"inicio": 2020, "fim": 2026,
+                 "datas": [{"tabela": "fDesligamento", "coluna": "Data do Desligamento"}]},
+  "medidas": [
+    {"nome": "Headcount", "tipo": "estoque_na_data", "entradas": "dColaborador[Data de Admissão]",
+     "saidas": "fDesligamento[Data do Desligamento]", "tabela": "dColaborador",
+     "descricao": "Colaboradores ativos no último dia do período: admitidos até a data menos desligados até a data.",
+     "pasta": "Quadro"},
+    {"nome": "HC Médio", "tipo": "media_mensal", "base": "Headcount", "tabela": "dColaborador",
+     "descricao": "Média do headcount de fim de mês no período.", "pasta": "Quadro"},
+    {"nome": "Cadastros", "agregacao": "contagem_linhas", "tabela": "dColaborador",
+     "descricao": "Colaboradores cadastrados (ativos e desligados).", "pasta": "Quadro"},
+    {"nome": "Remuneração Total", "agregacao": "soma", "coluna": "dColaborador[Remuneração]", "formato": "moeda",
+     "descricao": "Soma da remuneração mensal cadastrada (ativos e desligados).", "pasta": "Quadro"},
+    {"nome": "Remuneração Média", "tipo": "divisao", "numerador": "Remuneração Total", "denominador": "Cadastros",
+     "tabela": "dColaborador", "formato": "moeda", "descricao": "Remuneração total dividida pelo número de cadastros.", "pasta": "Quadro"},
+    {"nome": "Desligamentos", "agregacao": "contagem_linhas", "tabela": "fDesligamento", "formato": "inteiro",
+     "descricao": "Desligamentos registrados no período.", "pasta": "Turnover", "polaridade": "menor_melhor"},
+    {"nome": "Turnover", "tipo": "divisao", "numerador": "Desligamentos", "denominador": "HC Médio",
+     "formato": "percentual", "descricao": "Desligamentos do período divididos pelo headcount médio do período.", "pasta": "Turnover",
+     "polaridade": "menor_melhor", "meta": 0.05},
+    {"nome": "Desligamentos Acum. Ano", "tipo": "acumulado_ano", "base": "Desligamentos", "formato": "inteiro",
+     "descricao": "Desligamentos acumulados no ano.", "pasta": "Turnover"},
+    {"nome": "Var. Desligamentos A/A", "tipo": "variacao_ano_anterior", "base": "Desligamentos",
+     "descricao": "Variação dos desligamentos contra o mesmo período do ano anterior.", "pasta": "Turnover",
+     "polaridade": "menor_melhor"}
+  ],
+  "paginas": [
+    {"nome": "Visão Geral", "descricao": "Quadro e remuneração por cargo e empresa.",
+     "visuais": [
+       {"tipo": "segmentador", "campo": "dEmpresa[Empresa]"},
+       {"tipo": "segmentador", "campo": "dCargo[Cargo]"},
+       {"tipo": "cartao", "medida": "Headcount"},
+       {"tipo": "cartao", "medida": "Remuneração Total"},
+       {"tipo": "cartao", "medida": "Remuneração Média"},
+       {"tipo": "barras", "categoria": "dCargo[Cargo]", "valores": ["Headcount"]},
+       {"tipo": "colunas", "categoria": "dEmpresa[Empresa]", "valores": ["Remuneração Total"]},
+       {"tipo": "tabela", "campos": ["dCargo[Cargo]", "Headcount", "Remuneração Média"]}
+     ]},
+    {"nome": "Turnover", "descricao": "Desligamentos no tempo e por motivo.",
+     "visuais": [
+       {"tipo": "segmentador", "campo": "dCalendario[Ano]"},
+       {"tipo": "cartao", "medida": "Desligamentos"},
+       {"tipo": "cartao", "medida": "Turnover"},
+       {"tipo": "cartao", "medida": "Var. Desligamentos A/A"},
+       {"tipo": "linha", "categoria": "dCalendario[Mês/Ano]", "valores": ["Desligamentos", "Desligamentos Acum. Ano"]},
+       {"tipo": "rosca", "categoria": "dMotivo[Motivo]", "valores": ["Desligamentos"]},
+       {"tipo": "matriz", "linhas": ["dCargo[Cargo]"], "colunas": ["dCalendario[Trimestre]"], "valores": ["Desligamentos"]},
+       {"tipo": "tabela", "titulo": "Turnover por cargo (contra a meta)", "campos": ["dCargo[Cargo]", "Desligamentos", "Turnover"]}
+     ]}
+  ]
+}

@@ -1,0 +1,61 @@
+# O que o `gerar` entrega e como vira painel de verdade
+
+## .pbix x .pbip
+
+O **.pbix** é um arquivo binário fechado: o modelo de dados vai dentro dele
+num formato interno do Analysis Services, que só o Power BI Desktop escreve.
+Nenhuma ferramenta fora do Desktop gera um .pbix válido de forma suportada.
+
+O **.pbip** (Projeto do Power BI) é o formato texto oficial da Microsoft para
+o mesmo conteúdo, feito para git e para geração automática:
+
+```
+Painel.pbip                      aponta para o relatório
+Painel.SemanticModel/            o modelo, em TMDL (um arquivo por tabela)
+  definition.pbism
+  definition/database.tmdl, model.tmdl, expressions.tmdl, relationships.tmdl
+  definition/tables/*.tmdl       colunas, medidas, partição (Power Query)
+Painel.Report/                   o relatório, em PBIR (um JSON por página e visual)
+  definition.pbir
+  definition/report.json, version.json, pages/...
+  StaticResources/RegisteredResources/Deidara.json   o tema
+```
+
+O Desktop abre o .pbip e, em *Arquivo > Salvar como*, grava o .pbix. Essa é
+a ponte. O .pbip continua sendo a fonte: versionável, revisável em pull
+request e regenerável pelo Deidara.
+
+## Como o Deidara garante que abre
+
+- Todo JSON do relatório leva o `$schema` público da Microsoft e é
+  conferido contra ele por `ferramentas/validar_pbip.py` (inclusive a
+  configuração interna de cada visual).
+- O TMDL é conferido estruturalmente (tabulação, referências de
+  relacionamento a colunas que existem, `ref table`).
+- Todo campo usado num visual existe no modelo.
+
+O que **não** dá para provar sem o Desktop: que a versão do Power BI da
+máquina do usuário aceita o formato PBIR (versões anteriores a 2024 pedem a
+opção em versão prévia) e que as views rodam no banco real. Por isso o
+LEIA-ME começa pelo SQL e pela homologação.
+
+## A camada SQL
+
+`sql/01_views.sql` cria uma view por tabela do modelo no schema `bi`, já com
+os nomes amigáveis, as chaves compostas concatenadas e as datas do
+calendário sem hora. O Power BI lê só as views. Vantagens: o DBA revisa um
+arquivo; mudar a origem não quebra o painel; permissão de leitura num schema
+só.
+
+`sql/02_conferencia.sql` traz o total geral de cada indicador de agregação
+direto no banco. Homologar = esse total bater com o cartão do Power BI sem
+filtro.
+
+## Limitações conhecidas (versão atual)
+
+- Modo de importação (Import) apenas; DirectQuery fica para depois.
+- Sem RLS (segurança por linha), sem parâmetros de campo e sem drill-through:
+  configure no Desktop depois de gerar, e não regenere por cima.
+- Status de meta é por cor (verde/vermelho); ícones e faixas de tolerância ficam para depois.
+- Visuais nativos apenas (cartão, medidor, barras, colunas, linha, rosca,
+  tabela, matriz, segmentador).

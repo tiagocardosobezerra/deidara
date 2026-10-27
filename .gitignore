@@ -1,0 +1,8 @@
+__pycache__/
+*.pyc
+# saídas geradas e aprovações de painéis locais
+saida/
+*.aprovacao.json
+# projeto Power BI aberto no Desktop
+**/.pbi/localSettings.json
+**/.pbi/cache.abf
