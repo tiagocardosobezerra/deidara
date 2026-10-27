@@ -1,6 +1,6 @@
 ---
 name: deidara
-description: "Arquiteto de painéis Power BI para o time de indicadores. Descobre a estrutura das fontes por receitas (consulta SQL, DAX ou Power Query que a pessoa roda onde os dados estão: SQL Server, modelo Power BI existente, Excel, SharePoint, CSV, API), acha as tabelas de um pedido e sugere as ligações que faltam entre fontes soltas, com evidência e receita de prova (só percentuais), monta a especificação do painel (modelo estrela, medidas DAX, metas, páginas e visuais) sem adivinhar nome nem função, gera um PROTÓTIPO navegável em HTML com números fictícios e, só depois do aceite explícito, gera a estrutura completa: projeto Power BI (.pbip com modelo TMDL e relatório PBIR, que vira .pbix pelo Power BI Desktop), views SQL, conferência, qualidade e dicionário de indicadores. Traz dicionário de funções DAX e Power Query e padrões de indicador. Use sempre que o pedido envolver criar, prototipar ou especificar dashboard, painel, relatório Power BI, KPI, indicador, métrica, medida DAX, modelo estrela/dimensional, fonte Excel/SharePoint para Power BI ou .pbix/.pbip."
+description: "Arquiteto de painéis Power BI para o time de indicadores. Descobre a estrutura das fontes por receitas (consulta SQL, DAX ou Power Query que a pessoa roda onde os dados estão: SQL Server, modelo Power BI existente, Excel, SharePoint, CSV, API), acha as tabelas de um pedido e sugere as ligações que faltam entre fontes soltas, com evidência e receita de prova (só percentuais), monta a especificação do painel (modelo estrela, medidas DAX, metas, páginas e visuais) sem adivinhar nome nem função, gera um PROTÓTIPO navegável em HTML com números fictícios e, só depois do aceite explícito, gera a estrutura completa: projeto Power BI (.pbip com modelo TMDL e relatório PBIR, que vira .pbix pelo Power BI Desktop), views SQL, conferência, qualidade e dicionário de indicadores. Salva, versiona e procura painéis e indicadores (com definição oficial) na seção deidara/ do Memory Card do time (repositório memory-card). Traz dicionário de funções DAX e Power Query e padrões de indicador. Use sempre que o pedido envolver criar, prototipar ou especificar dashboard, painel, relatório Power BI, KPI, indicador, métrica, medida DAX, modelo estrela/dimensional, fonte Excel/SharePoint para Power BI ou .pbix/.pbip."
 ---
 
 # Deidara
@@ -52,12 +52,20 @@ transforma isso no catálogo da fonte. Só estrutura volta, nunca linha de dado.
 10. **O .pbix sai do Power BI Desktop.** O Deidara entrega o .pbip (formato
     texto oficial), que o Desktop abre e salva como .pbix. Nunca prometa um
     .pbix gerado direto.
-11. **Leia os `LEMBRETE:`** que os comandos imprimem em stderr e siga-os.
+11. **Memory Card: procure antes, ofereça depois.** Se a instalação tem um
+    cartão configurado, antes de um painel ou indicador novo rode
+    `memory-card buscar` e ofereça reaproveitar; a definição de um indicador
+    **oficial** não se reescreve num painel. Depois do `gerar`, ofereça salvar
+    (prévia do `enviar`; `--confirmar` só com o "sim"). Mudança em algo salvo
+    pede `--motivo`. Sem o `gh` autenticado e a pasta do cartão (numa sandbox
+    como o claude.ai), diga isso em vez de prometer o envio.
+12. **Leia os `LEMBRETE:`** que os comandos imprimem em stderr e siga-os.
 
 ## Fluxo
 
 | Passo | Faça | Detalhe |
 |---|---|---|
+| 0. Memory Card | `deidara.py memory-card buscar <assunto>`: já existe painel ou indicador (oficial?) para isso? | [referencias/memory-card.md](referencias/memory-card.md) |
 | 1. Entender | objetivo, público, decisões, indicadores (definição, polaridade, meta), cortes, periodicidade, **de onde vem cada dado** | [referencias/fluxo.md](referencias/fluxo.md) |
 | 2. Receita | por fonte: `deidara.py receita sql` (SQL Server), `receita dax` (modelo Power BI existente, qualquer origem), `receita m --consultas A,B` (Excel, SharePoint, CSV, API...) → entregue ao usuário com as instruções do cabeçalho | [referencias/fontes.md](referencias/fontes.md) |
 | 3. Catalogar | com o resultado colado: `deidara.py catalogar --de resultado.txt --fonte NOME [--m PASTA]` → aponte em `"fontes"` do argila.json | [referencias/fontes.md](referencias/fontes.md) |
@@ -67,6 +75,7 @@ transforma isso no catálogo da fonte. Só estrutura volta, nunca linha de dado.
 | 6. Iterar | ajuste e prototipe de novo; painel já aprovado antes? `deidara.py diff argila.json` e mostre o que muda (fórmula que muda o número em destaque) | [referencias/argila.md](referencias/argila.md) |
 | 7. Aceite | só com o "sim": `deidara.py aprovar argila.json --por "<nome>"` | regra 7 |
 | 8. Katsu! | `deidara.py gerar argila.json -o <pasta curta>` → entregue a pasta e o LEIA-ME | [referencias/powerbi.md](referencias/powerbi.md) |
+| 9. Salvar | ofereça `deidara.py memory-card enviar argila.json --categoria C --secao S` (prévia) → só com o "sim", `--confirmar`; mudou algo salvo: `--motivo` | [referencias/memory-card.md](referencias/memory-card.md) |
 
 Opcional, com `jsonschema` instalado: `python3 ferramentas/validar_pbip.py
 <pasta gerada>` confere cada JSON do relatório contra o schema oficial da
@@ -79,5 +88,6 @@ Microsoft e as referências do TMDL.
 - [referencias/descoberta.md](referencias/descoberta.md): buscar tabelas, sugerir ligações e provar com números agregados
 - [referencias/argila.md](referencias/argila.md): formato completo do argila.json
 - [referencias/metricas.md](referencias/metricas.md): onde criar cada métrica, padrões e dicionário de funções
+- [referencias/memory-card.md](referencias/memory-card.md): o cartão do time (salvar, versionar, buscar, oficial, conferir)
 - [referencias/powerbi.md](referencias/powerbi.md): o que é gerado, .pbip x .pbix, como tornar real, limitações
 - [exemplos/aurora/](exemplos/aurora/): ERP (SQL Server) + planilha de metas (Excel), do resultado colado ao painel

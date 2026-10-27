@@ -72,6 +72,13 @@ resultado colado ao painel: [exemplos/aurora](exemplos/aurora).
   mede a candidata na fonte (só percentuais e sim/não). A ligação entre fontes vira "declarada", com quem
   confirmou e a prova, registrada na entrega.
 - **Governança:** versão, histórico de aprovações, `deidara.py diff` e segurança por linha (RLS).
+- **Memory Card do time** (repositório `memory-card`, privado; o Deidara usa a seção `deidara/`):
+  cada painel aprovado e cada indicador
+  ficam salvos com versão, motivo de cada mudança e histórico. Procure antes de criar
+  (`memory-card buscar`), salve depois de aprovar (`memory-card enviar`), marque a definição
+  **oficial** de um indicador (um painel não pode reescrevê-la) e confira os painéis salvos quando
+  uma fonte mudar (`memory-card conferir`). A estrutura das fontes nunca vai para o cartão. Ver
+  [referencias/memory-card.md](referencias/memory-card.md).
 
 ## Instalação como skill
 
