@@ -1,33 +1,42 @@
 {
   "projeto": "Quadro e Turnover",
-  "versao": "1.0",
+  "versao": "1.1",
   "descricao": "Acompanhamento do quadro de colaboradores, da remuneração e dos desligamentos por cargo, empresa e motivo.",
   "publico": "Gestores de RH",
   "responsavel": "Time de Indicadores",
-  "schema": ["schema.json"],
-  "fonte": {"servidor": "SERVIDOR-SQL", "banco": "AURORA", "esquema_origem": "dbo", "esquema_views": "bi"},
+  "fontes": {
+    "erp": {"catalogo": "catalogos/erp.json", "servidor": "SERVIDOR-SQL", "banco": "AURORA",
+            "esquema_origem": "dbo", "esquema_views": "bi"},
+    "metas": {"catalogo": "catalogos/metas.json"}
+  },
   "tabelas": [
-    {"nome": "dColaborador", "tipo": "dimensao", "origem": "F_FUNCIONARIO",
+    {"nome": "dColaborador", "tipo": "dimensao", "fonte": "erp", "origem": "F_FUNCIONARIO",
      "colunas": [
        {"coluna": "MATRICULA", "nome": "Matrícula"},
        {"coluna": "NOME", "nome": "Colaborador"},
        {"coluna": "DATAADMISSAO", "nome": "Data de Admissão"},
        {"coluna": "VALORREMUNERACAO", "nome": "Remuneração", "formato": "moeda"}
      ]},
-    {"nome": "dCargo", "tipo": "dimensao", "origem": "F_CARGO",
+    {"nome": "dCargo", "tipo": "dimensao", "fonte": "erp", "origem": "F_CARGO",
      "colunas": [{"coluna": "CODCARGO", "nome": "Cód. Cargo"}, {"coluna": "DESCRICAOCARGO", "nome": "Cargo"}]},
-    {"nome": "dEmpresa", "tipo": "dimensao", "origem": "N_EMPRESA",
+    {"nome": "dEmpresa", "tipo": "dimensao", "fonte": "erp", "origem": "N_EMPRESA",
      "colunas": [{"coluna": "CODEMPRESA", "nome": "Cód. Empresa"}, {"coluna": "RAZAOSOCIAL", "nome": "Empresa"}]},
-    {"nome": "dMotivo", "tipo": "dimensao", "origem": "F_MOTIVO_DESLIGAMENTO",
+    {"nome": "dMotivo", "tipo": "dimensao", "fonte": "erp", "origem": "F_MOTIVO_DESLIGAMENTO",
      "colunas": [{"coluna": "CODMOTIVO", "nome": "Cód. Motivo"}, {"coluna": "DESCRICAOMOTIVO", "nome": "Motivo"}]},
-    {"nome": "fDesligamento", "tipo": "fato", "origem": "F_DESLIGAMENTO",
-     "colunas": [{"coluna": "DATADESLIGAMENTO", "nome": "Data do Desligamento"}]}
+    {"nome": "fDesligamento", "tipo": "fato", "fonte": "erp", "origem": "F_DESLIGAMENTO",
+     "colunas": [{"coluna": "DATADESLIGAMENTO", "nome": "Data do Desligamento"}]},
+    {"nome": "fMeta", "tipo": "fato", "fonte": "metas", "origem": "Metas",
+     "descricao": "Metas de turnover por empresa, da planilha do RH.",
+     "colunas": [{"coluna": "Meta Turnover", "formato": "percentual"}]}
   ],
   "relacionamentos": [
     {"de": "dColaborador", "para": "dCargo"},
     {"de": "dColaborador", "para": "dEmpresa"},
     {"de": "fDesligamento", "para": "dColaborador"},
-    {"de": "fDesligamento", "para": "dMotivo"}
+    {"de": "fDesligamento", "para": "dMotivo"},
+    {"de": "fMeta", "para": "dEmpresa",
+     "declarada": {"campos": [["Cód. Empresa", "CODEMPRESA"]], "por": "Time de Indicadores",
+                   "motivo": "a planilha de metas usa o mesmo código de empresa do ERP"}}
   ],
   "calendario": {"inicio": 2020, "fim": 2026,
                  "datas": [{"tabela": "fDesligamento", "coluna": "Data do Desligamento"}]},
@@ -48,7 +57,9 @@
      "descricao": "Desligamentos registrados no período.", "pasta": "Turnover", "polaridade": "menor_melhor"},
     {"nome": "Turnover", "tipo": "divisao", "numerador": "Desligamentos", "denominador": "HC Médio",
      "formato": "percentual", "descricao": "Desligamentos do período divididos pelo headcount médio do período.", "pasta": "Turnover",
-     "polaridade": "menor_melhor", "meta": 0.05},
+     "polaridade": "menor_melhor", "meta": "Meta de Turnover"},
+    {"nome": "Meta de Turnover", "agregacao": "media", "coluna": "fMeta[Meta Turnover]", "formato": "percentual",
+     "descricao": "Meta de turnover da planilha do RH (média das empresas no filtro).", "pasta": "Metas"},
     {"nome": "Desligamentos Acum. Ano", "tipo": "acumulado_ano", "base": "Desligamentos", "formato": "inteiro",
      "descricao": "Desligamentos acumulados no ano.", "pasta": "Turnover"},
     {"nome": "Var. Desligamentos A/A", "tipo": "variacao_ano_anterior", "base": "Desligamentos",

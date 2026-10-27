@@ -6,7 +6,7 @@ para validação).
 Os números são FICTÍCIOS, determinísticos e coerentes entre si (ver
 simulacao.py): o protótipo valida layout, indicadores e navegação, nunca
 valor. Nenhuma linha do banco é lida — regra "só estrutura, nunca dados" do
-Vegapunk.
+Deidara.
 """
 
 import html
@@ -350,7 +350,8 @@ def svg_modelo(m):
             meio = (a[0] + b[0]) / 2
         d = f'M{a[0]},{a[1]} C{meio},{a[1]} {meio},{b[1]} {b[0]},{b[1]}'
         para_dir = b[0] > a[0] or x1 == x2
-        out.append(f'<path d="{d}" class="rel{"" if r["ativo"] else " inativa"}">'
+        decl = ' declarada' if str(r['prova']).startswith('declarada') else ''
+        out.append(f'<path d="{d}" class="rel{"" if r["ativo"] else " inativa"}{decl}">'
                    f'<title>{_e(r["de"])}[{_e(r["de_coluna"])}] muitos → um {_e(r["para"])}[{_e(r["para_coluna"])}] · prova: {_e(r["prova"])}</title></path>'
                    f'<text x="{a[0] + (6 if para_dir else -6)}" y="{a[1] - 5}" class="card" text-anchor="{"start" if para_dir else "end"}">*</text>'
                    f'<text x="{b[0] + (6 if x1 == x2 else (-6 if para_dir else 6))}" y="{b[1] - 5}" class="card" '
@@ -360,7 +361,7 @@ def svg_modelo(m):
         cls = 'fato' if t['tipo'] == 'fato' else 'dim'
         out.append(f'<g><rect x="{x}" y="{y}" width="{bw}" height="{h}" rx="6" class="cx {cls}"/>'
                    f'<text x="{x + 10}" y="{y + 20}" class="t">{_e(_corta(t["nome"], 26))}</text>'
-                   f'<text x="{x + 10}" y="{y + 36}" class="sub">{_e(_corta(t["origem"] or "gerada no Power Query", 30))}</text>'
+                   f'<text x="{x + 10}" y="{y + 36}" class="sub">{_e(_corta((t.get("fonte") + " · " + t["origem"]) if t["origem"] else "gerada no Power Query", 32))}</text>'
                    f'<line x1="{x}" x2="{x + bw}" y1="{y + 44}" y2="{y + 44}" class="grade"/>')
         visiveis = [c for c in t['colunas'] if not c['oculta']]
         for k, c in enumerate(visiveis[:10]):
@@ -396,7 +397,7 @@ main{padding:16px 20px 40px}section{display:none}section.ativa{display:block}
 .caixa{fill:#fff;stroke:#8A8886}.nota{color:var(--suave);font-size:13px;margin:8px 0 0}
 .modelo{width:100%;height:auto;background:var(--pagina);border-radius:6px}.cx{stroke-width:1.5}
 .cx.fato{fill:#EAF3FF;stroke:#118DFF}.cx.dim{fill:#fff;stroke:#8A8886}.rel{stroke:#605E5C;stroke-width:1.5}
-.rel{fill:none}.rel.inativa{stroke-dasharray:6 4}.card{font-size:13px;font-weight:600;fill:#605E5C}
+.rel{fill:none}.rel.inativa{stroke-dasharray:6 4}.rel.declarada{stroke:#C55A11;stroke-dasharray:3 3;stroke-width:2}.card{font-size:13px;font-weight:600;fill:#605E5C}
 table .sub{color:#605E5C}
 table{border-collapse:collapse;width:100%;font-size:13px;background:var(--pagina);color:#252423}th,td{text-align:left;padding:8px 10px;border-bottom:1px solid var(--borda);vertical-align:top}
 th{position:sticky;top:0;background:#F3F2F1}code,pre{font-family:Consolas,monospace;font-size:12px}pre{margin:0;white-space:pre-wrap}

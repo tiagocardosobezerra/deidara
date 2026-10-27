@@ -8,23 +8,28 @@ mostra a escultura (o protótipo) e, só depois do "sim" do usuário, detona
 (gera o projeto Power BI completo).
 
 Fluxo:
-    coletar     estrutura das tabelas pelo Vegapunk (stella.py detalhar --json)
-    validar     confere o argila.json contra a estrutura (nunca adivinha nome)
+    receita     a consulta (SQL, DAX ou Power Query) que a pessoa roda onde os
+                dados estão; devolve só estrutura, nunca linhas de dado
+    catalogar   transforma o resultado colado num catálogo da fonte
+    validar     confere o argila.json contra os catálogos (nunca adivinha nome)
     prototipar  protótipo navegável em HTML, com números fictícios
     aprovar     grava o "sim" do usuário (hash do argila.json + do schema)
     gerar       .pbip (TMDL + PBIR) + views SQL + conferência + documentação
 
 Uso:
-    python3 deidara.py coletar   --vegapunk DIR TABELA [TABELA ...] -o schema.json [--db BANCO]
+    python3 deidara.py receita   sql [--esquema dbo] [--tabelas T1,T2] | dax | m [--consultas C1,C2] [-o ARQ]
+    python3 deidara.py catalogar --de RESULTADO.txt --fonte NOME [--m PASTA_DOS_.m] [-o catalogo.json]
     python3 deidara.py validar   argila.json [--json]
     python3 deidara.py prototipar argila.json [-o prototipo.html]
     python3 deidara.py aprovar   argila.json --por NOME [--observacao TEXTO]
     python3 deidara.py gerar     argila.json [-o PASTA]
     python3 deidara.py diff      argila.json [--contra OUTRO.json]
+    python3 deidara.py funcoes   buscar "acumulado" | ver SAMEPERIODLASTYEAR [--linguagem dax|m]
+    python3 deidara.py padroes   [turnover | taxa | estoque | ...]
     python3 deidara.py status
 
-O argila.json aponta para o(s) schema.json em "schema" (caminho relativo a
-ele). Formato completo: referencias/argila.md.
+O argila.json lista as fontes em "fontes" ({"erp": {"catalogo": "catalogos/erp.json"}}),
+com caminhos relativos a ele. Formato completo: referencias/argila.md.
 ================================================================================
 """
 
@@ -33,15 +38,13 @@ import datetime
 import json
 import os
 import shutil
-import subprocess
 import sys
 
 RAIZ = os.path.dirname(os.path.abspath(__file__))
 sys.path.insert(0, RAIZ)
 
-from argila import VERSAO, docs, governanca, pbir, prototipo, sql, tmdl  # noqa: E402
+from argila import VERSAO, catalogo, dicionario, docs, governanca, pbir, prototipo, receitas, sql, tmdl  # noqa: E402
 from argila.especificacao import resolver  # noqa: E402
-from argila.schema import Schema  # noqa: E402
 from argila.util import gravar_json, gravar_texto, ident, ler_json, sha256_arquivo  # noqa: E402
 
 
@@ -57,19 +60,24 @@ def _lembrete(texto):
 def _carregar(caminho_argila):
     argila = ler_json(caminho_argila)
     base = os.path.dirname(os.path.abspath(caminho_argila))
-    esquemas = argila.get('schema') or []
-    if isinstance(esquemas, str):
-        esquemas = [esquemas]
-    if not esquemas:
-        raise SystemExit('argila.json sem "schema": aponte para a saída do `deidara.py coletar` '
-                         '(ou do `stella.py detalhar --json`).')
-    caminhos = [os.path.join(base, e) for e in esquemas]
-    for c in caminhos:
+    fontes = argila.get('fontes') or {}
+    if not fontes:
+        raise SystemExit('argila.json sem "fontes": rode uma receita (`deidara.py receita`), o `catalogar` e aponte '
+                         'o catálogo, ex.: "fontes": {"erp": {"catalogo": "catalogos/erp.json"}}')
+    catalogos, caminhos = {}, []
+    for nome, cfg in fontes.items():
+        if not (cfg or {}).get('catalogo'):
+            raise SystemExit(f'fonte {nome} sem "catalogo"')
+        c = os.path.join(base, cfg['catalogo'])
         if not os.path.exists(c):
-            raise SystemExit(f'schema não encontrado: {c}')
-    schema = Schema.carregar(caminhos)
-    modelo, problemas = resolver(argila, schema)
-    return argila, schema, modelo, problemas, caminhos
+            raise SystemExit(f'catálogo da fonte {nome} não encontrado: {c}')
+        try:
+            catalogos[nome] = catalogo.carregar(c, nome)
+        except ValueError as e:
+            raise SystemExit(str(e))
+        caminhos.append(c)
+    modelo, problemas = resolver(argila, catalogos)
+    return argila, catalogos, modelo, problemas, caminhos
 
 
 def _relatorio(problemas):
@@ -81,7 +89,7 @@ def _relatorio(problemas):
 
 def _hashes(caminho_argila, caminhos_schema):
     return {'argila_sha256': sha256_arquivo(caminho_argila),
-            'schema_sha256': {os.path.basename(c): sha256_arquivo(c) for c in caminhos_schema}}
+            'catalogos_sha256': {os.path.basename(c): sha256_arquivo(c) for c in caminhos_schema}}
 
 
 def _arquivo_aprovacao(caminho_argila):
@@ -90,26 +98,105 @@ def _arquivo_aprovacao(caminho_argila):
 
 
 # ---------------------------------------------------------------- comandos
-def cmd_coletar(a):
-    stella = os.path.join(a.vegapunk, 'stella.py')
-    if not os.path.exists(stella):
-        raise SystemExit(f'stella.py não encontrado em {a.vegapunk}: aponte --vegapunk para a pasta do Vegapunk')
-    cmd = [sys.executable, stella] + (['--db', a.db] if a.db else []) + \
-          ['detalhar', '--dominio', 'schema', *a.tabelas, '--json']
-    r = subprocess.run(cmd, cwd=a.vegapunk, capture_output=True, text=True, encoding='utf-8')
-    if r.returncode != 0:
-        sys.stderr.write(r.stderr)
-        raise SystemExit(f'o detalhar do Vegapunk falhou (código {r.returncode})')
-    dados = json.loads(r.stdout)
-    faltam = [t for t in a.tabelas if t.upper() not in {k.upper() for k in dados.get('tabelas', {})}]
-    if faltam:
-        raise SystemExit(f'o Vegapunk não conhece: {", ".join(faltam)}. Rode o `buscar` dele antes; não invente.')
-    gravar_json(a.saida, dados)
-    print(f'{len(dados["tabelas"])} tabela(s) em {a.saida}')
-    for av in dados.get('aviso') or []:
-        print(f'  AVISO  {av}')
-    _lembrete('confirme no Vegapunk as tabelas que entrarem no painel: '
-              'stella.py confirmar --dominio schema "<pedido>" TABELA')
+def cmd_receita(a):
+    if a.tipo == 'sql':
+        texto = receitas.receita_sql(a.esquema, [t.strip() for t in (a.tabelas or '').split(',') if t.strip()])
+    elif a.tipo == 'dax':
+        texto = receitas.receita_dax()
+    elif a.tipo == 'funcoes-dax':
+        texto = receitas.receita_funcoes_dax()
+    elif a.tipo == 'funcoes-m':
+        texto = receitas.receita_funcoes_m()
+    else:
+        texto = receitas.receita_m([c.strip() for c in (a.consultas or '').split(',') if c.strip()])
+    if a.saida:
+        gravar_texto(a.saida, texto, bom=a.tipo == 'sql')
+        print(f'Receita {a.tipo} em {a.saida}')
+    else:
+        print(texto)
+    _lembrete('a pessoa roda a receita onde os dados estão, copia a grade com o cabeçalho para um .txt e você roda '
+              '`deidara.py catalogar --de ARQUIVO.txt --fonte NOME`. Nada de dado sai: só estrutura.')
+    return 0
+
+
+def cmd_catalogar(a):
+    if a.funcoes:
+        try:
+            d = receitas.dicionario_local(a.de, a.funcoes)
+        except ValueError as e:
+            print(str(e))
+            return 1
+        pasta = os.path.join(dicionario.PASTA, 'local')
+        os.makedirs(pasta, exist_ok=True)
+        gravar_json(os.path.join(pasta, f'{a.funcoes}.json'), d)
+        novas = [n for n in d['funcoes'] if n not in dicionario.funcoes(a.funcoes)]
+        print(f'Dicionário local {a.funcoes}: {len(d["funcoes"])} função(ões), {len(novas)} que o Deidara não conhecia'
+              + (f' (ex.: {", ".join(novas[:5])})' if novas else ''))
+        return 0
+    if not a.fonte:
+        print('informe --fonte (ou --funcoes dax|m para o dicionário de funções)')
+        return 1
+    try:
+        cat, avisos = receitas.catalogar(a.de, a.fonte, a.m)
+    except ValueError as e:
+        print(str(e))
+        return 1
+    saida = a.saida or os.path.join(os.path.dirname(os.path.abspath(a.de)), f'{a.fonte}.catalogo.json')
+    gravar_json(saida, cat)
+    ncol = sum(len(t['colunas']) for t in cat['tabelas'].values())
+    print(f'Fonte {a.fonte} ({cat["tipo"]}, receita {cat["receita"]}): {len(cat["tabelas"])} tabela(s), {ncol} coluna(s), '
+          f'{len(cat["fks"])} ligação(ões), {len(cat["expressoes"])} expressão(ões) auxiliar(es)')
+    for x in avisos:
+        print(f'  AVISO  {x}')
+    print(f'Catálogo: {saida}')
+    _lembrete(f'aponte no argila.json: "fontes": {{"{a.fonte}": {{"catalogo": "<caminho relativo de {os.path.basename(saida)}>"}}}}')
+    return 0
+
+
+def cmd_funcoes(a):
+    if a.acao == 'ver':
+        achou = dicionario.ver(a.termo, a.linguagem)
+        if not achou:
+            print(f'{a.termo} não está no dicionário. Tente: deidara.py funcoes buscar "<o que você quer fazer>"')
+            return 1
+        ling, nome, e = achou
+        print(f'{nome} ({ling.upper()} · {", ".join(e.get("categorias") or [])})')
+        for s in e.get('sintaxe') or []:
+            print(f'  {s}')
+        if e.get('descricao'):
+            print(f'  {e["descricao"]}')
+        if e.get('uso'):
+            print(f'  Em indicadores: {e["uso"]}')
+        if e.get('url'):
+            print(f'  Documentação oficial: {e["url"]}')
+        return 0
+    achados = dicionario.buscar(a.termo, a.linguagem)
+    for nome, e in achados:
+        print(f'  {nome:<28} {", ".join(e.get("categorias") or [])[:28]:<28} {e.get("descricao", "")}')
+    if not achados:
+        print('Nada encontrado. Busque pelo nome em inglês (ex.: "YTD", "DIVIDE") ou pela categoria.')
+    return 0
+
+
+def cmd_padroes(a):
+    dados = dicionario.padroes()
+    if not a.termo:
+        print('Onde criar cada coisa:')
+        for o in dados['onde_criar']:
+            print(f'  {o["meio"]}: {o["quando"]}')
+    for p in dicionario.padroes_para(a.termo or ''):
+        print(f'\n{p["nome"]}  [{p["id"]}]')
+        if p.get('argila'):
+            print(f'  argila.json: {json.dumps(p["argila"], ensure_ascii=False)}')
+        if p.get('dax'):
+            print(f'  DAX: {p["dax"]}')
+        if p.get('onde'):
+            print(f'  Onde: {p["onde"]}')
+        if p.get('alternativa'):
+            print(f'  Alternativa: {p["alternativa"]}')
+        for x in p.get('armadilhas') or []:
+            print(f'  Atenção: {x}')
+    return 0
 
 
 def cmd_validar(a):
@@ -184,8 +271,9 @@ def cmd_gerar(a):
         return 1
     aprov = ler_json(arq)
     atual = _hashes(a.argila, caminhos)
-    if aprov.get('argila_sha256') != atual['argila_sha256'] or aprov.get('schema_sha256') != atual['schema_sha256']:
-        print('O argila.json ou o schema mudou depois da aprovação: gere o protótipo de novo e peça novo aceite.')
+    if aprov.get('argila_sha256') != atual['argila_sha256'] or \
+            aprov.get('catalogos_sha256') != atual['catalogos_sha256']:
+        print('O argila.json ou um catálogo mudou depois da aprovação: gere o protótipo de novo e peça novo aceite.')
         for x in governanca.diferencas(aprov.get('retrato') or {}, governanca.retrato(modelo)):
             print(f'  MUDOU  {x}')
         return 1
@@ -210,10 +298,12 @@ def cmd_gerar(a):
     gravar_texto(os.path.join(pasta, '.gitignore'), '**/.pbi/localSettings.json\n**/.pbi/cache.abf\n')
     tmdl.gravar(modelo, pasta, nome)
     pbir.gravar(modelo, pasta, nome)
-    os.makedirs(os.path.join(pasta, 'sql'))
-    gravar_texto(os.path.join(pasta, 'sql', '01_views.sql'), sql.views(modelo), bom=True)
-    gravar_texto(os.path.join(pasta, 'sql', '02_conferencia.sql'), sql.conferencia(modelo), bom=True)
-    gravar_texto(os.path.join(pasta, 'sql', '03_qualidade.sql'), sql.qualidade(modelo), bom=True)
+    for f in sql.fontes_sql(modelo):
+        dsql = os.path.join(pasta, 'sql', f['nome'])
+        os.makedirs(dsql)
+        gravar_texto(os.path.join(dsql, '01_views.sql'), sql.views(modelo, f), bom=True)
+        gravar_texto(os.path.join(dsql, '02_conferencia.sql'), sql.conferencia(modelo, f), bom=True)
+        gravar_texto(os.path.join(dsql, '03_qualidade.sql'), sql.qualidade(modelo, f), bom=True)
     os.makedirs(os.path.join(pasta, 'docs'))
     gravar_texto(os.path.join(pasta, 'docs', 'dicionario_indicadores.md'),
                  docs.dicionario(modelo, aprov.get('historico') or []))
@@ -221,7 +311,7 @@ def cmd_gerar(a):
     gravar_texto(os.path.join(pasta, 'LEIA-ME.md'), docs.leia_me(modelo, nome, aprov, problemas.avisos))
     gravar_texto(os.path.join(pasta, 'prototipo.html'), prototipo.gerar_html(modelo, problemas, VERSAO))
     print(f'Katsu! Projeto gerado em {pasta}')
-    print(f'  {nome}.pbip  ·  sql/01_views.sql  ·  sql/02_conferencia.sql  ·  LEIA-ME.md')
+    print(f'  {nome}.pbip  ·  LEIA-ME.md' + ''.join(f'  ·  sql/{f["nome"]}/' for f in sql.fontes_sql(modelo)))
     _lembrete('o .pbix sai do Power BI Desktop: abra o .pbip e use Arquivo > Salvar como (passo 5 do LEIA-ME).')
     return 0
 
@@ -249,19 +339,24 @@ def cmd_diff(a):
 
 def cmd_status(a):
     print(f'Deidara {VERSAO} · Python {sys.version.split()[0]} · pasta {RAIZ}')
-    vp = os.environ.get('VEGAPUNK_DIR')
-    print(f'VEGAPUNK_DIR: {vp or "(não definido; use --vegapunk no coletar)"}')
     return 0
 
 
 def main(argv=None):
     ap = argparse.ArgumentParser(prog='deidara', description='Do schema ao painel Power BI.')
     sub = ap.add_subparsers(dest='cmd', required=True)
-    c = sub.add_parser('coletar', help='estrutura das tabelas pelo Vegapunk')
-    c.add_argument('--vegapunk', default=os.environ.get('VEGAPUNK_DIR'), required=not os.environ.get('VEGAPUNK_DIR'))
-    c.add_argument('--db')
-    c.add_argument('tabelas', nargs='+')
-    c.add_argument('-o', '--saida', default='schema.json')
+    r = sub.add_parser('receita', help='consulta que devolve a estrutura de uma fonte')
+    r.add_argument('tipo', choices=['sql', 'dax', 'm', 'funcoes-dax', 'funcoes-m'])
+    r.add_argument('--esquema', default='dbo')
+    r.add_argument('--tabelas', help='sql: tabelas separadas por vírgula (vazio = todas do esquema)')
+    r.add_argument('--consultas', help='m: consultas Power Query separadas por vírgula')
+    r.add_argument('-o', '--saida')
+    c = sub.add_parser('catalogar', help='resultado colado de uma receita -> catálogo da fonte')
+    c.add_argument('--de', required=True)
+    c.add_argument('--fonte')
+    c.add_argument('--funcoes', choices=['dax', 'm'], help='o resultado é da receita de funções (dicionário local)')
+    c.add_argument('--m', help='pasta com os .m (texto do Editor Avançado) das consultas, para a receita m')
+    c.add_argument('-o', '--saida')
     v = sub.add_parser('validar')
     v.add_argument('argila')
     v.add_argument('--json', action='store_true')
@@ -275,13 +370,19 @@ def main(argv=None):
     g = sub.add_parser('gerar')
     g.add_argument('argila')
     g.add_argument('-o', '--saida')
+    fu = sub.add_parser('funcoes', help='dicionário de funções DAX e M')
+    fu.add_argument('acao', choices=['buscar', 'ver'])
+    fu.add_argument('termo')
+    fu.add_argument('--linguagem', choices=['dax', 'm'])
+    pa = sub.add_parser('padroes', help='padrões de indicador e onde criar cada coisa')
+    pa.add_argument('termo', nargs='?')
     df = sub.add_parser('diff', help='o que mudou desde a aprovação')
     df.add_argument('argila')
     df.add_argument('--contra')
     sub.add_parser('status')
     a = ap.parse_args(argv)
-    return {'coletar': cmd_coletar, 'validar': cmd_validar, 'prototipar': cmd_prototipar, 'aprovar': cmd_aprovar,
-            'gerar': cmd_gerar, 'diff': cmd_diff, 'status': cmd_status}[a.cmd](a) or 0
+    return {'receita': cmd_receita, 'catalogar': cmd_catalogar, 'validar': cmd_validar, 'prototipar': cmd_prototipar, 'aprovar': cmd_aprovar,
+            'gerar': cmd_gerar, 'diff': cmd_diff, 'funcoes': cmd_funcoes, 'padroes': cmd_padroes, 'status': cmd_status}[a.cmd](a) or 0
 
 
 if __name__ == '__main__':

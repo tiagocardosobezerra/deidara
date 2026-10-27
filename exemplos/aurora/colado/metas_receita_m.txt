@@ -1,0 +1,4 @@
+Tabela	Name	TypeName	Kind	IsNullable	NumericPrecision	NumericScale	MaxLength	Description
+Metas	Cód. Empresa	Int64.Type	number	TRUE				
+Metas	Empresa	Text.Type	text	TRUE				
+Metas	Meta Turnover	Percentage.Type	number	TRUE				

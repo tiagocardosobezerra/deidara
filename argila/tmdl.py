@@ -2,15 +2,21 @@
 O modelo semântico do Power BI em TMDL (pasta `<Projeto>.SemanticModel`).
 
 TMDL é o formato texto do modelo tabular que o Power BI Desktop abre num
-projeto .pbip: um arquivo por tabela, indentado por tabulação. Cada tabela
-lê a view correspondente (`sql.py`) por dois parâmetros, Servidor e Banco,
-que o usuário troca em "Transformar dados > Editar parâmetros".
+projeto .pbip: um arquivo por tabela, indentado por tabulação.
+
+Cada tabela lê da sua fonte:
+- sqlserver: a view gerada (`sql.py`), por dois parâmetros da fonte
+  (<fonte>_Servidor e <fonte>_Banco), trocados em "Editar parâmetros";
+- powerbi / powerquery: a PRÓPRIA consulta Power Query que o usuário já usa
+  (Excel, SharePoint, API...), vinda do catálogo; o Deidara só acrescenta a
+  seleção e o nome das colunas, os tipos e as chaves compostas. Parâmetros e
+  consultas auxiliares que ela usa vêm junto (expressions.tmdl).
 """
 
 import os
 
 from .sql import nome_view  # noqa: F401  (documenta a ligação tabela -> view)
-from .util import FORMATOS, gravar_json, gravar_texto, guid, m_texto, tmdl_nome
+from .util import FORMATOS, M_POR_FAMILIA, gravar_json, gravar_texto, guid, ident, m_texto, tmdl_nome
 
 COMPATIBILIDADE = 1567
 
@@ -28,12 +34,54 @@ def _expressao(texto, nivel):
     return '\n'.join(tab + linha for linha in texto.splitlines())
 
 
+def parametros(fonte):
+    p = ident(fonte['nome'], 'f')
+    return f'{p}_Servidor', f'{p}_Banco'
+
+
+def _m_campo(nome):
+    return '[#' + m_texto(nome) + ']'
+
+
+def _m_lista(itens):
+    return '{' + ', '.join(itens) + '}'
+
+
+def _m_sobre_consulta(t):
+    """A consulta do usuário + seleção, nomes, tipos e chaves compostas."""
+    origem = '\n'.join('        ' + l for l in t['expressao_m'].strip().splitlines())
+    passos, ant = [f'    Origem =\n{origem}'], 'Origem'
+    for c in [c for c in t['colunas'] if c.get('chave_campos')]:
+        partes = ', '.join(f'if {_m_campo(f)} = null then "∅" else Text.Trim(Text.From({_m_campo(f)}))'
+                           for f in c['chave_campos'])
+        nome = 'Chave' + str(len(passos))
+        passos.append(f'    {nome} = Table.AddColumn({ant}, {m_texto(c["nome"])}, each Text.Combine({{{partes}}}, "|"), '
+                      'type text)')
+        ant = nome
+    sel = [m_texto(c['nome'] if c.get('chave_campos') else c['origem']) for c in t['colunas']]
+    passos.append(f'    Colunas = Table.SelectColumns({ant}, {_m_lista(sel)})')
+    ren = [_m_lista([m_texto(c['origem']), m_texto(c['nome'])]) for c in t['colunas']
+           if not c.get('chave_campos') and c['origem'] != c['nome']]
+    ant = 'Colunas'
+    if ren:
+        passos.append(f'    Nomes = Table.RenameColumns(Colunas, {_m_lista(ren)})')
+        ant = 'Nomes'
+    tipos = [_m_lista([m_texto(c['nome']), M_POR_FAMILIA.get(c['familia'], 'type text')]) for c in t['colunas']]
+    passos.append(f'    Tipos = Table.TransformColumnTypes({ant}, {_m_lista(tipos)})')
+    return 'let\n' + ',\n'.join(passos) + '\nin\n    Tipos'
+
+
 def _particao(m, t):
     if t.get('calendario'):
         return _particao_calendario(m, t)
-    m_expr = (f'let\n    Fonte = Sql.Database(Servidor, Banco),\n'
-              f'    Dados = Fonte{{[Schema={m_texto(m["fonte"]["esquema_views"])}, Item={m_texto("vw_" + t["nome"])}]}}[Data]\n'
-              f'in\n    Dados')
+    fonte = m['fontes'][t['fonte']]
+    if fonte['tipo'] == 'sqlserver':
+        serv, banco = parametros(fonte)
+        m_expr = (f'let\n    Fonte = Sql.Database({serv}, {banco}),\n'
+                  f'    Dados = Fonte{{[Schema={m_texto(fonte["esquema_views"])}, Item={m_texto("vw_" + t["nome"])}]}}[Data]\n'
+                  f'in\n    Dados')
+    else:
+        m_expr = _m_sobre_consulta(t)
     return (f'\tpartition {tmdl_nome(t["nome"])} = m\n\t\tmode: import\n\t\tsource =\n{_expressao(m_expr, 4)}\n')
 
 
@@ -119,14 +167,44 @@ def relacionamentos(m):
     return '\n'.join(out)
 
 
-def expressoes(m):
-    f = m['fonte']
-    return (f'expression Servidor = {m_texto(f["servidor"])} meta [IsParameterQuery=true, Type="Text", '
-            f'IsParameterQueryRequired=true]\n\tlineageTag: {guid("param", "Servidor")}\n\n'
-            f'\tannotation PBI_ResultType = Text\n\n'
-            f'expression Banco = {m_texto(f["banco"])} meta [IsParameterQuery=true, Type="Text", '
-            f'IsParameterQueryRequired=true]\n\tlineageTag: {guid("param", "Banco")}\n\n'
+def _parametro(nome, valor):
+    return (f'expression {tmdl_nome(nome)} = {m_texto(valor)} meta [IsParameterQuery=true, Type="Text", '
+            f'IsParameterQueryRequired=true]\n\tlineageTag: {guid("param", nome)}\n\n'
             f'\tannotation PBI_ResultType = Text\n')
+
+
+def expressoes_compartilhadas(m):
+    """{nome: expressão M} das consultas auxiliares e parâmetros das fontes Power Query."""
+    out = {}
+    for f in m['fontes'].values():
+        if f['tipo'] == 'sqlserver' or not any(t.get('fonte') == f['nome'] for t in m['tabelas']):
+            continue
+        out.update(f.get('expressoes') or {})
+    return out
+
+
+def expressoes(m):
+    blocos = []
+    for f in m['fontes'].values():
+        if f['tipo'] == 'sqlserver' and any(t.get('fonte') == f['nome'] for t in m['tabelas']):
+            serv, banco = parametros(f)
+            blocos += [_parametro(serv, f['servidor']), _parametro(banco, f['banco'])]
+    for nome, expr in sorted(expressoes_compartilhadas(m).items()):
+        expr = expr.strip()
+        if '\n' in expr:
+            corpo = f'expression {tmdl_nome(nome)} =\n{_expressao(expr, 2)}'
+        else:
+            corpo = f'expression {tmdl_nome(nome)} = {expr}'
+        blocos.append(f'{corpo}\n\tlineageTag: {guid("expr", nome)}\n')
+    return '\n'.join(blocos)
+
+
+def _ordem(m):
+    nomes = []
+    for f in m['fontes'].values():
+        if f['tipo'] == 'sqlserver' and any(t.get('fonte') == f['nome'] for t in m['tabelas']):
+            nomes += list(parametros(f))
+    return nomes + sorted(expressoes_compartilhadas(m)) + [t['nome'] for t in m['tabelas']]
 
 
 def modelo(m):
@@ -134,7 +212,7 @@ def modelo(m):
     return (f'model Model\n\tculture: pt-BR\n\tdefaultPowerBIDataSourceVersion: powerBI_V3\n'
             f'\tdiscourageImplicitMeasures\n'
             f'\tsourceQueryCulture: pt-BR\n\tdataAccessOptions\n\t\tlegacyRedirects\n\t\treturnErrorValuesAsNull\n\n'
-            f'annotation PBI_QueryOrder = ["Servidor","Banco",{",".join(chr(34) + t["nome"] + chr(34) for t in m["tabelas"])}]\n\n'
+            f'annotation PBI_QueryOrder = [{",".join(chr(34) + n + chr(34) for n in _ordem(m))}]\n\n'
             f'annotation __PBI_TimeIntelligenceEnabled = 0\n\n{refs}\n')
 
 
@@ -147,7 +225,9 @@ def gravar(m, pasta_projeto, nome):
         'version': '4.0', 'settings': {}})
     gravar_texto(os.path.join(defi, 'database.tmdl'), f'database\n\tcompatibilityLevel: {COMPATIBILIDADE}\n')
     gravar_texto(os.path.join(defi, 'model.tmdl'), modelo(m))
-    gravar_texto(os.path.join(defi, 'expressions.tmdl'), expressoes(m))
+    exprs = expressoes(m)
+    if exprs:
+        gravar_texto(os.path.join(defi, 'expressions.tmdl'), exprs)
     if m['relacionamentos']:
         gravar_texto(os.path.join(defi, 'relationships.tmdl'), relacionamentos(m))
     for t in m['tabelas']:

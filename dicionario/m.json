@@ -1,0 +1,4099 @@
+{
+ "formato": "deidara-dicionario/1",
+ "linguagem": "m",
+ "origem": "Nomes, categorias, assinaturas e links levantados da referência oficial da Microsoft (Microsoft Learn) em 27/10/2026; descrições e usos em pt-BR escritos para o Deidara. A documentação completa é a da Microsoft, no link de cada função. Para o dicionário exato da sua versão do Power BI, use a receita de funções (deidara.py receita funcoes-dax | funcoes-m) e o catalogar --funcoes.",
+ "funcoes": {
+  "#binary (literal form)": {
+   "categorias": [
+    "Binary functions"
+   ],
+   "url": "https://learn.microsoft.com/pt-br/powerquery-m/sharpbinary"
+  },
+  "#date (literal form)": {
+   "categorias": [
+    "Date functions"
+   ],
+   "url": "https://learn.microsoft.com/pt-br/powerquery-m/sharpdate"
+  },
+  "#datetime (literal form)": {
+   "categorias": [
+    "DateTime functions"
+   ],
+   "url": "https://learn.microsoft.com/pt-br/powerquery-m/sharpdatetime"
+  },
+  "#datetimezone (literal form)": {
+   "categorias": [
+    "DateTimeZone functions"
+   ],
+   "url": "https://learn.microsoft.com/pt-br/powerquery-m/sharpdatetimezone"
+  },
+  "#duration (literal form)": {
+   "categorias": [
+    "Duration functions"
+   ],
+   "url": "https://learn.microsoft.com/pt-br/powerquery-m/sharpduration"
+  },
+  "#table (literal form)": {
+   "categorias": [
+    "Table functions"
+   ],
+   "url": "https://learn.microsoft.com/pt-br/powerquery-m/sharptable"
+  },
+  "#time (literal form)": {
+   "categorias": [
+    "Time functions"
+   ],
+   "url": "https://learn.microsoft.com/pt-br/powerquery-m/sharptime"
+  },
+  "Access.Database": {
+   "categorias": [
+    "Accessing data functions"
+   ],
+   "url": "https://learn.microsoft.com/pt-br/powerquery-m/access-database"
+  },
+  "AccessControlEntry.ConditionToIdentities": {
+   "categorias": [
+    "Accessing data functions"
+   ],
+   "url": "https://learn.microsoft.com/pt-br/powerquery-m/accesscontrolentry-conditiontoidentities"
+  },
+  "Action.WithErrorContext [internal]": {
+   "categorias": [
+    "Value functions"
+   ],
+   "url": "https://learn.microsoft.com/pt-br/powerquery-m/action-witherrorcontext"
+  },
+  "ActiveDirectory.Domains": {
+   "categorias": [
+    "Accessing data functions"
+   ],
+   "url": "https://learn.microsoft.com/pt-br/powerquery-m/activedirectory-domains"
+  },
+  "AdoDotNet.DataSource": {
+   "categorias": [
+    "Accessing data functions"
+   ],
+   "url": "https://learn.microsoft.com/pt-br/powerquery-m/adodotnet-datasource"
+  },
+  "AdoDotNet.Query": {
+   "categorias": [
+    "Accessing data functions"
+   ],
+   "url": "https://learn.microsoft.com/pt-br/powerquery-m/adodotnet-query"
+  },
+  "AdobeAnalytics.Cubes": {
+   "categorias": [
+    "Accessing data functions"
+   ],
+   "url": "https://learn.microsoft.com/pt-br/powerquery-m/adobeanalytics-cubes"
+  },
+  "AnalysisServices.Database": {
+   "categorias": [
+    "Accessing data functions"
+   ],
+   "url": "https://learn.microsoft.com/pt-br/powerquery-m/analysisservices-database"
+  },
+  "AnalysisServices.Databases": {
+   "categorias": [
+    "Accessing data functions"
+   ],
+   "url": "https://learn.microsoft.com/pt-br/powerquery-m/analysisservices-databases"
+  },
+  "AzureStorage.BlobContents": {
+   "categorias": [
+    "Accessing data functions"
+   ],
+   "url": "https://learn.microsoft.com/pt-br/powerquery-m/azurestorage-blobcontents"
+  },
+  "AzureStorage.Blobs": {
+   "categorias": [
+    "Accessing data functions"
+   ],
+   "url": "https://learn.microsoft.com/pt-br/powerquery-m/azurestorage-blobs"
+  },
+  "AzureStorage.DataLake": {
+   "categorias": [
+    "Accessing data functions"
+   ],
+   "url": "https://learn.microsoft.com/pt-br/powerquery-m/azurestorage-datalake"
+  },
+  "AzureStorage.DataLakeContents": {
+   "categorias": [
+    "Accessing data functions"
+   ],
+   "url": "https://learn.microsoft.com/pt-br/powerquery-m/azurestorage-datalakecontents"
+  },
+  "AzureStorage.Tables": {
+   "categorias": [
+    "Accessing data functions"
+   ],
+   "url": "https://learn.microsoft.com/pt-br/powerquery-m/azurestorage-tables"
+  },
+  "Binary.ApproximateLength": {
+   "categorias": [
+    "Binary functions"
+   ],
+   "url": "https://learn.microsoft.com/pt-br/powerquery-m/binary-approximatelength"
+  },
+  "Binary.Buffer": {
+   "categorias": [
+    "Binary functions"
+   ],
+   "url": "https://learn.microsoft.com/pt-br/powerquery-m/binary-buffer"
+  },
+  "Binary.Combine": {
+   "categorias": [
+    "Binary functions"
+   ],
+   "url": "https://learn.microsoft.com/pt-br/powerquery-m/binary-combine"
+  },
+  "Binary.Compress": {
+   "categorias": [
+    "Binary functions"
+   ],
+   "url": "https://learn.microsoft.com/pt-br/powerquery-m/binary-compress"
+  },
+  "Binary.Decompress": {
+   "categorias": [
+    "Binary functions"
+   ],
+   "url": "https://learn.microsoft.com/pt-br/powerquery-m/binary-decompress"
+  },
+  "Binary.From": {
+   "categorias": [
+    "Binary functions"
+   ],
+   "url": "https://learn.microsoft.com/pt-br/powerquery-m/binary-from"
+  },
+  "Binary.FromList": {
+   "categorias": [
+    "Binary functions"
+   ],
+   "url": "https://learn.microsoft.com/pt-br/powerquery-m/binary-fromlist"
+  },
+  "Binary.FromText": {
+   "categorias": [
+    "Binary functions"
+   ],
+   "url": "https://learn.microsoft.com/pt-br/powerquery-m/binary-fromtext"
+  },
+  "Binary.InferContentType": {
+   "categorias": [
+    "Binary functions"
+   ],
+   "url": "https://learn.microsoft.com/pt-br/powerquery-m/binary-infercontenttype"
+  },
+  "Binary.Length": {
+   "categorias": [
+    "Binary functions"
+   ],
+   "url": "https://learn.microsoft.com/pt-br/powerquery-m/binary-length"
+  },
+  "Binary.Range": {
+   "categorias": [
+    "Binary functions"
+   ],
+   "url": "https://learn.microsoft.com/pt-br/powerquery-m/binary-range"
+  },
+  "Binary.Split": {
+   "categorias": [
+    "Binary functions"
+   ],
+   "url": "https://learn.microsoft.com/pt-br/powerquery-m/binary-split"
+  },
+  "Binary.ToList": {
+   "categorias": [
+    "Binary functions"
+   ],
+   "url": "https://learn.microsoft.com/pt-br/powerquery-m/binary-tolist"
+  },
+  "Binary.ToText": {
+   "categorias": [
+    "Binary functions"
+   ],
+   "url": "https://learn.microsoft.com/pt-br/powerquery-m/binary-totext"
+  },
+  "Binary.View": {
+   "categorias": [
+    "Binary functions"
+   ],
+   "url": "https://learn.microsoft.com/pt-br/powerquery-m/binary-view"
+  },
+  "Binary.ViewError": {
+   "categorias": [
+    "Binary functions"
+   ],
+   "url": "https://learn.microsoft.com/pt-br/powerquery-m/binary-viewerror"
+  },
+  "Binary.ViewFunction": {
+   "categorias": [
+    "Binary functions"
+   ],
+   "url": "https://learn.microsoft.com/pt-br/powerquery-m/binary-viewfunction"
+  },
+  "BinaryFormat.7BitEncodedSignedInteger": {
+   "categorias": [
+    "Binary functions"
+   ],
+   "url": "https://learn.microsoft.com/pt-br/powerquery-m/binaryformat-7bitencodedsignedinteger"
+  },
+  "BinaryFormat.7BitEncodedUnsignedInteger": {
+   "categorias": [
+    "Binary functions"
+   ],
+   "url": "https://learn.microsoft.com/pt-br/powerquery-m/binaryformat-7bitencodedunsignedinteger"
+  },
+  "BinaryFormat.Binary": {
+   "categorias": [
+    "Binary functions"
+   ],
+   "url": "https://learn.microsoft.com/pt-br/powerquery-m/binaryformat-binary"
+  },
+  "BinaryFormat.Byte": {
+   "categorias": [
+    "Binary functions"
+   ],
+   "url": "https://learn.microsoft.com/pt-br/powerquery-m/binaryformat-byte"
+  },
+  "BinaryFormat.ByteOrder": {
+   "categorias": [
+    "Binary functions"
+   ],
+   "url": "https://learn.microsoft.com/pt-br/powerquery-m/binaryformat-byteorder"
+  },
+  "BinaryFormat.Choice": {
+   "categorias": [
+    "Binary functions"
+   ],
+   "url": "https://learn.microsoft.com/pt-br/powerquery-m/binaryformat-choice"
+  },
+  "BinaryFormat.Decimal": {
+   "categorias": [
+    "Binary functions"
+   ],
+   "url": "https://learn.microsoft.com/pt-br/powerquery-m/binaryformat-decimal"
+  },
+  "BinaryFormat.Double": {
+   "categorias": [
+    "Binary functions"
+   ],
+   "url": "https://learn.microsoft.com/pt-br/powerquery-m/binaryformat-double"
+  },
+  "BinaryFormat.Group": {
+   "categorias": [
+    "Binary functions"
+   ],
+   "url": "https://learn.microsoft.com/pt-br/powerquery-m/binaryformat-group"
+  },
+  "BinaryFormat.Length": {
+   "categorias": [
+    "Binary functions"
+   ],
+   "url": "https://learn.microsoft.com/pt-br/powerquery-m/binaryformat-length"
+  },
+  "BinaryFormat.List": {
+   "categorias": [
+    "Binary functions"
+   ],
+   "url": "https://learn.microsoft.com/pt-br/powerquery-m/binaryformat-list"
+  },
+  "BinaryFormat.Null": {
+   "categorias": [
+    "Binary functions"
+   ],
+   "url": "https://learn.microsoft.com/pt-br/powerquery-m/binaryformat-null"
+  },
+  "BinaryFormat.Record": {
+   "categorias": [
+    "Binary functions"
+   ],
+   "url": "https://learn.microsoft.com/pt-br/powerquery-m/binaryformat-record"
+  },
+  "BinaryFormat.SignedInteger16": {
+   "categorias": [
+    "Binary functions"
+   ],
+   "url": "https://learn.microsoft.com/pt-br/powerquery-m/binaryformat-signedinteger16"
+  },
+  "BinaryFormat.SignedInteger32": {
+   "categorias": [
+    "Binary functions"
+   ],
+   "url": "https://learn.microsoft.com/pt-br/powerquery-m/binaryformat-signedinteger32"
+  },
+  "BinaryFormat.SignedInteger64": {
+   "categorias": [
+    "Binary functions"
+   ],
+   "url": "https://learn.microsoft.com/pt-br/powerquery-m/binaryformat-signedinteger64"
+  },
+  "BinaryFormat.Single": {
+   "categorias": [
+    "Binary functions"
+   ],
+   "url": "https://learn.microsoft.com/pt-br/powerquery-m/binaryformat-single"
+  },
+  "BinaryFormat.Text": {
+   "categorias": [
+    "Binary functions"
+   ],
+   "url": "https://learn.microsoft.com/pt-br/powerquery-m/binaryformat-text"
+  },
+  "BinaryFormat.Transform": {
+   "categorias": [
+    "Binary functions"
+   ],
+   "url": "https://learn.microsoft.com/pt-br/powerquery-m/binaryformat-transform"
+  },
+  "BinaryFormat.UnsignedInteger16": {
+   "categorias": [
+    "Binary functions"
+   ],
+   "url": "https://learn.microsoft.com/pt-br/powerquery-m/binaryformat-unsignedinteger16"
+  },
+  "BinaryFormat.UnsignedInteger32": {
+   "categorias": [
+    "Binary functions"
+   ],
+   "url": "https://learn.microsoft.com/pt-br/powerquery-m/binaryformat-unsignedinteger32"
+  },
+  "BinaryFormat.UnsignedInteger64": {
+   "categorias": [
+    "Binary functions"
+   ],
+   "url": "https://learn.microsoft.com/pt-br/powerquery-m/binaryformat-unsignedinteger64"
+  },
+  "Byte.From": {
+   "categorias": [
+    "Number functions"
+   ],
+   "url": "https://learn.microsoft.com/pt-br/powerquery-m/byte-from"
+  },
+  "Cdm.Contents": {
+   "categorias": [
+    "Accessing data functions"
+   ],
+   "url": "https://learn.microsoft.com/pt-br/powerquery-m/cdm-contents"
+  },
+  "Character.FromNumber": {
+   "categorias": [
+    "Text functions"
+   ],
+   "url": "https://learn.microsoft.com/pt-br/powerquery-m/character-fromnumber"
+  },
+  "Character.ToNumber": {
+   "categorias": [
+    "Text functions"
+   ],
+   "url": "https://learn.microsoft.com/pt-br/powerquery-m/character-tonumber"
+  },
+  "Combiner.CombineTextByDelimiter": {
+   "categorias": [
+    "Combiner functions"
+   ],
+   "url": "https://learn.microsoft.com/pt-br/powerquery-m/combiner-combinetextbydelimiter"
+  },
+  "Combiner.CombineTextByEachDelimiter": {
+   "categorias": [
+    "Combiner functions"
+   ],
+   "url": "https://learn.microsoft.com/pt-br/powerquery-m/combiner-combinetextbyeachdelimiter"
+  },
+  "Combiner.CombineTextByLengths": {
+   "categorias": [
+    "Combiner functions"
+   ],
+   "url": "https://learn.microsoft.com/pt-br/powerquery-m/combiner-combinetextbylengths"
+  },
+  "Combiner.CombineTextByPositions": {
+   "categorias": [
+    "Combiner functions"
+   ],
+   "url": "https://learn.microsoft.com/pt-br/powerquery-m/combiner-combinetextbypositions"
+  },
+  "Combiner.CombineTextByRanges": {
+   "categorias": [
+    "Combiner functions"
+   ],
+   "url": "https://learn.microsoft.com/pt-br/powerquery-m/combiner-combinetextbyranges"
+  },
+  "Comparer.Equals": {
+   "categorias": [
+    "Comparer functions"
+   ],
+   "url": "https://learn.microsoft.com/pt-br/powerquery-m/comparer-equals"
+  },
+  "Comparer.FromCulture": {
+   "categorias": [
+    "Comparer functions"
+   ],
+   "url": "https://learn.microsoft.com/pt-br/powerquery-m/comparer-fromculture"
+  },
+  "Comparer.Ordinal": {
+   "categorias": [
+    "Comparer functions"
+   ],
+   "url": "https://learn.microsoft.com/pt-br/powerquery-m/comparer-ordinal"
+  },
+  "Comparer.OrdinalIgnoreCase": {
+   "categorias": [
+    "Comparer functions"
+   ],
+   "url": "https://learn.microsoft.com/pt-br/powerquery-m/comparer-ordinalignorecase"
+  },
+  "Csv.Document": {
+   "categorias": [
+    "Accessing data functions"
+   ],
+   "url": "https://learn.microsoft.com/pt-br/powerquery-m/csv-document",
+   "descricao": "Lê um arquivo CSV.",
+   "uso": ""
+  },
+  "Cube.AddAndExpandDimensionColumn": {
+   "categorias": [
+    "Accessing data functions"
+   ],
+   "url": "https://learn.microsoft.com/pt-br/powerquery-m/cube-addandexpanddimensioncolumn"
+  },
+  "Cube.AddMeasureColumn": {
+   "categorias": [
+    "Accessing data functions"
+   ],
+   "url": "https://learn.microsoft.com/pt-br/powerquery-m/cube-addmeasurecolumn"
+  },
+  "Cube.ApplyParameter": {
+   "categorias": [
+    "Accessing data functions"
+   ],
+   "url": "https://learn.microsoft.com/pt-br/powerquery-m/cube-applyparameter"
+  },
+  "Cube.AttributeMemberId": {
+   "categorias": [
+    "Accessing data functions"
+   ],
+   "url": "https://learn.microsoft.com/pt-br/powerquery-m/cube-attributememberid"
+  },
+  "Cube.AttributeMemberProperty": {
+   "categorias": [
+    "Accessing data functions"
+   ],
+   "url": "https://learn.microsoft.com/pt-br/powerquery-m/cube-attributememberproperty"
+  },
+  "Cube.CollapseAndRemoveColumns": {
+   "categorias": [
+    "Accessing data functions"
+   ],
+   "url": "https://learn.microsoft.com/pt-br/powerquery-m/cube-collapseandremovecolumns"
+  },
+  "Cube.Dimensions": {
+   "categorias": [
+    "Accessing data functions"
+   ],
+   "url": "https://learn.microsoft.com/pt-br/powerquery-m/cube-dimensions"
+  },
+  "Cube.DisplayFolders": {
+   "categorias": [
+    "Accessing data functions"
+   ],
+   "url": "https://learn.microsoft.com/pt-br/powerquery-m/cube-displayfolders"
+  },
+  "Cube.MeasureProperties": {
+   "categorias": [
+    "Accessing data functions"
+   ],
+   "url": "https://learn.microsoft.com/pt-br/powerquery-m/cube-measureproperties"
+  },
+  "Cube.MeasureProperty": {
+   "categorias": [
+    "Accessing data functions"
+   ],
+   "url": "https://learn.microsoft.com/pt-br/powerquery-m/cube-measureproperty"
+  },
+  "Cube.Measures": {
+   "categorias": [
+    "Accessing data functions"
+   ],
+   "url": "https://learn.microsoft.com/pt-br/powerquery-m/cube-measures"
+  },
+  "Cube.Parameters": {
+   "categorias": [
+    "Accessing data functions"
+   ],
+   "url": "https://learn.microsoft.com/pt-br/powerquery-m/cube-parameters"
+  },
+  "Cube.Properties": {
+   "categorias": [
+    "Accessing data functions"
+   ],
+   "url": "https://learn.microsoft.com/pt-br/powerquery-m/cube-properties"
+  },
+  "Cube.PropertyKey": {
+   "categorias": [
+    "Accessing data functions"
+   ],
+   "url": "https://learn.microsoft.com/pt-br/powerquery-m/cube-propertykey"
+  },
+  "Cube.ReplaceDimensions": {
+   "categorias": [
+    "Accessing data functions"
+   ],
+   "url": "https://learn.microsoft.com/pt-br/powerquery-m/cube-replacedimensions"
+  },
+  "Cube.Transform": {
+   "categorias": [
+    "Accessing data functions"
+   ],
+   "url": "https://learn.microsoft.com/pt-br/powerquery-m/cube-transform"
+  },
+  "Currency.From": {
+   "categorias": [
+    "Number functions"
+   ],
+   "url": "https://learn.microsoft.com/pt-br/powerquery-m/currency-from"
+  },
+  "DB2.Database": {
+   "categorias": [
+    "Accessing data functions"
+   ],
+   "url": "https://learn.microsoft.com/pt-br/powerquery-m/db2-database"
+  },
+  "Date.AddDays": {
+   "categorias": [
+    "Date functions"
+   ],
+   "url": "https://learn.microsoft.com/pt-br/powerquery-m/date-adddays"
+  },
+  "Date.AddMonths": {
+   "categorias": [
+    "Date functions"
+   ],
+   "url": "https://learn.microsoft.com/pt-br/powerquery-m/date-addmonths"
+  },
+  "Date.AddQuarters": {
+   "categorias": [
+    "Date functions"
+   ],
+   "url": "https://learn.microsoft.com/pt-br/powerquery-m/date-addquarters"
+  },
+  "Date.AddWeeks": {
+   "categorias": [
+    "Date functions"
+   ],
+   "url": "https://learn.microsoft.com/pt-br/powerquery-m/date-addweeks"
+  },
+  "Date.AddYears": {
+   "categorias": [
+    "Date functions"
+   ],
+   "url": "https://learn.microsoft.com/pt-br/powerquery-m/date-addyears"
+  },
+  "Date.Day": {
+   "categorias": [
+    "Date functions"
+   ],
+   "url": "https://learn.microsoft.com/pt-br/powerquery-m/date-day"
+  },
+  "Date.DayOfWeek": {
+   "categorias": [
+    "Date functions"
+   ],
+   "url": "https://learn.microsoft.com/pt-br/powerquery-m/date-dayofweek"
+  },
+  "Date.DayOfWeekName": {
+   "categorias": [
+    "Date functions"
+   ],
+   "url": "https://learn.microsoft.com/pt-br/powerquery-m/date-dayofweekname"
+  },
+  "Date.DayOfYear": {
+   "categorias": [
+    "Date functions"
+   ],
+   "url": "https://learn.microsoft.com/pt-br/powerquery-m/date-dayofyear"
+  },
+  "Date.DaysInMonth": {
+   "categorias": [
+    "Date functions"
+   ],
+   "url": "https://learn.microsoft.com/pt-br/powerquery-m/date-daysinmonth"
+  },
+  "Date.EndOfDay": {
+   "categorias": [
+    "Date functions"
+   ],
+   "url": "https://learn.microsoft.com/pt-br/powerquery-m/date-endofday"
+  },
+  "Date.EndOfMonth": {
+   "categorias": [
+    "Date functions"
+   ],
+   "url": "https://learn.microsoft.com/pt-br/powerquery-m/date-endofmonth",
+   "descricao": "Último dia do mês.",
+   "uso": ""
+  },
+  "Date.EndOfQuarter": {
+   "categorias": [
+    "Date functions"
+   ],
+   "url": "https://learn.microsoft.com/pt-br/powerquery-m/date-endofquarter"
+  },
+  "Date.EndOfWeek": {
+   "categorias": [
+    "Date functions"
+   ],
+   "url": "https://learn.microsoft.com/pt-br/powerquery-m/date-endofweek"
+  },
+  "Date.EndOfYear": {
+   "categorias": [
+    "Date functions"
+   ],
+   "url": "https://learn.microsoft.com/pt-br/powerquery-m/date-endofyear"
+  },
+  "Date.From": {
+   "categorias": [
+    "Date functions"
+   ],
+   "url": "https://learn.microsoft.com/pt-br/powerquery-m/date-from",
+   "descricao": "Converte um valor em data.",
+   "uso": ""
+  },
+  "Date.FromText": {
+   "categorias": [
+    "Date functions"
+   ],
+   "url": "https://learn.microsoft.com/pt-br/powerquery-m/date-fromtext"
+  },
+  "Date.IsInCurrentDay": {
+   "categorias": [
+    "Date functions"
+   ],
+   "url": "https://learn.microsoft.com/pt-br/powerquery-m/date-isincurrentday"
+  },
+  "Date.IsInCurrentMonth": {
+   "categorias": [
+    "Date functions"
+   ],
+   "url": "https://learn.microsoft.com/pt-br/powerquery-m/date-isincurrentmonth"
+  },
+  "Date.IsInCurrentQuarter": {
+   "categorias": [
+    "Date functions"
+   ],
+   "url": "https://learn.microsoft.com/pt-br/powerquery-m/date-isincurrentquarter"
+  },
+  "Date.IsInCurrentWeek": {
+   "categorias": [
+    "Date functions"
+   ],
+   "url": "https://learn.microsoft.com/pt-br/powerquery-m/date-isincurrentweek"
+  },
+  "Date.IsInCurrentYear": {
+   "categorias": [
+    "Date functions"
+   ],
+   "url": "https://learn.microsoft.com/pt-br/powerquery-m/date-isincurrentyear"
+  },
+  "Date.IsInNextDay": {
+   "categorias": [
+    "Date functions"
+   ],
+   "url": "https://learn.microsoft.com/pt-br/powerquery-m/date-isinnextday"
+  },
+  "Date.IsInNextMonth": {
+   "categorias": [
+    "Date functions"
+   ],
+   "url": "https://learn.microsoft.com/pt-br/powerquery-m/date-isinnextmonth"
+  },
+  "Date.IsInNextNDays": {
+   "categorias": [
+    "Date functions"
+   ],
+   "url": "https://learn.microsoft.com/pt-br/powerquery-m/date-isinnextndays"
+  },
+  "Date.IsInNextNMonths": {
+   "categorias": [
+    "Date functions"
+   ],
+   "url": "https://learn.microsoft.com/pt-br/powerquery-m/date-isinnextnmonths"
+  },
+  "Date.IsInNextNQuarters": {
+   "categorias": [
+    "Date functions"
+   ],
+   "url": "https://learn.microsoft.com/pt-br/powerquery-m/date-isinnextnquarters"
+  },
+  "Date.IsInNextNWeeks": {
+   "categorias": [
+    "Date functions"
+   ],
+   "url": "https://learn.microsoft.com/pt-br/powerquery-m/date-isinnextnweeks"
+  },
+  "Date.IsInNextNYears": {
+   "categorias": [
+    "Date functions"
+   ],
+   "url": "https://learn.microsoft.com/pt-br/powerquery-m/date-isinnextnyears"
+  },
+  "Date.IsInNextQuarter": {
+   "categorias": [
+    "Date functions"
+   ],
+   "url": "https://learn.microsoft.com/pt-br/powerquery-m/date-isinnextquarter"
+  },
+  "Date.IsInNextWeek": {
+   "categorias": [
+    "Date functions"
+   ],
+   "url": "https://learn.microsoft.com/pt-br/powerquery-m/date-isinnextweek"
+  },
+  "Date.IsInNextYear": {
+   "categorias": [
+    "Date functions"
+   ],
+   "url": "https://learn.microsoft.com/pt-br/powerquery-m/date-isinnextyear"
+  },
+  "Date.IsInPreviousDay": {
+   "categorias": [
+    "Date functions"
+   ],
+   "url": "https://learn.microsoft.com/pt-br/powerquery-m/date-isinpreviousday"
+  },
+  "Date.IsInPreviousMonth": {
+   "categorias": [
+    "Date functions"
+   ],
+   "url": "https://learn.microsoft.com/pt-br/powerquery-m/date-isinpreviousmonth"
+  },
+  "Date.IsInPreviousNDays": {
+   "categorias": [
+    "Date functions"
+   ],
+   "url": "https://learn.microsoft.com/pt-br/powerquery-m/date-isinpreviousndays"
+  },
+  "Date.IsInPreviousNMonths": {
+   "categorias": [
+    "Date functions"
+   ],
+   "url": "https://learn.microsoft.com/pt-br/powerquery-m/date-isinpreviousnmonths"
+  },
+  "Date.IsInPreviousNQuarters": {
+   "categorias": [
+    "Date functions"
+   ],
+   "url": "https://learn.microsoft.com/pt-br/powerquery-m/date-isinpreviousnquarters"
+  },
+  "Date.IsInPreviousNWeeks": {
+   "categorias": [
+    "Date functions"
+   ],
+   "url": "https://learn.microsoft.com/pt-br/powerquery-m/date-isinpreviousnweeks"
+  },
+  "Date.IsInPreviousNYears": {
+   "categorias": [
+    "Date functions"
+   ],
+   "url": "https://learn.microsoft.com/pt-br/powerquery-m/date-isinpreviousnyears"
+  },
+  "Date.IsInPreviousQuarter": {
+   "categorias": [
+    "Date functions"
+   ],
+   "url": "https://learn.microsoft.com/pt-br/powerquery-m/date-isinpreviousquarter"
+  },
+  "Date.IsInPreviousWeek": {
+   "categorias": [
+    "Date functions"
+   ],
+   "url": "https://learn.microsoft.com/pt-br/powerquery-m/date-isinpreviousweek"
+  },
+  "Date.IsInPreviousYear": {
+   "categorias": [
+    "Date functions"
+   ],
+   "url": "https://learn.microsoft.com/pt-br/powerquery-m/date-isinpreviousyear"
+  },
+  "Date.IsInYearToDate": {
+   "categorias": [
+    "Date functions"
+   ],
+   "url": "https://learn.microsoft.com/pt-br/powerquery-m/date-isinyeartodate"
+  },
+  "Date.IsLeapYear": {
+   "categorias": [
+    "Date functions"
+   ],
+   "url": "https://learn.microsoft.com/pt-br/powerquery-m/date-isleapyear"
+  },
+  "Date.Month": {
+   "categorias": [
+    "Date functions"
+   ],
+   "url": "https://learn.microsoft.com/pt-br/powerquery-m/date-month",
+   "descricao": "Mês de uma data.",
+   "uso": ""
+  },
+  "Date.MonthName": {
+   "categorias": [
+    "Date functions"
+   ],
+   "url": "https://learn.microsoft.com/pt-br/powerquery-m/date-monthname"
+  },
+  "Date.QuarterOfYear": {
+   "categorias": [
+    "Date functions"
+   ],
+   "url": "https://learn.microsoft.com/pt-br/powerquery-m/date-quarterofyear",
+   "descricao": "Trimestre de uma data.",
+   "uso": ""
+  },
+  "Date.StartOfDay": {
+   "categorias": [
+    "Date functions"
+   ],
+   "url": "https://learn.microsoft.com/pt-br/powerquery-m/date-startofday"
+  },
+  "Date.StartOfMonth": {
+   "categorias": [
+    "Date functions"
+   ],
+   "url": "https://learn.microsoft.com/pt-br/powerquery-m/date-startofmonth"
+  },
+  "Date.StartOfQuarter": {
+   "categorias": [
+    "Date functions"
+   ],
+   "url": "https://learn.microsoft.com/pt-br/powerquery-m/date-startofquarter"
+  },
+  "Date.StartOfWeek": {
+   "categorias": [
+    "Date functions"
+   ],
+   "url": "https://learn.microsoft.com/pt-br/powerquery-m/date-startofweek"
+  },
+  "Date.StartOfYear": {
+   "categorias": [
+    "Date functions"
+   ],
+   "url": "https://learn.microsoft.com/pt-br/powerquery-m/date-startofyear"
+  },
+  "Date.ToRecord": {
+   "categorias": [
+    "Date functions"
+   ],
+   "url": "https://learn.microsoft.com/pt-br/powerquery-m/date-torecord"
+  },
+  "Date.ToText": {
+   "categorias": [
+    "Date functions"
+   ],
+   "url": "https://learn.microsoft.com/pt-br/powerquery-m/date-totext"
+  },
+  "Date.WeekOfMonth": {
+   "categorias": [
+    "Date functions"
+   ],
+   "url": "https://learn.microsoft.com/pt-br/powerquery-m/date-weekofmonth"
+  },
+  "Date.WeekOfYear": {
+   "categorias": [
+    "Date functions"
+   ],
+   "url": "https://learn.microsoft.com/pt-br/powerquery-m/date-weekofyear"
+  },
+  "Date.Year": {
+   "categorias": [
+    "Date functions"
+   ],
+   "url": "https://learn.microsoft.com/pt-br/powerquery-m/date-year",
+   "descricao": "Ano de uma data.",
+   "uso": ""
+  },
+  "DateTime.AddZone": {
+   "categorias": [
+    "DateTime functions"
+   ],
+   "url": "https://learn.microsoft.com/pt-br/powerquery-m/datetime-addzone"
+  },
+  "DateTime.Date": {
+   "categorias": [
+    "DateTime functions"
+   ],
+   "url": "https://learn.microsoft.com/pt-br/powerquery-m/datetime-date"
+  },
+  "DateTime.FixedLocalNow": {
+   "categorias": [
+    "DateTime functions"
+   ],
+   "url": "https://learn.microsoft.com/pt-br/powerquery-m/datetime-fixedlocalnow"
+  },
+  "DateTime.From": {
+   "categorias": [
+    "DateTime functions"
+   ],
+   "url": "https://learn.microsoft.com/pt-br/powerquery-m/datetime-from"
+  },
+  "DateTime.FromFileTime": {
+   "categorias": [
+    "DateTime functions"
+   ],
+   "url": "https://learn.microsoft.com/pt-br/powerquery-m/datetime-fromfiletime"
+  },
+  "DateTime.FromText": {
+   "categorias": [
+    "DateTime functions"
+   ],
+   "url": "https://learn.microsoft.com/pt-br/powerquery-m/datetime-fromtext"
+  },
+  "DateTime.IsInCurrentHour": {
+   "categorias": [
+    "DateTime functions"
+   ],
+   "url": "https://learn.microsoft.com/pt-br/powerquery-m/datetime-isincurrenthour"
+  },
+  "DateTime.IsInCurrentMinute": {
+   "categorias": [
+    "DateTime functions"
+   ],
+   "url": "https://learn.microsoft.com/pt-br/powerquery-m/datetime-isincurrentminute"
+  },
+  "DateTime.IsInCurrentSecond": {
+   "categorias": [
+    "DateTime functions"
+   ],
+   "url": "https://learn.microsoft.com/pt-br/powerquery-m/datetime-isincurrentsecond"
+  },
+  "DateTime.IsInNextHour": {
+   "categorias": [
+    "DateTime functions"
+   ],
+   "url": "https://learn.microsoft.com/pt-br/powerquery-m/datetime-isinnexthour"
+  },
+  "DateTime.IsInNextMinute": {
+   "categorias": [
+    "DateTime functions"
+   ],
+   "url": "https://learn.microsoft.com/pt-br/powerquery-m/datetime-isinnextminute"
+  },
+  "DateTime.IsInNextNHours": {
+   "categorias": [
+    "DateTime functions"
+   ],
+   "url": "https://learn.microsoft.com/pt-br/powerquery-m/datetime-isinnextnhours"
+  },
+  "DateTime.IsInNextNMinutes": {
+   "categorias": [
+    "DateTime functions"
+   ],
+   "url": "https://learn.microsoft.com/pt-br/powerquery-m/datetime-isinnextnminutes"
+  },
+  "DateTime.IsInNextNSeconds": {
+   "categorias": [
+    "DateTime functions"
+   ],
+   "url": "https://learn.microsoft.com/pt-br/powerquery-m/datetime-isinnextnseconds"
+  },
+  "DateTime.IsInNextSecond": {
+   "categorias": [
+    "DateTime functions"
+   ],
+   "url": "https://learn.microsoft.com/pt-br/powerquery-m/datetime-isinnextsecond"
+  },
+  "DateTime.IsInPreviousHour": {
+   "categorias": [
+    "DateTime functions"
+   ],
+   "url": "https://learn.microsoft.com/pt-br/powerquery-m/datetime-isinprevioushour"
+  },
+  "DateTime.IsInPreviousMinute": {
+   "categorias": [
+    "DateTime functions"
+   ],
+   "url": "https://learn.microsoft.com/pt-br/powerquery-m/datetime-isinpreviousminute"
+  },
+  "DateTime.IsInPreviousNHours": {
+   "categorias": [
+    "DateTime functions"
+   ],
+   "url": "https://learn.microsoft.com/pt-br/powerquery-m/datetime-isinpreviousnhours"
+  },
+  "DateTime.IsInPreviousNMinutes": {
+   "categorias": [
+    "DateTime functions"
+   ],
+   "url": "https://learn.microsoft.com/pt-br/powerquery-m/datetime-isinpreviousnminutes"
+  },
+  "DateTime.IsInPreviousNSeconds": {
+   "categorias": [
+    "DateTime functions"
+   ],
+   "url": "https://learn.microsoft.com/pt-br/powerquery-m/datetime-isinpreviousnseconds"
+  },
+  "DateTime.IsInPreviousSecond": {
+   "categorias": [
+    "DateTime functions"
+   ],
+   "url": "https://learn.microsoft.com/pt-br/powerquery-m/datetime-isinprevioussecond"
+  },
+  "DateTime.LocalNow": {
+   "categorias": [
+    "DateTime functions"
+   ],
+   "url": "https://learn.microsoft.com/pt-br/powerquery-m/datetime-localnow",
+   "descricao": "Data e hora locais de agora.",
+   "uso": ""
+  },
+  "DateTime.Time": {
+   "categorias": [
+    "DateTime functions"
+   ],
+   "url": "https://learn.microsoft.com/pt-br/powerquery-m/datetime-time"
+  },
+  "DateTime.ToRecord": {
+   "categorias": [
+    "DateTime functions"
+   ],
+   "url": "https://learn.microsoft.com/pt-br/powerquery-m/datetime-torecord"
+  },
+  "DateTime.ToText": {
+   "categorias": [
+    "DateTime functions"
+   ],
+   "url": "https://learn.microsoft.com/pt-br/powerquery-m/datetime-totext"
+  },
+  "DateTimeZone.FixedLocalNow": {
+   "categorias": [
+    "DateTimeZone functions"
+   ],
+   "url": "https://learn.microsoft.com/pt-br/powerquery-m/datetimezone-fixedlocalnow"
+  },
+  "DateTimeZone.FixedUtcNow": {
+   "categorias": [
+    "DateTimeZone functions"
+   ],
+   "url": "https://learn.microsoft.com/pt-br/powerquery-m/datetimezone-fixedutcnow"
+  },
+  "DateTimeZone.From": {
+   "categorias": [
+    "DateTimeZone functions"
+   ],
+   "url": "https://learn.microsoft.com/pt-br/powerquery-m/datetimezone-from"
+  },
+  "DateTimeZone.FromFileTime": {
+   "categorias": [
+    "DateTimeZone functions"
+   ],
+   "url": "https://learn.microsoft.com/pt-br/powerquery-m/datetimezone-fromfiletime"
+  },
+  "DateTimeZone.FromText": {
+   "categorias": [
+    "DateTimeZone functions"
+   ],
+   "url": "https://learn.microsoft.com/pt-br/powerquery-m/datetimezone-fromtext"
+  },
+  "DateTimeZone.LocalNow": {
+   "categorias": [
+    "DateTimeZone functions"
+   ],
+   "url": "https://learn.microsoft.com/pt-br/powerquery-m/datetimezone-localnow"
+  },
+  "DateTimeZone.RemoveZone": {
+   "categorias": [
+    "DateTimeZone functions"
+   ],
+   "url": "https://learn.microsoft.com/pt-br/powerquery-m/datetimezone-removezone"
+  },
+  "DateTimeZone.SwitchZone": {
+   "categorias": [
+    "DateTimeZone functions"
+   ],
+   "url": "https://learn.microsoft.com/pt-br/powerquery-m/datetimezone-switchzone"
+  },
+  "DateTimeZone.ToLocal": {
+   "categorias": [
+    "DateTimeZone functions"
+   ],
+   "url": "https://learn.microsoft.com/pt-br/powerquery-m/datetimezone-tolocal"
+  },
+  "DateTimeZone.ToRecord": {
+   "categorias": [
+    "DateTimeZone functions"
+   ],
+   "url": "https://learn.microsoft.com/pt-br/powerquery-m/datetimezone-torecord"
+  },
+  "DateTimeZone.ToText": {
+   "categorias": [
+    "DateTimeZone functions"
+   ],
+   "url": "https://learn.microsoft.com/pt-br/powerquery-m/datetimezone-totext"
+  },
+  "DateTimeZone.ToUtc": {
+   "categorias": [
+    "DateTimeZone functions"
+   ],
+   "url": "https://learn.microsoft.com/pt-br/powerquery-m/datetimezone-toutc"
+  },
+  "DateTimeZone.UtcNow": {
+   "categorias": [
+    "DateTimeZone functions"
+   ],
+   "url": "https://learn.microsoft.com/pt-br/powerquery-m/datetimezone-utcnow"
+  },
+  "DateTimeZone.ZoneHours": {
+   "categorias": [
+    "DateTimeZone functions"
+   ],
+   "url": "https://learn.microsoft.com/pt-br/powerquery-m/datetimezone-zonehours"
+  },
+  "DateTimeZone.ZoneMinutes": {
+   "categorias": [
+    "DateTimeZone functions"
+   ],
+   "url": "https://learn.microsoft.com/pt-br/powerquery-m/datetimezone-zoneminutes"
+  },
+  "Decimal.From": {
+   "categorias": [
+    "Number functions"
+   ],
+   "url": "https://learn.microsoft.com/pt-br/powerquery-m/decimal-from"
+  },
+  "DeltaLake.Metadata": {
+   "categorias": [
+    "Accessing data functions"
+   ],
+   "url": "https://learn.microsoft.com/pt-br/powerquery-m/deltalake-metadata"
+  },
+  "DeltaLake.Table": {
+   "categorias": [
+    "Accessing data functions"
+   ],
+   "url": "https://learn.microsoft.com/pt-br/powerquery-m/deltalake-table"
+  },
+  "Diagnostics.ActivityId": {
+   "categorias": [
+    "Error handling"
+   ],
+   "url": "https://learn.microsoft.com/pt-br/powerquery-m/diagnostics-activityid"
+  },
+  "Diagnostics.CorrelationId": {
+   "categorias": [
+    "Error handling"
+   ],
+   "url": "https://learn.microsoft.com/pt-br/powerquery-m/diagnostics-correlationid"
+  },
+  "Diagnostics.Trace": {
+   "categorias": [
+    "Error handling"
+   ],
+   "url": "https://learn.microsoft.com/pt-br/powerquery-m/diagnostics-trace"
+  },
+  "DirectQueryCapabilities.From [internal]": {
+   "categorias": [
+    "Value functions"
+   ],
+   "url": "https://learn.microsoft.com/pt-br/powerquery-m/directquerycapabilities-from"
+  },
+  "Double.From": {
+   "categorias": [
+    "Number functions"
+   ],
+   "url": "https://learn.microsoft.com/pt-br/powerquery-m/double-from"
+  },
+  "Duration.Days": {
+   "categorias": [
+    "Duration functions"
+   ],
+   "url": "https://learn.microsoft.com/pt-br/powerquery-m/duration-days"
+  },
+  "Duration.From": {
+   "categorias": [
+    "Duration functions"
+   ],
+   "url": "https://learn.microsoft.com/pt-br/powerquery-m/duration-from"
+  },
+  "Duration.FromText": {
+   "categorias": [
+    "Duration functions"
+   ],
+   "url": "https://learn.microsoft.com/pt-br/powerquery-m/duration-fromtext"
+  },
+  "Duration.Hours": {
+   "categorias": [
+    "Duration functions"
+   ],
+   "url": "https://learn.microsoft.com/pt-br/powerquery-m/duration-hours"
+  },
+  "Duration.Minutes": {
+   "categorias": [
+    "Duration functions"
+   ],
+   "url": "https://learn.microsoft.com/pt-br/powerquery-m/duration-minutes"
+  },
+  "Duration.Seconds": {
+   "categorias": [
+    "Duration functions"
+   ],
+   "url": "https://learn.microsoft.com/pt-br/powerquery-m/duration-seconds"
+  },
+  "Duration.ToRecord": {
+   "categorias": [
+    "Duration functions"
+   ],
+   "url": "https://learn.microsoft.com/pt-br/powerquery-m/duration-torecord"
+  },
+  "Duration.ToText": {
+   "categorias": [
+    "Duration functions"
+   ],
+   "url": "https://learn.microsoft.com/pt-br/powerquery-m/duration-totext"
+  },
+  "Duration.TotalDays": {
+   "categorias": [
+    "Duration functions"
+   ],
+   "url": "https://learn.microsoft.com/pt-br/powerquery-m/duration-totaldays"
+  },
+  "Duration.TotalHours": {
+   "categorias": [
+    "Duration functions"
+   ],
+   "url": "https://learn.microsoft.com/pt-br/powerquery-m/duration-totalhours"
+  },
+  "Duration.TotalMinutes": {
+   "categorias": [
+    "Duration functions"
+   ],
+   "url": "https://learn.microsoft.com/pt-br/powerquery-m/duration-totalminutes"
+  },
+  "Duration.TotalSeconds": {
+   "categorias": [
+    "Duration functions"
+   ],
+   "url": "https://learn.microsoft.com/pt-br/powerquery-m/duration-totalseconds"
+  },
+  "Embedded.Value": {
+   "categorias": [
+    "Value functions"
+   ],
+   "url": "https://learn.microsoft.com/pt-br/powerquery-m/embedded-value"
+  },
+  "Error.Record": {
+   "categorias": [
+    "Error handling"
+   ],
+   "url": "https://learn.microsoft.com/pt-br/powerquery-m/error-record"
+  },
+  "Essbase.Cubes": {
+   "categorias": [
+    "Accessing data functions"
+   ],
+   "url": "https://learn.microsoft.com/pt-br/powerquery-m/essbase-cubes"
+  },
+  "Excel.CurrentWorkbook": {
+   "categorias": [
+    "Accessing data functions"
+   ],
+   "url": "https://learn.microsoft.com/pt-br/powerquery-m/excel-currentworkbook"
+  },
+  "Excel.ShapeTable [internal]": {
+   "categorias": [
+    "Value functions"
+   ],
+   "url": "https://learn.microsoft.com/pt-br/powerquery-m/excel-shapetable"
+  },
+  "Excel.Workbook": {
+   "categorias": [
+    "Accessing data functions"
+   ],
+   "url": "https://learn.microsoft.com/pt-br/powerquery-m/excel-workbook",
+   "descricao": "Lê as planilhas, tabelas e nomes de um arquivo Excel.",
+   "uso": "Fonte de metas e cadastros manuais."
+  },
+  "Exchange.Contents": {
+   "categorias": [
+    "Accessing data functions"
+   ],
+   "url": "https://learn.microsoft.com/pt-br/powerquery-m/exchange-contents"
+  },
+  "Expression.Constant": {
+   "categorias": [
+    "Expression functions"
+   ],
+   "url": "https://learn.microsoft.com/pt-br/powerquery-m/expression-constant"
+  },
+  "Expression.Evaluate": {
+   "categorias": [
+    "Expression functions"
+   ],
+   "url": "https://learn.microsoft.com/pt-br/powerquery-m/expression-evaluate",
+   "descricao": "Avalia um texto como expressão M.",
+   "uso": ""
+  },
+  "Expression.Identifier": {
+   "categorias": [
+    "Expression functions"
+   ],
+   "url": "https://learn.microsoft.com/pt-br/powerquery-m/expression-identifier"
+  },
+  "FabricAI.Prompt": {
+   "categorias": [
+    "Accessing data functions"
+   ],
+   "url": "https://learn.microsoft.com/pt-br/powerquery-m/fabricai-prompt"
+  },
+  "File.Contents": {
+   "categorias": [
+    "Accessing data functions"
+   ],
+   "url": "https://learn.microsoft.com/pt-br/powerquery-m/file-contents",
+   "descricao": "Conteúdo binário de um arquivo local ou da rede.",
+   "uso": "Arquivo na rede exige gateway no serviço."
+  },
+  "Folder.Contents": {
+   "categorias": [
+    "Accessing data functions"
+   ],
+   "url": "https://learn.microsoft.com/pt-br/powerquery-m/folder-contents"
+  },
+  "Folder.Files": {
+   "categorias": [
+    "Accessing data functions"
+   ],
+   "url": "https://learn.microsoft.com/pt-br/powerquery-m/folder-files",
+   "descricao": "Lista os arquivos de uma pasta.",
+   "uso": "Juntar vários arquivos iguais."
+  },
+  "Function.From": {
+   "categorias": [
+    "Function values"
+   ],
+   "url": "https://learn.microsoft.com/pt-br/powerquery-m/function-from"
+  },
+  "Function.Invoke": {
+   "categorias": [
+    "Function values"
+   ],
+   "url": "https://learn.microsoft.com/pt-br/powerquery-m/function-invoke"
+  },
+  "Function.InvokeAfter": {
+   "categorias": [
+    "Function values"
+   ],
+   "url": "https://learn.microsoft.com/pt-br/powerquery-m/function-invokeafter"
+  },
+  "Function.InvokeWithErrorContext": {
+   "categorias": [
+    "Function values"
+   ],
+   "url": "https://learn.microsoft.com/pt-br/powerquery-m/function-invokewitherrorcontext"
+  },
+  "Function.IsDataSource": {
+   "categorias": [
+    "Function values"
+   ],
+   "url": "https://learn.microsoft.com/pt-br/powerquery-m/function-isdatasource"
+  },
+  "Function.ScalarVector": {
+   "categorias": [
+    "Function values"
+   ],
+   "url": "https://learn.microsoft.com/pt-br/powerquery-m/function-scalarvector"
+  },
+  "Geography.FromWellKnownText": {
+   "categorias": [
+    "Record functions"
+   ],
+   "url": "https://learn.microsoft.com/pt-br/powerquery-m/geography-fromwellknowntext"
+  },
+  "Geography.ToWellKnownText": {
+   "categorias": [
+    "Record functions"
+   ],
+   "url": "https://learn.microsoft.com/pt-br/powerquery-m/geography-towellknowntext"
+  },
+  "GeographyPoint.From": {
+   "categorias": [
+    "Record functions"
+   ],
+   "url": "https://learn.microsoft.com/pt-br/powerquery-m/geographypoint-from"
+  },
+  "Geometry.FromWellKnownText": {
+   "categorias": [
+    "Record functions"
+   ],
+   "url": "https://learn.microsoft.com/pt-br/powerquery-m/geometry-fromwellknowntext"
+  },
+  "Geometry.ToWellKnownText": {
+   "categorias": [
+    "Record functions"
+   ],
+   "url": "https://learn.microsoft.com/pt-br/powerquery-m/geometry-towellknowntext"
+  },
+  "GeometryPoint.From": {
+   "categorias": [
+    "Record functions"
+   ],
+   "url": "https://learn.microsoft.com/pt-br/powerquery-m/geometrypoint-from"
+  },
+  "GoogleAnalytics.Accounts": {
+   "categorias": [
+    "Accessing data functions"
+   ],
+   "url": "https://learn.microsoft.com/pt-br/powerquery-m/googleanalytics-accounts"
+  },
+  "Graph.Nodes [internal]": {
+   "categorias": [
+    "Value functions"
+   ],
+   "url": "https://learn.microsoft.com/pt-br/powerquery-m/graph-nodes"
+  },
+  "Guid.From": {
+   "categorias": [
+    "Text functions"
+   ],
+   "url": "https://learn.microsoft.com/pt-br/powerquery-m/guid-from"
+  },
+  "HdInsight.Containers": {
+   "categorias": [
+    "Accessing data functions"
+   ],
+   "url": "https://learn.microsoft.com/pt-br/powerquery-m/hdinsight-containers"
+  },
+  "HdInsight.Contents": {
+   "categorias": [
+    "Accessing data functions"
+   ],
+   "url": "https://learn.microsoft.com/pt-br/powerquery-m/hdinsight-contents"
+  },
+  "HdInsight.Files": {
+   "categorias": [
+    "Accessing data functions"
+   ],
+   "url": "https://learn.microsoft.com/pt-br/powerquery-m/hdinsight-files"
+  },
+  "Hdfs.Contents": {
+   "categorias": [
+    "Accessing data functions"
+   ],
+   "url": "https://learn.microsoft.com/pt-br/powerquery-m/hdfs-contents"
+  },
+  "Hdfs.Files": {
+   "categorias": [
+    "Accessing data functions"
+   ],
+   "url": "https://learn.microsoft.com/pt-br/powerquery-m/hdfs-files"
+  },
+  "Html.Table": {
+   "categorias": [
+    "Accessing data functions"
+   ],
+   "url": "https://learn.microsoft.com/pt-br/powerquery-m/html-table"
+  },
+  "Identity.From": {
+   "categorias": [
+    "Accessing data functions"
+   ],
+   "url": "https://learn.microsoft.com/pt-br/powerquery-m/identity-from"
+  },
+  "Identity.IsMemberOf": {
+   "categorias": [
+    "Accessing data functions"
+   ],
+   "url": "https://learn.microsoft.com/pt-br/powerquery-m/identity-ismemberof"
+  },
+  "IdentityProvider.Default": {
+   "categorias": [
+    "Accessing data functions"
+   ],
+   "url": "https://learn.microsoft.com/pt-br/powerquery-m/identityprovider-default"
+  },
+  "Informix.Database": {
+   "categorias": [
+    "Accessing data functions"
+   ],
+   "url": "https://learn.microsoft.com/pt-br/powerquery-m/informix-database"
+  },
+  "Int16.From": {
+   "categorias": [
+    "Number functions"
+   ],
+   "url": "https://learn.microsoft.com/pt-br/powerquery-m/int16-from"
+  },
+  "Int32.From": {
+   "categorias": [
+    "Number functions"
+   ],
+   "url": "https://learn.microsoft.com/pt-br/powerquery-m/int32-from"
+  },
+  "Int64.From": {
+   "categorias": [
+    "Number functions"
+   ],
+   "url": "https://learn.microsoft.com/pt-br/powerquery-m/int64-from"
+  },
+  "Int8.From": {
+   "categorias": [
+    "Number functions"
+   ],
+   "url": "https://learn.microsoft.com/pt-br/powerquery-m/int8-from"
+  },
+  "ItemExpression.From": {
+   "categorias": [
+    "Table functions"
+   ],
+   "url": "https://learn.microsoft.com/pt-br/powerquery-m/itemexpression-from"
+  },
+  "Json.Document": {
+   "categorias": [
+    "Accessing data functions"
+   ],
+   "url": "https://learn.microsoft.com/pt-br/powerquery-m/json-document",
+   "descricao": "Interpreta um conteúdo JSON.",
+   "uso": ""
+  },
+  "Json.FromValue": {
+   "categorias": [
+    "Accessing data functions",
+    "Text functions"
+   ],
+   "url": "https://learn.microsoft.com/pt-br/powerquery-m/json-fromvalue"
+  },
+  "Lines.FromBinary": {
+   "categorias": [
+    "Lines functions"
+   ],
+   "url": "https://learn.microsoft.com/pt-br/powerquery-m/lines-frombinary"
+  },
+  "Lines.FromText": {
+   "categorias": [
+    "Lines functions"
+   ],
+   "url": "https://learn.microsoft.com/pt-br/powerquery-m/lines-fromtext"
+  },
+  "Lines.ToBinary": {
+   "categorias": [
+    "Lines functions"
+   ],
+   "url": "https://learn.microsoft.com/pt-br/powerquery-m/lines-tobinary"
+  },
+  "Lines.ToText": {
+   "categorias": [
+    "Lines functions"
+   ],
+   "url": "https://learn.microsoft.com/pt-br/powerquery-m/lines-totext"
+  },
+  "List.Accumulate": {
+   "categorias": [
+    "List functions"
+   ],
+   "url": "https://learn.microsoft.com/pt-br/powerquery-m/list-accumulate"
+  },
+  "List.AllTrue": {
+   "categorias": [
+    "List functions"
+   ],
+   "url": "https://learn.microsoft.com/pt-br/powerquery-m/list-alltrue"
+  },
+  "List.Alternate": {
+   "categorias": [
+    "List functions"
+   ],
+   "url": "https://learn.microsoft.com/pt-br/powerquery-m/list-alternate"
+  },
+  "List.AnyTrue": {
+   "categorias": [
+    "List functions"
+   ],
+   "url": "https://learn.microsoft.com/pt-br/powerquery-m/list-anytrue"
+  },
+  "List.Average": {
+   "categorias": [
+    "List functions"
+   ],
+   "url": "https://learn.microsoft.com/pt-br/powerquery-m/list-average"
+  },
+  "List.Buffer": {
+   "categorias": [
+    "List functions"
+   ],
+   "url": "https://learn.microsoft.com/pt-br/powerquery-m/list-buffer"
+  },
+  "List.Combine": {
+   "categorias": [
+    "List functions"
+   ],
+   "url": "https://learn.microsoft.com/pt-br/powerquery-m/list-combine"
+  },
+  "List.ConformToPageReader": {
+   "categorias": [
+    "List functions"
+   ],
+   "url": "https://learn.microsoft.com/pt-br/powerquery-m/list-conformtopagereader"
+  },
+  "List.Contains": {
+   "categorias": [
+    "List functions"
+   ],
+   "url": "https://learn.microsoft.com/pt-br/powerquery-m/list-contains"
+  },
+  "List.ContainsAll": {
+   "categorias": [
+    "List functions"
+   ],
+   "url": "https://learn.microsoft.com/pt-br/powerquery-m/list-containsall"
+  },
+  "List.ContainsAny": {
+   "categorias": [
+    "List functions"
+   ],
+   "url": "https://learn.microsoft.com/pt-br/powerquery-m/list-containsany"
+  },
+  "List.Count": {
+   "categorias": [
+    "List functions"
+   ],
+   "url": "https://learn.microsoft.com/pt-br/powerquery-m/list-count"
+  },
+  "List.Covariance": {
+   "categorias": [
+    "List functions"
+   ],
+   "url": "https://learn.microsoft.com/pt-br/powerquery-m/list-covariance"
+  },
+  "List.DateTimeZones": {
+   "categorias": [
+    "List functions"
+   ],
+   "url": "https://learn.microsoft.com/pt-br/powerquery-m/list-datetimezones"
+  },
+  "List.DateTimes": {
+   "categorias": [
+    "List functions"
+   ],
+   "url": "https://learn.microsoft.com/pt-br/powerquery-m/list-datetimes"
+  },
+  "List.Dates": {
+   "categorias": [
+    "List functions"
+   ],
+   "url": "https://learn.microsoft.com/pt-br/powerquery-m/list-dates",
+   "descricao": "Lista de datas a partir de uma data inicial.",
+   "uso": "O calendário do Deidara."
+  },
+  "List.Difference": {
+   "categorias": [
+    "List functions"
+   ],
+   "url": "https://learn.microsoft.com/pt-br/powerquery-m/list-difference"
+  },
+  "List.Distinct": {
+   "categorias": [
+    "List functions"
+   ],
+   "url": "https://learn.microsoft.com/pt-br/powerquery-m/list-distinct"
+  },
+  "List.Durations": {
+   "categorias": [
+    "List functions"
+   ],
+   "url": "https://learn.microsoft.com/pt-br/powerquery-m/list-durations"
+  },
+  "List.FindText": {
+   "categorias": [
+    "List functions"
+   ],
+   "url": "https://learn.microsoft.com/pt-br/powerquery-m/list-findtext"
+  },
+  "List.First": {
+   "categorias": [
+    "List functions"
+   ],
+   "url": "https://learn.microsoft.com/pt-br/powerquery-m/list-first"
+  },
+  "List.FirstN": {
+   "categorias": [
+    "List functions"
+   ],
+   "url": "https://learn.microsoft.com/pt-br/powerquery-m/list-firstn"
+  },
+  "List.Generate": {
+   "categorias": [
+    "List functions"
+   ],
+   "url": "https://learn.microsoft.com/pt-br/powerquery-m/list-generate"
+  },
+  "List.InsertRange": {
+   "categorias": [
+    "List functions"
+   ],
+   "url": "https://learn.microsoft.com/pt-br/powerquery-m/list-insertrange"
+  },
+  "List.Intersect": {
+   "categorias": [
+    "List functions"
+   ],
+   "url": "https://learn.microsoft.com/pt-br/powerquery-m/list-intersect"
+  },
+  "List.IsDistinct": {
+   "categorias": [
+    "List functions"
+   ],
+   "url": "https://learn.microsoft.com/pt-br/powerquery-m/list-isdistinct"
+  },
+  "List.IsEmpty": {
+   "categorias": [
+    "List functions"
+   ],
+   "url": "https://learn.microsoft.com/pt-br/powerquery-m/list-isempty"
+  },
+  "List.Last": {
+   "categorias": [
+    "List functions"
+   ],
+   "url": "https://learn.microsoft.com/pt-br/powerquery-m/list-last"
+  },
+  "List.LastN": {
+   "categorias": [
+    "List functions"
+   ],
+   "url": "https://learn.microsoft.com/pt-br/powerquery-m/list-lastn"
+  },
+  "List.MatchesAll": {
+   "categorias": [
+    "List functions"
+   ],
+   "url": "https://learn.microsoft.com/pt-br/powerquery-m/list-matchesall"
+  },
+  "List.MatchesAny": {
+   "categorias": [
+    "List functions"
+   ],
+   "url": "https://learn.microsoft.com/pt-br/powerquery-m/list-matchesany"
+  },
+  "List.Max": {
+   "categorias": [
+    "List functions"
+   ],
+   "url": "https://learn.microsoft.com/pt-br/powerquery-m/list-max"
+  },
+  "List.MaxN": {
+   "categorias": [
+    "List functions"
+   ],
+   "url": "https://learn.microsoft.com/pt-br/powerquery-m/list-maxn"
+  },
+  "List.Median": {
+   "categorias": [
+    "List functions"
+   ],
+   "url": "https://learn.microsoft.com/pt-br/powerquery-m/list-median"
+  },
+  "List.Min": {
+   "categorias": [
+    "List functions"
+   ],
+   "url": "https://learn.microsoft.com/pt-br/powerquery-m/list-min"
+  },
+  "List.MinN": {
+   "categorias": [
+    "List functions"
+   ],
+   "url": "https://learn.microsoft.com/pt-br/powerquery-m/list-minn"
+  },
+  "List.Mode": {
+   "categorias": [
+    "List functions"
+   ],
+   "url": "https://learn.microsoft.com/pt-br/powerquery-m/list-mode"
+  },
+  "List.Modes": {
+   "categorias": [
+    "List functions"
+   ],
+   "url": "https://learn.microsoft.com/pt-br/powerquery-m/list-modes"
+  },
+  "List.NonNullCount": {
+   "categorias": [
+    "List functions"
+   ],
+   "url": "https://learn.microsoft.com/pt-br/powerquery-m/list-nonnullcount"
+  },
+  "List.Numbers": {
+   "categorias": [
+    "List functions"
+   ],
+   "url": "https://learn.microsoft.com/pt-br/powerquery-m/list-numbers"
+  },
+  "List.Percentile": {
+   "categorias": [
+    "List functions"
+   ],
+   "url": "https://learn.microsoft.com/pt-br/powerquery-m/list-percentile"
+  },
+  "List.PositionOf": {
+   "categorias": [
+    "List functions"
+   ],
+   "url": "https://learn.microsoft.com/pt-br/powerquery-m/list-positionof"
+  },
+  "List.PositionOfAny": {
+   "categorias": [
+    "List functions"
+   ],
+   "url": "https://learn.microsoft.com/pt-br/powerquery-m/list-positionofany"
+  },
+  "List.Positions": {
+   "categorias": [
+    "List functions"
+   ],
+   "url": "https://learn.microsoft.com/pt-br/powerquery-m/list-positions"
+  },
+  "List.Product": {
+   "categorias": [
+    "List functions"
+   ],
+   "url": "https://learn.microsoft.com/pt-br/powerquery-m/list-product"
+  },
+  "List.Random": {
+   "categorias": [
+    "List functions"
+   ],
+   "url": "https://learn.microsoft.com/pt-br/powerquery-m/list-random"
+  },
+  "List.Range": {
+   "categorias": [
+    "List functions"
+   ],
+   "url": "https://learn.microsoft.com/pt-br/powerquery-m/list-range"
+  },
+  "List.RemoveFirstN": {
+   "categorias": [
+    "List functions"
+   ],
+   "url": "https://learn.microsoft.com/pt-br/powerquery-m/list-removefirstn"
+  },
+  "List.RemoveItems": {
+   "categorias": [
+    "List functions"
+   ],
+   "url": "https://learn.microsoft.com/pt-br/powerquery-m/list-removeitems"
+  },
+  "List.RemoveLastN": {
+   "categorias": [
+    "List functions"
+   ],
+   "url": "https://learn.microsoft.com/pt-br/powerquery-m/list-removelastn"
+  },
+  "List.RemoveMatchingItems": {
+   "categorias": [
+    "List functions"
+   ],
+   "url": "https://learn.microsoft.com/pt-br/powerquery-m/list-removematchingitems"
+  },
+  "List.RemoveNulls": {
+   "categorias": [
+    "List functions"
+   ],
+   "url": "https://learn.microsoft.com/pt-br/powerquery-m/list-removenulls"
+  },
+  "List.RemoveRange": {
+   "categorias": [
+    "List functions"
+   ],
+   "url": "https://learn.microsoft.com/pt-br/powerquery-m/list-removerange"
+  },
+  "List.Repeat": {
+   "categorias": [
+    "List functions"
+   ],
+   "url": "https://learn.microsoft.com/pt-br/powerquery-m/list-repeat"
+  },
+  "List.ReplaceMatchingItems": {
+   "categorias": [
+    "List functions"
+   ],
+   "url": "https://learn.microsoft.com/pt-br/powerquery-m/list-replacematchingitems"
+  },
+  "List.ReplaceRange": {
+   "categorias": [
+    "List functions"
+   ],
+   "url": "https://learn.microsoft.com/pt-br/powerquery-m/list-replacerange"
+  },
+  "List.ReplaceValue": {
+   "categorias": [
+    "List functions"
+   ],
+   "url": "https://learn.microsoft.com/pt-br/powerquery-m/list-replacevalue"
+  },
+  "List.Reverse": {
+   "categorias": [
+    "List functions"
+   ],
+   "url": "https://learn.microsoft.com/pt-br/powerquery-m/list-reverse"
+  },
+  "List.Select": {
+   "categorias": [
+    "List functions"
+   ],
+   "url": "https://learn.microsoft.com/pt-br/powerquery-m/list-select"
+  },
+  "List.Single": {
+   "categorias": [
+    "List functions"
+   ],
+   "url": "https://learn.microsoft.com/pt-br/powerquery-m/list-single"
+  },
+  "List.SingleOrDefault": {
+   "categorias": [
+    "List functions"
+   ],
+   "url": "https://learn.microsoft.com/pt-br/powerquery-m/list-singleordefault"
+  },
+  "List.Skip": {
+   "categorias": [
+    "List functions"
+   ],
+   "url": "https://learn.microsoft.com/pt-br/powerquery-m/list-skip"
+  },
+  "List.Sort": {
+   "categorias": [
+    "List functions"
+   ],
+   "url": "https://learn.microsoft.com/pt-br/powerquery-m/list-sort"
+  },
+  "List.Split": {
+   "categorias": [
+    "List functions"
+   ],
+   "url": "https://learn.microsoft.com/pt-br/powerquery-m/list-split"
+  },
+  "List.StandardDeviation": {
+   "categorias": [
+    "List functions"
+   ],
+   "url": "https://learn.microsoft.com/pt-br/powerquery-m/list-standarddeviation"
+  },
+  "List.Sum": {
+   "categorias": [
+    "List functions"
+   ],
+   "url": "https://learn.microsoft.com/pt-br/powerquery-m/list-sum"
+  },
+  "List.Times": {
+   "categorias": [
+    "List functions"
+   ],
+   "url": "https://learn.microsoft.com/pt-br/powerquery-m/list-times"
+  },
+  "List.Transform": {
+   "categorias": [
+    "List functions"
+   ],
+   "url": "https://learn.microsoft.com/pt-br/powerquery-m/list-transform"
+  },
+  "List.TransformMany": {
+   "categorias": [
+    "List functions"
+   ],
+   "url": "https://learn.microsoft.com/pt-br/powerquery-m/list-transformmany"
+  },
+  "List.Union": {
+   "categorias": [
+    "List functions"
+   ],
+   "url": "https://learn.microsoft.com/pt-br/powerquery-m/list-union"
+  },
+  "List.Zip": {
+   "categorias": [
+    "List functions"
+   ],
+   "url": "https://learn.microsoft.com/pt-br/powerquery-m/list-zip"
+  },
+  "Logical.From": {
+   "categorias": [
+    "Logical functions"
+   ],
+   "url": "https://learn.microsoft.com/pt-br/powerquery-m/logical-from"
+  },
+  "Logical.FromText": {
+   "categorias": [
+    "Logical functions"
+   ],
+   "url": "https://learn.microsoft.com/pt-br/powerquery-m/logical-fromtext"
+  },
+  "Logical.ToText": {
+   "categorias": [
+    "Logical functions"
+   ],
+   "url": "https://learn.microsoft.com/pt-br/powerquery-m/logical-totext"
+  },
+  "MissingField.Type [parameter value type]": {
+   "categorias": [
+    "Record functions"
+   ],
+   "url": "https://learn.microsoft.com/pt-br/powerquery-m/missingfield-type"
+  },
+  "Module.Versions": {
+   "categorias": [
+    "Value functions"
+   ],
+   "url": "https://learn.microsoft.com/pt-br/powerquery-m/module-versions"
+  },
+  "MySQL.Database": {
+   "categorias": [
+    "Accessing data functions"
+   ],
+   "url": "https://learn.microsoft.com/pt-br/powerquery-m/mysql-database"
+  },
+  "Number.Abs": {
+   "categorias": [
+    "Number functions"
+   ],
+   "url": "https://learn.microsoft.com/pt-br/powerquery-m/number-abs"
+  },
+  "Number.Acos": {
+   "categorias": [
+    "Number functions"
+   ],
+   "url": "https://learn.microsoft.com/pt-br/powerquery-m/number-acos"
+  },
+  "Number.Asin": {
+   "categorias": [
+    "Number functions"
+   ],
+   "url": "https://learn.microsoft.com/pt-br/powerquery-m/number-asin"
+  },
+  "Number.Atan": {
+   "categorias": [
+    "Number functions"
+   ],
+   "url": "https://learn.microsoft.com/pt-br/powerquery-m/number-atan"
+  },
+  "Number.Atan2": {
+   "categorias": [
+    "Number functions"
+   ],
+   "url": "https://learn.microsoft.com/pt-br/powerquery-m/number-atan2"
+  },
+  "Number.BitwiseAnd": {
+   "categorias": [
+    "Number functions"
+   ],
+   "url": "https://learn.microsoft.com/pt-br/powerquery-m/number-bitwiseand"
+  },
+  "Number.BitwiseNot": {
+   "categorias": [
+    "Number functions"
+   ],
+   "url": "https://learn.microsoft.com/pt-br/powerquery-m/number-bitwisenot"
+  },
+  "Number.BitwiseOr": {
+   "categorias": [
+    "Number functions"
+   ],
+   "url": "https://learn.microsoft.com/pt-br/powerquery-m/number-bitwiseor"
+  },
+  "Number.BitwiseShiftLeft": {
+   "categorias": [
+    "Number functions"
+   ],
+   "url": "https://learn.microsoft.com/pt-br/powerquery-m/number-bitwiseshiftleft"
+  },
+  "Number.BitwiseShiftRight": {
+   "categorias": [
+    "Number functions"
+   ],
+   "url": "https://learn.microsoft.com/pt-br/powerquery-m/number-bitwiseshiftright"
+  },
+  "Number.BitwiseXor": {
+   "categorias": [
+    "Number functions"
+   ],
+   "url": "https://learn.microsoft.com/pt-br/powerquery-m/number-bitwisexor"
+  },
+  "Number.Combinations": {
+   "categorias": [
+    "Number functions"
+   ],
+   "url": "https://learn.microsoft.com/pt-br/powerquery-m/number-combinations"
+  },
+  "Number.Cos": {
+   "categorias": [
+    "Number functions"
+   ],
+   "url": "https://learn.microsoft.com/pt-br/powerquery-m/number-cos"
+  },
+  "Number.Cosh": {
+   "categorias": [
+    "Number functions"
+   ],
+   "url": "https://learn.microsoft.com/pt-br/powerquery-m/number-cosh"
+  },
+  "Number.Exp": {
+   "categorias": [
+    "Number functions"
+   ],
+   "url": "https://learn.microsoft.com/pt-br/powerquery-m/number-exp"
+  },
+  "Number.Factorial": {
+   "categorias": [
+    "Number functions"
+   ],
+   "url": "https://learn.microsoft.com/pt-br/powerquery-m/number-factorial"
+  },
+  "Number.From": {
+   "categorias": [
+    "Number functions"
+   ],
+   "url": "https://learn.microsoft.com/pt-br/powerquery-m/number-from",
+   "descricao": "Converte um valor em número.",
+   "uso": ""
+  },
+  "Number.FromText": {
+   "categorias": [
+    "Number functions"
+   ],
+   "url": "https://learn.microsoft.com/pt-br/powerquery-m/number-fromtext"
+  },
+  "Number.IntegerDivide": {
+   "categorias": [
+    "Number functions"
+   ],
+   "url": "https://learn.microsoft.com/pt-br/powerquery-m/number-integerdivide"
+  },
+  "Number.IsEven": {
+   "categorias": [
+    "Number functions"
+   ],
+   "url": "https://learn.microsoft.com/pt-br/powerquery-m/number-iseven"
+  },
+  "Number.IsNaN": {
+   "categorias": [
+    "Number functions"
+   ],
+   "url": "https://learn.microsoft.com/pt-br/powerquery-m/number-isnan"
+  },
+  "Number.IsOdd": {
+   "categorias": [
+    "Number functions"
+   ],
+   "url": "https://learn.microsoft.com/pt-br/powerquery-m/number-isodd"
+  },
+  "Number.Ln": {
+   "categorias": [
+    "Number functions"
+   ],
+   "url": "https://learn.microsoft.com/pt-br/powerquery-m/number-ln"
+  },
+  "Number.Log": {
+   "categorias": [
+    "Number functions"
+   ],
+   "url": "https://learn.microsoft.com/pt-br/powerquery-m/number-log"
+  },
+  "Number.Log10": {
+   "categorias": [
+    "Number functions"
+   ],
+   "url": "https://learn.microsoft.com/pt-br/powerquery-m/number-log10"
+  },
+  "Number.Mod": {
+   "categorias": [
+    "Number functions"
+   ],
+   "url": "https://learn.microsoft.com/pt-br/powerquery-m/number-mod"
+  },
+  "Number.Permutations": {
+   "categorias": [
+    "Number functions"
+   ],
+   "url": "https://learn.microsoft.com/pt-br/powerquery-m/number-permutations"
+  },
+  "Number.Power": {
+   "categorias": [
+    "Number functions"
+   ],
+   "url": "https://learn.microsoft.com/pt-br/powerquery-m/number-power"
+  },
+  "Number.Random": {
+   "categorias": [
+    "Number functions"
+   ],
+   "url": "https://learn.microsoft.com/pt-br/powerquery-m/number-random"
+  },
+  "Number.RandomBetween": {
+   "categorias": [
+    "Number functions"
+   ],
+   "url": "https://learn.microsoft.com/pt-br/powerquery-m/number-randombetween"
+  },
+  "Number.Round": {
+   "categorias": [
+    "Number functions"
+   ],
+   "url": "https://learn.microsoft.com/pt-br/powerquery-m/number-round",
+   "descricao": "Arredonda um número.",
+   "uso": ""
+  },
+  "Number.RoundAwayFromZero": {
+   "categorias": [
+    "Number functions"
+   ],
+   "url": "https://learn.microsoft.com/pt-br/powerquery-m/number-roundawayfromzero"
+  },
+  "Number.RoundDown": {
+   "categorias": [
+    "Number functions"
+   ],
+   "url": "https://learn.microsoft.com/pt-br/powerquery-m/number-rounddown"
+  },
+  "Number.RoundTowardZero": {
+   "categorias": [
+    "Number functions"
+   ],
+   "url": "https://learn.microsoft.com/pt-br/powerquery-m/number-roundtowardzero"
+  },
+  "Number.RoundUp": {
+   "categorias": [
+    "Number functions"
+   ],
+   "url": "https://learn.microsoft.com/pt-br/powerquery-m/number-roundup"
+  },
+  "Number.Sign": {
+   "categorias": [
+    "Number functions"
+   ],
+   "url": "https://learn.microsoft.com/pt-br/powerquery-m/number-sign"
+  },
+  "Number.Sin": {
+   "categorias": [
+    "Number functions"
+   ],
+   "url": "https://learn.microsoft.com/pt-br/powerquery-m/number-sin"
+  },
+  "Number.Sinh": {
+   "categorias": [
+    "Number functions"
+   ],
+   "url": "https://learn.microsoft.com/pt-br/powerquery-m/number-sinh"
+  },
+  "Number.Sqrt": {
+   "categorias": [
+    "Number functions"
+   ],
+   "url": "https://learn.microsoft.com/pt-br/powerquery-m/number-sqrt"
+  },
+  "Number.Tan": {
+   "categorias": [
+    "Number functions"
+   ],
+   "url": "https://learn.microsoft.com/pt-br/powerquery-m/number-tan"
+  },
+  "Number.Tanh": {
+   "categorias": [
+    "Number functions"
+   ],
+   "url": "https://learn.microsoft.com/pt-br/powerquery-m/number-tanh"
+  },
+  "Number.ToText": {
+   "categorias": [
+    "Number functions"
+   ],
+   "url": "https://learn.microsoft.com/pt-br/powerquery-m/number-totext"
+  },
+  "OData.Feed": {
+   "categorias": [
+    "Accessing data functions"
+   ],
+   "url": "https://learn.microsoft.com/pt-br/powerquery-m/odata-feed",
+   "descricao": "Lê um serviço OData.",
+   "uso": ""
+  },
+  "Occurrence.All [parameter value]": {
+   "categorias": [
+    "List functions"
+   ],
+   "url": "https://learn.microsoft.com/pt-br/powerquery-m/occurrence-type"
+  },
+  "Occurrence.First [parameter value]": {
+   "categorias": [
+    "List functions"
+   ],
+   "url": "https://learn.microsoft.com/pt-br/powerquery-m/occurrence-type"
+  },
+  "Occurrence.Last [parameter value]": {
+   "categorias": [
+    "List functions"
+   ],
+   "url": "https://learn.microsoft.com/pt-br/powerquery-m/occurrence-type"
+  },
+  "Odbc.DataSource": {
+   "categorias": [
+    "Accessing data functions"
+   ],
+   "url": "https://learn.microsoft.com/pt-br/powerquery-m/odbc-datasource"
+  },
+  "Odbc.InferOptions": {
+   "categorias": [
+    "Accessing data functions"
+   ],
+   "url": "https://learn.microsoft.com/pt-br/powerquery-m/odbc-inferoptions"
+  },
+  "Odbc.Query": {
+   "categorias": [
+    "Accessing data functions"
+   ],
+   "url": "https://learn.microsoft.com/pt-br/powerquery-m/odbc-query"
+  },
+  "OleDb.DataSource": {
+   "categorias": [
+    "Accessing data functions"
+   ],
+   "url": "https://learn.microsoft.com/pt-br/powerquery-m/oledb-datasource"
+  },
+  "OleDb.Query": {
+   "categorias": [
+    "Accessing data functions"
+   ],
+   "url": "https://learn.microsoft.com/pt-br/powerquery-m/oledb-query"
+  },
+  "Oracle.Database": {
+   "categorias": [
+    "Accessing data functions"
+   ],
+   "url": "https://learn.microsoft.com/pt-br/powerquery-m/oracle-database"
+  },
+  "Order.Ascending [parameter value]": {
+   "categorias": [
+    "List functions"
+   ],
+   "url": "https://learn.microsoft.com/pt-br/powerquery-m/order-type"
+  },
+  "Order.Descending [parameter value]": {
+   "categorias": [
+    "List functions"
+   ],
+   "url": "https://learn.microsoft.com/pt-br/powerquery-m/order-type"
+  },
+  "Pdf.Tables": {
+   "categorias": [
+    "Accessing data functions"
+   ],
+   "url": "https://learn.microsoft.com/pt-br/powerquery-m/pdf-tables"
+  },
+  "Percentage.From": {
+   "categorias": [
+    "Number functions"
+   ],
+   "url": "https://learn.microsoft.com/pt-br/powerquery-m/percentage-from"
+  },
+  "PostgreSQL.Database": {
+   "categorias": [
+    "Accessing data functions"
+   ],
+   "url": "https://learn.microsoft.com/pt-br/powerquery-m/postgresql-database"
+  },
+  "Progress.DataSourceProgress [internal]": {
+   "categorias": [
+    "Value functions"
+   ],
+   "url": "https://learn.microsoft.com/pt-br/powerquery-m/progress-datasourceprogress"
+  },
+  "RData.FromBinary": {
+   "categorias": [
+    "Accessing data functions"
+   ],
+   "url": "https://learn.microsoft.com/pt-br/powerquery-m/rdata-frombinary"
+  },
+  "Record.AddField": {
+   "categorias": [
+    "Record functions"
+   ],
+   "url": "https://learn.microsoft.com/pt-br/powerquery-m/record-addfield"
+  },
+  "Record.Combine": {
+   "categorias": [
+    "Record functions"
+   ],
+   "url": "https://learn.microsoft.com/pt-br/powerquery-m/record-combine"
+  },
+  "Record.Field": {
+   "categorias": [
+    "Record functions"
+   ],
+   "url": "https://learn.microsoft.com/pt-br/powerquery-m/record-field"
+  },
+  "Record.FieldCount": {
+   "categorias": [
+    "Record functions"
+   ],
+   "url": "https://learn.microsoft.com/pt-br/powerquery-m/record-fieldcount"
+  },
+  "Record.FieldNames": {
+   "categorias": [
+    "Record functions"
+   ],
+   "url": "https://learn.microsoft.com/pt-br/powerquery-m/record-fieldnames"
+  },
+  "Record.FieldOrDefault": {
+   "categorias": [
+    "Record functions"
+   ],
+   "url": "https://learn.microsoft.com/pt-br/powerquery-m/record-fieldordefault"
+  },
+  "Record.FieldValues": {
+   "categorias": [
+    "Record functions"
+   ],
+   "url": "https://learn.microsoft.com/pt-br/powerquery-m/record-fieldvalues"
+  },
+  "Record.FromList": {
+   "categorias": [
+    "Record functions"
+   ],
+   "url": "https://learn.microsoft.com/pt-br/powerquery-m/record-fromlist"
+  },
+  "Record.FromTable": {
+   "categorias": [
+    "Record functions"
+   ],
+   "url": "https://learn.microsoft.com/pt-br/powerquery-m/record-fromtable"
+  },
+  "Record.HasFields": {
+   "categorias": [
+    "Record functions"
+   ],
+   "url": "https://learn.microsoft.com/pt-br/powerquery-m/record-hasfields"
+  },
+  "Record.RemoveFields": {
+   "categorias": [
+    "Record functions"
+   ],
+   "url": "https://learn.microsoft.com/pt-br/powerquery-m/record-removefields"
+  },
+  "Record.RenameFields": {
+   "categorias": [
+    "Record functions"
+   ],
+   "url": "https://learn.microsoft.com/pt-br/powerquery-m/record-renamefields"
+  },
+  "Record.ReorderFields": {
+   "categorias": [
+    "Record functions"
+   ],
+   "url": "https://learn.microsoft.com/pt-br/powerquery-m/record-reorderfields"
+  },
+  "Record.SelectFields": {
+   "categorias": [
+    "Record functions"
+   ],
+   "url": "https://learn.microsoft.com/pt-br/powerquery-m/record-selectfields"
+  },
+  "Record.ToList": {
+   "categorias": [
+    "Record functions"
+   ],
+   "url": "https://learn.microsoft.com/pt-br/powerquery-m/record-tolist"
+  },
+  "Record.ToTable": {
+   "categorias": [
+    "Record functions"
+   ],
+   "url": "https://learn.microsoft.com/pt-br/powerquery-m/record-totable",
+   "descricao": "Transforma um registro em tabela (nome/valor).",
+   "uso": ""
+  },
+  "Record.TransformFields": {
+   "categorias": [
+    "Record functions"
+   ],
+   "url": "https://learn.microsoft.com/pt-br/powerquery-m/record-transformfields"
+  },
+  "Replacer.ReplaceText": {
+   "categorias": [
+    "Replacer functions"
+   ],
+   "url": "https://learn.microsoft.com/pt-br/powerquery-m/replacer-replacetext"
+  },
+  "Replacer.ReplaceValue": {
+   "categorias": [
+    "Replacer functions"
+   ],
+   "url": "https://learn.microsoft.com/pt-br/powerquery-m/replacer-replacevalue"
+  },
+  "RowExpression.Column": {
+   "categorias": [
+    "Table functions"
+   ],
+   "url": "https://learn.microsoft.com/pt-br/powerquery-m/rowexpression-column"
+  },
+  "RowExpression.From": {
+   "categorias": [
+    "Table functions"
+   ],
+   "url": "https://learn.microsoft.com/pt-br/powerquery-m/rowexpression-from"
+  },
+  "Salesforce.Data": {
+   "categorias": [
+    "Accessing data functions"
+   ],
+   "url": "https://learn.microsoft.com/pt-br/powerquery-m/salesforce-data"
+  },
+  "Salesforce.Reports": {
+   "categorias": [
+    "Accessing data functions"
+   ],
+   "url": "https://learn.microsoft.com/pt-br/powerquery-m/salesforce-reports"
+  },
+  "SapBusinessWarehouse.Cubes": {
+   "categorias": [
+    "Accessing data functions"
+   ],
+   "url": "https://learn.microsoft.com/pt-br/powerquery-m/sapbusinesswarehouse-cubes"
+  },
+  "SapHana.Database": {
+   "categorias": [
+    "Accessing data functions"
+   ],
+   "url": "https://learn.microsoft.com/pt-br/powerquery-m/saphana-database"
+  },
+  "SharePoint.Contents": {
+   "categorias": [
+    "Accessing data functions"
+   ],
+   "url": "https://learn.microsoft.com/pt-br/powerquery-m/sharepoint-contents",
+   "descricao": "Navega pelas pastas de um site SharePoint.",
+   "uso": ""
+  },
+  "SharePoint.Files": {
+   "categorias": [
+    "Accessing data functions"
+   ],
+   "url": "https://learn.microsoft.com/pt-br/powerquery-m/sharepoint-files",
+   "descricao": "Lista os arquivos de um site SharePoint.",
+   "uso": "Planilha no SharePoint sem gateway."
+  },
+  "SharePoint.Tables": {
+   "categorias": [
+    "Accessing data functions"
+   ],
+   "url": "https://learn.microsoft.com/pt-br/powerquery-m/sharepoint-tables",
+   "descricao": "Lista as listas de um site SharePoint.",
+   "uso": "Lista do SharePoint como fonte."
+  },
+  "Single.From": {
+   "categorias": [
+    "Number functions"
+   ],
+   "url": "https://learn.microsoft.com/pt-br/powerquery-m/single-from"
+  },
+  "Soda.Feed": {
+   "categorias": [
+    "Accessing data functions"
+   ],
+   "url": "https://learn.microsoft.com/pt-br/powerquery-m/soda-feed"
+  },
+  "Splitter.SplitByNothing": {
+   "categorias": [
+    "Splitter functions"
+   ],
+   "url": "https://learn.microsoft.com/pt-br/powerquery-m/splitter-splitbynothing"
+  },
+  "Splitter.SplitTextByAnyDelimiter": {
+   "categorias": [
+    "Splitter functions"
+   ],
+   "url": "https://learn.microsoft.com/pt-br/powerquery-m/splitter-splittextbyanydelimiter"
+  },
+  "Splitter.SplitTextByCharacterTransition": {
+   "categorias": [
+    "Splitter functions"
+   ],
+   "url": "https://learn.microsoft.com/pt-br/powerquery-m/splitter-splittextbycharactertransition"
+  },
+  "Splitter.SplitTextByDelimiter": {
+   "categorias": [
+    "Splitter functions"
+   ],
+   "url": "https://learn.microsoft.com/pt-br/powerquery-m/splitter-splittextbydelimiter"
+  },
+  "Splitter.SplitTextByEachDelimiter": {
+   "categorias": [
+    "Splitter functions"
+   ],
+   "url": "https://learn.microsoft.com/pt-br/powerquery-m/splitter-splittextbyeachdelimiter"
+  },
+  "Splitter.SplitTextByLengths": {
+   "categorias": [
+    "Splitter functions"
+   ],
+   "url": "https://learn.microsoft.com/pt-br/powerquery-m/splitter-splittextbylengths"
+  },
+  "Splitter.SplitTextByPositions": {
+   "categorias": [
+    "Splitter functions"
+   ],
+   "url": "https://learn.microsoft.com/pt-br/powerquery-m/splitter-splittextbypositions"
+  },
+  "Splitter.SplitTextByRanges": {
+   "categorias": [
+    "Splitter functions"
+   ],
+   "url": "https://learn.microsoft.com/pt-br/powerquery-m/splitter-splittextbyranges"
+  },
+  "Splitter.SplitTextByRepeatedLengths": {
+   "categorias": [
+    "Splitter functions"
+   ],
+   "url": "https://learn.microsoft.com/pt-br/powerquery-m/splitter-splittextbyrepeatedlengths"
+  },
+  "Splitter.SplitTextByWhitespace": {
+   "categorias": [
+    "Splitter functions"
+   ],
+   "url": "https://learn.microsoft.com/pt-br/powerquery-m/splitter-splittextbywhitespace"
+  },
+  "Sql.Database": {
+   "categorias": [
+    "Accessing data functions"
+   ],
+   "url": "https://learn.microsoft.com/pt-br/powerquery-m/sql-database",
+   "descricao": "Conecta a um banco SQL Server.",
+   "uso": "O Deidara lê as views por aqui."
+  },
+  "Sql.Databases": {
+   "categorias": [
+    "Accessing data functions"
+   ],
+   "url": "https://learn.microsoft.com/pt-br/powerquery-m/sql-databases"
+  },
+  "SqlExpression.SchemaFrom [internal]": {
+   "categorias": [
+    "Value functions"
+   ],
+   "url": "https://learn.microsoft.com/pt-br/powerquery-m/sqlexpression-schemafrom"
+  },
+  "SqlExpression.ToExpression [internal]": {
+   "categorias": [
+    "Value functions"
+   ],
+   "url": "https://learn.microsoft.com/pt-br/powerquery-m/sqlexpression-toexpression"
+  },
+  "Sybase.Database": {
+   "categorias": [
+    "Accessing data functions"
+   ],
+   "url": "https://learn.microsoft.com/pt-br/powerquery-m/sybase-database"
+  },
+  "Table.AddColumn": {
+   "categorias": [
+    "Table functions"
+   ],
+   "url": "https://learn.microsoft.com/pt-br/powerquery-m/table-addcolumn",
+   "descricao": "Acrescenta uma coluna calculada linha a linha.",
+   "uso": "Chave composta, faixas, classificação."
+  },
+  "Table.AddFuzzyClusterColumn": {
+   "categorias": [
+    "Table functions"
+   ],
+   "url": "https://learn.microsoft.com/pt-br/powerquery-m/table-addfuzzyclustercolumn"
+  },
+  "Table.AddIndexColumn": {
+   "categorias": [
+    "Table functions"
+   ],
+   "url": "https://learn.microsoft.com/pt-br/powerquery-m/table-addindexcolumn"
+  },
+  "Table.AddJoinColumn": {
+   "categorias": [
+    "Table functions"
+   ],
+   "url": "https://learn.microsoft.com/pt-br/powerquery-m/table-addjoincolumn"
+  },
+  "Table.AddKey": {
+   "categorias": [
+    "Table functions"
+   ],
+   "url": "https://learn.microsoft.com/pt-br/powerquery-m/table-addkey"
+  },
+  "Table.AddRankColumn": {
+   "categorias": [
+    "Table functions"
+   ],
+   "url": "https://learn.microsoft.com/pt-br/powerquery-m/table-addrankcolumn"
+  },
+  "Table.AggregateTableColumn": {
+   "categorias": [
+    "Table functions"
+   ],
+   "url": "https://learn.microsoft.com/pt-br/powerquery-m/table-aggregatetablecolumn"
+  },
+  "Table.AlternateRows": {
+   "categorias": [
+    "Table functions"
+   ],
+   "url": "https://learn.microsoft.com/pt-br/powerquery-m/table-alternaterows"
+  },
+  "Table.ApproximateRowCount": {
+   "categorias": [
+    "Table functions"
+   ],
+   "url": "https://learn.microsoft.com/pt-br/powerquery-m/table-approximaterowcount"
+  },
+  "Table.Buffer": {
+   "categorias": [
+    "Table functions"
+   ],
+   "url": "https://learn.microsoft.com/pt-br/powerquery-m/table-buffer",
+   "descricao": "Guarda a tabela em memória durante a avaliação.",
+   "uso": ""
+  },
+  "Table.Column": {
+   "categorias": [
+    "Table functions"
+   ],
+   "url": "https://learn.microsoft.com/pt-br/powerquery-m/table-column"
+  },
+  "Table.ColumnCount": {
+   "categorias": [
+    "Table functions"
+   ],
+   "url": "https://learn.microsoft.com/pt-br/powerquery-m/table-columncount"
+  },
+  "Table.ColumnNames": {
+   "categorias": [
+    "Table functions"
+   ],
+   "url": "https://learn.microsoft.com/pt-br/powerquery-m/table-columnnames"
+  },
+  "Table.ColumnsOfType": {
+   "categorias": [
+    "Table functions"
+   ],
+   "url": "https://learn.microsoft.com/pt-br/powerquery-m/table-columnsoftype"
+  },
+  "Table.Combine": {
+   "categorias": [
+    "Table functions"
+   ],
+   "url": "https://learn.microsoft.com/pt-br/powerquery-m/table-combine",
+   "descricao": "Empilha tabelas com as mesmas colunas.",
+   "uso": "Juntar planilhas mensais."
+  },
+  "Table.CombineColumns": {
+   "categorias": [
+    "Table functions"
+   ],
+   "url": "https://learn.microsoft.com/pt-br/powerquery-m/table-combinecolumns"
+  },
+  "Table.CombineColumnsToRecord": {
+   "categorias": [
+    "Table functions"
+   ],
+   "url": "https://learn.microsoft.com/pt-br/powerquery-m/table-combinecolumnstorecord"
+  },
+  "Table.ConformToPageReader [internal]": {
+   "categorias": [
+    "Table functions"
+   ],
+   "url": "https://learn.microsoft.com/pt-br/powerquery-m/table-conformtopagereader"
+  },
+  "Table.Contains": {
+   "categorias": [
+    "Table functions"
+   ],
+   "url": "https://learn.microsoft.com/pt-br/powerquery-m/table-contains"
+  },
+  "Table.ContainsAll": {
+   "categorias": [
+    "Table functions"
+   ],
+   "url": "https://learn.microsoft.com/pt-br/powerquery-m/table-containsall"
+  },
+  "Table.ContainsAny": {
+   "categorias": [
+    "Table functions"
+   ],
+   "url": "https://learn.microsoft.com/pt-br/powerquery-m/table-containsany"
+  },
+  "Table.DemoteHeaders": {
+   "categorias": [
+    "Table functions"
+   ],
+   "url": "https://learn.microsoft.com/pt-br/powerquery-m/table-demoteheaders"
+  },
+  "Table.Distinct": {
+   "categorias": [
+    "Table functions"
+   ],
+   "url": "https://learn.microsoft.com/pt-br/powerquery-m/table-distinct",
+   "descricao": "Remove linhas repetidas.",
+   "uso": "Garantir chave única no lado \"um\" de uma dimensão."
+  },
+  "Table.DuplicateColumn": {
+   "categorias": [
+    "Table functions"
+   ],
+   "url": "https://learn.microsoft.com/pt-br/powerquery-m/table-duplicatecolumn"
+  },
+  "Table.ExpandListColumn": {
+   "categorias": [
+    "Table functions"
+   ],
+   "url": "https://learn.microsoft.com/pt-br/powerquery-m/table-expandlistcolumn"
+  },
+  "Table.ExpandRecordColumn": {
+   "categorias": [
+    "Table functions"
+   ],
+   "url": "https://learn.microsoft.com/pt-br/powerquery-m/table-expandrecordcolumn"
+  },
+  "Table.ExpandTableColumn": {
+   "categorias": [
+    "Table functions"
+   ],
+   "url": "https://learn.microsoft.com/pt-br/powerquery-m/table-expandtablecolumn",
+   "descricao": "Expande uma coluna de tabela aninhada.",
+   "uso": ""
+  },
+  "Table.FillDown": {
+   "categorias": [
+    "Table functions"
+   ],
+   "url": "https://learn.microsoft.com/pt-br/powerquery-m/table-filldown",
+   "descricao": "Preenche vazios com o valor de cima.",
+   "uso": "Planilha com célula mesclada."
+  },
+  "Table.FillUp": {
+   "categorias": [
+    "Table functions"
+   ],
+   "url": "https://learn.microsoft.com/pt-br/powerquery-m/table-fillup"
+  },
+  "Table.FilterWithDataTable [internal]": {
+   "categorias": [
+    "Table functions"
+   ],
+   "url": "https://learn.microsoft.com/pt-br/powerquery-m/table-filterwithdatatable"
+  },
+  "Table.FindText": {
+   "categorias": [
+    "Table functions"
+   ],
+   "url": "https://learn.microsoft.com/pt-br/powerquery-m/table-findtext"
+  },
+  "Table.First": {
+   "categorias": [
+    "Table functions"
+   ],
+   "url": "https://learn.microsoft.com/pt-br/powerquery-m/table-first"
+  },
+  "Table.FirstN": {
+   "categorias": [
+    "Table functions"
+   ],
+   "url": "https://learn.microsoft.com/pt-br/powerquery-m/table-firstn"
+  },
+  "Table.FirstValue": {
+   "categorias": [
+    "Table functions"
+   ],
+   "url": "https://learn.microsoft.com/pt-br/powerquery-m/table-firstvalue"
+  },
+  "Table.FromColumns": {
+   "categorias": [
+    "Table functions"
+   ],
+   "url": "https://learn.microsoft.com/pt-br/powerquery-m/table-fromcolumns"
+  },
+  "Table.FromList": {
+   "categorias": [
+    "Table functions"
+   ],
+   "url": "https://learn.microsoft.com/pt-br/powerquery-m/table-fromlist"
+  },
+  "Table.FromPartitions": {
+   "categorias": [
+    "Table functions"
+   ],
+   "url": "https://learn.microsoft.com/pt-br/powerquery-m/table-frompartitions"
+  },
+  "Table.FromRecords": {
+   "categorias": [
+    "Table functions"
+   ],
+   "url": "https://learn.microsoft.com/pt-br/powerquery-m/table-fromrecords"
+  },
+  "Table.FromRows": {
+   "categorias": [
+    "Table functions"
+   ],
+   "url": "https://learn.microsoft.com/pt-br/powerquery-m/table-fromrows"
+  },
+  "Table.FromValue": {
+   "categorias": [
+    "Table functions"
+   ],
+   "url": "https://learn.microsoft.com/pt-br/powerquery-m/table-fromvalue"
+  },
+  "Table.FuzzyGroup": {
+   "categorias": [
+    "Table functions"
+   ],
+   "url": "https://learn.microsoft.com/pt-br/powerquery-m/table-fuzzygroup"
+  },
+  "Table.FuzzyJoin": {
+   "categorias": [
+    "Table functions"
+   ],
+   "url": "https://learn.microsoft.com/pt-br/powerquery-m/table-fuzzyjoin"
+  },
+  "Table.FuzzyNestedJoin": {
+   "categorias": [
+    "Table functions"
+   ],
+   "url": "https://learn.microsoft.com/pt-br/powerquery-m/table-fuzzynestedjoin"
+  },
+  "Table.Group": {
+   "categorias": [
+    "Table functions"
+   ],
+   "url": "https://learn.microsoft.com/pt-br/powerquery-m/table-group",
+   "descricao": "Agrupa linhas e agrega.",
+   "uso": "Pré-agregar uma fonte grande."
+  },
+  "Table.HasColumns": {
+   "categorias": [
+    "Table functions"
+   ],
+   "url": "https://learn.microsoft.com/pt-br/powerquery-m/table-hascolumns"
+  },
+  "Table.InsertRows": {
+   "categorias": [
+    "Table functions"
+   ],
+   "url": "https://learn.microsoft.com/pt-br/powerquery-m/table-insertrows"
+  },
+  "Table.IsDistinct": {
+   "categorias": [
+    "Table functions"
+   ],
+   "url": "https://learn.microsoft.com/pt-br/powerquery-m/table-isdistinct"
+  },
+  "Table.IsEmpty": {
+   "categorias": [
+    "Table functions"
+   ],
+   "url": "https://learn.microsoft.com/pt-br/powerquery-m/table-isempty"
+  },
+  "Table.Join": {
+   "categorias": [
+    "Table functions"
+   ],
+   "url": "https://learn.microsoft.com/pt-br/powerquery-m/table-join"
+  },
+  "Table.Keys": {
+   "categorias": [
+    "Table functions"
+   ],
+   "url": "https://learn.microsoft.com/pt-br/powerquery-m/table-keys"
+  },
+  "Table.Last": {
+   "categorias": [
+    "Table functions"
+   ],
+   "url": "https://learn.microsoft.com/pt-br/powerquery-m/table-last"
+  },
+  "Table.LastN": {
+   "categorias": [
+    "Table functions"
+   ],
+   "url": "https://learn.microsoft.com/pt-br/powerquery-m/table-lastn"
+  },
+  "Table.MatchesAllRows": {
+   "categorias": [
+    "Table functions"
+   ],
+   "url": "https://learn.microsoft.com/pt-br/powerquery-m/table-matchesallrows"
+  },
+  "Table.MatchesAnyRows": {
+   "categorias": [
+    "Table functions"
+   ],
+   "url": "https://learn.microsoft.com/pt-br/powerquery-m/table-matchesanyrows"
+  },
+  "Table.Max": {
+   "categorias": [
+    "Table functions"
+   ],
+   "url": "https://learn.microsoft.com/pt-br/powerquery-m/table-max"
+  },
+  "Table.MaxN": {
+   "categorias": [
+    "Table functions"
+   ],
+   "url": "https://learn.microsoft.com/pt-br/powerquery-m/table-maxn"
+  },
+  "Table.Min": {
+   "categorias": [
+    "Table functions"
+   ],
+   "url": "https://learn.microsoft.com/pt-br/powerquery-m/table-min"
+  },
+  "Table.MinN": {
+   "categorias": [
+    "Table functions"
+   ],
+   "url": "https://learn.microsoft.com/pt-br/powerquery-m/table-minn"
+  },
+  "Table.NestedJoin": {
+   "categorias": [
+    "Table functions"
+   ],
+   "url": "https://learn.microsoft.com/pt-br/powerquery-m/table-nestedjoin",
+   "descricao": "Junta duas tabelas por colunas-chave (resultado aninhado).",
+   "uso": ""
+  },
+  "Table.Partition": {
+   "categorias": [
+    "Table functions"
+   ],
+   "url": "https://learn.microsoft.com/pt-br/powerquery-m/table-partition"
+  },
+  "Table.PartitionKey": {
+   "categorias": [
+    "Table functions"
+   ],
+   "url": "https://learn.microsoft.com/pt-br/powerquery-m/table-partitionkey"
+  },
+  "Table.PartitionValues": {
+   "categorias": [
+    "Binary functions",
+    "Table functions"
+   ],
+   "url": "https://learn.microsoft.com/pt-br/powerquery-m/table-partitionvalues"
+  },
+  "Table.Pivot": {
+   "categorias": [
+    "Table functions"
+   ],
+   "url": "https://learn.microsoft.com/pt-br/powerquery-m/table-pivot",
+   "descricao": "Transforma valores de uma coluna em colunas.",
+   "uso": ""
+  },
+  "Table.PositionOf": {
+   "categorias": [
+    "Table functions"
+   ],
+   "url": "https://learn.microsoft.com/pt-br/powerquery-m/table-positionof"
+  },
+  "Table.PositionOfAny": {
+   "categorias": [
+    "Table functions"
+   ],
+   "url": "https://learn.microsoft.com/pt-br/powerquery-m/table-positionofany"
+  },
+  "Table.PrefixColumns": {
+   "categorias": [
+    "Table functions"
+   ],
+   "url": "https://learn.microsoft.com/pt-br/powerquery-m/table-prefixcolumns"
+  },
+  "Table.Profile": {
+   "categorias": [
+    "Table functions"
+   ],
+   "url": "https://learn.microsoft.com/pt-br/powerquery-m/table-profile"
+  },
+  "Table.PromoteHeaders": {
+   "categorias": [
+    "Table functions"
+   ],
+   "url": "https://learn.microsoft.com/pt-br/powerquery-m/table-promoteheaders",
+   "descricao": "Usa a primeira linha como cabeçalho.",
+   "uso": ""
+  },
+  "Table.Range": {
+   "categorias": [
+    "Table functions"
+   ],
+   "url": "https://learn.microsoft.com/pt-br/powerquery-m/table-range"
+  },
+  "Table.RemoveColumns": {
+   "categorias": [
+    "Table functions"
+   ],
+   "url": "https://learn.microsoft.com/pt-br/powerquery-m/table-removecolumns"
+  },
+  "Table.RemoveFirstN": {
+   "categorias": [
+    "Table functions"
+   ],
+   "url": "https://learn.microsoft.com/pt-br/powerquery-m/table-removefirstn"
+  },
+  "Table.RemoveLastN": {
+   "categorias": [
+    "Table functions"
+   ],
+   "url": "https://learn.microsoft.com/pt-br/powerquery-m/table-removelastn"
+  },
+  "Table.RemoveMatchingRows": {
+   "categorias": [
+    "Table functions"
+   ],
+   "url": "https://learn.microsoft.com/pt-br/powerquery-m/table-removematchingrows"
+  },
+  "Table.RemoveRows": {
+   "categorias": [
+    "Table functions"
+   ],
+   "url": "https://learn.microsoft.com/pt-br/powerquery-m/table-removerows"
+  },
+  "Table.RemoveRowsWithErrors": {
+   "categorias": [
+    "Table functions"
+   ],
+   "url": "https://learn.microsoft.com/pt-br/powerquery-m/table-removerowswitherrors"
+  },
+  "Table.RenameColumns": {
+   "categorias": [
+    "Table functions"
+   ],
+   "url": "https://learn.microsoft.com/pt-br/powerquery-m/table-renamecolumns",
+   "descricao": "Renomeia colunas.",
+   "uso": "Nome amigável no modelo."
+  },
+  "Table.ReorderColumns": {
+   "categorias": [
+    "Table functions"
+   ],
+   "url": "https://learn.microsoft.com/pt-br/powerquery-m/table-reordercolumns"
+  },
+  "Table.Repeat": {
+   "categorias": [
+    "Table functions"
+   ],
+   "url": "https://learn.microsoft.com/pt-br/powerquery-m/table-repeat"
+  },
+  "Table.ReplaceErrorValues": {
+   "categorias": [
+    "Table functions"
+   ],
+   "url": "https://learn.microsoft.com/pt-br/powerquery-m/table-replaceerrorvalues"
+  },
+  "Table.ReplaceKeys": {
+   "categorias": [
+    "Table functions"
+   ],
+   "url": "https://learn.microsoft.com/pt-br/powerquery-m/table-replacekeys"
+  },
+  "Table.ReplaceMatchingRows": {
+   "categorias": [
+    "Table functions"
+   ],
+   "url": "https://learn.microsoft.com/pt-br/powerquery-m/table-replacematchingrows"
+  },
+  "Table.ReplacePartitionKey": {
+   "categorias": [
+    "Table functions"
+   ],
+   "url": "https://learn.microsoft.com/pt-br/powerquery-m/table-replacepartitionkey"
+  },
+  "Table.ReplaceRelationshipIdentity [internal]": {
+   "categorias": [
+    "Table functions"
+   ],
+   "url": "https://learn.microsoft.com/pt-br/powerquery-m/table-replacerelationshipidentity"
+  },
+  "Table.ReplaceRows": {
+   "categorias": [
+    "Table functions"
+   ],
+   "url": "https://learn.microsoft.com/pt-br/powerquery-m/table-replacerows"
+  },
+  "Table.ReplaceValue": {
+   "categorias": [
+    "Table functions"
+   ],
+   "url": "https://learn.microsoft.com/pt-br/powerquery-m/table-replacevalue",
+   "descricao": "Troca valores numa coluna.",
+   "uso": ""
+  },
+  "Table.ReverseRows": {
+   "categorias": [
+    "Table functions"
+   ],
+   "url": "https://learn.microsoft.com/pt-br/powerquery-m/table-reverserows"
+  },
+  "Table.RowCount": {
+   "categorias": [
+    "Table functions"
+   ],
+   "url": "https://learn.microsoft.com/pt-br/powerquery-m/table-rowcount"
+  },
+  "Table.Schema": {
+   "categorias": [
+    "Table functions"
+   ],
+   "url": "https://learn.microsoft.com/pt-br/powerquery-m/table-schema",
+   "descricao": "Descreve as colunas de uma tabela (nome, tipo...).",
+   "uso": "É a receita M do Deidara."
+  },
+  "Table.SelectColumns": {
+   "categorias": [
+    "Table functions"
+   ],
+   "url": "https://learn.microsoft.com/pt-br/powerquery-m/table-selectcolumns",
+   "descricao": "Mantém só as colunas informadas.",
+   "uso": "O Deidara usa para levar ao modelo só o que o painel usa."
+  },
+  "Table.SelectRows": {
+   "categorias": [
+    "Table functions"
+   ],
+   "url": "https://learn.microsoft.com/pt-br/powerquery-m/table-selectrows",
+   "descricao": "Mantém as linhas que atendem a uma condição.",
+   "uso": "Filtro na origem (o que não entra no modelo não pesa)."
+  },
+  "Table.SelectRowsWithErrors": {
+   "categorias": [
+    "Table functions"
+   ],
+   "url": "https://learn.microsoft.com/pt-br/powerquery-m/table-selectrowswitherrors"
+  },
+  "Table.SingleRow": {
+   "categorias": [
+    "Table functions"
+   ],
+   "url": "https://learn.microsoft.com/pt-br/powerquery-m/table-singlerow"
+  },
+  "Table.Skip": {
+   "categorias": [
+    "Table functions"
+   ],
+   "url": "https://learn.microsoft.com/pt-br/powerquery-m/table-skip"
+  },
+  "Table.Sort": {
+   "categorias": [
+    "Table functions"
+   ],
+   "url": "https://learn.microsoft.com/pt-br/powerquery-m/table-sort"
+  },
+  "Table.Split": {
+   "categorias": [
+    "Table functions"
+   ],
+   "url": "https://learn.microsoft.com/pt-br/powerquery-m/table-split"
+  },
+  "Table.SplitAt": {
+   "categorias": [
+    "Table functions"
+   ],
+   "url": "https://learn.microsoft.com/pt-br/powerquery-m/table-splitat"
+  },
+  "Table.SplitColumn": {
+   "categorias": [
+    "Table functions"
+   ],
+   "url": "https://learn.microsoft.com/pt-br/powerquery-m/table-splitcolumn"
+  },
+  "Table.StopFolding": {
+   "categorias": [
+    "Table functions"
+   ],
+   "url": "https://learn.microsoft.com/pt-br/powerquery-m/table-stopfolding"
+  },
+  "Table.ToColumns": {
+   "categorias": [
+    "Table functions"
+   ],
+   "url": "https://learn.microsoft.com/pt-br/powerquery-m/table-tocolumns"
+  },
+  "Table.ToList": {
+   "categorias": [
+    "Table functions"
+   ],
+   "url": "https://learn.microsoft.com/pt-br/powerquery-m/table-tolist"
+  },
+  "Table.ToRecords": {
+   "categorias": [
+    "Table functions"
+   ],
+   "url": "https://learn.microsoft.com/pt-br/powerquery-m/table-torecords"
+  },
+  "Table.ToRows": {
+   "categorias": [
+    "Table functions"
+   ],
+   "url": "https://learn.microsoft.com/pt-br/powerquery-m/table-torows"
+  },
+  "Table.TransformColumnNames": {
+   "categorias": [
+    "Table functions"
+   ],
+   "url": "https://learn.microsoft.com/pt-br/powerquery-m/table-transformcolumnnames"
+  },
+  "Table.TransformColumnTypes": {
+   "categorias": [
+    "Table functions"
+   ],
+   "url": "https://learn.microsoft.com/pt-br/powerquery-m/table-transformcolumntypes",
+   "descricao": "Define o tipo de cada coluna.",
+   "uso": "Coluna sem tipo vira texto e quebra relação e soma."
+  },
+  "Table.TransformColumns": {
+   "categorias": [
+    "Table functions"
+   ],
+   "url": "https://learn.microsoft.com/pt-br/powerquery-m/table-transformcolumns"
+  },
+  "Table.TransformRows": {
+   "categorias": [
+    "Table functions"
+   ],
+   "url": "https://learn.microsoft.com/pt-br/powerquery-m/table-transformrows"
+  },
+  "Table.Transpose": {
+   "categorias": [
+    "Table functions"
+   ],
+   "url": "https://learn.microsoft.com/pt-br/powerquery-m/table-transpose"
+  },
+  "Table.Unpivot": {
+   "categorias": [
+    "Table functions"
+   ],
+   "url": "https://learn.microsoft.com/pt-br/powerquery-m/table-unpivot"
+  },
+  "Table.UnpivotOtherColumns": {
+   "categorias": [
+    "Table functions"
+   ],
+   "url": "https://learn.microsoft.com/pt-br/powerquery-m/table-unpivotothercolumns",
+   "descricao": "Transforma colunas em linhas (despivotar).",
+   "uso": "Planilha de metas com um mês por coluna."
+  },
+  "Table.View": {
+   "categorias": [
+    "Table functions"
+   ],
+   "url": "https://learn.microsoft.com/pt-br/powerquery-m/table-view"
+  },
+  "Table.ViewError": {
+   "categorias": [
+    "Table functions"
+   ],
+   "url": "https://learn.microsoft.com/pt-br/powerquery-m/table-viewerror"
+  },
+  "Table.ViewFunction": {
+   "categorias": [
+    "Table functions"
+   ],
+   "url": "https://learn.microsoft.com/pt-br/powerquery-m/table-viewfunction"
+  },
+  "Table.WithErrorContext [internal]": {
+   "categorias": [
+    "Table functions"
+   ],
+   "url": "https://learn.microsoft.com/pt-br/powerquery-m/table-witherrorcontext"
+  },
+  "Tables.GetRelationships": {
+   "categorias": [
+    "Table functions"
+   ],
+   "url": "https://learn.microsoft.com/pt-br/powerquery-m/tables-getrelationships"
+  },
+  "Teradata.Database": {
+   "categorias": [
+    "Accessing data functions"
+   ],
+   "url": "https://learn.microsoft.com/pt-br/powerquery-m/teradata-database"
+  },
+  "Text.AfterDelimiter": {
+   "categorias": [
+    "Text functions"
+   ],
+   "url": "https://learn.microsoft.com/pt-br/powerquery-m/text-afterdelimiter"
+  },
+  "Text.At": {
+   "categorias": [
+    "Text functions"
+   ],
+   "url": "https://learn.microsoft.com/pt-br/powerquery-m/text-at"
+  },
+  "Text.BeforeDelimiter": {
+   "categorias": [
+    "Text functions"
+   ],
+   "url": "https://learn.microsoft.com/pt-br/powerquery-m/text-beforedelimiter"
+  },
+  "Text.BetweenDelimiters": {
+   "categorias": [
+    "Text functions"
+   ],
+   "url": "https://learn.microsoft.com/pt-br/powerquery-m/text-betweendelimiters"
+  },
+  "Text.Clean": {
+   "categorias": [
+    "Text functions"
+   ],
+   "url": "https://learn.microsoft.com/pt-br/powerquery-m/text-clean"
+  },
+  "Text.Combine": {
+   "categorias": [
+    "Text functions"
+   ],
+   "url": "https://learn.microsoft.com/pt-br/powerquery-m/text-combine",
+   "descricao": "Junta textos com um separador.",
+   "uso": "Chave composta."
+  },
+  "Text.Contains": {
+   "categorias": [
+    "Text functions"
+   ],
+   "url": "https://learn.microsoft.com/pt-br/powerquery-m/text-contains"
+  },
+  "Text.End": {
+   "categorias": [
+    "Text functions"
+   ],
+   "url": "https://learn.microsoft.com/pt-br/powerquery-m/text-end"
+  },
+  "Text.EndsWith": {
+   "categorias": [
+    "Text functions"
+   ],
+   "url": "https://learn.microsoft.com/pt-br/powerquery-m/text-endswith"
+  },
+  "Text.From": {
+   "categorias": [
+    "Text functions"
+   ],
+   "url": "https://learn.microsoft.com/pt-br/powerquery-m/text-from",
+   "descricao": "Converte um valor em texto.",
+   "uso": ""
+  },
+  "Text.FromBinary": {
+   "categorias": [
+    "Text functions"
+   ],
+   "url": "https://learn.microsoft.com/pt-br/powerquery-m/text-frombinary"
+  },
+  "Text.InferNumberType": {
+   "categorias": [
+    "Text functions"
+   ],
+   "url": "https://learn.microsoft.com/pt-br/powerquery-m/text-infernumbertype"
+  },
+  "Text.Insert": {
+   "categorias": [
+    "Text functions"
+   ],
+   "url": "https://learn.microsoft.com/pt-br/powerquery-m/text-insert"
+  },
+  "Text.Length": {
+   "categorias": [
+    "Text functions"
+   ],
+   "url": "https://learn.microsoft.com/pt-br/powerquery-m/text-length"
+  },
+  "Text.Lower": {
+   "categorias": [
+    "Text functions"
+   ],
+   "url": "https://learn.microsoft.com/pt-br/powerquery-m/text-lower"
+  },
+  "Text.Middle": {
+   "categorias": [
+    "Text functions"
+   ],
+   "url": "https://learn.microsoft.com/pt-br/powerquery-m/text-middle"
+  },
+  "Text.NewGuid": {
+   "categorias": [
+    "Text functions"
+   ],
+   "url": "https://learn.microsoft.com/pt-br/powerquery-m/text-newguid"
+  },
+  "Text.PadEnd": {
+   "categorias": [
+    "Text functions"
+   ],
+   "url": "https://learn.microsoft.com/pt-br/powerquery-m/text-padend"
+  },
+  "Text.PadStart": {
+   "categorias": [
+    "Text functions"
+   ],
+   "url": "https://learn.microsoft.com/pt-br/powerquery-m/text-padstart",
+   "descricao": "Completa o texto à esquerda até um tamanho.",
+   "uso": "Código \"7\" -> \"007\"."
+  },
+  "Text.PositionOf": {
+   "categorias": [
+    "Text functions"
+   ],
+   "url": "https://learn.microsoft.com/pt-br/powerquery-m/text-positionof"
+  },
+  "Text.PositionOfAny": {
+   "categorias": [
+    "Text functions"
+   ],
+   "url": "https://learn.microsoft.com/pt-br/powerquery-m/text-positionofany"
+  },
+  "Text.Proper": {
+   "categorias": [
+    "Text functions"
+   ],
+   "url": "https://learn.microsoft.com/pt-br/powerquery-m/text-proper"
+  },
+  "Text.Range": {
+   "categorias": [
+    "Text functions"
+   ],
+   "url": "https://learn.microsoft.com/pt-br/powerquery-m/text-range"
+  },
+  "Text.Remove": {
+   "categorias": [
+    "Text functions"
+   ],
+   "url": "https://learn.microsoft.com/pt-br/powerquery-m/text-remove"
+  },
+  "Text.RemoveRange": {
+   "categorias": [
+    "Text functions"
+   ],
+   "url": "https://learn.microsoft.com/pt-br/powerquery-m/text-removerange"
+  },
+  "Text.Repeat": {
+   "categorias": [
+    "Text functions"
+   ],
+   "url": "https://learn.microsoft.com/pt-br/powerquery-m/text-repeat"
+  },
+  "Text.Replace": {
+   "categorias": [
+    "Text functions"
+   ],
+   "url": "https://learn.microsoft.com/pt-br/powerquery-m/text-replace"
+  },
+  "Text.ReplaceRange": {
+   "categorias": [
+    "Text functions"
+   ],
+   "url": "https://learn.microsoft.com/pt-br/powerquery-m/text-replacerange"
+  },
+  "Text.Reverse": {
+   "categorias": [
+    "Text functions"
+   ],
+   "url": "https://learn.microsoft.com/pt-br/powerquery-m/text-reverse"
+  },
+  "Text.Select": {
+   "categorias": [
+    "Text functions"
+   ],
+   "url": "https://learn.microsoft.com/pt-br/powerquery-m/text-select"
+  },
+  "Text.Split": {
+   "categorias": [
+    "Text functions"
+   ],
+   "url": "https://learn.microsoft.com/pt-br/powerquery-m/text-split"
+  },
+  "Text.SplitAny": {
+   "categorias": [
+    "Text functions"
+   ],
+   "url": "https://learn.microsoft.com/pt-br/powerquery-m/text-splitany"
+  },
+  "Text.Start": {
+   "categorias": [
+    "Text functions"
+   ],
+   "url": "https://learn.microsoft.com/pt-br/powerquery-m/text-start"
+  },
+  "Text.StartsWith": {
+   "categorias": [
+    "Text functions"
+   ],
+   "url": "https://learn.microsoft.com/pt-br/powerquery-m/text-startswith"
+  },
+  "Text.ToBinary": {
+   "categorias": [
+    "Text functions"
+   ],
+   "url": "https://learn.microsoft.com/pt-br/powerquery-m/text-tobinary"
+  },
+  "Text.ToList": {
+   "categorias": [
+    "Text functions"
+   ],
+   "url": "https://learn.microsoft.com/pt-br/powerquery-m/text-tolist"
+  },
+  "Text.Trim": {
+   "categorias": [
+    "Text functions"
+   ],
+   "url": "https://learn.microsoft.com/pt-br/powerquery-m/text-trim",
+   "descricao": "Tira espaços das pontas.",
+   "uso": "Código com espaço quebra relação."
+  },
+  "Text.TrimEnd": {
+   "categorias": [
+    "Text functions"
+   ],
+   "url": "https://learn.microsoft.com/pt-br/powerquery-m/text-trimend"
+  },
+  "Text.TrimStart": {
+   "categorias": [
+    "Text functions"
+   ],
+   "url": "https://learn.microsoft.com/pt-br/powerquery-m/text-trimstart"
+  },
+  "Text.Upper": {
+   "categorias": [
+    "Text functions"
+   ],
+   "url": "https://learn.microsoft.com/pt-br/powerquery-m/text-upper"
+  },
+  "Time.EndOfHour": {
+   "categorias": [
+    "Time functions"
+   ],
+   "url": "https://learn.microsoft.com/pt-br/powerquery-m/time-endofhour"
+  },
+  "Time.From": {
+   "categorias": [
+    "Time functions"
+   ],
+   "url": "https://learn.microsoft.com/pt-br/powerquery-m/time-from"
+  },
+  "Time.FromText": {
+   "categorias": [
+    "Time functions"
+   ],
+   "url": "https://learn.microsoft.com/pt-br/powerquery-m/time-fromtext"
+  },
+  "Time.Hour": {
+   "categorias": [
+    "Time functions"
+   ],
+   "url": "https://learn.microsoft.com/pt-br/powerquery-m/time-hour"
+  },
+  "Time.Minute": {
+   "categorias": [
+    "Time functions"
+   ],
+   "url": "https://learn.microsoft.com/pt-br/powerquery-m/time-minute"
+  },
+  "Time.Second": {
+   "categorias": [
+    "Time functions"
+   ],
+   "url": "https://learn.microsoft.com/pt-br/powerquery-m/time-second"
+  },
+  "Time.StartOfHour": {
+   "categorias": [
+    "Time functions"
+   ],
+   "url": "https://learn.microsoft.com/pt-br/powerquery-m/time-startofhour"
+  },
+  "Time.ToRecord": {
+   "categorias": [
+    "Time functions"
+   ],
+   "url": "https://learn.microsoft.com/pt-br/powerquery-m/time-torecord"
+  },
+  "Time.ToText": {
+   "categorias": [
+    "Time functions"
+   ],
+   "url": "https://learn.microsoft.com/pt-br/powerquery-m/time-totext"
+  },
+  "Type.AddTableKey": {
+   "categorias": [
+    "Type functions"
+   ],
+   "url": "https://learn.microsoft.com/pt-br/powerquery-m/type-addtablekey"
+  },
+  "Type.ClosedRecord": {
+   "categorias": [
+    "Type functions"
+   ],
+   "url": "https://learn.microsoft.com/pt-br/powerquery-m/type-closedrecord"
+  },
+  "Type.Facets": {
+   "categorias": [
+    "Type functions"
+   ],
+   "url": "https://learn.microsoft.com/pt-br/powerquery-m/type-facets"
+  },
+  "Type.ForFunction": {
+   "categorias": [
+    "Type functions"
+   ],
+   "url": "https://learn.microsoft.com/pt-br/powerquery-m/type-forfunction"
+  },
+  "Type.ForRecord": {
+   "categorias": [
+    "Type functions"
+   ],
+   "url": "https://learn.microsoft.com/pt-br/powerquery-m/type-forrecord"
+  },
+  "Type.FunctionParameters": {
+   "categorias": [
+    "Type functions"
+   ],
+   "url": "https://learn.microsoft.com/pt-br/powerquery-m/type-functionparameters"
+  },
+  "Type.FunctionRequiredParameters": {
+   "categorias": [
+    "Type functions"
+   ],
+   "url": "https://learn.microsoft.com/pt-br/powerquery-m/type-functionrequiredparameters"
+  },
+  "Type.FunctionReturn": {
+   "categorias": [
+    "Type functions"
+   ],
+   "url": "https://learn.microsoft.com/pt-br/powerquery-m/type-functionreturn"
+  },
+  "Type.Is": {
+   "categorias": [
+    "Type functions"
+   ],
+   "url": "https://learn.microsoft.com/pt-br/powerquery-m/type-is"
+  },
+  "Type.IsNullable": {
+   "categorias": [
+    "Type functions"
+   ],
+   "url": "https://learn.microsoft.com/pt-br/powerquery-m/type-isnullable"
+  },
+  "Type.IsOpenRecord": {
+   "categorias": [
+    "Type functions"
+   ],
+   "url": "https://learn.microsoft.com/pt-br/powerquery-m/type-isopenrecord"
+  },
+  "Type.ListItem": {
+   "categorias": [
+    "Type functions"
+   ],
+   "url": "https://learn.microsoft.com/pt-br/powerquery-m/type-listitem"
+  },
+  "Type.NonNullable": {
+   "categorias": [
+    "Type functions"
+   ],
+   "url": "https://learn.microsoft.com/pt-br/powerquery-m/type-nonnullable"
+  },
+  "Type.OpenRecord": {
+   "categorias": [
+    "Type functions"
+   ],
+   "url": "https://learn.microsoft.com/pt-br/powerquery-m/type-openrecord"
+  },
+  "Type.RecordFields": {
+   "categorias": [
+    "Type functions"
+   ],
+   "url": "https://learn.microsoft.com/pt-br/powerquery-m/type-recordfields"
+  },
+  "Type.ReplaceFacets": {
+   "categorias": [
+    "Type functions"
+   ],
+   "url": "https://learn.microsoft.com/pt-br/powerquery-m/type-replacefacets"
+  },
+  "Type.ReplaceTableKeys": {
+   "categorias": [
+    "Type functions"
+   ],
+   "url": "https://learn.microsoft.com/pt-br/powerquery-m/type-replacetablekeys"
+  },
+  "Type.ReplaceTablePartitionKey": {
+   "categorias": [
+    "Type functions"
+   ],
+   "url": "https://learn.microsoft.com/pt-br/powerquery-m/type-replacetablepartitionkey"
+  },
+  "Type.TableColumn": {
+   "categorias": [
+    "Type functions"
+   ],
+   "url": "https://learn.microsoft.com/pt-br/powerquery-m/type-tablecolumn"
+  },
+  "Type.TableKeys": {
+   "categorias": [
+    "Type functions"
+   ],
+   "url": "https://learn.microsoft.com/pt-br/powerquery-m/type-tablekeys"
+  },
+  "Type.TablePartitionKey": {
+   "categorias": [
+    "Type functions"
+   ],
+   "url": "https://learn.microsoft.com/pt-br/powerquery-m/type-tablepartitionkey"
+  },
+  "Type.TableRow": {
+   "categorias": [
+    "Type functions"
+   ],
+   "url": "https://learn.microsoft.com/pt-br/powerquery-m/type-tablerow"
+  },
+  "Type.TableSchema": {
+   "categorias": [
+    "Type functions"
+   ],
+   "url": "https://learn.microsoft.com/pt-br/powerquery-m/type-tableschema"
+  },
+  "Type.Union": {
+   "categorias": [
+    "Type functions"
+   ],
+   "url": "https://learn.microsoft.com/pt-br/powerquery-m/type-union"
+  },
+  "Uri.BuildQueryString": {
+   "categorias": [
+    "Uri functions"
+   ],
+   "url": "https://learn.microsoft.com/pt-br/powerquery-m/uri-buildquerystring"
+  },
+  "Uri.Combine": {
+   "categorias": [
+    "Uri functions"
+   ],
+   "url": "https://learn.microsoft.com/pt-br/powerquery-m/uri-combine"
+  },
+  "Uri.EscapeDataString": {
+   "categorias": [
+    "Uri functions"
+   ],
+   "url": "https://learn.microsoft.com/pt-br/powerquery-m/uri-escapedatastring"
+  },
+  "Uri.Parts": {
+   "categorias": [
+    "Uri functions"
+   ],
+   "url": "https://learn.microsoft.com/pt-br/powerquery-m/uri-parts"
+  },
+  "Value.Add": {
+   "categorias": [
+    "Value functions"
+   ],
+   "url": "https://learn.microsoft.com/pt-br/powerquery-m/value-add"
+  },
+  "Value.Alternates": {
+   "categorias": [
+    "Value functions"
+   ],
+   "url": "https://learn.microsoft.com/pt-br/powerquery-m/value-alternates"
+  },
+  "Value.As": {
+   "categorias": [
+    "Value functions"
+   ],
+   "url": "https://learn.microsoft.com/pt-br/powerquery-m/value-as"
+  },
+  "Value.Compare": {
+   "categorias": [
+    "Value functions"
+   ],
+   "url": "https://learn.microsoft.com/pt-br/powerquery-m/value-compare"
+  },
+  "Value.Divide": {
+   "categorias": [
+    "Value functions"
+   ],
+   "url": "https://learn.microsoft.com/pt-br/powerquery-m/value-divide"
+  },
+  "Value.Equals": {
+   "categorias": [
+    "Value functions"
+   ],
+   "url": "https://learn.microsoft.com/pt-br/powerquery-m/value-equals"
+  },
+  "Value.Expression": {
+   "categorias": [
+    "Value functions"
+   ],
+   "url": "https://learn.microsoft.com/pt-br/powerquery-m/value-expression"
+  },
+  "Value.Firewall [internal]": {
+   "categorias": [
+    "Value functions"
+   ],
+   "url": "https://learn.microsoft.com/pt-br/powerquery-m/value-firewall"
+  },
+  "Value.FromText": {
+   "categorias": [
+    "Text functions"
+   ],
+   "url": "https://learn.microsoft.com/pt-br/powerquery-m/value-fromtext"
+  },
+  "Value.Is": {
+   "categorias": [
+    "Value functions"
+   ],
+   "url": "https://learn.microsoft.com/pt-br/powerquery-m/value-is"
+  },
+  "Value.Lineage [internal]": {
+   "categorias": [
+    "Value functions"
+   ],
+   "url": "https://learn.microsoft.com/pt-br/powerquery-m/value-lineage"
+  },
+  "Value.Metadata": {
+   "categorias": [
+    "Value functions"
+   ],
+   "url": "https://learn.microsoft.com/pt-br/powerquery-m/value-metadata"
+  },
+  "Value.Multiply": {
+   "categorias": [
+    "Value functions"
+   ],
+   "url": "https://learn.microsoft.com/pt-br/powerquery-m/value-multiply"
+  },
+  "Value.NativeQuery": {
+   "categorias": [
+    "Value functions"
+   ],
+   "url": "https://learn.microsoft.com/pt-br/powerquery-m/value-nativequery",
+   "descricao": "Roda uma consulta nativa na fonte.",
+   "uso": ""
+  },
+  "Value.NullableEquals": {
+   "categorias": [
+    "Value functions"
+   ],
+   "url": "https://learn.microsoft.com/pt-br/powerquery-m/value-nullableequals"
+  },
+  "Value.Optimize": {
+   "categorias": [
+    "Value functions"
+   ],
+   "url": "https://learn.microsoft.com/pt-br/powerquery-m/value-optimize"
+  },
+  "Value.RemoveMetadata": {
+   "categorias": [
+    "Value functions"
+   ],
+   "url": "https://learn.microsoft.com/pt-br/powerquery-m/value-removemetadata"
+  },
+  "Value.ReplaceMetadata": {
+   "categorias": [
+    "Value functions"
+   ],
+   "url": "https://learn.microsoft.com/pt-br/powerquery-m/value-replacemetadata"
+  },
+  "Value.ReplaceType": {
+   "categorias": [
+    "Value functions"
+   ],
+   "url": "https://learn.microsoft.com/pt-br/powerquery-m/value-replacetype"
+  },
+  "Value.Subtract": {
+   "categorias": [
+    "Value functions"
+   ],
+   "url": "https://learn.microsoft.com/pt-br/powerquery-m/value-subtract"
+  },
+  "Value.Traits [internal]": {
+   "categorias": [
+    "Value functions"
+   ],
+   "url": "https://learn.microsoft.com/pt-br/powerquery-m/value-traits"
+  },
+  "Value.Type": {
+   "categorias": [
+    "Value functions"
+   ],
+   "url": "https://learn.microsoft.com/pt-br/powerquery-m/value-type"
+  },
+  "Value.VersionIdentity": {
+   "categorias": [
+    "Value functions"
+   ],
+   "url": "https://learn.microsoft.com/pt-br/powerquery-m/value-versionidentity"
+  },
+  "Value.Versions": {
+   "categorias": [
+    "Value functions"
+   ],
+   "url": "https://learn.microsoft.com/pt-br/powerquery-m/value-versions"
+  },
+  "Value.ViewError [internal]": {
+   "categorias": [
+    "Value functions"
+   ],
+   "url": "https://learn.microsoft.com/pt-br/powerquery-m/value-viewerror"
+  },
+  "Value.ViewFunction [internal]": {
+   "categorias": [
+    "Value functions"
+   ],
+   "url": "https://learn.microsoft.com/pt-br/powerquery-m/value-viewfunction"
+  },
+  "Variable.Value": {
+   "categorias": [
+    "Value functions"
+   ],
+   "url": "https://learn.microsoft.com/pt-br/powerquery-m/variable-value"
+  },
+  "Variable.ValueOrDefault": {
+   "categorias": [
+    "Value functions"
+   ],
+   "url": "https://learn.microsoft.com/pt-br/powerquery-m/variable-valueordefault"
+  },
+  "Web.BrowserContents": {
+   "categorias": [
+    "Accessing data functions"
+   ],
+   "url": "https://learn.microsoft.com/pt-br/powerquery-m/web-browsercontents"
+  },
+  "Web.Contents": {
+   "categorias": [
+    "Accessing data functions"
+   ],
+   "url": "https://learn.microsoft.com/pt-br/powerquery-m/web-contents",
+   "descricao": "Faz uma requisição web e devolve o conteúdo.",
+   "uso": "APIs (use RelativePath/Query para atualizar no serviço)."
+  },
+  "Web.Headers": {
+   "categorias": [
+    "Accessing data functions"
+   ],
+   "url": "https://learn.microsoft.com/pt-br/powerquery-m/web-headers"
+  },
+  "Web.Page": {
+   "categorias": [
+    "Accessing data functions"
+   ],
+   "url": "https://learn.microsoft.com/pt-br/powerquery-m/web-page"
+  },
+  "WebAction.Request": {
+   "categorias": [
+    "Accessing data functions"
+   ],
+   "url": "https://learn.microsoft.com/pt-br/powerquery-m/webaction-request"
+  },
+  "Xml.Document": {
+   "categorias": [
+    "Accessing data functions"
+   ],
+   "url": "https://learn.microsoft.com/pt-br/powerquery-m/xml-document"
+  },
+  "Xml.Tables": {
+   "categorias": [
+    "Accessing data functions"
+   ],
+   "url": "https://learn.microsoft.com/pt-br/powerquery-m/xml-tables"
+  }
+ }
+}

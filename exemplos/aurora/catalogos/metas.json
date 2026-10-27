@@ -1,0 +1,53 @@
+{
+  "formato": "deidara-catalogo/1",
+  "fonte": "metas",
+  "tipo": "powerquery",
+  "receita": "m",
+  "coletado_em": "27/10/2026 14:03",
+  "tabelas": {
+    "Metas": {
+      "descricao": "",
+      "pk": [],
+      "expressao_m": "let\n    Fonte = Excel.Workbook(File.Contents(CaminhoMetas), null, true),\n    Metas = Fonte{[Item=\"Metas\", Kind=\"Table\"]}[Data],\n    Tipos = Table.TransformColumnTypes(Metas, {{\"Cód. Empresa\", Int64.Type}, {\"Empresa\", type text}, {\"Meta Turnover\", Percentage.Type}})\nin\n    Tipos",
+      "colunas": [
+        {
+          "coluna": "Cód. Empresa",
+          "familia": "inteiro",
+          "tipo": "Int64.Type",
+          "precisao": null,
+          "escala": null,
+          "tamanho": null,
+          "nulo": 1,
+          "descricao": "",
+          "tipo_indefinido": false
+        },
+        {
+          "coluna": "Empresa",
+          "familia": "texto",
+          "tipo": "Text.Type",
+          "precisao": null,
+          "escala": null,
+          "tamanho": null,
+          "nulo": 1,
+          "descricao": "",
+          "tipo_indefinido": false
+        },
+        {
+          "coluna": "Meta Turnover",
+          "familia": "real",
+          "tipo": "Percentage.Type",
+          "precisao": null,
+          "escala": null,
+          "tamanho": null,
+          "nulo": 1,
+          "descricao": "",
+          "tipo_indefinido": false
+        }
+      ]
+    }
+  },
+  "fks": [],
+  "expressoes": {
+    "CaminhoMetas": "\"\\\\servidor\\rh\\metas.xlsx\" meta [IsParameterQuery=true, Type=\"Text\", IsParameterQueryRequired=true]"
+  }
+}

@@ -1,5 +1,5 @@
 """
-Testes do Deidara sobre o exemplo fictício (schema "Aurora" do Vegapunk).
+Testes do Deidara sobre o exemplo fictício "Aurora" (ERP em SQL Server + planilha de metas).
 
     python3 -m unittest discover -s testes
 """
@@ -21,7 +21,7 @@ sys.path.insert(0, os.path.join(RAIZ, 'ferramentas'))
 import deidara  # noqa: E402
 import validar_pbip  # noqa: E402
 from argila.especificacao import referencias_dax, resolver  # noqa: E402
-from argila.schema import Schema  # noqa: E402
+from argila import catalogo, receitas  # noqa: E402
 
 EXEMPLO = os.path.join(RAIZ, 'exemplos', 'aurora')
 
@@ -35,11 +35,11 @@ def _md(argila, nome):
     return next(x for x in argila['medidas'] if x['nome'] == nome)
 
 
-SCHEMA = Schema.carregar([os.path.join(EXEMPLO, 'schema.json')])
+CATALOGOS = {n: catalogo.carregar(os.path.join(EXEMPLO, 'catalogos', f'{n}.json'), n) for n in ('erp', 'metas')}
 
 
 def _resolver(argila):
-    return resolver(argila, SCHEMA)
+    return resolver(argila, CATALOGOS)
 
 
 def _calado(fn, *args):
@@ -164,33 +164,31 @@ class TestValidacao(unittest.TestCase):
         self.assertEqual(refs, [(None, 'A'), ('d Cargo', 'Cargo')])
 
 
-def _col(nome, tipo, pk=None, escala=0, tamanho=4, precisao=10):
-    return {'coluna': nome, 'descricao': nome.lower(), 'tipo': tipo, 'tamanho': tamanho, 'precisao': precisao,
-            'escala': escala, 'nulo': 0 if pk else 1, 'ordem': 1, 'pk_ordem': pk}
+def _linha(secao, tabela, coluna='', tipo='', tamanho='', precisao='', escala='', nulo='', pk='', mae='', cmae='',
+           fk='', ordem=''):
+    return {'secao': secao, 'tabela': tabela, 'coluna': coluna, 'tipo': tipo, 'tamanho': str(tamanho),
+            'precisao': str(precisao), 'escala': str(escala), 'nulo': str(nulo), 'pk_ordem': str(pk),
+            'descricao': coluna.lower(), 'tabela_mae': mae, 'campo_mae': cmae, 'fk': fk, 'fk_ordem': str(ordem)}
 
 
 def _schema_sintetico():
-    """Pedidos x clientes, com a FK em tipos diferentes (varchar -> int) e colunas de borda."""
-    fk = {'constraint': 'FK_PED_CLI', 'origem': 'constraint', 'tabela_filha': 'PEDIDO', 'tabela_mae': 'CLIENTE',
-          'colunas': [{'campo_filho': 'CODCLI', 'campo_mae': 'COD'}], 'composta': False,
-          'on': 'PEDIDO.CODCLI = CLIENTE.COD', 'join': '', 'confirmado_pelo_dicionario': None, 'cobre_chave_da_mae': True}
-    fk2 = {'constraint': 'FK_PED_LOJA', 'origem': 'constraint', 'tabela_filha': 'PEDIDO', 'tabela_mae': 'LOJA',
-           'colunas': [{'campo_filho': 'EMP', 'campo_mae': 'EMP'}, {'campo_filho': 'LOJA', 'campo_mae': 'LOJA'}],
-           'composta': True, 'on': '', 'join': '', 'confirmado_pelo_dicionario': None, 'cobre_chave_da_mae': True}
-    dados = {'tabelas': {
-        'PEDIDO': {'metadados': {'pk': ['ID']}, 'colunas': [
-            _col('ID', 'int', 1), _col('CODCLI', 'varchar', tamanho=10, precisao=0),
-            _col('TAXA', 'decimal', escala=6, tamanho=9, precisao=18), _col('DATA', 'datetime'),
-            _col('HORA', 'time'), _col('EMP', 'int'), _col('LOJA', 'smallint')], 'fks': [fk, fk2]},
-        'CLIENTE': {'metadados': {'pk': ['COD']}, 'colunas': [_col('COD', 'int', 1), _col('NOME', 'varchar', tamanho=60)],
-                    'fks': [fk]},
-        'LOJA': {'metadados': {'pk': ['EMP', 'LOJA']}, 'colunas': [_col('EMP', 'int', 1), _col('LOJA', 'smallint', 2),
-                                                                   _col('NOMELOJA', 'varchar', tamanho=60)], 'fks': [fk2]},
-    }}
-    d = tempfile.mkdtemp(prefix='dds')
-    with open(os.path.join(d, 'schema.json'), 'w', encoding='utf-8') as f:
-        json.dump(dados, f)
-    return Schema.carregar([os.path.join(d, 'schema.json')])
+    """Pedidos x clientes, como se viessem da receita SQL: FK em tipos diferentes (varchar -> int),
+    FK composta e colunas de borda."""
+    L = _linha
+    linhas = [
+        L('coluna', 'PEDIDO', 'ID', 'int', 4, 10, 0, 0, 1), L('coluna', 'PEDIDO', 'CODCLI', 'varchar', 10, 0, 0, 1),
+        L('coluna', 'PEDIDO', 'TAXA', 'decimal', 9, 18, 6, 1), L('coluna', 'PEDIDO', 'DATA', 'datetime', 8, 23, 3, 1),
+        L('coluna', 'PEDIDO', 'HORA', 'time', 5, 16, 7, 1), L('coluna', 'PEDIDO', 'EMP', 'int', 4, 10, 0, 1),
+        L('coluna', 'PEDIDO', 'LOJA', 'smallint', 2, 5, 0, 1),
+        L('coluna', 'CLIENTE', 'COD', 'int', 4, 10, 0, 0, 1), L('coluna', 'CLIENTE', 'NOME', 'varchar', 60, 0, 0, 1),
+        L('coluna', 'LOJA', 'EMP', 'int', 4, 10, 0, 0, 1), L('coluna', 'LOJA', 'LOJA', 'smallint', 2, 5, 0, 0, 2),
+        L('coluna', 'LOJA', 'NOMELOJA', 'varchar', 60, 0, 0, 1),
+        L('fk', 'PEDIDO', 'CODCLI', mae='CLIENTE', cmae='COD', fk='FK_PED_CLI', ordem=1),
+        L('fk', 'PEDIDO', 'EMP', mae='LOJA', cmae='EMP', fk='FK_PED_LOJA', ordem=1),
+        L('fk', 'PEDIDO', 'LOJA', mae='LOJA', cmae='LOJA', fk='FK_PED_LOJA', ordem=2),
+    ]
+    cat, _ = receitas.catalogo_de_sql(linhas, 'loja')
+    return {'loja': catalogo.Fonte('loja', cat, '')}
 
 
 ARGILA_PEDIDOS = {
@@ -219,7 +217,7 @@ class TestTipos(unittest.TestCase):
         self.assertEqual((c['cast_sql'], c['tipo_tmdl']), ('int', 'int64'))
         self.assertTrue(any('convertida para int' in a for a in self.p.avisos))
         from argila.sql import views
-        self.assertIn('CAST(t.[CODCLI] AS int) AS [CODCLI]', views(self.m))
+        self.assertIn('CAST(t.[CODCLI] AS int) AS [CODCLI]', views(self.m, self.m['fontes']['loja']))
 
     def test_decimal_com_mais_de_4_casas_vira_double(self):
         self.assertEqual(self._col('fPedido', 'TAXA')['tipo_tmdl'], 'double')
@@ -240,14 +238,15 @@ class TestTipos(unittest.TestCase):
 
     def test_chave_composta_estavel_no_sql(self):
         from argila.sql import views
-        v = views(self.m)
+        v = views(self.m, self.m['fontes']['loja'])
         self.assertIn("ISNULL(RTRIM(CONVERT(nvarchar(100), t.[EMP])), N'∅')", v)
         self.assertIn("N'|'", v)
 
     def test_conferencia_sem_overflow_e_qualidade_com_nomes(self):
         from argila.sql import conferencia, qualidade
-        self.assertIn('COUNT_BIG(*)', conferencia(self.m))
-        for linha in qualidade(self.m).split('UNION ALL'):
+        f = self.m['fontes']['loja']
+        self.assertIn('COUNT_BIG(*)', conferencia(self.m, f))
+        for linha in qualidade(self.m, f).split('UNION ALL'):
             if 'SELECT' in linha:
                 self.assertIn('AS ocorrencias', linha)
 
@@ -260,7 +259,9 @@ class TestTipos(unittest.TestCase):
 
 class TestMetas(unittest.TestCase):
     def setUp(self):
-        self.m, self.p = _resolver(_base())
+        a = _base()
+        _md(a, 'Turnover')['meta'] = 0.05                     # meta numérica (o exemplo usa a da planilha)
+        self.m, self.p = _resolver(a)
 
     def test_meta_numerica_vira_medidas(self):
         from argila.especificacao import medida
@@ -321,6 +322,141 @@ class TestGovernanca(unittest.TestCase):
         self.assertEqual(ids(a), ids(b))
 
 
+COLADO_DAX = "\n".join("\t".join(l) for l in [
+    ["[secao]", "[tabela]", "[coluna]", "[tipo]", "[descricao]", "[extra]", "[expressao]"],
+    ["tabela", "Vendas", "", "", "Vendas do SharePoint", "", ""],
+    ["tabela", "Calc", "", "", "", "calculada", ""],
+    ["coluna", "Vendas", "Loja", "Int64", "", "", ""],
+    ["coluna", "Vendas", "Valor", "Decimal", "Valor da venda", "", ""],
+    ["coluna", "Vendas", "Data", "DateTime", "", "", ""],
+    ["coluna", "Vendas", "Margem", "Double", "", "calculada", ""],
+    ["coluna", "Lojas", "Loja", "Int64", "", "", ""],
+    ["coluna", "Lojas", "Nome", "String", "", "", ""],
+    ["relacao", "Vendas", "Loja", "Many>One", "Lojas[Loja]", "ativa", ""],
+    ["particao", "Vendas", "", "4", "", "", "let⏎    Fonte = SharePoint.Tables(Site)⏎in⏎    Fonte"],
+    ["particao", "Lojas", "", "4", "", "", "let⏎    Fonte = Excel.Workbook(File.Contents(Arq))⏎in⏎    Fonte"],
+    ["expressao", "Site", "", "0", "", "", "\"https://x.sharepoint.com/sites/rh\" meta [IsParameterQuery=true]"],
+])
+
+
+class TestReceitas(unittest.TestCase):
+    def _colar(self, texto):
+        d = tempfile.mkdtemp(prefix='ddr')
+        arq = os.path.join(d, 'r.txt')
+        with open(arq, 'w', encoding='utf-8') as f:
+            f.write(texto)
+        return arq
+
+    def test_receitas_tem_as_funcoes_documentadas(self):
+        dax = receitas.receita_dax()
+        for f in ('INFO.VIEW.TABLES()', 'INFO.VIEW.COLUMNS()', 'INFO.VIEW.RELATIONSHIPS()', 'INFO.PARTITIONS()',
+                  'INFO.EXPRESSIONS()', '[QueryDefinition]', '[FromCardinality]'):
+            self.assertIn(f, dax)
+        self.assertIn('Table.Schema(c{1})', receitas.receita_m(['Metas']))
+        self.assertIn("STRING_SPLIT(@tabelas", receitas.receita_sql('dbo', ['A', 'B']))
+
+    def test_catalogar_resultado_da_receita_dax(self):
+        cat, avisos = receitas.catalogar(self._colar(COLADO_DAX), 'vendas')
+        self.assertEqual(cat['tipo'], 'powerbi')
+        self.assertEqual(sorted(cat['tabelas']), ['Lojas', 'Vendas'])            # a calculada ficou de fora
+        cols = {c['coluna']: c['familia'] for c in cat['tabelas']['Vendas']['colunas']}
+        self.assertEqual(cols, {'Loja': 'inteiro', 'Valor': 'decimal', 'Data': 'datahora'})
+        self.assertIn('\n    Fonte = SharePoint.Tables(Site)', cat['tabelas']['Vendas']['expressao_m'])
+        self.assertEqual(cat['fks'][0]['tabela_filha'], 'Vendas')
+        self.assertIn('Site', cat['expressoes'])
+        self.assertTrue(any('Margem' in a for a in avisos) and any('Calc' in a for a in avisos))
+
+    def test_resultado_irreconhecivel(self):
+        with self.assertRaises(ValueError):
+            receitas.catalogar(self._colar('a\tb\n1\t2\n'), 'x')
+
+
+class TestFontes(unittest.TestCase):
+    def test_relacao_entre_fontes_sem_declarar_e_erro(self):
+        a = _base()
+        a['relacionamentos'][-1].pop('declarada')
+        _, p = _resolver(a)
+        self.assertTrue(any('fontes diferentes' in e for e in p.erros), p.erros)
+
+    def test_declarada_pede_quem_e_campos_que_existem(self):
+        a = _base()
+        a['relacionamentos'][-1]['declarada'] = {'campos': [['Cod Empresa', 'CODEMPRESA']]}
+        _, p = _resolver(a)
+        self.assertTrue(any('"por"' in e for e in p.erros), p.erros)
+        a['relacionamentos'][-1]['declarada']['por'] = 'Ana'
+        _, p = _resolver(a)
+        self.assertTrue(any('"Cod Empresa" não existe' in e and 'Cód. Empresa' in e for e in p.erros), p.erros)
+
+    def test_power_query_reaproveita_a_consulta_do_usuario(self):
+        from argila import tmdl
+        m, _ = _resolver(_base())
+        fmeta = next(t for t in m['tabelas'] if t['nome'] == 'fMeta')
+        texto = tmdl.tabela(m, fmeta)
+        self.assertIn('Excel.Workbook(File.Contents(CaminhoMetas), null, true)', texto)
+        self.assertIn('Table.SelectColumns(Origem, {"Meta Turnover", "Cód. Empresa"})', texto)
+        self.assertIn('expression CaminhoMetas', tmdl.expressoes(m))
+        self.assertIn('expression erp_Servidor', tmdl.expressoes(m))
+
+    def test_filtro_sql_em_fonte_power_query_e_erro(self):
+        a = _base()
+        next(t for t in a['tabelas'] if t['nome'] == 'fMeta')['filtro'] = 'x = 1'
+        _, p = _resolver(a)
+        self.assertTrue(any('só vale para fonte sqlserver' in e for e in p.erros), p.erros)
+
+    def test_chave_composta_em_power_query(self):
+        from argila import tmdl
+        cat, _ = receitas.catalogar(TestReceitas()._colar(COLADO_DAX), 'vendas')
+        fonte = catalogo.Fonte('vendas', cat, '')
+        a = {'projeto': 'V', 'fontes': {'vendas': {}}, 'tabelas': [
+            {'nome': 'fVendas', 'tipo': 'fato', 'origem': 'Vendas', 'colunas': ['Valor', 'Data']},
+            {'nome': 'dLojas', 'tipo': 'dimensao', 'origem': 'Lojas', 'colunas': ['Nome']}],
+            'relacionamentos': [{'de': 'fVendas', 'para': 'dLojas'}],
+            'medidas': [{'nome': 'Total', 'agregacao': 'soma', 'coluna': 'fVendas[Valor]'}],
+            'paginas': [{'nome': 'P', 'visuais': [{'tipo': 'barras', 'categoria': 'dLojas[Nome]', 'valores': ['Total']}]}]}
+        m, p = resolver(a, {'vendas': fonte})
+        self.assertEqual(p.erros, [])
+        self.assertEqual(m['relacionamentos'][0]['prova'], 'modelo existente')
+        self.assertIn('SharePoint.Tables(Site)', tmdl.tabela(m, m['tabelas'][0]))
+
+
+class TestDicionario(unittest.TestCase):
+    def test_funcao_inventada_e_erro_com_sugestao(self):
+        a = _base()
+        a['medidas'].append({'nome': 'X', 'dax': 'CALCULATE([Desligamentos], SAMEPERIODLASTYAER(dCalendario[Data]))'})
+        _, p = _resolver(a)
+        self.assertTrue(any('SAMEPERIODLASTYAER' in e and 'SAMEPERIODLASTYEAR' in e for e in p.erros), p.erros)
+
+    def test_dax_gerado_e_padroes_so_usam_funcoes_do_dicionario(self):
+        from argila import dicionario
+        m, _ = _resolver(_base())
+        for md in m['medidas']:
+            self.assertEqual(dicionario.desconhecidas(md['dax']), [], md['nome'])
+        for pd in dicionario.padroes()['padroes']:
+            for dax in (pd.get('dax'), (pd.get('argila') or {}).get('dax')):
+                if dax:
+                    self.assertEqual(dicionario.desconhecidas(dax), [], pd['id'])
+
+    def test_nomes_de_coluna_e_texto_nao_viram_funcao(self):
+        from argila import dicionario
+        self.assertEqual(dicionario.funcoes_usadas("SUM('T x'[A(b)]) + LEN(\"ABC(\") // FOO(1)"), ['SUM', 'LEN'])
+
+    def test_toda_funcao_tem_link_oficial_e_as_principais_tem_descricao(self):
+        from argila import dicionario
+        dax = dicionario.funcoes('dax')
+        for n in ('CALCULATE', 'DIVIDE', 'TOTALYTD', 'DATESINPERIOD', 'USERELATIONSHIP'):
+            self.assertTrue(dax[n]['url'].startswith('https://learn.microsoft.com/pt-br/dax/'), n)
+            self.assertTrue(dax[n].get('descricao'), n)
+        self.assertIn('Excel.Workbook', dicionario.funcoes('m'))
+
+    def test_dicionario_local_da_receita(self):
+        d = tempfile.mkdtemp(prefix='ddf')
+        arq = os.path.join(d, 'f.txt')
+        with open(arq, 'w', encoding='utf-8') as f:
+            f.write('FUNCTION_NAME\tDESCRIPTION\nSUM\tx\nNOVAFUNCAO\ty\n')
+        loc = receitas.dicionario_local(arq, 'dax')
+        self.assertEqual(sorted(loc['funcoes']), ['NOVAFUNCAO', 'SUM'])
+
+
 class TestSimulacao(unittest.TestCase):
     def setUp(self):
         from argila.simulacao import Simulador, categorias
@@ -347,7 +483,7 @@ class TestSimulacao(unittest.TestCase):
 class TestFluxo(unittest.TestCase):
     def setUp(self):
         self.dir = tempfile.mkdtemp(prefix='dd')
-        shutil.copy(os.path.join(EXEMPLO, 'schema.json'), self.dir)
+        shutil.copytree(os.path.join(EXEMPLO, 'catalogos'), os.path.join(self.dir, 'catalogos'))
         self.argila = os.path.join(self.dir, 'argila.json')
         with open(self.argila, 'w', encoding='utf-8') as f:
             json.dump(_base(), f, ensure_ascii=False)
@@ -376,12 +512,12 @@ class TestFluxo(unittest.TestCase):
         self.assertEqual(_calado(deidara.main, ['aprovar', self.argila, '--por', 'Teste'])[0], 0)
         saida = os.path.join(self.dir, 'o')
         self.assertEqual(_calado(deidara.main, ['gerar', self.argila, '-o', saida])[0], 0)
-        for arq in ['Quadro_e_Turnover.pbip', 'sql/01_views.sql', 'sql/02_conferencia.sql', 'LEIA-ME.md',
+        for arq in ['Quadro_e_Turnover.pbip', 'sql/erp/01_views.sql', 'sql/erp/03_qualidade.sql', 'LEIA-ME.md',
                     'docs/dicionario_indicadores.md', 'Quadro_e_Turnover.SemanticModel/definition/model.tmdl']:
             self.assertTrue(os.path.exists(os.path.join(saida, arq)), arq)
         _, tabelas, colunas, medidas, erros = validar_pbip.validar_tmdl(saida)
         self.assertEqual(erros, [])
-        self.assertEqual(len(tabelas), 6)
+        self.assertEqual(len(tabelas), 7)                      # 5 do ERP + metas + calendário
         self.assertEqual(validar_pbip.validar_visuais(saida, tabelas, colunas, medidas), [])
 
     def test_diff_mostra_mudanca_de_formula(self):
@@ -399,7 +535,7 @@ class TestFluxo(unittest.TestCase):
     def test_reaprovacao_grava_historico(self):
         _calado(deidara.main, ['aprovar', self.argila, '--por', 'Ana'])
         a = _base()
-        a['versao'] = '1.1'
+        a['versao'] = '1.2'
         a['paginas'][0]['visuais'].append({'tipo': 'cartao', 'medida': 'HC Médio'})
         with open(self.argila, 'w', encoding='utf-8') as f:
             json.dump(a, f, ensure_ascii=False)
@@ -407,7 +543,7 @@ class TestFluxo(unittest.TestCase):
         with open(os.path.join(self.dir, 'argila.aprovacao.json'), encoding='utf-8') as f:
             hist = json.load(f)['historico']
         self.assertEqual([h['aprovado_por'] for h in hist], ['Ana', 'Bia'])
-        self.assertIn('versão: 1.0 → 1.1', hist[1]['mudancas'])
+        self.assertIn('versão: 1.1 → 1.2', hist[1]['mudancas'])
         saida = os.path.join(self.dir, 'o')
         _calado(deidara.main, ['gerar', self.argila, '-o', saida])
         with open(os.path.join(saida, 'docs', 'dicionario_indicadores.md'), encoding='utf-8') as f:

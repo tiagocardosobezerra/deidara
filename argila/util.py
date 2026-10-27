@@ -14,7 +14,7 @@ import uuid
 
 NAMESPACE = uuid.UUID('6d1f3c2e-9a4b-5c7d-8e0f-de1da7a0c1a7')
 
-# Tipo base do SQL Server (como o `detalhar` do Vegapunk mostra) -> família.
+# Tipo base do SQL Server (catálogo da receita sql) -> família.
 _FAMILIA_SQL = {
     'int': 'inteiro', 'bigint': 'inteiro', 'smallint': 'inteiro', 'tinyint': 'inteiro',
     'decimal': 'decimal', 'numeric': 'decimal', 'money': 'decimal', 'smallmoney': 'decimal',
@@ -34,6 +34,18 @@ _TIPO_TMDL = {
 
 NUMERICAS = {'inteiro', 'decimal', 'real'}
 
+# Família -> tipo SQL Server (CAST na view quando a mãe vem de outra fonte).
+SQL_POR_FAMILIA = {
+    'inteiro': 'bigint', 'decimal': 'decimal(19,4)', 'real': 'float', 'data': 'date', 'datahora': 'datetime2',
+    'hora': 'time', 'logico': 'bit', 'texto': 'nvarchar(4000)',
+}
+
+# Família -> tipo do Power Query (Table.TransformColumnTypes).
+M_POR_FAMILIA = {
+    'inteiro': 'Int64.Type', 'decimal': 'Currency.Type', 'real': 'type number', 'data': 'type date',
+    'datahora': 'type datetime', 'hora': 'type time', 'logico': 'type logical', 'texto': 'type text',
+}
+
 # Formato amigável do argila.json -> formatString do Power BI (cultura pt-BR
 # troca os separadores sozinha) e exemplo para o protótipo.
 FORMATOS = {
@@ -51,7 +63,7 @@ def familia_sql(tipo):
 
 
 def familia_da_coluna(oc):
-    """Família de uma coluna do `detalhar`. decimal com mais de 4 casas vira
+    """Família de uma coluna do catálogo SQL. decimal com mais de 4 casas vira
     real (double): o decimal do Power BI é fixo em 4 casas e truncaria."""
     f = familia_sql(oc.get('tipo'))
     if f == 'decimal' and (oc.get('escala') or 0) > 4:
@@ -60,7 +72,7 @@ def familia_da_coluna(oc):
 
 
 def sql_tipo(oc):
-    """Tipo SQL completo de uma coluna do `detalhar` (para CAST), ou None."""
+    """Tipo SQL completo de uma coluna do catálogo SQL (para CAST), ou None."""
     t = (oc.get('tipo') or '').lower()
     if not t:
         return None
@@ -159,6 +171,6 @@ def gravar_texto(caminho, texto, bom=False):
 
 
 def numero_br(valor, casas=0):
-    """1234567.891 -> '1.234.567,89' (regra de saída pt-BR do Vegapunk)."""
+    """1234567.891 -> '1.234.567,89' (saída sempre em pt-BR)."""
     s = f'{valor:,.{casas}f}'
     return s.replace(',', '§').replace('.', ',').replace('§', '.')

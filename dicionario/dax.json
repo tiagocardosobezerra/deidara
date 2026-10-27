@@ -1,0 +1,3230 @@
+{
+ "formato": "deidara-dicionario/1",
+ "linguagem": "dax",
+ "origem": "Nomes, categorias, assinaturas e links levantados da referência oficial da Microsoft (Microsoft Learn) em 27/10/2026; descrições e usos em pt-BR escritos para o Deidara. A documentação completa é a da Microsoft, no link de cada função. Para o dicionário exato da sua versão do Power BI, use a receita de funções (deidara.py receita funcoes-dax | funcoes-m) e o catalogar --funcoes.",
+ "funcoes": {
+  "ABS": {
+   "categorias": [
+    "Matemáticas"
+   ],
+   "url": "https://learn.microsoft.com/pt-br/dax/abs-function-dax",
+   "descricao": "Valor absoluto.",
+   "uso": "",
+   "sintaxe": [
+    "ABS(<number>)"
+   ]
+  },
+  "ACCRINT": {
+   "categorias": [
+    "Financeiras"
+   ],
+   "url": "https://learn.microsoft.com/pt-br/dax/accrint-function-dax"
+  },
+  "ACCRINTM": {
+   "categorias": [
+    "Financeiras"
+   ],
+   "url": "https://learn.microsoft.com/pt-br/dax/accrintm-function-dax"
+  },
+  "ACOS": {
+   "categorias": [
+    "Matemáticas"
+   ],
+   "url": "https://learn.microsoft.com/pt-br/dax/acos-function-dax"
+  },
+  "ACOSH": {
+   "categorias": [
+    "Matemáticas"
+   ],
+   "url": "https://learn.microsoft.com/pt-br/dax/acosh-function-dax"
+  },
+  "ACOT": {
+   "categorias": [
+    "Matemáticas"
+   ],
+   "url": "https://learn.microsoft.com/pt-br/dax/acot-function-dax"
+  },
+  "ACOTH": {
+   "categorias": [
+    "Matemáticas"
+   ],
+   "url": "https://learn.microsoft.com/pt-br/dax/acoth-function-dax"
+  },
+  "ADDCOLUMNS": {
+   "categorias": [
+    "Manipulação de tabela"
+   ],
+   "url": "https://learn.microsoft.com/pt-br/dax/addcolumns-function-dax",
+   "descricao": "Acrescenta colunas calculadas a uma tabela.",
+   "uso": "",
+   "sintaxe": [
+    "ADDCOLUMNS(<table>, <name>, <expression>[, <name>, <expression>]…)"
+   ]
+  },
+  "ADDMISSINGITEMS": {
+   "categorias": [
+    "Manipulação de tabela"
+   ],
+   "url": "https://learn.microsoft.com/pt-br/dax/addmissingitems-function-dax"
+  },
+  "ALL": {
+   "categorias": [
+    "Filtro"
+   ],
+   "url": "https://learn.microsoft.com/pt-br/dax/all-function-dax",
+   "descricao": "Remove filtros de uma tabela ou colunas (devolve todas as linhas).",
+   "uso": "Denominador de participação: [Valor] / CALCULATE([Valor], ALL(dProduto)).",
+   "sintaxe": [
+    "ALL( [<table> | <column>[, <column>[, <column>[,…]]]] )"
+   ]
+  },
+  "ALLCROSSFILTERED": {
+   "categorias": [
+    "Filtro"
+   ],
+   "url": "https://learn.microsoft.com/pt-br/dax/allcrossfiltered-function-dax"
+  },
+  "ALLEXCEPT": {
+   "categorias": [
+    "Filtro"
+   ],
+   "url": "https://learn.microsoft.com/pt-br/dax/allexcept-function-dax",
+   "descricao": "Remove todos os filtros de uma tabela, exceto os das colunas informadas.",
+   "uso": "",
+   "sintaxe": [
+    "ALLEXCEPT(<table>,<column>[,<column>[,…]])"
+   ]
+  },
+  "ALLNOBLANKROW": {
+   "categorias": [
+    "Filtro"
+   ],
+   "url": "https://learn.microsoft.com/pt-br/dax/allnoblankrow-function-dax"
+  },
+  "ALLSELECTED": {
+   "categorias": [
+    "Filtro"
+   ],
+   "url": "https://learn.microsoft.com/pt-br/dax/allselected-function-dax",
+   "descricao": "Remove filtros internos do visual, mantendo os filtros externos (segmentadores).",
+   "uso": "Participação no total visível do visual.",
+   "sintaxe": [
+    "ALLSELECTED([<tableName> | <columnName>[, <columnName>[, <columnName>[,…]]]] )"
+   ]
+  },
+  "AMORDEGRC": {
+   "categorias": [
+    "Financeiras"
+   ],
+   "url": "https://learn.microsoft.com/pt-br/dax/amordegrc-function-dax"
+  },
+  "AMORLINC": {
+   "categorias": [
+    "Financeiras"
+   ],
+   "url": "https://learn.microsoft.com/pt-br/dax/amorlinc-function-dax"
+  },
+  "AND": {
+   "categorias": [
+    "Lógicas"
+   ],
+   "url": "https://learn.microsoft.com/pt-br/dax/and-function-dax",
+   "descricao": "Verdadeiro quando as duas condições são verdadeiras.",
+   "uso": "",
+   "sintaxe": [
+    "AND(<logical1>,<logical2>)"
+   ]
+  },
+  "APPROXIMATEDISTINCTCOUNT": {
+   "categorias": [
+    "Agregação"
+   ],
+   "url": "https://learn.microsoft.com/pt-br/dax/approximate-distinctcount-function-dax"
+  },
+  "ASIN": {
+   "categorias": [
+    "Matemáticas"
+   ],
+   "url": "https://learn.microsoft.com/pt-br/dax/asin-function-dax"
+  },
+  "ASINH": {
+   "categorias": [
+    "Matemáticas"
+   ],
+   "url": "https://learn.microsoft.com/pt-br/dax/asinh-function-dax"
+  },
+  "ATAN": {
+   "categorias": [
+    "Matemáticas"
+   ],
+   "url": "https://learn.microsoft.com/pt-br/dax/atan-function-dax"
+  },
+  "ATANH": {
+   "categorias": [
+    "Matemáticas"
+   ],
+   "url": "https://learn.microsoft.com/pt-br/dax/atanh-function-dax"
+  },
+  "AVERAGE": {
+   "categorias": [
+    "Agregação"
+   ],
+   "url": "https://learn.microsoft.com/pt-br/dax/average-function-dax",
+   "descricao": "Média aritmética dos valores de uma coluna.",
+   "uso": "Ticket médio por linha, nota média.",
+   "sintaxe": [
+    "AVERAGE(<column>)"
+   ]
+  },
+  "AVERAGEA": {
+   "categorias": [
+    "Agregação"
+   ],
+   "url": "https://learn.microsoft.com/pt-br/dax/averagea-function-dax"
+  },
+  "AVERAGEX": {
+   "categorias": [
+    "Agregação"
+   ],
+   "url": "https://learn.microsoft.com/pt-br/dax/averagex-function-dax",
+   "descricao": "Média de uma expressão avaliada linha a linha de uma tabela.",
+   "uso": "Média por período: AVERAGEX(VALUES(Calendário[Ano-Mês]), [Headcount]) dá o HC médio.",
+   "sintaxe": [
+    "AVERAGEX(<table>,<expression>)"
+   ]
+  },
+  "BETA.DIST": {
+   "categorias": [
+    "Estatísticas"
+   ],
+   "url": "https://learn.microsoft.com/pt-br/dax/beta-dist-function-dax"
+  },
+  "BETA.INV": {
+   "categorias": [
+    "Estatísticas"
+   ],
+   "url": "https://learn.microsoft.com/pt-br/dax/beta-inv-function-dax"
+  },
+  "BITAND": {
+   "categorias": [
+    "Lógicas"
+   ],
+   "url": "https://learn.microsoft.com/pt-br/dax/bitand-function-dax"
+  },
+  "BITLSHIFT": {
+   "categorias": [
+    "Lógicas"
+   ],
+   "url": "https://learn.microsoft.com/pt-br/dax/bitlshift-function-dax"
+  },
+  "BITOR": {
+   "categorias": [
+    "Lógicas"
+   ],
+   "url": "https://learn.microsoft.com/pt-br/dax/bitor-function-dax"
+  },
+  "BITRSHIFT": {
+   "categorias": [
+    "Lógicas"
+   ],
+   "url": "https://learn.microsoft.com/pt-br/dax/bitrshift-function-dax"
+  },
+  "BITXOR": {
+   "categorias": [
+    "Lógicas"
+   ],
+   "url": "https://learn.microsoft.com/pt-br/dax/bitxor-function-dax"
+  },
+  "BLANK": {
+   "categorias": [
+    "Outras"
+   ],
+   "url": "https://learn.microsoft.com/pt-br/dax/blank-function-dax",
+   "descricao": "Devolve o valor em branco.",
+   "uso": "Esconder um número (período futuro, sem meta).",
+   "sintaxe": [
+    "BLANK()"
+   ]
+  },
+  "CALCULATE": {
+   "categorias": [
+    "Filtro"
+   ],
+   "url": "https://learn.microsoft.com/pt-br/dax/calculate-function-dax",
+   "descricao": "Avalia uma expressão num contexto de filtro modificado pelos filtros informados.",
+   "uso": "Base de quase todo indicador com recorte: só ativos, só pedidos de demissão, ano anterior.",
+   "sintaxe": [
+    "CALCULATE(<expression>[, <filter1> [, <filter2> [, …]]])"
+   ]
+  },
+  "CALCULATETABLE": {
+   "categorias": [
+    "Filtro"
+   ],
+   "url": "https://learn.microsoft.com/pt-br/dax/calculatetable-function-dax",
+   "descricao": "Devolve uma tabela avaliada num contexto de filtro modificado.",
+   "uso": "",
+   "sintaxe": [
+    "CALCULATETABLE(<expression>[, <filter1> [, <filter2> [, …]]])"
+   ]
+  },
+  "CALENDAR": {
+   "categorias": [
+    "Data e hora"
+   ],
+   "url": "https://learn.microsoft.com/pt-br/dax/calendar-function-dax",
+   "descricao": "Tabela de datas entre duas datas.",
+   "uso": "O Deidara gera o calendário no Power Query.",
+   "sintaxe": [
+    "CALENDAR(<start_date>, <end_date>)"
+   ]
+  },
+  "CALENDARAUTO": {
+   "categorias": [
+    "Data e hora"
+   ],
+   "url": "https://learn.microsoft.com/pt-br/dax/calendarauto-function-dax",
+   "descricao": "Tabela de datas que cobre todas as datas do modelo.",
+   "uso": ""
+  },
+  "CEILING": {
+   "categorias": [
+    "Matemáticas"
+   ],
+   "url": "https://learn.microsoft.com/pt-br/dax/ceiling-function-dax"
+  },
+  "CHISQ.DIST": {
+   "categorias": [
+    "Estatísticas"
+   ],
+   "url": "https://learn.microsoft.com/pt-br/dax/chisq-dist-function-dax"
+  },
+  "CHISQ.DIST.RT": {
+   "categorias": [
+    "Estatísticas"
+   ],
+   "url": "https://learn.microsoft.com/pt-br/dax/chisq-dist-rt-function-dax"
+  },
+  "CHISQ.INV": {
+   "categorias": [
+    "Estatísticas"
+   ],
+   "url": "https://learn.microsoft.com/pt-br/dax/chisq-inv-function-dax"
+  },
+  "CHISQ.INV.RT": {
+   "categorias": [
+    "Estatísticas"
+   ],
+   "url": "https://learn.microsoft.com/pt-br/dax/chisq-inv-rt-function-dax"
+  },
+  "CLOSINGBALANCEMONTH": {
+   "categorias": [
+    "Inteligência de tempo"
+   ],
+   "url": "https://learn.microsoft.com/pt-br/dax/closingbalancemonth-function-dax"
+  },
+  "CLOSINGBALANCEQUARTER": {
+   "categorias": [
+    "Inteligência de tempo"
+   ],
+   "url": "https://learn.microsoft.com/pt-br/dax/closingbalancequarter-function-dax"
+  },
+  "CLOSINGBALANCEWEEK": {
+   "categorias": [
+    "Inteligência de tempo"
+   ],
+   "url": "https://learn.microsoft.com/pt-br/dax/closingbalanceweek-function-dax"
+  },
+  "CLOSINGBALANCEYEAR": {
+   "categorias": [
+    "Inteligência de tempo"
+   ],
+   "url": "https://learn.microsoft.com/pt-br/dax/closingbalanceyear-function-dax"
+  },
+  "COALESCE": {
+   "categorias": [
+    "Lógicas"
+   ],
+   "url": "https://learn.microsoft.com/pt-br/dax/coalesce-function-dax",
+   "descricao": "Primeiro argumento que não é branco.",
+   "uso": "Mostrar 0 em vez de vazio: COALESCE([Medida], 0).",
+   "sintaxe": [
+    "COALESCE(<expression>, <expression>[, <expression>]…)"
+   ]
+  },
+  "COLUMNSTATISTICS": {
+   "categorias": [
+    "Informação"
+   ],
+   "url": "https://learn.microsoft.com/pt-br/dax/columnstatistics-function-dax"
+  },
+  "COMBIN": {
+   "categorias": [
+    "Estatísticas"
+   ],
+   "url": "https://learn.microsoft.com/pt-br/dax/combin-function-dax"
+  },
+  "COMBINA": {
+   "categorias": [
+    "Estatísticas"
+   ],
+   "url": "https://learn.microsoft.com/pt-br/dax/combina-function-dax"
+  },
+  "COMBINEVALUES": {
+   "categorias": [
+    "Texto"
+   ],
+   "url": "https://learn.microsoft.com/pt-br/dax/combinevalues-function-dax"
+  },
+  "CONCATENATE": {
+   "categorias": [
+    "Texto"
+   ],
+   "url": "https://learn.microsoft.com/pt-br/dax/concatenate-function-dax"
+  },
+  "CONCATENATEX": {
+   "categorias": [
+    "Texto"
+   ],
+   "url": "https://learn.microsoft.com/pt-br/dax/concatenatex-function-dax",
+   "descricao": "Junta em texto o resultado de uma expressão por linha.",
+   "uso": "Lista de itens num tooltip.",
+   "sintaxe": [
+    "CONCATENATEX(<table>, <expression>[, <delimiter> [, <orderBy_expression> [, <order>]]...])"
+   ]
+  },
+  "CONFIDENCE.NORM": {
+   "categorias": [
+    "Estatísticas"
+   ],
+   "url": "https://learn.microsoft.com/pt-br/dax/confidence-norm-function-dax"
+  },
+  "CONFIDENCE.T": {
+   "categorias": [
+    "Estatísticas"
+   ],
+   "url": "https://learn.microsoft.com/pt-br/dax/confidence-t-function-dax"
+  },
+  "CONTAINS": {
+   "categorias": [
+    "Informação"
+   ],
+   "url": "https://learn.microsoft.com/pt-br/dax/contains-function-dax"
+  },
+  "CONTAINSROW": {
+   "categorias": [
+    "Informação"
+   ],
+   "url": "https://learn.microsoft.com/pt-br/dax/containsrow-function-dax"
+  },
+  "CONTAINSSTRING": {
+   "categorias": [
+    "Informação"
+   ],
+   "url": "https://learn.microsoft.com/pt-br/dax/containsstring-function-dax"
+  },
+  "CONTAINSSTRINGEXACT": {
+   "categorias": [
+    "Informação"
+   ],
+   "url": "https://learn.microsoft.com/pt-br/dax/containsstringexact-function-dax"
+  },
+  "CONVERT": {
+   "categorias": [
+    "Matemáticas"
+   ],
+   "url": "https://learn.microsoft.com/pt-br/dax/convert-function-dax"
+  },
+  "COS": {
+   "categorias": [
+    "Matemáticas"
+   ],
+   "url": "https://learn.microsoft.com/pt-br/dax/cos-function-dax"
+  },
+  "COSH": {
+   "categorias": [
+    "Matemáticas"
+   ],
+   "url": "https://learn.microsoft.com/pt-br/dax/cosh-function-dax"
+  },
+  "COT": {
+   "categorias": [
+    "Matemáticas"
+   ],
+   "url": "https://learn.microsoft.com/pt-br/dax/cot-function-dax"
+  },
+  "COTH": {
+   "categorias": [
+    "Matemáticas"
+   ],
+   "url": "https://learn.microsoft.com/pt-br/dax/coth-function-dax"
+  },
+  "COUNT": {
+   "categorias": [
+    "Agregação"
+   ],
+   "url": "https://learn.microsoft.com/pt-br/dax/count-function-dax",
+   "descricao": "Conta os valores não vazios de uma coluna.",
+   "uso": "",
+   "sintaxe": [
+    "COUNT(<column>)"
+   ]
+  },
+  "COUNTA": {
+   "categorias": [
+    "Agregação"
+   ],
+   "url": "https://learn.microsoft.com/pt-br/dax/counta-function-dax",
+   "descricao": "Conta os valores não vazios de uma coluna de qualquer tipo.",
+   "uso": ""
+  },
+  "COUNTAX": {
+   "categorias": [
+    "Agregação"
+   ],
+   "url": "https://learn.microsoft.com/pt-br/dax/countax-function-dax"
+  },
+  "COUNTBLANK": {
+   "categorias": [
+    "Agregação"
+   ],
+   "url": "https://learn.microsoft.com/pt-br/dax/countblank-function-dax",
+   "descricao": "Conta os valores em branco de uma coluna.",
+   "uso": "Qualidade: quantos registros sem preenchimento."
+  },
+  "COUNTROWS": {
+   "categorias": [
+    "Agregação"
+   ],
+   "url": "https://learn.microsoft.com/pt-br/dax/countrows-function-dax",
+   "descricao": "Conta as linhas de uma tabela no contexto de filtro.",
+   "uso": "Contagem de eventos: desligamentos, pedidos, chamados.",
+   "sintaxe": [
+    "COUNTROWS([<table>])"
+   ]
+  },
+  "COUNTX": {
+   "categorias": [
+    "Agregação"
+   ],
+   "url": "https://learn.microsoft.com/pt-br/dax/countx-function-dax",
+   "descricao": "Conta as linhas em que uma expressão não é vazia.",
+   "uso": ""
+  },
+  "COUPDAYBS": {
+   "categorias": [
+    "Financeiras"
+   ],
+   "url": "https://learn.microsoft.com/pt-br/dax/coupdaybs-function-dax"
+  },
+  "COUPDAYS": {
+   "categorias": [
+    "Financeiras"
+   ],
+   "url": "https://learn.microsoft.com/pt-br/dax/coupdays-function-dax"
+  },
+  "COUPDAYSNC": {
+   "categorias": [
+    "Financeiras"
+   ],
+   "url": "https://learn.microsoft.com/pt-br/dax/coupdaysnc-function-dax"
+  },
+  "COUPNCD": {
+   "categorias": [
+    "Financeiras"
+   ],
+   "url": "https://learn.microsoft.com/pt-br/dax/coupncd-function-dax"
+  },
+  "COUPNUM": {
+   "categorias": [
+    "Financeiras"
+   ],
+   "url": "https://learn.microsoft.com/pt-br/dax/coupnum-function-dax"
+  },
+  "COUPPCD": {
+   "categorias": [
+    "Financeiras"
+   ],
+   "url": "https://learn.microsoft.com/pt-br/dax/couppcd-function-dax"
+  },
+  "CROSSFILTER": {
+   "categorias": [
+    "Relacionamento"
+   ],
+   "url": "https://learn.microsoft.com/pt-br/dax/crossfilter-function-dax",
+   "descricao": "Muda a direção do filtro de uma relação dentro do CALCULATE.",
+   "uso": "",
+   "sintaxe": [
+    "CROSSFILTER(<columnName1>, <columnName2>, <direction>)"
+   ]
+  },
+  "CROSSJOIN": {
+   "categorias": [
+    "Manipulação de tabela"
+   ],
+   "url": "https://learn.microsoft.com/pt-br/dax/crossjoin-function-dax"
+  },
+  "CUMIPMT": {
+   "categorias": [
+    "Financeiras"
+   ],
+   "url": "https://learn.microsoft.com/pt-br/dax/cumipmt-function-dax"
+  },
+  "CUMPRINC": {
+   "categorias": [
+    "Financeiras"
+   ],
+   "url": "https://learn.microsoft.com/pt-br/dax/cumprinc-function-dax"
+  },
+  "CURRENCY": {
+   "categorias": [
+    "Matemáticas"
+   ],
+   "url": "https://learn.microsoft.com/pt-br/dax/currency-function-dax"
+  },
+  "CURRENTGROUP": {
+   "categorias": [
+    "Manipulação de tabela"
+   ],
+   "url": "https://learn.microsoft.com/pt-br/dax/currentgroup-function-dax"
+  },
+  "CUSTOMDATA": {
+   "categorias": [
+    "Informação"
+   ],
+   "url": "https://learn.microsoft.com/pt-br/dax/customdata-function-dax"
+  },
+  "DATATABLE": {
+   "categorias": [
+    "Manipulação de tabela"
+   ],
+   "url": "https://learn.microsoft.com/pt-br/dax/datatable-function-dax"
+  },
+  "DATE": {
+   "categorias": [
+    "Data e hora"
+   ],
+   "url": "https://learn.microsoft.com/pt-br/dax/date-function-dax",
+   "descricao": "Monta uma data a partir de ano, mês e dia.",
+   "uso": "",
+   "sintaxe": [
+    "DATE(<year>, <month>, <day>)"
+   ]
+  },
+  "DATEADD": {
+   "categorias": [
+    "Inteligência de tempo"
+   ],
+   "url": "https://learn.microsoft.com/pt-br/dax/dateadd-function-dax",
+   "descricao": "Desloca as datas do filtro por um número de dias, meses, trimestres ou anos.",
+   "uso": "Mês anterior: DATEADD(Calendário[Data], -1, MONTH).",
+   "sintaxe": [
+    "DATEADD(<dates> or <calendar>, <number_of_intervals>, <interval>[,<Extension>],[,<Truncation>])"
+   ]
+  },
+  "DATEDIFF": {
+   "categorias": [
+    "Data e hora"
+   ],
+   "url": "https://learn.microsoft.com/pt-br/dax/datediff-function-dax",
+   "descricao": "Diferença entre duas datas na unidade informada.",
+   "uso": "Tempo de casa, prazo de atendimento.",
+   "sintaxe": [
+    "DATEDIFF(<Date1>, <Date2>, <Interval>)"
+   ]
+  },
+  "DATESBETWEEN": {
+   "categorias": [
+    "Inteligência de tempo"
+   ],
+   "url": "https://learn.microsoft.com/pt-br/dax/datesbetween-function-dax",
+   "descricao": "Datas entre uma data inicial e uma final.",
+   "uso": "",
+   "sintaxe": [
+    "DATESBETWEEN(<dates or calendar>, <StartDate>, <EndDate>)"
+   ]
+  },
+  "DATESINPERIOD": {
+   "categorias": [
+    "Inteligência de tempo"
+   ],
+   "url": "https://learn.microsoft.com/pt-br/dax/datesinperiod-function-dax",
+   "descricao": "Datas de um intervalo que começa numa data e anda N períodos.",
+   "uso": "Móvel 12 meses: DATESINPERIOD(Calendário[Data], MAX(Calendário[Data]), -12, MONTH).",
+   "sintaxe": [
+    "DATESINPERIOD(<dates or calendar>, <start_date>, <number_of_intervals>, <interval>[, <endbehavior>])"
+   ]
+  },
+  "DATESMTD": {
+   "categorias": [
+    "Inteligência de tempo"
+   ],
+   "url": "https://learn.microsoft.com/pt-br/dax/datesmtd-function-dax",
+   "descricao": "Datas do início do mês até a última data do filtro.",
+   "uso": "",
+   "sintaxe": [
+    "DATESMTD(<dates> or <calendar>)"
+   ]
+  },
+  "DATESQTD": {
+   "categorias": [
+    "Inteligência de tempo"
+   ],
+   "url": "https://learn.microsoft.com/pt-br/dax/datesqtd-function-dax",
+   "descricao": "Datas do início do trimestre até a última data do filtro.",
+   "uso": "",
+   "sintaxe": [
+    "DATESQTD(<dates> or <calendar>)"
+   ]
+  },
+  "DATESWTD": {
+   "categorias": [
+    "Inteligência de tempo"
+   ],
+   "url": "https://learn.microsoft.com/pt-br/dax/dateswtd-function-dax"
+  },
+  "DATESYTD": {
+   "categorias": [
+    "Inteligência de tempo"
+   ],
+   "url": "https://learn.microsoft.com/pt-br/dax/datesytd-function-dax",
+   "descricao": "Datas do início do ano até a última data do filtro.",
+   "uso": "",
+   "sintaxe": [
+    "DATESYTD(<dates> or <calendar> [,<year_end_date>])"
+   ]
+  },
+  "DATEVALUE": {
+   "categorias": [
+    "Data e hora"
+   ],
+   "url": "https://learn.microsoft.com/pt-br/dax/datevalue-function-dax"
+  },
+  "DAY": {
+   "categorias": [
+    "Data e hora"
+   ],
+   "url": "https://learn.microsoft.com/pt-br/dax/day-function-dax"
+  },
+  "DB": {
+   "categorias": [
+    "Financeiras"
+   ],
+   "url": "https://learn.microsoft.com/pt-br/dax/db-function-dax"
+  },
+  "DDB": {
+   "categorias": [
+    "Financeiras"
+   ],
+   "url": "https://learn.microsoft.com/pt-br/dax/ddb-function-dax"
+  },
+  "DEGREES": {
+   "categorias": [
+    "Matemáticas"
+   ],
+   "url": "https://learn.microsoft.com/pt-br/dax/degrees-function-dax"
+  },
+  "DETAILROWS": {
+   "categorias": [
+    "Manipulação de tabela"
+   ],
+   "url": "https://learn.microsoft.com/pt-br/dax/detailrows-function-dax"
+  },
+  "DISC": {
+   "categorias": [
+    "Financeiras"
+   ],
+   "url": "https://learn.microsoft.com/pt-br/dax/disc-function-dax"
+  },
+  "DISTINCT": {
+   "categorias": [
+    "Outras"
+   ],
+   "url": null,
+   "descricao": "Valores distintos de uma coluna ou tabela.",
+   "uso": ""
+  },
+  "DISTINCT column": {
+   "categorias": [
+    "Manipulação de tabela"
+   ],
+   "url": "https://learn.microsoft.com/pt-br/dax/distinct-function-dax"
+  },
+  "DISTINCT table": {
+   "categorias": [
+    "Manipulação de tabela"
+   ],
+   "url": "https://learn.microsoft.com/pt-br/dax/distinct-table-function-dax"
+  },
+  "DISTINCTCOUNT": {
+   "categorias": [
+    "Agregação"
+   ],
+   "url": "https://learn.microsoft.com/pt-br/dax/distinctcount-function-dax",
+   "descricao": "Conta os valores distintos de uma coluna, contando o branco como um valor.",
+   "uso": "Prefira DISTINCTCOUNTNOBLANK para bater com COUNT(DISTINCT) do SQL.",
+   "sintaxe": [
+    "DISTINCTCOUNT(<column>)"
+   ]
+  },
+  "DISTINCTCOUNTNOBLANK": {
+   "categorias": [
+    "Agregação"
+   ],
+   "url": "https://learn.microsoft.com/pt-br/dax/distinctcountnoblank-function-dax",
+   "descricao": "Conta os valores distintos de uma coluna, ignorando o branco.",
+   "uso": "Clientes ativos, colaboradores distintos.",
+   "sintaxe": [
+    "DISTINCTCOUNTNOBLANK(<column>)"
+   ]
+  },
+  "DIVIDE": {
+   "categorias": [
+    "Matemáticas"
+   ],
+   "url": "https://learn.microsoft.com/pt-br/dax/divide-function-dax",
+   "descricao": "Divisão segura: devolve branco (ou o valor alternativo) quando o divisor é zero ou branco.",
+   "uso": "Toda taxa e média ponderada; nunca use \"/\" em medida.",
+   "sintaxe": [
+    "DIVIDE(<numerator>, <denominator> [,<alternateresult>])"
+   ]
+  },
+  "DOLLARDE": {
+   "categorias": [
+    "Financeiras"
+   ],
+   "url": "https://learn.microsoft.com/pt-br/dax/dollarde-function-dax"
+  },
+  "DOLLARFR": {
+   "categorias": [
+    "Financeiras"
+   ],
+   "url": "https://learn.microsoft.com/pt-br/dax/dollarfr-function-dax"
+  },
+  "DURATION": {
+   "categorias": [
+    "Financeiras"
+   ],
+   "url": "https://learn.microsoft.com/pt-br/dax/duration-function-dax"
+  },
+  "EARLIER": {
+   "categorias": [
+    "Filtro"
+   ],
+   "url": "https://learn.microsoft.com/pt-br/dax/earlier-function-dax"
+  },
+  "EARLIEST": {
+   "categorias": [
+    "Filtro"
+   ],
+   "url": "https://learn.microsoft.com/pt-br/dax/earliest-function-dax"
+  },
+  "EDATE": {
+   "categorias": [
+    "Data e hora"
+   ],
+   "url": "https://learn.microsoft.com/pt-br/dax/edate-function-dax",
+   "descricao": "A mesma data, N meses antes ou depois.",
+   "uso": "",
+   "sintaxe": [
+    "EDATE(<start_date>, <months>)"
+   ]
+  },
+  "EFFECT": {
+   "categorias": [
+    "Financeiras"
+   ],
+   "url": "https://learn.microsoft.com/pt-br/dax/effect-function-dax"
+  },
+  "ENDOFMONTH": {
+   "categorias": [
+    "Inteligência de tempo"
+   ],
+   "url": "https://learn.microsoft.com/pt-br/dax/endofmonth-function-dax",
+   "descricao": "Última data do mês do filtro.",
+   "uso": "",
+   "sintaxe": [
+    "ENDOFMONTH(<dates> or <calendar>)"
+   ]
+  },
+  "ENDOFQUARTER": {
+   "categorias": [
+    "Inteligência de tempo"
+   ],
+   "url": "https://learn.microsoft.com/pt-br/dax/endofquarter-function-dax"
+  },
+  "ENDOFWEEK": {
+   "categorias": [
+    "Inteligência de tempo"
+   ],
+   "url": "https://learn.microsoft.com/pt-br/dax/endofweek-function-dax"
+  },
+  "ENDOFYEAR": {
+   "categorias": [
+    "Inteligência de tempo"
+   ],
+   "url": "https://learn.microsoft.com/pt-br/dax/endofyear-function-dax"
+  },
+  "EOMONTH": {
+   "categorias": [
+    "Data e hora"
+   ],
+   "url": "https://learn.microsoft.com/pt-br/dax/eomonth-function-dax",
+   "descricao": "Último dia do mês, N meses antes ou depois de uma data.",
+   "uso": "",
+   "sintaxe": [
+    "EOMONTH(<start_date>, <months>)"
+   ]
+  },
+  "ERROR": {
+   "categorias": [
+    "Outras"
+   ],
+   "url": "https://learn.microsoft.com/pt-br/dax/error-function-dax"
+  },
+  "EVALUATEANDLOG": {
+   "categorias": [
+    "Outras"
+   ],
+   "url": "https://learn.microsoft.com/pt-br/dax/evaluateandlog-function-dax"
+  },
+  "EVEN": {
+   "categorias": [
+    "Matemáticas"
+   ],
+   "url": "https://learn.microsoft.com/pt-br/dax/even-function-dax"
+  },
+  "EXACT": {
+   "categorias": [
+    "Texto"
+   ],
+   "url": "https://learn.microsoft.com/pt-br/dax/exact-function-dax"
+  },
+  "EXCEPT": {
+   "categorias": [
+    "Manipulação de tabela"
+   ],
+   "url": "https://learn.microsoft.com/pt-br/dax/except-function-dax"
+  },
+  "EXP": {
+   "categorias": [
+    "Matemáticas"
+   ],
+   "url": "https://learn.microsoft.com/pt-br/dax/exp-function-dax"
+  },
+  "EXPON.DIST": {
+   "categorias": [
+    "Estatísticas"
+   ],
+   "url": "https://learn.microsoft.com/pt-br/dax/expon-dist-function-dax"
+  },
+  "EXTERNALMEASURE": {
+   "categorias": [
+    "Outras"
+   ],
+   "url": "https://learn.microsoft.com/pt-br/dax/externalmeasure-function-dax"
+  },
+  "FACT": {
+   "categorias": [
+    "Matemáticas"
+   ],
+   "url": "https://learn.microsoft.com/pt-br/dax/fact-function-dax"
+  },
+  "FALSE": {
+   "categorias": [
+    "Lógicas"
+   ],
+   "url": "https://learn.microsoft.com/pt-br/dax/false-function-dax"
+  },
+  "FILTER": {
+   "categorias": [
+    "Filtro"
+   ],
+   "url": "https://learn.microsoft.com/pt-br/dax/filter-function-dax",
+   "descricao": "Devolve as linhas de uma tabela que atendem a uma condição.",
+   "uso": "Use em filtros que dependem de medida; para filtro simples de coluna, prefira o predicado direto no CALCULATE.",
+   "sintaxe": [
+    "FILTER(<table>,<filter>)"
+   ]
+  },
+  "FILTERS": {
+   "categorias": [
+    "Manipulação de tabela"
+   ],
+   "url": "https://learn.microsoft.com/pt-br/dax/filters-function-dax"
+  },
+  "FIND": {
+   "categorias": [
+    "Texto"
+   ],
+   "url": "https://learn.microsoft.com/pt-br/dax/find-function-dax"
+  },
+  "FIRST": {
+   "categorias": [
+    "Filtro"
+   ],
+   "url": "https://learn.microsoft.com/pt-br/dax/first-function-dax"
+  },
+  "FIRSTDATE": {
+   "categorias": [
+    "Inteligência de tempo"
+   ],
+   "url": "https://learn.microsoft.com/pt-br/dax/firstdate-function-dax",
+   "descricao": "Primeira data do filtro (como tabela).",
+   "uso": "",
+   "sintaxe": [
+    "FIRSTDATE(<dates> or <calendar>)"
+   ]
+  },
+  "FIXED": {
+   "categorias": [
+    "Texto"
+   ],
+   "url": "https://learn.microsoft.com/pt-br/dax/fixed-function-dax"
+  },
+  "FLOOR": {
+   "categorias": [
+    "Matemáticas"
+   ],
+   "url": "https://learn.microsoft.com/pt-br/dax/floor-function-dax"
+  },
+  "FORMAT": {
+   "categorias": [
+    "Texto"
+   ],
+   "url": "https://learn.microsoft.com/pt-br/dax/format-function-dax",
+   "descricao": "Converte um valor em texto num formato.",
+   "uso": "Use só em rótulo: a medida vira texto e perde a ordenação.",
+   "sintaxe": [
+    "FORMAT(<value>, <format_string>[, <locale_name>])"
+   ]
+  },
+  "FV": {
+   "categorias": [
+    "Financeiras"
+   ],
+   "url": "https://learn.microsoft.com/pt-br/dax/fv-function-dax"
+  },
+  "GCD": {
+   "categorias": [
+    "Matemáticas"
+   ],
+   "url": "https://learn.microsoft.com/pt-br/dax/gcd-function-dax"
+  },
+  "GENERATE": {
+   "categorias": [
+    "Manipulação de tabela"
+   ],
+   "url": "https://learn.microsoft.com/pt-br/dax/generate-function-dax"
+  },
+  "GENERATEALL": {
+   "categorias": [
+    "Manipulação de tabela"
+   ],
+   "url": "https://learn.microsoft.com/pt-br/dax/generateall-function-dax"
+  },
+  "GENERATESERIES": {
+   "categorias": [
+    "Manipulação de tabela"
+   ],
+   "url": "https://learn.microsoft.com/pt-br/dax/generateseries-function-dax",
+   "descricao": "Tabela com uma sequência de números.",
+   "uso": "Parâmetro \"e se\" e faixas.",
+   "sintaxe": [
+    "GENERATESERIES(<startValue>, <endValue>[, <incrementValue>])"
+   ]
+  },
+  "GEOMEAN": {
+   "categorias": [
+    "Estatísticas"
+   ],
+   "url": "https://learn.microsoft.com/pt-br/dax/geomean-function-dax"
+  },
+  "GEOMEANX": {
+   "categorias": [
+    "Estatísticas"
+   ],
+   "url": "https://learn.microsoft.com/pt-br/dax/geomeanx-function-dax"
+  },
+  "GROUPBY": {
+   "categorias": [
+    "Manipulação de tabela"
+   ],
+   "url": "https://learn.microsoft.com/pt-br/dax/groupby-function-dax"
+  },
+  "HASONEFILTER": {
+   "categorias": [
+    "Informação"
+   ],
+   "url": "https://learn.microsoft.com/pt-br/dax/hasonefilter-function-dax"
+  },
+  "HASONEVALUE": {
+   "categorias": [
+    "Informação"
+   ],
+   "url": "https://learn.microsoft.com/pt-br/dax/hasonevalue-function-dax",
+   "descricao": "Verdadeiro quando a coluna tem exatamente um valor no filtro.",
+   "uso": "Esconder valor na linha de total.",
+   "sintaxe": [
+    "HASONEVALUE(<columnName>)"
+   ]
+  },
+  "HOUR": {
+   "categorias": [
+    "Data e hora"
+   ],
+   "url": "https://learn.microsoft.com/pt-br/dax/hour-function-dax"
+  },
+  "IF": {
+   "categorias": [
+    "Lógicas"
+   ],
+   "url": "https://learn.microsoft.com/pt-br/dax/if-function-dax",
+   "descricao": "Devolve um valor ou outro conforme a condição.",
+   "uso": "",
+   "sintaxe": [
+    "IF(<logical_test>, <value_if_true>[, <value_if_false>])"
+   ]
+  },
+  "IF.EAGER": {
+   "categorias": [
+    "Lógicas"
+   ],
+   "url": "https://learn.microsoft.com/pt-br/dax/if-eager-function-dax"
+  },
+  "IFERROR": {
+   "categorias": [
+    "Lógicas"
+   ],
+   "url": "https://learn.microsoft.com/pt-br/dax/iferror-function-dax"
+  },
+  "IGNORE": {
+   "categorias": [
+    "Manipulação de tabela"
+   ],
+   "url": "https://learn.microsoft.com/pt-br/dax/ignore-function-dax"
+  },
+  "INDEX": {
+   "categorias": [
+    "Filtro"
+   ],
+   "url": "https://learn.microsoft.com/pt-br/dax/index-function-dax",
+   "descricao": "A linha numa posição absoluta da ordenação.",
+   "uso": "",
+   "sintaxe": [
+    "INDEX(<position>[, <relation> or <axis>][, <orderBy>][, <blanks>][, <partitionBy>][, <matchBy>][, <reset>] )"
+   ]
+  },
+  "INFO.ALTERNATEOFDEFINITIONS": {
+   "categorias": [
+    "INFO (metadados do modelo)"
+   ],
+   "url": null
+  },
+  "INFO.ANNOTATIONS": {
+   "categorias": [
+    "INFO (metadados do modelo)"
+   ],
+   "url": null
+  },
+  "INFO.ATTRIBUTEHIERARCHIES": {
+   "categorias": [
+    "INFO (metadados do modelo)"
+   ],
+   "url": null
+  },
+  "INFO.ATTRIBUTEHIERARCHYSTORAGES": {
+   "categorias": [
+    "INFO (metadados do modelo)"
+   ],
+   "url": null
+  },
+  "INFO.CALCDEPENDENCY": {
+   "categorias": [
+    "INFO (metadados do modelo)"
+   ],
+   "url": null
+  },
+  "INFO.CALCULATIONGROUPS": {
+   "categorias": [
+    "INFO (metadados do modelo)"
+   ],
+   "url": null
+  },
+  "INFO.CALCULATIONITEMS": {
+   "categorias": [
+    "INFO (metadados do modelo)"
+   ],
+   "url": null
+  },
+  "INFO.CALENDARCOLUMNGROUPS": {
+   "categorias": [
+    "INFO (metadados do modelo)"
+   ],
+   "url": null
+  },
+  "INFO.CALENDARCOLUMNREFERENCES": {
+   "categorias": [
+    "INFO (metadados do modelo)"
+   ],
+   "url": null
+  },
+  "INFO.CALENDARS": {
+   "categorias": [
+    "INFO (metadados do modelo)"
+   ],
+   "url": null
+  },
+  "INFO.CATALOGS": {
+   "categorias": [
+    "INFO (metadados do modelo)"
+   ],
+   "url": null
+  },
+  "INFO.CHANGEDPROPERTIES": {
+   "categorias": [
+    "INFO (metadados do modelo)"
+   ],
+   "url": null
+  },
+  "INFO.COLUMNPARTITIONSTORAGES": {
+   "categorias": [
+    "INFO (metadados do modelo)"
+   ],
+   "url": null
+  },
+  "INFO.COLUMNPERMISSIONS": {
+   "categorias": [
+    "INFO (metadados do modelo)"
+   ],
+   "url": null
+  },
+  "INFO.COLUMNS": {
+   "categorias": [
+    "INFO (metadados do modelo)"
+   ],
+   "url": null
+  },
+  "INFO.COLUMNSTORAGES": {
+   "categorias": [
+    "INFO (metadados do modelo)"
+   ],
+   "url": null
+  },
+  "INFO.CSDLMETADATA": {
+   "categorias": [
+    "INFO (metadados do modelo)"
+   ],
+   "url": null
+  },
+  "INFO.CULTURES": {
+   "categorias": [
+    "INFO (metadados do modelo)"
+   ],
+   "url": null
+  },
+  "INFO.DATACOVERAGEDEFINITIONS": {
+   "categorias": [
+    "INFO (metadados do modelo)"
+   ],
+   "url": null
+  },
+  "INFO.DATASOURCES": {
+   "categorias": [
+    "INFO (metadados do modelo)"
+   ],
+   "url": null
+  },
+  "INFO.DELTATABLEMETADATASTORAGES": {
+   "categorias": [
+    "INFO (metadados do modelo)"
+   ],
+   "url": null
+  },
+  "INFO.DEPENDENCIES": {
+   "categorias": [
+    "INFO (metadados do modelo)"
+   ],
+   "url": null
+  },
+  "INFO.DETAILROWSDEFINITIONS": {
+   "categorias": [
+    "INFO (metadados do modelo)"
+   ],
+   "url": null
+  },
+  "INFO.DICTIONARYSTORAGES": {
+   "categorias": [
+    "INFO (metadados do modelo)"
+   ],
+   "url": null
+  },
+  "INFO.EXCLUDEDARTIFACTS": {
+   "categorias": [
+    "INFO (metadados do modelo)"
+   ],
+   "url": null
+  },
+  "INFO.EXPRESSIONS": {
+   "categorias": [
+    "INFO (metadados do modelo)"
+   ],
+   "url": null
+  },
+  "INFO.EXTENDEDPROPERTIES": {
+   "categorias": [
+    "INFO (metadados do modelo)"
+   ],
+   "url": null
+  },
+  "INFO.FORMATSTRINGDEFINITIONS": {
+   "categorias": [
+    "INFO (metadados do modelo)"
+   ],
+   "url": null
+  },
+  "INFO.FUNCTIONS": {
+   "categorias": [
+    "INFO (metadados do modelo)"
+   ],
+   "url": null
+  },
+  "INFO.GENERALSEGMENTMAPSEGMENTMETADATASTORAGES": {
+   "categorias": [
+    "INFO (metadados do modelo)"
+   ],
+   "url": null
+  },
+  "INFO.GROUPBYCOLUMNS": {
+   "categorias": [
+    "INFO (metadados do modelo)"
+   ],
+   "url": null
+  },
+  "INFO.HIERARCHIES": {
+   "categorias": [
+    "INFO (metadados do modelo)"
+   ],
+   "url": null
+  },
+  "INFO.HIERARCHYSTORAGES": {
+   "categorias": [
+    "INFO (metadados do modelo)"
+   ],
+   "url": null
+  },
+  "INFO.KPIS": {
+   "categorias": [
+    "INFO (metadados do modelo)"
+   ],
+   "url": null
+  },
+  "INFO.LEVELS": {
+   "categorias": [
+    "INFO (metadados do modelo)"
+   ],
+   "url": null
+  },
+  "INFO.LINGUISTICMETADATA": {
+   "categorias": [
+    "INFO (metadados do modelo)"
+   ],
+   "url": null
+  },
+  "INFO.MEASURES": {
+   "categorias": [
+    "INFO (metadados do modelo)"
+   ],
+   "url": null
+  },
+  "INFO.MODEL": {
+   "categorias": [
+    "INFO (metadados do modelo)"
+   ],
+   "url": null
+  },
+  "INFO.OBJECTTRANSLATIONS": {
+   "categorias": [
+    "INFO (metadados do modelo)"
+   ],
+   "url": null
+  },
+  "INFO.PARQUETFILESTORAGES": {
+   "categorias": [
+    "INFO (metadados do modelo)"
+   ],
+   "url": null
+  },
+  "INFO.PARTITIONS": {
+   "categorias": [
+    "INFO (metadados do modelo)"
+   ],
+   "url": null
+  },
+  "INFO.PARTITIONSTORAGES": {
+   "categorias": [
+    "INFO (metadados do modelo)"
+   ],
+   "url": null
+  },
+  "INFO.PERSPECTIVECOLUMNS": {
+   "categorias": [
+    "INFO (metadados do modelo)"
+   ],
+   "url": null
+  },
+  "INFO.PERSPECTIVEHIERARCHIES": {
+   "categorias": [
+    "INFO (metadados do modelo)"
+   ],
+   "url": null
+  },
+  "INFO.PERSPECTIVEMEASURES": {
+   "categorias": [
+    "INFO (metadados do modelo)"
+   ],
+   "url": null
+  },
+  "INFO.PERSPECTIVES": {
+   "categorias": [
+    "INFO (metadados do modelo)"
+   ],
+   "url": null
+  },
+  "INFO.PERSPECTIVETABLES": {
+   "categorias": [
+    "INFO (metadados do modelo)"
+   ],
+   "url": null
+  },
+  "INFO.PROPERTIES": {
+   "categorias": [
+    "INFO (metadados do modelo)"
+   ],
+   "url": null
+  },
+  "INFO.QUERYGROUPS": {
+   "categorias": [
+    "INFO (metadados do modelo)"
+   ],
+   "url": null
+  },
+  "INFO.REFRESHPOLICIES": {
+   "categorias": [
+    "INFO (metadados do modelo)"
+   ],
+   "url": null
+  },
+  "INFO.RELATEDCOLUMNDETAILS": {
+   "categorias": [
+    "INFO (metadados do modelo)"
+   ],
+   "url": null
+  },
+  "INFO.RELATIONSHIPINDEXSTORAGES": {
+   "categorias": [
+    "INFO (metadados do modelo)"
+   ],
+   "url": null
+  },
+  "INFO.RELATIONSHIPS": {
+   "categorias": [
+    "INFO (metadados do modelo)"
+   ],
+   "url": null
+  },
+  "INFO.RELATIONSHIPSTORAGES": {
+   "categorias": [
+    "INFO (metadados do modelo)"
+   ],
+   "url": null
+  },
+  "INFO.ROLEMEMBERSHIPS": {
+   "categorias": [
+    "INFO (metadados do modelo)"
+   ],
+   "url": null
+  },
+  "INFO.ROLES": {
+   "categorias": [
+    "INFO (metadados do modelo)"
+   ],
+   "url": null
+  },
+  "INFO.SEGMENTMAPSTORAGES": {
+   "categorias": [
+    "INFO (metadados do modelo)"
+   ],
+   "url": null
+  },
+  "INFO.SEGMENTSTORAGES": {
+   "categorias": [
+    "INFO (metadados do modelo)"
+   ],
+   "url": null
+  },
+  "INFO.STORAGEFILES": {
+   "categorias": [
+    "INFO (metadados do modelo)"
+   ],
+   "url": null
+  },
+  "INFO.STORAGEFOLDERS": {
+   "categorias": [
+    "INFO (metadados do modelo)"
+   ],
+   "url": null
+  },
+  "INFO.STORAGETABLECOLUMNS": {
+   "categorias": [
+    "INFO (metadados do modelo)"
+   ],
+   "url": null
+  },
+  "INFO.STORAGETABLECOLUMNSEGMENTS": {
+   "categorias": [
+    "INFO (metadados do modelo)"
+   ],
+   "url": null
+  },
+  "INFO.STORAGETABLES": {
+   "categorias": [
+    "INFO (metadados do modelo)"
+   ],
+   "url": null
+  },
+  "INFO.TABLEPERMISSIONS": {
+   "categorias": [
+    "INFO (metadados do modelo)"
+   ],
+   "url": null
+  },
+  "INFO.TABLES": {
+   "categorias": [
+    "INFO (metadados do modelo)"
+   ],
+   "url": null
+  },
+  "INFO.TABLESTORAGES": {
+   "categorias": [
+    "INFO (metadados do modelo)"
+   ],
+   "url": null
+  },
+  "INFO.USERDEFINEDFUNCTIONS": {
+   "categorias": [
+    "INFO (metadados do modelo)"
+   ],
+   "url": null
+  },
+  "INFO.VARIATIONS": {
+   "categorias": [
+    "INFO (metadados do modelo)"
+   ],
+   "url": null
+  },
+  "INFO.VIEW.COLUMNS": {
+   "categorias": [
+    "INFO (metadados do modelo)"
+   ],
+   "url": null
+  },
+  "INFO.VIEW.MEASURES": {
+   "categorias": [
+    "INFO (metadados do modelo)"
+   ],
+   "url": null
+  },
+  "INFO.VIEW.RELATIONSHIPS": {
+   "categorias": [
+    "INFO (metadados do modelo)"
+   ],
+   "url": null
+  },
+  "INFO.VIEW.TABLES": {
+   "categorias": [
+    "INFO (metadados do modelo)"
+   ],
+   "url": null
+  },
+  "INT": {
+   "categorias": [
+    "Matemáticas"
+   ],
+   "url": "https://learn.microsoft.com/pt-br/dax/int-function-dax"
+  },
+  "INTERSECT": {
+   "categorias": [
+    "Manipulação de tabela"
+   ],
+   "url": "https://learn.microsoft.com/pt-br/dax/intersect-function-dax"
+  },
+  "INTRATE": {
+   "categorias": [
+    "Financeiras"
+   ],
+   "url": "https://learn.microsoft.com/pt-br/dax/intrate-function-dax"
+  },
+  "IPMT": {
+   "categorias": [
+    "Financeiras"
+   ],
+   "url": "https://learn.microsoft.com/pt-br/dax/ipmt-function-dax"
+  },
+  "ISAFTER": {
+   "categorias": [
+    "Informação"
+   ],
+   "url": "https://learn.microsoft.com/pt-br/dax/isafter-function-dax"
+  },
+  "ISBLANK": {
+   "categorias": [
+    "Informação"
+   ],
+   "url": "https://learn.microsoft.com/pt-br/dax/isblank-function-dax",
+   "descricao": "Verdadeiro quando o valor está em branco.",
+   "uso": "",
+   "sintaxe": [
+    "ISBLANK(<value>)"
+   ]
+  },
+  "ISBOOLEAN": {
+   "categorias": [
+    "Informação"
+   ],
+   "url": "https://learn.microsoft.com/pt-br/dax/isboolean-function-dax"
+  },
+  "ISCROSSFILTERED": {
+   "categorias": [
+    "Informação"
+   ],
+   "url": "https://learn.microsoft.com/pt-br/dax/iscrossfiltered-function-dax"
+  },
+  "ISCURRENCY": {
+   "categorias": [
+    "Informação"
+   ],
+   "url": "https://learn.microsoft.com/pt-br/dax/iscurrency-function-dax"
+  },
+  "ISDATETIME": {
+   "categorias": [
+    "Informação"
+   ],
+   "url": "https://learn.microsoft.com/pt-br/dax/isdatetime-function-dax"
+  },
+  "ISDECIMAL": {
+   "categorias": [
+    "Informação"
+   ],
+   "url": "https://learn.microsoft.com/pt-br/dax/isdecimal-function-dax"
+  },
+  "ISDOUBLE": {
+   "categorias": [
+    "Informação"
+   ],
+   "url": "https://learn.microsoft.com/pt-br/dax/isdouble-function-dax"
+  },
+  "ISEMPTY": {
+   "categorias": [
+    "Informação"
+   ],
+   "url": "https://learn.microsoft.com/pt-br/dax/isempty-function-dax"
+  },
+  "ISERROR": {
+   "categorias": [
+    "Informação"
+   ],
+   "url": "https://learn.microsoft.com/pt-br/dax/iserror-function-dax"
+  },
+  "ISEVEN": {
+   "categorias": [
+    "Informação"
+   ],
+   "url": "https://learn.microsoft.com/pt-br/dax/iseven-function-dax"
+  },
+  "ISFILTERED": {
+   "categorias": [
+    "Informação"
+   ],
+   "url": "https://learn.microsoft.com/pt-br/dax/isfiltered-function-dax",
+   "descricao": "Verdadeiro quando a coluna está filtrada diretamente.",
+   "uso": "",
+   "sintaxe": [
+    "ISFILTERED(<TableNameOrColumnName>)"
+   ]
+  },
+  "ISINSCOPE": {
+   "categorias": [
+    "Informação"
+   ],
+   "url": "https://learn.microsoft.com/pt-br/dax/isinscope-function-dax",
+   "descricao": "Verdadeiro quando a coluna é o nível atual de uma hierarquia no visual.",
+   "uso": "Cálculo diferente por nível da matriz.",
+   "sintaxe": [
+    "ISINSCOPE(<columnName>)"
+   ]
+  },
+  "ISINT64": {
+   "categorias": [
+    "Informação"
+   ],
+   "url": "https://learn.microsoft.com/pt-br/dax/isint64-function-dax"
+  },
+  "ISINTEGER": {
+   "categorias": [
+    "Informação"
+   ],
+   "url": "https://learn.microsoft.com/pt-br/dax/isinteger-function-dax"
+  },
+  "ISLOGICAL": {
+   "categorias": [
+    "Informação"
+   ],
+   "url": "https://learn.microsoft.com/pt-br/dax/islogical-function-dax"
+  },
+  "ISNONTEXT": {
+   "categorias": [
+    "Informação"
+   ],
+   "url": "https://learn.microsoft.com/pt-br/dax/isnontext-function-dax"
+  },
+  "ISNUMBER": {
+   "categorias": [
+    "Informação"
+   ],
+   "url": "https://learn.microsoft.com/pt-br/dax/isnumber-function-dax"
+  },
+  "ISNUMERIC": {
+   "categorias": [
+    "Informação"
+   ],
+   "url": "https://learn.microsoft.com/pt-br/dax/isnumeric-function-dax"
+  },
+  "ISO.CEILING": {
+   "categorias": [
+    "Matemáticas"
+   ],
+   "url": "https://learn.microsoft.com/pt-br/dax/iso-ceiling-function-dax"
+  },
+  "ISODD": {
+   "categorias": [
+    "Informação"
+   ],
+   "url": "https://learn.microsoft.com/pt-br/dax/isodd-function-dax"
+  },
+  "ISONORAFTER": {
+   "categorias": [
+    "Informação"
+   ],
+   "url": "https://learn.microsoft.com/pt-br/dax/isonorafter-function-dax"
+  },
+  "ISPMT": {
+   "categorias": [
+    "Financeiras"
+   ],
+   "url": "https://learn.microsoft.com/pt-br/dax/ispmt-function-dax"
+  },
+  "ISSELECTEDMEASURE": {
+   "categorias": [
+    "Informação"
+   ],
+   "url": "https://learn.microsoft.com/pt-br/dax/isselectedmeasure-function-dax"
+  },
+  "ISSTRING": {
+   "categorias": [
+    "Informação"
+   ],
+   "url": "https://learn.microsoft.com/pt-br/dax/isstring-function-dax"
+  },
+  "ISSUBTOTAL": {
+   "categorias": [
+    "Informação"
+   ],
+   "url": "https://learn.microsoft.com/pt-br/dax/issubtotal-function-dax"
+  },
+  "ISTEXT": {
+   "categorias": [
+    "Informação"
+   ],
+   "url": "https://learn.microsoft.com/pt-br/dax/istext-function-dax"
+  },
+  "KEEPFILTERS": {
+   "categorias": [
+    "Filtro"
+   ],
+   "url": "https://learn.microsoft.com/pt-br/dax/keepfilters-function-dax",
+   "descricao": "Faz o filtro do CALCULATE se somar ao filtro existente em vez de substituí-lo.",
+   "uso": "",
+   "sintaxe": [
+    "KEEPFILTERS(<expression>)"
+   ]
+  },
+  "LAST": {
+   "categorias": [
+    "Filtro"
+   ],
+   "url": "https://learn.microsoft.com/pt-br/dax/last-function-dax"
+  },
+  "LASTDATE": {
+   "categorias": [
+    "Inteligência de tempo"
+   ],
+   "url": "https://learn.microsoft.com/pt-br/dax/lastdate-function-dax",
+   "descricao": "Última data do filtro (como tabela).",
+   "uso": "",
+   "sintaxe": [
+    "LASTDATE(<dates> or <calendar>)"
+   ]
+  },
+  "LCM": {
+   "categorias": [
+    "Matemáticas"
+   ],
+   "url": "https://learn.microsoft.com/pt-br/dax/lcm-function-dax"
+  },
+  "LEFT": {
+   "categorias": [
+    "Texto"
+   ],
+   "url": "https://learn.microsoft.com/pt-br/dax/left-function-dax"
+  },
+  "LEN": {
+   "categorias": [
+    "Texto"
+   ],
+   "url": "https://learn.microsoft.com/pt-br/dax/len-function-dax"
+  },
+  "LINEST": {
+   "categorias": [
+    "Estatísticas"
+   ],
+   "url": "https://learn.microsoft.com/pt-br/dax/linest-function-dax"
+  },
+  "LINESTX": {
+   "categorias": [
+    "Estatísticas"
+   ],
+   "url": "https://learn.microsoft.com/pt-br/dax/linestx-function-dax"
+  },
+  "LN": {
+   "categorias": [
+    "Matemáticas"
+   ],
+   "url": "https://learn.microsoft.com/pt-br/dax/ln-function-dax"
+  },
+  "LOG": {
+   "categorias": [
+    "Matemáticas"
+   ],
+   "url": "https://learn.microsoft.com/pt-br/dax/log-function-dax"
+  },
+  "LOG10": {
+   "categorias": [
+    "Matemáticas"
+   ],
+   "url": "https://learn.microsoft.com/pt-br/dax/log10-function-dax"
+  },
+  "LOOKUP": {
+   "categorias": [
+    "Filtro"
+   ],
+   "url": "https://learn.microsoft.com/pt-br/dax/lookup-function-dax"
+  },
+  "LOOKUPVALUE": {
+   "categorias": [
+    "Filtro"
+   ],
+   "url": "https://learn.microsoft.com/pt-br/dax/lookupvalue-function-dax",
+   "descricao": "Busca um valor por igualdade de colunas, sem relacionamento.",
+   "uso": "Evite em medida: é lento; prefira relação ou TREATAS.",
+   "sintaxe": [
+    "LOOKUPVALUE ( <result_columnName>, <search_columnName>, <search_value> [, <search2_columnName>, <search2_value>]… [, <alternateResult>] )"
+   ]
+  },
+  "LOOKUPWITHTOTALS": {
+   "categorias": [
+    "Filtro"
+   ],
+   "url": "https://learn.microsoft.com/pt-br/dax/lookupwithtotals-function-dax"
+  },
+  "LOWER": {
+   "categorias": [
+    "Texto"
+   ],
+   "url": "https://learn.microsoft.com/pt-br/dax/lower-function-dax"
+  },
+  "MATCHBY": {
+   "categorias": [
+    "Filtro"
+   ],
+   "url": "https://learn.microsoft.com/pt-br/dax/matchby-function-dax"
+  },
+  "MAX": {
+   "categorias": [
+    "Agregação"
+   ],
+   "url": "https://learn.microsoft.com/pt-br/dax/max-function-dax",
+   "descricao": "Maior valor de uma coluna (ou o maior entre dois valores).",
+   "uso": "Última data do período: MAX(Calendário[Data]) em medidas de estoque.",
+   "sintaxe": [
+    "MAX(<column>)",
+    "MAX(<expression1>, <expression2>)"
+   ]
+  },
+  "MAXA": {
+   "categorias": [
+    "Agregação"
+   ],
+   "url": "https://learn.microsoft.com/pt-br/dax/maxa-function-dax"
+  },
+  "MAXX": {
+   "categorias": [
+    "Agregação"
+   ],
+   "url": "https://learn.microsoft.com/pt-br/dax/maxx-function-dax",
+   "descricao": "Maior resultado de uma expressão avaliada linha a linha.",
+   "uso": ""
+  },
+  "MDURATION": {
+   "categorias": [
+    "Financeiras"
+   ],
+   "url": "https://learn.microsoft.com/pt-br/dax/mduration-function-dax"
+  },
+  "MEDIAN": {
+   "categorias": [
+    "Estatísticas"
+   ],
+   "url": "https://learn.microsoft.com/pt-br/dax/median-function-dax",
+   "descricao": "Mediana dos valores de uma coluna.",
+   "uso": "Prazo mediano (menos sensível a extremos que a média).",
+   "sintaxe": [
+    "MEDIAN(<column>)"
+   ]
+  },
+  "MEDIANX": {
+   "categorias": [
+    "Estatísticas"
+   ],
+   "url": "https://learn.microsoft.com/pt-br/dax/medianx-function-dax",
+   "descricao": "Mediana de uma expressão avaliada linha a linha.",
+   "uso": "",
+   "sintaxe": [
+    "MEDIANX(<table>, <expression>)"
+   ]
+  },
+  "MID": {
+   "categorias": [
+    "Texto"
+   ],
+   "url": "https://learn.microsoft.com/pt-br/dax/mid-function-dax"
+  },
+  "MIN": {
+   "categorias": [
+    "Agregação"
+   ],
+   "url": "https://learn.microsoft.com/pt-br/dax/min-function-dax",
+   "descricao": "Menor valor de uma coluna (ou o menor entre dois valores).",
+   "uso": "Primeira data, menor preço.",
+   "sintaxe": [
+    "MIN(<column>)",
+    "MIN(<expression1>, <expression2>)"
+   ]
+  },
+  "MINA": {
+   "categorias": [
+    "Agregação"
+   ],
+   "url": "https://learn.microsoft.com/pt-br/dax/mina-function-dax"
+  },
+  "MINUTE": {
+   "categorias": [
+    "Data e hora"
+   ],
+   "url": "https://learn.microsoft.com/pt-br/dax/minute-function-dax"
+  },
+  "MINX": {
+   "categorias": [
+    "Agregação"
+   ],
+   "url": "https://learn.microsoft.com/pt-br/dax/minx-function-dax",
+   "descricao": "Menor resultado de uma expressão avaliada linha a linha.",
+   "uso": ""
+  },
+  "MOD": {
+   "categorias": [
+    "Matemáticas"
+   ],
+   "url": "https://learn.microsoft.com/pt-br/dax/mod-function-dax"
+  },
+  "MONTH": {
+   "categorias": [
+    "Data e hora"
+   ],
+   "url": "https://learn.microsoft.com/pt-br/dax/month-function-dax",
+   "descricao": "Mês de uma data.",
+   "uso": "",
+   "sintaxe": [
+    "MONTH(<datetime>)"
+   ]
+  },
+  "MOVINGAVERAGE": {
+   "categorias": [
+    "Filtro"
+   ],
+   "url": "https://learn.microsoft.com/pt-br/dax/movingaverage-function-dax",
+   "descricao": "Média móvel (cálculo visual).",
+   "uso": "Só em cálculo visual, não em medida do modelo.",
+   "sintaxe": [
+    "MOVINGAVERAGE ( <column>, <windowSize>[, <includeCurrent>][, <axis>][, <orderBy>][, <blanks>][, <reset>] )"
+   ]
+  },
+  "MROUND": {
+   "categorias": [
+    "Matemáticas"
+   ],
+   "url": "https://learn.microsoft.com/pt-br/dax/mround-function-dax"
+  },
+  "NAMEOF": {
+   "categorias": [
+    "Informação"
+   ],
+   "url": "https://learn.microsoft.com/pt-br/dax/nameof-function-dax"
+  },
+  "NATURALINNERJOIN": {
+   "categorias": [
+    "Manipulação de tabela"
+   ],
+   "url": "https://learn.microsoft.com/pt-br/dax/naturalinnerjoin-function-dax"
+  },
+  "NATURALLEFTOUTERJOIN": {
+   "categorias": [
+    "Manipulação de tabela"
+   ],
+   "url": "https://learn.microsoft.com/pt-br/dax/naturalleftouterjoin-function-dax"
+  },
+  "NETWORKDAYS": {
+   "categorias": [
+    "Data e hora"
+   ],
+   "url": "https://learn.microsoft.com/pt-br/dax/networkdays-function-dax"
+  },
+  "NEXT": {
+   "categorias": [
+    "Filtro"
+   ],
+   "url": "https://learn.microsoft.com/pt-br/dax/next-function-dax"
+  },
+  "NEXTDAY": {
+   "categorias": [
+    "Inteligência de tempo"
+   ],
+   "url": "https://learn.microsoft.com/pt-br/dax/nextday-function-dax"
+  },
+  "NEXTMONTH": {
+   "categorias": [
+    "Inteligência de tempo"
+   ],
+   "url": "https://learn.microsoft.com/pt-br/dax/nextmonth-function-dax"
+  },
+  "NEXTQUARTER": {
+   "categorias": [
+    "Inteligência de tempo"
+   ],
+   "url": "https://learn.microsoft.com/pt-br/dax/nextquarter-function-dax"
+  },
+  "NEXTWEEK": {
+   "categorias": [
+    "Inteligência de tempo"
+   ],
+   "url": "https://learn.microsoft.com/pt-br/dax/nextweek-function-dax"
+  },
+  "NEXTYEAR": {
+   "categorias": [
+    "Inteligência de tempo"
+   ],
+   "url": "https://learn.microsoft.com/pt-br/dax/nextyear-function-dax"
+  },
+  "NOMINAL": {
+   "categorias": [
+    "Financeiras"
+   ],
+   "url": "https://learn.microsoft.com/pt-br/dax/nominal-function-dax"
+  },
+  "NONVISUAL": {
+   "categorias": [
+    "Informação"
+   ],
+   "url": "https://learn.microsoft.com/pt-br/dax/nonvisual-function-dax"
+  },
+  "NORM.DIST": {
+   "categorias": [
+    "Estatísticas"
+   ],
+   "url": "https://learn.microsoft.com/pt-br/dax/norm-dist-function-dax"
+  },
+  "NORM.INV": {
+   "categorias": [
+    "Estatísticas"
+   ],
+   "url": "https://learn.microsoft.com/pt-br/dax/norm-inv-function-dax"
+  },
+  "NORM.S.DIST": {
+   "categorias": [
+    "Estatísticas"
+   ],
+   "url": "https://learn.microsoft.com/pt-br/dax/norm-s-dist-function-dax"
+  },
+  "NORM.S.INV": {
+   "categorias": [
+    "Estatísticas"
+   ],
+   "url": "https://learn.microsoft.com/pt-br/dax/norm-s-inv-function-dax"
+  },
+  "NOT": {
+   "categorias": [
+    "Lógicas"
+   ],
+   "url": "https://learn.microsoft.com/pt-br/dax/not-function-dax",
+   "descricao": "Inverte o valor lógico.",
+   "uso": "",
+   "sintaxe": [
+    "NOT(<logical>)"
+   ]
+  },
+  "NOW": {
+   "categorias": [
+    "Data e hora"
+   ],
+   "url": "https://learn.microsoft.com/pt-br/dax/now-function-dax",
+   "descricao": "Data e hora atuais.",
+   "uso": "",
+   "sintaxe": [
+    "NOW()"
+   ]
+  },
+  "NPER": {
+   "categorias": [
+    "Financeiras"
+   ],
+   "url": "https://learn.microsoft.com/pt-br/dax/nper-function-dax"
+  },
+  "ODD": {
+   "categorias": [
+    "Matemáticas"
+   ],
+   "url": "https://learn.microsoft.com/pt-br/dax/odd-function-dax"
+  },
+  "ODDFPRICE": {
+   "categorias": [
+    "Financeiras"
+   ],
+   "url": "https://learn.microsoft.com/pt-br/dax/oddfprice-function-dax"
+  },
+  "ODDFYIELD": {
+   "categorias": [
+    "Financeiras"
+   ],
+   "url": "https://learn.microsoft.com/pt-br/dax/oddfyield-function-dax"
+  },
+  "ODDLPRICE": {
+   "categorias": [
+    "Financeiras"
+   ],
+   "url": "https://learn.microsoft.com/pt-br/dax/oddlprice-function-dax"
+  },
+  "ODDLYIELD": {
+   "categorias": [
+    "Financeiras"
+   ],
+   "url": "https://learn.microsoft.com/pt-br/dax/oddlyield-function-dax"
+  },
+  "OFFSET": {
+   "categorias": [
+    "Filtro"
+   ],
+   "url": "https://learn.microsoft.com/pt-br/dax/offset-function-dax",
+   "descricao": "A linha N posições antes ou depois na ordenação.",
+   "uso": "Comparar com o item anterior sem inteligência de tempo.",
+   "sintaxe": [
+    "OFFSET ( <delta>[, <relation> or <axis>][, <orderBy>][, <blanks>][, <partitionBy>][, <matchBy>][, <reset>] )"
+   ]
+  },
+  "OPENINGBALANCEMONTH": {
+   "categorias": [
+    "Inteligência de tempo"
+   ],
+   "url": "https://learn.microsoft.com/pt-br/dax/openingbalancemonth-function-dax"
+  },
+  "OPENINGBALANCEQUARTER": {
+   "categorias": [
+    "Inteligência de tempo"
+   ],
+   "url": "https://learn.microsoft.com/pt-br/dax/openingbalancequarter-function-dax"
+  },
+  "OPENINGBALANCEWEEK": {
+   "categorias": [
+    "Inteligência de tempo"
+   ],
+   "url": "https://learn.microsoft.com/pt-br/dax/openingbalanceweek-function-dax"
+  },
+  "OPENINGBALANCEYEAR": {
+   "categorias": [
+    "Inteligência de tempo"
+   ],
+   "url": "https://learn.microsoft.com/pt-br/dax/openingbalanceyear-function-dax"
+  },
+  "OR": {
+   "categorias": [
+    "Lógicas"
+   ],
+   "url": "https://learn.microsoft.com/pt-br/dax/or-function-dax",
+   "descricao": "Verdadeiro quando uma das duas condições é verdadeira.",
+   "uso": "",
+   "sintaxe": [
+    "OR(<logical1>,<logical2>)"
+   ]
+  },
+  "ORDERBY": {
+   "categorias": [
+    "Filtro"
+   ],
+   "url": "https://learn.microsoft.com/pt-br/dax/orderby-function-dax"
+  },
+  "PARALLELPERIOD": {
+   "categorias": [
+    "Inteligência de tempo"
+   ],
+   "url": "https://learn.microsoft.com/pt-br/dax/parallelperiod-function-dax",
+   "descricao": "Período inteiro deslocado (mês, trimestre ou ano completo).",
+   "uso": "",
+   "sintaxe": [
+    "PARALLELPERIOD(<dates> or <calendar>,<number_of_intervals>,<interval>)"
+   ]
+  },
+  "PARTITIONBY": {
+   "categorias": [
+    "Filtro"
+   ],
+   "url": "https://learn.microsoft.com/pt-br/dax/partitionby-function-dax"
+  },
+  "PATH": {
+   "categorias": [
+    "Pai e filho"
+   ],
+   "url": "https://learn.microsoft.com/pt-br/dax/path-function-dax"
+  },
+  "PATHCONTAINS": {
+   "categorias": [
+    "Pai e filho"
+   ],
+   "url": "https://learn.microsoft.com/pt-br/dax/pathcontains-function-dax"
+  },
+  "PATHITEM": {
+   "categorias": [
+    "Pai e filho"
+   ],
+   "url": "https://learn.microsoft.com/pt-br/dax/pathitem-function-dax"
+  },
+  "PATHITEMREVERSE": {
+   "categorias": [
+    "Pai e filho"
+   ],
+   "url": "https://learn.microsoft.com/pt-br/dax/pathitemreverse-function-dax"
+  },
+  "PATHLENGTH": {
+   "categorias": [
+    "Pai e filho"
+   ],
+   "url": "https://learn.microsoft.com/pt-br/dax/pathlength-function-dax"
+  },
+  "PDURATION": {
+   "categorias": [
+    "Financeiras"
+   ],
+   "url": "https://learn.microsoft.com/pt-br/dax/pduration-function-dax"
+  },
+  "PERCENTILE.EXC": {
+   "categorias": [
+    "Estatísticas"
+   ],
+   "url": "https://learn.microsoft.com/pt-br/dax/percentile-exc-function-dax"
+  },
+  "PERCENTILE.INC": {
+   "categorias": [
+    "Estatísticas"
+   ],
+   "url": "https://learn.microsoft.com/pt-br/dax/percentile-inc-function-dax"
+  },
+  "PERCENTILEX.EXC": {
+   "categorias": [
+    "Estatísticas"
+   ],
+   "url": "https://learn.microsoft.com/pt-br/dax/percentilex-exc-function-dax"
+  },
+  "PERCENTILEX.INC": {
+   "categorias": [
+    "Estatísticas"
+   ],
+   "url": "https://learn.microsoft.com/pt-br/dax/percentilex-inc-function-dax",
+   "descricao": "Percentil de uma expressão avaliada linha a linha.",
+   "uso": "",
+   "sintaxe": [
+    "PERCENTILEX.INC(<table>, <expression>;, k)"
+   ]
+  },
+  "PERMUT": {
+   "categorias": [
+    "Estatísticas"
+   ],
+   "url": "https://learn.microsoft.com/pt-br/dax/permut-function-dax"
+  },
+  "PI": {
+   "categorias": [
+    "Matemáticas"
+   ],
+   "url": "https://learn.microsoft.com/pt-br/dax/pi-function-dax"
+  },
+  "PMT": {
+   "categorias": [
+    "Financeiras"
+   ],
+   "url": "https://learn.microsoft.com/pt-br/dax/pmt-function-dax"
+  },
+  "POISSON.DIST": {
+   "categorias": [
+    "Estatísticas"
+   ],
+   "url": "https://learn.microsoft.com/pt-br/dax/poisson-dist-function-dax"
+  },
+  "POWER": {
+   "categorias": [
+    "Matemáticas"
+   ],
+   "url": "https://learn.microsoft.com/pt-br/dax/power-function-dax"
+  },
+  "PPMT": {
+   "categorias": [
+    "Financeiras"
+   ],
+   "url": "https://learn.microsoft.com/pt-br/dax/ppmt-function-dax"
+  },
+  "PREVIOUS": {
+   "categorias": [
+    "Filtro"
+   ],
+   "url": "https://learn.microsoft.com/pt-br/dax/previous-function-dax"
+  },
+  "PREVIOUSDAY": {
+   "categorias": [
+    "Inteligência de tempo"
+   ],
+   "url": "https://learn.microsoft.com/pt-br/dax/previousday-function-dax"
+  },
+  "PREVIOUSMONTH": {
+   "categorias": [
+    "Inteligência de tempo"
+   ],
+   "url": "https://learn.microsoft.com/pt-br/dax/previousmonth-function-dax",
+   "descricao": "Todas as datas do mês anterior.",
+   "uso": "",
+   "sintaxe": [
+    "PREVIOUSMONTH(<dates> or <calendar>)"
+   ]
+  },
+  "PREVIOUSQUARTER": {
+   "categorias": [
+    "Inteligência de tempo"
+   ],
+   "url": "https://learn.microsoft.com/pt-br/dax/previousquarter-function-dax"
+  },
+  "PREVIOUSWEEK": {
+   "categorias": [
+    "Inteligência de tempo"
+   ],
+   "url": "https://learn.microsoft.com/pt-br/dax/previousweek-function-dax"
+  },
+  "PREVIOUSYEAR": {
+   "categorias": [
+    "Inteligência de tempo"
+   ],
+   "url": "https://learn.microsoft.com/pt-br/dax/previousyear-function-dax",
+   "descricao": "Todas as datas do ano anterior.",
+   "uso": "",
+   "sintaxe": [
+    "PREVIOUSYEAR(<dates> or <calendar>[,<year_end_date>])"
+   ]
+  },
+  "PRICE": {
+   "categorias": [
+    "Financeiras"
+   ],
+   "url": "https://learn.microsoft.com/pt-br/dax/price-function-dax"
+  },
+  "PRICEDISC": {
+   "categorias": [
+    "Financeiras"
+   ],
+   "url": "https://learn.microsoft.com/pt-br/dax/pricedisc-function-dax"
+  },
+  "PRICEMAT": {
+   "categorias": [
+    "Financeiras"
+   ],
+   "url": "https://learn.microsoft.com/pt-br/dax/pricemat-function-dax"
+  },
+  "PRODUCT": {
+   "categorias": [
+    "Agregação"
+   ],
+   "url": "https://learn.microsoft.com/pt-br/dax/product-function-dax"
+  },
+  "PRODUCTX": {
+   "categorias": [
+    "Agregação"
+   ],
+   "url": "https://learn.microsoft.com/pt-br/dax/productx-function-dax"
+  },
+  "PV": {
+   "categorias": [
+    "Financeiras"
+   ],
+   "url": "https://learn.microsoft.com/pt-br/dax/pv-function-dax"
+  },
+  "QUARTER": {
+   "categorias": [
+    "Data e hora"
+   ],
+   "url": "https://learn.microsoft.com/pt-br/dax/quarter-function-dax"
+  },
+  "QUOTIENT": {
+   "categorias": [
+    "Matemáticas"
+   ],
+   "url": "https://learn.microsoft.com/pt-br/dax/quotient-function-dax"
+  },
+  "RADIANS": {
+   "categorias": [
+    "Matemáticas"
+   ],
+   "url": "https://learn.microsoft.com/pt-br/dax/radians-function-dax"
+  },
+  "RAND": {
+   "categorias": [
+    "Matemáticas"
+   ],
+   "url": "https://learn.microsoft.com/pt-br/dax/rand-function-dax"
+  },
+  "RANDBETWEEN": {
+   "categorias": [
+    "Matemáticas"
+   ],
+   "url": "https://learn.microsoft.com/pt-br/dax/randbetween-function-dax"
+  },
+  "RANGE": {
+   "categorias": [
+    "Filtro"
+   ],
+   "url": "https://learn.microsoft.com/pt-br/dax/range-function-dax"
+  },
+  "RANK": {
+   "categorias": [
+    "Filtro"
+   ],
+   "url": "https://learn.microsoft.com/pt-br/dax/rank-function-dax",
+   "descricao": "Posição da linha atual numa ordenação (função de janela).",
+   "uso": "",
+   "sintaxe": [
+    "RANK ( [<ties>][, <relation> or <axis>][, <orderBy>][, <blanks>][, <partitionBy>][, <matchBy>][, <reset>] )"
+   ]
+  },
+  "RANK.EQ": {
+   "categorias": [
+    "Estatísticas"
+   ],
+   "url": "https://learn.microsoft.com/pt-br/dax/rank-eq-function-dax"
+  },
+  "RANKX": {
+   "categorias": [
+    "Estatísticas"
+   ],
+   "url": "https://learn.microsoft.com/pt-br/dax/rankx-function-dax",
+   "descricao": "Posição de cada item numa ordenação por uma expressão.",
+   "uso": "Ranking de lojas, top N.",
+   "sintaxe": [
+    "RANKX(<table>, <expression>[, <value>[, <order>[, <ties>]]])"
+   ]
+  },
+  "RATE": {
+   "categorias": [
+    "Financeiras"
+   ],
+   "url": "https://learn.microsoft.com/pt-br/dax/rate-function-dax"
+  },
+  "RECEIVED": {
+   "categorias": [
+    "Financeiras"
+   ],
+   "url": "https://learn.microsoft.com/pt-br/dax/received-function-dax"
+  },
+  "RELATED": {
+   "categorias": [
+    "Relacionamento"
+   ],
+   "url": "https://learn.microsoft.com/pt-br/dax/related-function-dax",
+   "descricao": "Busca o valor de uma coluna na tabela do lado \"um\" da relação.",
+   "uso": "Coluna calculada na fato vinda da dimensão.",
+   "sintaxe": [
+    "RELATED(<column>)"
+   ]
+  },
+  "RELATEDTABLE": {
+   "categorias": [
+    "Relacionamento"
+   ],
+   "url": "https://learn.microsoft.com/pt-br/dax/relatedtable-function-dax",
+   "descricao": "Devolve as linhas relacionadas do lado \"muitos\".",
+   "uso": "",
+   "sintaxe": [
+    "RELATEDTABLE(<tableName>)"
+   ]
+  },
+  "REMOVEFILTERS": {
+   "categorias": [
+    "Filtro"
+   ],
+   "url": "https://learn.microsoft.com/pt-br/dax/removefilters-function-dax",
+   "descricao": "Remove filtros de tabelas ou colunas dentro do CALCULATE (forma explícita do ALL).",
+   "uso": "Ignorar o calendário numa medida de estoque.",
+   "sintaxe": [
+    "REMOVEFILTERS([<table> | <column>[, <column>[, <column>[,…]]]])"
+   ]
+  },
+  "REPLACE": {
+   "categorias": [
+    "Texto"
+   ],
+   "url": "https://learn.microsoft.com/pt-br/dax/replace-function-dax"
+  },
+  "REPT": {
+   "categorias": [
+    "Texto"
+   ],
+   "url": "https://learn.microsoft.com/pt-br/dax/rept-function-dax"
+  },
+  "RIGHT": {
+   "categorias": [
+    "Texto"
+   ],
+   "url": "https://learn.microsoft.com/pt-br/dax/right-function-dax"
+  },
+  "ROLLUP": {
+   "categorias": [
+    "Manipulação de tabela"
+   ],
+   "url": "https://learn.microsoft.com/pt-br/dax/rollup-function-dax"
+  },
+  "ROLLUPADDISSUBTOTAL": {
+   "categorias": [
+    "Manipulação de tabela"
+   ],
+   "url": "https://learn.microsoft.com/pt-br/dax/rollupaddissubtotal-function-dax"
+  },
+  "ROLLUPGROUP": {
+   "categorias": [
+    "Manipulação de tabela"
+   ],
+   "url": "https://learn.microsoft.com/pt-br/dax/rollupgroup-function-dax"
+  },
+  "ROLLUPISSUBTOTAL": {
+   "categorias": [
+    "Manipulação de tabela"
+   ],
+   "url": "https://learn.microsoft.com/pt-br/dax/rollupissubtotal-function-dax"
+  },
+  "ROUND": {
+   "categorias": [
+    "Matemáticas"
+   ],
+   "url": "https://learn.microsoft.com/pt-br/dax/round-function-dax",
+   "descricao": "Arredonda para N casas decimais.",
+   "uso": "",
+   "sintaxe": [
+    "ROUND(<number>, <num_digits>)"
+   ]
+  },
+  "ROUNDDOWN": {
+   "categorias": [
+    "Matemáticas"
+   ],
+   "url": "https://learn.microsoft.com/pt-br/dax/rounddown-function-dax"
+  },
+  "ROUNDUP": {
+   "categorias": [
+    "Matemáticas"
+   ],
+   "url": "https://learn.microsoft.com/pt-br/dax/roundup-function-dax"
+  },
+  "ROW": {
+   "categorias": [
+    "Manipulação de tabela"
+   ],
+   "url": "https://learn.microsoft.com/pt-br/dax/row-function-dax"
+  },
+  "ROWNUMBER": {
+   "categorias": [
+    "Filtro"
+   ],
+   "url": "https://learn.microsoft.com/pt-br/dax/rownumber-function-dax",
+   "descricao": "Número único da linha atual numa ordenação.",
+   "uso": "",
+   "sintaxe": [
+    "ROWNUMBER ( [<relation> or <axis>][, <orderBy>][, <blanks>][, <partitionBy>][, <matchBy>][, <reset>] )"
+   ]
+  },
+  "RRI": {
+   "categorias": [
+    "Financeiras"
+   ],
+   "url": "https://learn.microsoft.com/pt-br/dax/rri-function-dax"
+  },
+  "RUNNINGSUM": {
+   "categorias": [
+    "Filtro"
+   ],
+   "url": "https://learn.microsoft.com/pt-br/dax/runningsum-function-dax",
+   "descricao": "Soma acumulada ao longo do eixo (cálculo visual).",
+   "uso": "Só em cálculo visual, não em medida do modelo.",
+   "sintaxe": [
+    "RUNNINGSUM ( <column>[, <axis>][, <orderBy>][, <blanks>][, <reset>] )"
+   ]
+  },
+  "SAMEPERIODLASTYEAR": {
+   "categorias": [
+    "Inteligência de tempo"
+   ],
+   "url": "https://learn.microsoft.com/pt-br/dax/sameperiodlastyear-function-dax",
+   "descricao": "As mesmas datas do filtro, deslocadas um ano para trás.",
+   "uso": "Ano anterior e variação A/A.",
+   "sintaxe": [
+    "SAMEPERIODLASTYEAR(<dates> or <calendar>)"
+   ]
+  },
+  "SAMPLE": {
+   "categorias": [
+    "Estatísticas"
+   ],
+   "url": "https://learn.microsoft.com/pt-br/dax/sample-function-dax"
+  },
+  "SEARCH": {
+   "categorias": [
+    "Texto"
+   ],
+   "url": "https://learn.microsoft.com/pt-br/dax/search-function-dax"
+  },
+  "SECOND": {
+   "categorias": [
+    "Data e hora"
+   ],
+   "url": "https://learn.microsoft.com/pt-br/dax/second-function-dax"
+  },
+  "SELECTCOLUMNS": {
+   "categorias": [
+    "Manipulação de tabela"
+   ],
+   "url": "https://learn.microsoft.com/pt-br/dax/selectcolumns-function-dax",
+   "descricao": "Monta uma tabela com as colunas/expressões escolhidas.",
+   "uso": "",
+   "sintaxe": [
+    "SELECTCOLUMNS(<Table>, [<Name>], <Expression>, [<Name>], …)"
+   ]
+  },
+  "SELECTEDMEASURE": {
+   "categorias": [
+    "Informação"
+   ],
+   "url": "https://learn.microsoft.com/pt-br/dax/selectedmeasure-function-dax"
+  },
+  "SELECTEDMEASUREFORMATSTRING": {
+   "categorias": [
+    "Informação"
+   ],
+   "url": "https://learn.microsoft.com/pt-br/dax/selectedmeasureformatstring-function-dax"
+  },
+  "SELECTEDMEASURENAME": {
+   "categorias": [
+    "Informação"
+   ],
+   "url": "https://learn.microsoft.com/pt-br/dax/selectedmeasurename-function-dax"
+  },
+  "SELECTEDVALUE": {
+   "categorias": [
+    "Filtro"
+   ],
+   "url": "https://learn.microsoft.com/pt-br/dax/selectedvalue-function-dax",
+   "descricao": "Valor da coluna quando há um só no filtro; senão, o alternativo.",
+   "uso": "Título dinâmico, meta escolhida no segmentador.",
+   "sintaxe": [
+    "SELECTEDVALUE(<columnName>[, <alternateResult>])"
+   ]
+  },
+  "SIGN": {
+   "categorias": [
+    "Matemáticas"
+   ],
+   "url": "https://learn.microsoft.com/pt-br/dax/sign-function-dax"
+  },
+  "SIN": {
+   "categorias": [
+    "Matemáticas"
+   ],
+   "url": "https://learn.microsoft.com/pt-br/dax/sin-function-dax"
+  },
+  "SINH": {
+   "categorias": [
+    "Matemáticas"
+   ],
+   "url": "https://learn.microsoft.com/pt-br/dax/sinh-function-dax"
+  },
+  "SLN": {
+   "categorias": [
+    "Financeiras"
+   ],
+   "url": "https://learn.microsoft.com/pt-br/dax/sln-function-dax"
+  },
+  "SQRT": {
+   "categorias": [
+    "Matemáticas"
+   ],
+   "url": "https://learn.microsoft.com/pt-br/dax/sqrt-function-dax"
+  },
+  "SQRTPI": {
+   "categorias": [
+    "Matemáticas"
+   ],
+   "url": "https://learn.microsoft.com/pt-br/dax/sqrtpi-function-dax"
+  },
+  "STARTOFMONTH": {
+   "categorias": [
+    "Inteligência de tempo"
+   ],
+   "url": "https://learn.microsoft.com/pt-br/dax/startofmonth-function-dax",
+   "descricao": "Primeira data do mês do filtro.",
+   "uso": "",
+   "sintaxe": [
+    "STARTOFMONTH(<dates> or <calendar>)"
+   ]
+  },
+  "STARTOFQUARTER": {
+   "categorias": [
+    "Inteligência de tempo"
+   ],
+   "url": "https://learn.microsoft.com/pt-br/dax/startofquarter-function-dax"
+  },
+  "STARTOFWEEK": {
+   "categorias": [
+    "Inteligência de tempo"
+   ],
+   "url": "https://learn.microsoft.com/pt-br/dax/startofweek-function-dax"
+  },
+  "STARTOFYEAR": {
+   "categorias": [
+    "Inteligência de tempo"
+   ],
+   "url": "https://learn.microsoft.com/pt-br/dax/startofyear-function-dax"
+  },
+  "STDEV.P": {
+   "categorias": [
+    "Estatísticas"
+   ],
+   "url": "https://learn.microsoft.com/pt-br/dax/stdev-p-function-dax",
+   "descricao": "Desvio padrão da população.",
+   "uso": "",
+   "sintaxe": [
+    "STDEV.P(<ColumnName>)"
+   ]
+  },
+  "STDEV.S": {
+   "categorias": [
+    "Estatísticas"
+   ],
+   "url": "https://learn.microsoft.com/pt-br/dax/stdev-s-function-dax"
+  },
+  "STDEVX.P": {
+   "categorias": [
+    "Estatísticas"
+   ],
+   "url": "https://learn.microsoft.com/pt-br/dax/stdevx-p-function-dax"
+  },
+  "STDEVX.S": {
+   "categorias": [
+    "Estatísticas"
+   ],
+   "url": "https://learn.microsoft.com/pt-br/dax/stdevx-s-function-dax"
+  },
+  "SUBSTITUTE": {
+   "categorias": [
+    "Texto"
+   ],
+   "url": "https://learn.microsoft.com/pt-br/dax/substitute-function-dax"
+  },
+  "SUBSTITUTEWITHINDEX": {
+   "categorias": [
+    "Manipulação de tabela"
+   ],
+   "url": "https://learn.microsoft.com/pt-br/dax/substitutewithindex-function-dax"
+  },
+  "SUM": {
+   "categorias": [
+    "Agregação"
+   ],
+   "url": "https://learn.microsoft.com/pt-br/dax/sum-function-dax",
+   "descricao": "Soma os valores de uma coluna no contexto de filtro.",
+   "uso": "Totais aditivos: valor vendido, horas, custo.",
+   "sintaxe": [
+    "SUM(<column>)"
+   ]
+  },
+  "SUMMARIZE": {
+   "categorias": [
+    "Manipulação de tabela"
+   ],
+   "url": "https://learn.microsoft.com/pt-br/dax/summarize-function-dax",
+   "descricao": "Agrupa uma tabela pelas colunas informadas.",
+   "uso": "",
+   "sintaxe": [
+    "SUMMARIZE (<table>, <groupBy_columnName>[, <groupBy_columnName>]…[, <name>, <expression>]…)"
+   ]
+  },
+  "SUMMARIZECOLUMNS": {
+   "categorias": [
+    "Manipulação de tabela"
+   ],
+   "url": "https://learn.microsoft.com/pt-br/dax/summarizecolumns-function-dax",
+   "descricao": "Agrupa e calcula num só passo (forma recomendada em consultas).",
+   "uso": "",
+   "sintaxe": [
+    "SUMMARIZECOLUMNS( <groupBy_columnName> [, < groupBy_columnName >]…, [<filterTable>]…[, <name>, <expression>]…)"
+   ]
+  },
+  "SUMX": {
+   "categorias": [
+    "Agregação"
+   ],
+   "url": "https://learn.microsoft.com/pt-br/dax/sumx-function-dax",
+   "descricao": "Avalia uma expressão linha a linha de uma tabela e soma os resultados.",
+   "uso": "Soma de um produto (quantidade × preço) sem criar coluna.",
+   "sintaxe": [
+    "SUMX(<table>, <expression>)"
+   ]
+  },
+  "SWITCH": {
+   "categorias": [
+    "Lógicas"
+   ],
+   "url": "https://learn.microsoft.com/pt-br/dax/switch-function-dax",
+   "descricao": "Escolhe um resultado pelo primeiro valor/condição que bater.",
+   "uso": "Faixas (SWITCH(TRUE(), ...)) e status de meta.",
+   "sintaxe": [
+    "SWITCH(<expression>, <value>, <result>[, <value>, <result>]…[, <else>])"
+   ]
+  },
+  "SYD": {
+   "categorias": [
+    "Financeiras"
+   ],
+   "url": "https://learn.microsoft.com/pt-br/dax/syd-function-dax"
+  },
+  "T.DIST": {
+   "categorias": [
+    "Estatísticas"
+   ],
+   "url": "https://learn.microsoft.com/pt-br/dax/t-dist-function-dax"
+  },
+  "T.DIST.2T": {
+   "categorias": [
+    "Estatísticas"
+   ],
+   "url": "https://learn.microsoft.com/pt-br/dax/t-dist-2t-function-dax"
+  },
+  "T.DIST.RT": {
+   "categorias": [
+    "Estatísticas"
+   ],
+   "url": "https://learn.microsoft.com/pt-br/dax/t-dist-rt-function-dax"
+  },
+  "T.INV": {
+   "categorias": [
+    "Estatísticas"
+   ],
+   "url": "https://learn.microsoft.com/pt-br/dax/t-inv-function-dax"
+  },
+  "T.INV.2t": {
+   "categorias": [
+    "Estatísticas"
+   ],
+   "url": "https://learn.microsoft.com/pt-br/dax/t-inv-2t-function-dax"
+  },
+  "TABLEOF": {
+   "categorias": [
+    "Informação"
+   ],
+   "url": "https://learn.microsoft.com/pt-br/dax/tableof-function-dax"
+  },
+  "TAN": {
+   "categorias": [
+    "Matemáticas"
+   ],
+   "url": "https://learn.microsoft.com/pt-br/dax/tan-function-dax"
+  },
+  "TANH": {
+   "categorias": [
+    "Matemáticas"
+   ],
+   "url": "https://learn.microsoft.com/pt-br/dax/tanh-function-dax"
+  },
+  "TBILLEQ": {
+   "categorias": [
+    "Financeiras"
+   ],
+   "url": "https://learn.microsoft.com/pt-br/dax/tbilleq-function-dax"
+  },
+  "TBILLPRICE": {
+   "categorias": [
+    "Financeiras"
+   ],
+   "url": "https://learn.microsoft.com/pt-br/dax/tbillprice-function-dax"
+  },
+  "TBILLYIELD": {
+   "categorias": [
+    "Financeiras"
+   ],
+   "url": "https://learn.microsoft.com/pt-br/dax/tbillyield-function-dax"
+  },
+  "TEXTCONTAINS": {
+   "categorias": [
+    "Informação"
+   ],
+   "url": "https://learn.microsoft.com/pt-br/dax/textcontains-function-dax"
+  },
+  "TEXTSIMILARITY": {
+   "categorias": [
+    "Informação"
+   ],
+   "url": "https://learn.microsoft.com/pt-br/dax/textsimilarity-function-dax"
+  },
+  "TIME": {
+   "categorias": [
+    "Data e hora"
+   ],
+   "url": "https://learn.microsoft.com/pt-br/dax/time-function-dax"
+  },
+  "TIMEVALUE": {
+   "categorias": [
+    "Data e hora"
+   ],
+   "url": "https://learn.microsoft.com/pt-br/dax/timevalue-function-dax"
+  },
+  "TOCSV": {
+   "categorias": [
+    "Outras"
+   ],
+   "url": "https://learn.microsoft.com/pt-br/dax/tocsv-function-dax"
+  },
+  "TODAY": {
+   "categorias": [
+    "Data e hora"
+   ],
+   "url": "https://learn.microsoft.com/pt-br/dax/today-function-dax",
+   "descricao": "Data de hoje (do momento da consulta).",
+   "uso": "Proteger meses futuros: IF(MIN(Calendário[Data]) > TODAY(), BLANK(), ...).",
+   "sintaxe": [
+    "TODAY()"
+   ]
+  },
+  "TOJSON": {
+   "categorias": [
+    "Outras"
+   ],
+   "url": "https://learn.microsoft.com/pt-br/dax/tojson-function-dax"
+  },
+  "TOPN": {
+   "categorias": [
+    "Manipulação de tabela"
+   ],
+   "url": "https://learn.microsoft.com/pt-br/dax/topn-function-dax",
+   "descricao": "As N primeiras linhas de uma tabela por uma expressão.",
+   "uso": "",
+   "sintaxe": [
+    "TOPN(<N_Value>, <Table>, <OrderBy_Expression>, [<Order>[, <OrderBy_Expression>, [<Order>]]…])"
+   ]
+  },
+  "TOTALMTD": {
+   "categorias": [
+    "Inteligência de tempo"
+   ],
+   "url": "https://learn.microsoft.com/pt-br/dax/totalmtd-function-dax",
+   "descricao": "Acumula a expressão do início do mês até a última data do filtro.",
+   "uso": "",
+   "sintaxe": [
+    "TOTALMTD(<expression>,<dates> or <calendar>[,<filter>])"
+   ]
+  },
+  "TOTALQTD": {
+   "categorias": [
+    "Inteligência de tempo"
+   ],
+   "url": "https://learn.microsoft.com/pt-br/dax/totalqtd-function-dax",
+   "descricao": "Acumula a expressão do início do trimestre até a última data do filtro.",
+   "uso": "",
+   "sintaxe": [
+    "TOTALQTD(<expression>,<dates> or <calendar>[,<filter>])"
+   ]
+  },
+  "TOTALWTD": {
+   "categorias": [
+    "Inteligência de tempo"
+   ],
+   "url": "https://learn.microsoft.com/pt-br/dax/totalwtd-function-dax"
+  },
+  "TOTALYTD": {
+   "categorias": [
+    "Inteligência de tempo"
+   ],
+   "url": "https://learn.microsoft.com/pt-br/dax/totalytd-function-dax",
+   "descricao": "Acumula a expressão do início do ano até a última data do filtro.",
+   "uso": "Acumulado no ano (YTD).",
+   "sintaxe": [
+    "TOTALYTD(<expression>,<dates> or <calendar>[,<filter>][,<year_end_date>])"
+   ]
+  },
+  "TREATAS": {
+   "categorias": [
+    "Manipulação de tabela"
+   ],
+   "url": "https://learn.microsoft.com/pt-br/dax/treatas-function-dax",
+   "descricao": "Aplica os valores de uma tabela como filtro em colunas de outra, sem relacionamento.",
+   "uso": "Ligação virtual entre fontes sem relação física.",
+   "sintaxe": [
+    "TREATAS(tableExpression, <column>[, <column>[, <column>[,…]]])"
+   ]
+  },
+  "TRIM": {
+   "categorias": [
+    "Texto"
+   ],
+   "url": "https://learn.microsoft.com/pt-br/dax/trim-function-dax"
+  },
+  "TRUE": {
+   "categorias": [
+    "Lógicas"
+   ],
+   "url": "https://learn.microsoft.com/pt-br/dax/true-function-dax"
+  },
+  "TRUNC": {
+   "categorias": [
+    "Matemáticas"
+   ],
+   "url": "https://learn.microsoft.com/pt-br/dax/trunc-function-dax"
+  },
+  "Table Constructor": {
+   "categorias": [
+    "Manipulação de tabela"
+   ],
+   "url": "https://learn.microsoft.com/pt-br/dax/table-constructor"
+  },
+  "UNICHAR": {
+   "categorias": [
+    "Texto"
+   ],
+   "url": "https://learn.microsoft.com/pt-br/dax/unichar-function-dax"
+  },
+  "UNICODE": {
+   "categorias": [
+    "Texto"
+   ],
+   "url": "https://learn.microsoft.com/pt-br/dax/unicode-function-dax"
+  },
+  "UNION": {
+   "categorias": [
+    "Manipulação de tabela"
+   ],
+   "url": "https://learn.microsoft.com/pt-br/dax/union-function-dax"
+  },
+  "UPPER": {
+   "categorias": [
+    "Texto"
+   ],
+   "url": "https://learn.microsoft.com/pt-br/dax/upper-function-dax"
+  },
+  "USERCULTURE": {
+   "categorias": [
+    "Informação"
+   ],
+   "url": "https://learn.microsoft.com/pt-br/dax/userculture-function-dax"
+  },
+  "USERELATIONSHIP": {
+   "categorias": [
+    "Relacionamento"
+   ],
+   "url": "https://learn.microsoft.com/pt-br/dax/userelationship-function-dax",
+   "descricao": "Ativa uma relação inativa dentro do CALCULATE.",
+   "uso": "Segunda data da fato (ex.: data de aviso x data de desligamento).",
+   "sintaxe": [
+    "USERELATIONSHIP(<columnName1>,<columnName2>)"
+   ]
+  },
+  "USERNAME": {
+   "categorias": [
+    "Informação"
+   ],
+   "url": "https://learn.microsoft.com/pt-br/dax/username-function-dax"
+  },
+  "USEROBJECTID": {
+   "categorias": [
+    "Informação"
+   ],
+   "url": "https://learn.microsoft.com/pt-br/dax/userobjectid-function-dax"
+  },
+  "USERPRINCIPALNAME": {
+   "categorias": [
+    "Informação"
+   ],
+   "url": "https://learn.microsoft.com/pt-br/dax/userprincipalname-function-dax",
+   "descricao": "E-mail (UPN) de quem está vendo o relatório.",
+   "uso": "Segurança por linha (RLS).",
+   "sintaxe": [
+    "USERPRINCIPALNAME()"
+   ]
+  },
+  "UTCNOW": {
+   "categorias": [
+    "Data e hora"
+   ],
+   "url": "https://learn.microsoft.com/pt-br/dax/utcnow-function-dax"
+  },
+  "UTCTODAY": {
+   "categorias": [
+    "Data e hora"
+   ],
+   "url": "https://learn.microsoft.com/pt-br/dax/utctoday-function-dax"
+  },
+  "VALUE": {
+   "categorias": [
+    "Texto"
+   ],
+   "url": "https://learn.microsoft.com/pt-br/dax/value-function-dax"
+  },
+  "VALUES": {
+   "categorias": [
+    "Manipulação de tabela"
+   ],
+   "url": "https://learn.microsoft.com/pt-br/dax/values-function-dax",
+   "descricao": "Valores distintos visíveis de uma coluna (inclui o branco de relação sem par).",
+   "uso": "Iterar por mês: AVERAGEX(VALUES(Calendário[Ano-Mês]), ...).",
+   "sintaxe": [
+    "VALUES(<TableNameOrColumnName>)"
+   ]
+  },
+  "VAR.P": {
+   "categorias": [
+    "Estatísticas"
+   ],
+   "url": "https://learn.microsoft.com/pt-br/dax/var-p-function-dax"
+  },
+  "VAR.S": {
+   "categorias": [
+    "Estatísticas"
+   ],
+   "url": "https://learn.microsoft.com/pt-br/dax/var-s-function-dax"
+  },
+  "VARX.P": {
+   "categorias": [
+    "Estatísticas"
+   ],
+   "url": "https://learn.microsoft.com/pt-br/dax/varx-p-function-dax"
+  },
+  "VARX.S": {
+   "categorias": [
+    "Estatísticas"
+   ],
+   "url": "https://learn.microsoft.com/pt-br/dax/varx-s-function-dax"
+  },
+  "VDB": {
+   "categorias": [
+    "Financeiras"
+   ],
+   "url": "https://learn.microsoft.com/pt-br/dax/vdb-function-dax"
+  },
+  "WEEKDAY": {
+   "categorias": [
+    "Data e hora"
+   ],
+   "url": "https://learn.microsoft.com/pt-br/dax/weekday-function-dax"
+  },
+  "WEEKNUM": {
+   "categorias": [
+    "Data e hora"
+   ],
+   "url": "https://learn.microsoft.com/pt-br/dax/weeknum-function-dax"
+  },
+  "WINDOW": {
+   "categorias": [
+    "Filtro"
+   ],
+   "url": "https://learn.microsoft.com/pt-br/dax/window-function-dax",
+   "descricao": "Linhas de uma janela relativa ou absoluta numa ordenação.",
+   "uso": "",
+   "sintaxe": [
+    "WINDOW ( from[, from_type], to[, to_type][, <relation> or <axis>][, <orderBy>][, <blanks>][, <partitionBy>][, <matchBy>][, <reset>] )"
+   ]
+  },
+  "XIRR": {
+   "categorias": [
+    "Financeiras"
+   ],
+   "url": "https://learn.microsoft.com/pt-br/dax/xirr-function-dax"
+  },
+  "XNPV": {
+   "categorias": [
+    "Financeiras"
+   ],
+   "url": "https://learn.microsoft.com/pt-br/dax/xnpv-function-dax"
+  },
+  "YEAR": {
+   "categorias": [
+    "Data e hora"
+   ],
+   "url": "https://learn.microsoft.com/pt-br/dax/year-function-dax",
+   "descricao": "Ano de uma data.",
+   "uso": "",
+   "sintaxe": [
+    "YEAR(<date>)"
+   ]
+  },
+  "YEARFRAC": {
+   "categorias": [
+    "Data e hora"
+   ],
+   "url": "https://learn.microsoft.com/pt-br/dax/yearfrac-function-dax"
+  },
+  "YIELD": {
+   "categorias": [
+    "Financeiras"
+   ],
+   "url": "https://learn.microsoft.com/pt-br/dax/yield-function-dax"
+  },
+  "YIELDDISC": {
+   "categorias": [
+    "Financeiras"
+   ],
+   "url": "https://learn.microsoft.com/pt-br/dax/yielddisc-function-dax"
+  },
+  "YIELDMAT": {
+   "categorias": [
+    "Financeiras"
+   ],
+   "url": "https://learn.microsoft.com/pt-br/dax/yieldmat-function-dax"
+  }
+ }
+}

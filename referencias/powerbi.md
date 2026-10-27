@@ -39,17 +39,21 @@ máquina do usuário aceita o formato PBIR (versões anteriores a 2024 pedem a
 opção em versão prévia) e que as views rodam no banco real. Por isso o
 LEIA-ME começa pelo SQL e pela homologação.
 
-## A camada SQL
+## Como cada fonte é lida
 
-`sql/01_views.sql` cria uma view por tabela do modelo no schema `bi`, já com
-os nomes amigáveis, as chaves compostas concatenadas e as datas do
-calendário sem hora. O Power BI lê só as views. Vantagens: o DBA revisa um
+**SQL Server.** `sql/<fonte>/01_views.sql` cria uma view por tabela do modelo
+no schema `bi`, já com os nomes amigáveis, as chaves compostas concatenadas e
+as datas do calendário sem hora. O Power BI lê só as views, por dois
+parâmetros (`<fonte>_Servidor`, `<fonte>_Banco`). Vantagens: o DBA revisa um
 arquivo; mudar a origem não quebra o painel; permissão de leitura num schema
-só.
+só. `02_conferencia.sql` traz o total de cada indicador direto no banco (geral
+e por ano) e `03_qualidade.sql`, as checagens que derrubam ou distorcem a
+atualização.
 
-`sql/02_conferencia.sql` traz o total geral de cada indicador de agregação
-direto no banco. Homologar = esse total bater com o cartão do Power BI sem
-filtro.
+**Power BI existente / Power Query (Excel, SharePoint, CSV, API...).** A
+partição reaproveita a consulta de origem que veio no catálogo e acrescenta
+seleção, nomes, tipos e chave composta. Parâmetros e consultas auxiliares
+dela vão para `expressions.tmdl`. A homologação é contra a própria fonte.
 
 ## Limitações conhecidas (versão atual)
 

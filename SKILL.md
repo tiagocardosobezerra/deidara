@@ -1,6 +1,6 @@
 ---
 name: deidara
-description: "Arquiteto de painéis Power BI para o time de indicadores. Parte da estrutura real do banco (descoberta pelo Vegapunk, nunca adivinhada), monta a especificação do painel (modelo estrela, medidas DAX, páginas e visuais), gera um PROTÓTIPO navegável em HTML com números fictícios para validação e, só depois do aceite explícito do usuário, gera a estrutura completa: projeto Power BI (.pbip com modelo TMDL e relatório PBIR, que vira .pbix pelo Power BI Desktop), views SQL, consultas de conferência e dicionário de indicadores. Use sempre que o pedido envolver criar, prototipar ou especificar dashboard, painel, relatório Power BI, KPI, indicador, métrica, medida DAX, modelo estrela/dimensional ou .pbix/.pbip."
+description: "Arquiteto de painéis Power BI para o time de indicadores. Descobre a estrutura das fontes por receitas (consulta SQL, DAX ou Power Query que a pessoa roda onde os dados estão: SQL Server, modelo Power BI existente, Excel, SharePoint, CSV, API), monta a especificação do painel (modelo estrela, medidas DAX, metas, páginas e visuais) sem adivinhar nome nem função, gera um PROTÓTIPO navegável em HTML com números fictícios e, só depois do aceite explícito, gera a estrutura completa: projeto Power BI (.pbip com modelo TMDL e relatório PBIR, que vira .pbix pelo Power BI Desktop), views SQL, conferência, qualidade e dicionário de indicadores. Traz dicionário de funções DAX e Power Query e padrões de indicador. Use sempre que o pedido envolver criar, prototipar ou especificar dashboard, painel, relatório Power BI, KPI, indicador, métrica, medida DAX, modelo estrela/dimensional, fonte Excel/SharePoint para Power BI ou .pbix/.pbip."
 ---
 
 # Deidara
@@ -13,65 +13,66 @@ Todos os comandos rodam da pasta da skill pelo `deidara.py` (Python 3.8+,
 sem dependência). Se `python3` não existir (no Windows costuma ser só o
 atalho da Microsoft Store), use `python`, sem perguntar.
 
-O Deidara **depende do Vegapunk** para a estrutura do banco: nome de tabela,
-coluna, tipo e ligação vêm do `stella.py detalhar --json`. O Vegapunk fica
-na pasta indicada por `VEGAPUNK_DIR` ou em `--vegapunk`.
+O Deidara **não se conecta a nenhuma fonte**. Ele entrega uma receita, a
+pessoa roda onde os dados já estão e cola o resultado; o `catalogar`
+transforma isso no catálogo da fonte. Só estrutura volta, nunca linha de dado.
 
 ## Regras que valem sempre
 
-1. **Nunca adivinhe nome de tabela ou coluna.** Descubra pelo Vegapunk
-   (`stella.py buscar` → escolha → `deidara.py coletar`). O `validar` recusa
-   qualquer nome que não veio do `detalhar`; não "conserte" um erro trocando
-   o nome por um parecido sem confirmar com o usuário.
-2. **Relacionamento só com prova.** O Deidara usa a FK de agrupamento provado
-   do Vegapunk. Ligação sem prova é erro; `"aceitar_sem_prova": true` só
-   depois de o usuário confirmar os campos.
-3. **Só estrutura, nunca dados.** Nenhuma linha do banco entra no protótipo
-   nem na geração. Os números do protótipo são fictícios e isso é dito na
-   tela. Se o usuário pedir "com os dados reais", explique que isso acontece
-   no Power BI Desktop, depois de rodar as views.
-4. **Indicador sem definição não entra.** Toda medida tem `descricao` em
+1. **Nunca adivinhe nome de tabela ou coluna.** Tudo vem do catálogo de uma
+   fonte (receita → `catalogar`). O `validar` recusa nome fora do catálogo;
+   não "conserte" um erro trocando por um nome parecido sem confirmar.
+2. **Nunca invente função.** DAX livre (e filtro de segurança) só com função
+   do dicionário (`deidara.py funcoes buscar`/`ver`); o `validar` recusa a
+   que não existe. Prefira os tipos prontos de medida e os padrões
+   (`deidara.py padroes`), que já trazem o DAX conferido.
+3. **Ligação só com prova ou declarada.** Prova = FK do banco ou relação do
+   modelo Power BI de origem. Entre fontes diferentes (planilha x ERP) não
+   existe FK: só com `"declarada"` (campos, **quem confirmou** e por quê),
+   depois de perguntar ao dono do dado. Nunca declare por conta própria.
+4. **Só estrutura, nunca dados.** As receitas devolvem metadados; o protótipo
+   usa números fictícios e diz isso na tela. Se pedirem "com os dados
+   reais", isso acontece no Power BI Desktop, depois de gerar.
+5. **Indicador sem definição não entra.** Toda medida tem `descricao` em
    linguagem de negócio. Se o usuário não sabe dizer o que o número
    significa (numerador, denominador, filtro, período), pergunte antes.
-5. **Protótipo antes de tudo.** Nunca rode `gerar` sem um protótipo
-   mostrado e aprovado. Peça o aceite explicitamente ("Aprova este
-   protótipo para eu gerar o projeto Power BI?"); só com o "sim" rode
-   `aprovar --por "<nome>"`. Qualquer mudança depois disso pede novo
-   protótipo e novo aceite (o `gerar` confere o hash e recusa).
-6. **Indicador de estoque não é contagem de cadastro.** Headcount, contratos
-   vigentes e afins são `estoque_na_data` (entradas até a data menos saídas
-   até a data); taxa sobre estoque usa a média do período (`media_mensal`).
-   Contar a tabela de cadastro inteira mistura ativos e desligados.
-7. **Avisos são decisões do usuário.** Os `AVISO` do `validar` (data sem
-   tipo, chave que não cobre a PK, coluna que não filtra a medida) vão para
-   o usuário em linguagem simples antes do aceite; não os esconda.
-8. **Saída em pt-BR**: datas `dd/MM/aaaa`, números `1.234.567,89`.
-9. **O .pbix sai do Power BI Desktop.** O formato .pbix é binário e
-   fechado; o Deidara entrega o .pbip (formato texto oficial do Power BI),
-   que o Desktop abre e salva como .pbix. Diga isso com clareza; nunca
-   prometa um .pbix gerado direto.
-10. **Leia os `LEMBRETE:`** que os comandos imprimem em stderr e siga-os.
+6. **Estoque não é contagem de cadastro.** Headcount, contratos vigentes e
+   afins são `estoque_na_data`; taxa sobre estoque usa `media_mensal`.
+7. **Protótipo antes de tudo.** Nunca rode `gerar` sem protótipo mostrado e
+   aprovado. Peça o aceite explicitamente; só com o "sim" rode
+   `aprovar --por "<nome>"`. Mudou algo depois? Novo protótipo e novo aceite
+   (o `gerar` confere o hash e recusa).
+8. **Avisos são decisões do usuário.** Os `AVISO` do `validar` (ligação
+   declarada, coluna sem tipo, corte que não filtra a medida, atributo
+   atual) vão para o usuário em linguagem simples antes do aceite.
+9. **Saída em pt-BR**: datas `dd/MM/aaaa`, números `1.234.567,89`.
+10. **O .pbix sai do Power BI Desktop.** O Deidara entrega o .pbip (formato
+    texto oficial), que o Desktop abre e salva como .pbix. Nunca prometa um
+    .pbix gerado direto.
+11. **Leia os `LEMBRETE:`** que os comandos imprimem em stderr e siga-os.
 
 ## Fluxo
 
 | Passo | Faça | Detalhe |
 |---|---|---|
-| 1. Entender | objetivo do painel, público, decisões que ele apoia, indicadores (definição, polaridade, meta), cortes (por quê?), periodicidade | [referencias/fluxo.md](referencias/fluxo.md), Passo 1 |
-| 2. Descobrir | Vegapunk: `stella.py buscar --dominio schema "<assunto>"` → escolha as tabelas → `python3 deidara.py coletar --vegapunk DIR TAB1 TAB2 ... -o projeto/schema.json` | Passo 2 |
-| 3. Moldar | escreva `projeto/argila.json` (tabelas fato/dimensão, relacionamentos, calendário, medidas, páginas) → `python3 deidara.py validar projeto/argila.json` até zerar os erros | [referencias/argila.md](referencias/argila.md) |
-| 4. Esculpir | `python3 deidara.py prototipar projeto/argila.json` → mostre o HTML ao usuário (abrir no navegador ou publicar), com os avisos | Passo 4 |
-| 5. Iterar | ajuste o argila.json com o retorno do usuário → `prototipar` de novo; painel já aprovado antes? `deidara.py diff projeto/argila.json` e mostre as mudanças (fórmula que muda o número em destaque) | [referencias/argila.md](referencias/argila.md), "Versões e mudanças" |
-| 6. Aceite | só com o "sim": `python3 deidara.py aprovar projeto/argila.json --por "<nome>"` | regra 5 |
-| 7. Katsu! | `python3 deidara.py gerar projeto/argila.json` → entregue a pasta e o LEIA-ME | [referencias/powerbi.md](referencias/powerbi.md) |
-| 8. Fechar | `stella.py confirmar --dominio schema "<pedido>" TABELA` no Vegapunk para cada tabela usada | regra 5 do Vegapunk |
+| 1. Entender | objetivo, público, decisões, indicadores (definição, polaridade, meta), cortes, periodicidade, **de onde vem cada dado** | [referencias/fluxo.md](referencias/fluxo.md) |
+| 2. Receita | por fonte: `deidara.py receita sql` (SQL Server), `receita dax` (modelo Power BI existente, qualquer origem), `receita m --consultas A,B` (Excel, SharePoint, CSV, API...) → entregue ao usuário com as instruções do cabeçalho | [referencias/fontes.md](referencias/fontes.md) |
+| 3. Catalogar | com o resultado colado: `deidara.py catalogar --de resultado.txt --fonte NOME [--m PASTA]` → aponte em `"fontes"` do argila.json | [referencias/fontes.md](referencias/fontes.md) |
+| 4. Moldar | escreva `argila.json` (fontes, tabelas, relacionamentos, calendário, medidas, páginas); para cada indicador, `deidara.py padroes "<assunto>"`; DAX livre só com `funcoes buscar/ver` → `deidara.py validar` até zerar os erros | [referencias/argila.md](referencias/argila.md), [referencias/metricas.md](referencias/metricas.md) |
+| 5. Esculpir | `deidara.py prototipar argila.json` → mostre o HTML (com os avisos) | |
+| 6. Iterar | ajuste e prototipe de novo; painel já aprovado antes? `deidara.py diff argila.json` e mostre o que muda (fórmula que muda o número em destaque) | [referencias/argila.md](referencias/argila.md) |
+| 7. Aceite | só com o "sim": `deidara.py aprovar argila.json --por "<nome>"` | regra 7 |
+| 8. Katsu! | `deidara.py gerar argila.json -o <pasta curta>` → entregue a pasta e o LEIA-ME | [referencias/powerbi.md](referencias/powerbi.md) |
 
-Opcional, quando houver `jsonschema` instalado: `python3
-ferramentas/validar_pbip.py <pasta gerada>` confere cada JSON do relatório
-contra o schema oficial da Microsoft e as referências do TMDL.
+Opcional, com `jsonschema` instalado: `python3 ferramentas/validar_pbip.py
+<pasta gerada>` confere cada JSON do relatório contra o schema oficial da
+Microsoft e as referências do TMDL.
 
 ## Referências
 
-- [referencias/fluxo.md](referencias/fluxo.md): o passo a passo com as perguntas de descoberta
+- [referencias/fluxo.md](referencias/fluxo.md): passo a passo e perguntas de descoberta
+- [referencias/fontes.md](referencias/fontes.md): receitas SQL, DAX e M, catalogar, fontes e ligação declarada
 - [referencias/argila.md](referencias/argila.md): formato completo do argila.json
+- [referencias/metricas.md](referencias/metricas.md): onde criar cada métrica, padrões e dicionário de funções
 - [referencias/powerbi.md](referencias/powerbi.md): o que é gerado, .pbip x .pbix, como tornar real, limitações
-- [exemplos/aurora/](exemplos/aurora/): exemplo completo sobre o schema fictício do Vegapunk
+- [exemplos/aurora/](exemplos/aurora/): ERP (SQL Server) + planilha de metas (Excel), do resultado colado ao painel

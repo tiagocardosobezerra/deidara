@@ -6,3 +6,4 @@ saida/
 # projeto Power BI aberto no Desktop
 **/.pbi/localSettings.json
 **/.pbi/cache.abf
+dicionario/local/

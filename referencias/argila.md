@@ -8,10 +8,9 @@ Um arquivo JSON (UTF-8) por painel. Exemplo completo:
 | Campo | Obrigatório | O que é |
 |---|---|---|
 | `projeto` | sim | nome do painel (vira o nome do .pbip) |
-| `schema` | sim | caminho (ou lista) do JSON do `coletar`, relativo ao argila.json |
+| `fontes` | sim | `{"nome": {"catalogo": "caminho do catálogo", ...}}`; fonte SQL Server aceita também `servidor`, `banco` (valores iniciais dos parâmetros), `esquema_origem` (padrão `dbo`) e `esquema_views` (padrão `bi`). Ver [fontes.md](fontes.md) |
 | `versao` | recomendado | versão do painel (ex.: `1.0`), vai para o histórico de mudanças |
 | `descricao`, `publico`, `responsavel` | não | aparecem no protótipo e na documentação |
-| `fonte` | não | `servidor`, `banco` (valores iniciais dos parâmetros do Power BI), `esquema_origem` (padrão `dbo`), `esquema_views` (padrão `bi`) |
 | `tema` | não | `cores` (lista hex, a 1ª é a principal), `fundo`, `texto` |
 | `tabelas` | sim | tabelas do modelo |
 | `relacionamentos` | não | ligações entre tabelas do modelo |
@@ -23,21 +22,23 @@ Um arquivo JSON (UTF-8) por painel. Exemplo completo:
 ## tabelas
 
 ```json
-{"nome": "dCargo", "tipo": "dimensao", "origem": "F_CARGO",
+{"nome": "dCargo", "tipo": "dimensao", "fonte": "erp", "origem": "F_CARGO",
  "colunas": [{"coluna": "CODCARGO", "nome": "Cód. Cargo"}, "DESCRICAOCARGO"],
  "filtro": "t.ATIVO = 1"}
 ```
 
 - `nome`: nome no Power BI. Convenção: `f` + nome para fato, `d` para dimensão.
 - `tipo`: `fato` ou `dimensao`.
-- `origem`: tabela do banco, **exatamente** como veio do Vegapunk.
+- `fonte`: nome da fonte em `fontes` (pode omitir quando há uma só).
+- `origem`: tabela ou consulta, **exatamente** como está no catálogo da fonte.
 - `colunas`: texto (nome igual à origem) ou objeto com `coluna` (origem),
   `nome` (amigável), `formato` (`inteiro`, `decimal`, `moeda`, `percentual`,
-  `data`), `oculta`, `descricao` (padrão: a do Vegapunk) e `tipo` (só quando
-  a base do Vegapunk não foi enriquecida: `inteiro`, `decimal`, `real`,
-  `data`, `datahora`, `logico`, `texto`).
-- `filtro`: opcional, entra no `WHERE` da view como está (o alias da origem é
-  `t`). Não é conferido: revise o SQL.
+  `data`), `oculta`, `descricao` (padrão: a do catálogo) e `tipo` (só quando
+  a fonte não trouxe o tipo: `inteiro`, `decimal`, `real`, `data`,
+  `datahora`, `hora`, `logico`, `texto`).
+- `filtro`: só fonte SQL Server; entra no `WHERE` da view como está (o alias
+  da origem é `t`). Não é conferido: revise o SQL. Nas outras fontes, filtre na
+  própria consulta Power Query.
 
 Colunas de ligação que você não listou entram sozinhas, ocultas.
 
@@ -46,15 +47,18 @@ Colunas de ligação que você não listou entram sozinhas, ocultas.
 ```json
 {"de": "fDesligamento", "para": "dMotivo"}
 {"de": "fMovimento", "para": "dData", "via": ["DATAPAGAMENTO"], "ativo": false}
-{"de": "fX", "para": "dY", "aceitar_sem_prova": true, "via": ["CAMPO"]}
+{"de": "fMeta", "para": "dEmpresa",
+ "declarada": {"campos": [["Cód. Empresa", "CODEMPRESA"]], "por": "Ana (RH)", "motivo": "mesmo código do ERP"}}
 ```
 
-- `de` = lado muitos (a filha da FK), `para` = lado um (a mãe).
-- A FK vem do Vegapunk. Chave composta vira, nas duas views, a coluna oculta
-  `Chave <para>` (`CONCAT(A, '|', B)`): o Power BI só relaciona por uma coluna.
-- `via`: os campos da filha, quando há mais de uma FK entre as tabelas.
+- `de` = lado muitos (a filha), `para` = lado um (a mãe).
+- A ligação vem do catálogo da fonte (FK do banco ou relação do modelo Power
+  BI de origem). Chave composta vira a coluna oculta `Chave <para>` nas duas
+  pontas (na view ou no Power Query): o Power BI só relaciona por uma coluna.
+- `via`: os campos da filha, quando há mais de uma ligação entre as tabelas.
 - `ativo`: só uma relação ativa por par de tabelas.
-- `aceitar_sem_prova`: só depois de confirmar os campos com o usuário.
+- `declarada`: entre fontes diferentes ou sem prova, depois de confirmar os
+  campos com o dono do dado; `por` é obrigatório ([fontes.md](fontes.md)).
 
 ## calendario
 
@@ -91,7 +95,8 @@ Tipos prontos (preferidos: validação completa e consulta de conferência):
   ainda dentro) **ou** `saidas` (coluna de data de outra tabela, ex.: a fato
   de desligamentos). Não precisa de relacionamento com o calendário.
 - `dax`: DAX livre, para o que os tipos não cobrem. O Deidara confere toda
-  referência `Tabela[Coluna]` e `[Medida]`, mas não a lógica.
+  referência `Tabela[Coluna]` e `[Medida]` e toda função contra o dicionário
+  (função inexistente é erro), mas não a lógica. Ver [metricas.md](metricas.md).
 
 ```json
 {"nome": "Headcount", "tipo": "estoque_na_data", "entradas": "dColaborador[Data de Admissão]",
@@ -148,8 +153,8 @@ nome sai de página + tipo + título, e reordenar os visuais não muda nada.
 
 Cada regra é um filtro DAX booleano sobre uma tabela do modelo (as colunas são
 conferidas). Vira `roles/<papel>.tmdl`; os membros de cada papel se configuram
-no serviço (passo 7 do LEIA-ME). A coluna com o e-mail precisa vir do banco,
-pelo Vegapunk, como qualquer outra.
+no serviço (LEIA-ME). A coluna com o e-mail precisa estar no catálogo de uma
+fonte, como qualquer outra. Funções do filtro são conferidas no dicionário.
 
 ## Versões e mudanças
 

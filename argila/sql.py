@@ -18,7 +18,17 @@ from .util import sql_nome
 
 
 def nome_view(m, t):
-    return f'{sql_nome(m["fonte"]["esquema_views"])}.{sql_nome("vw_" + t["nome"])}'
+    return f'{sql_nome(m["fontes"][t["fonte"]]["esquema_views"])}.{sql_nome("vw_" + t["nome"])}'
+
+
+def fontes_sql(m):
+    """Fontes SQL Server que têm pelo menos uma tabela no modelo."""
+    return [f for f in m['fontes'].values()
+            if f['tipo'] == 'sqlserver' and any(t.get('fonte') == f['nome'] for t in m['tabelas'])]
+
+
+def _da_fonte(m, fonte):
+    return [t for t in m['tabelas'] if t.get('fonte') == fonte['nome']]
 
 
 def _lit(s):
@@ -45,21 +55,19 @@ def _cabecalho(m, titulo, linhas):
     return f'/*\n  {m["projeto"]} — {titulo}\n  Gerado pelo Deidara a partir do argila.json aprovado.\n{corpo}\n*/\nSET NOCOUNT ON;\n'
 
 
-def views(m):
-    esq = m['fonte']['esquema_views']
-    out = [_cabecalho(m, 'camada de views para o Power BI',
+def views(m, fonte):
+    esq = fonte['esquema_views']
+    out = [_cabecalho(m, f'camada de views para o Power BI (fonte {fonte["nome"]}, banco {fonte["banco"]})',
                       ['Revise com o DBA antes de rodar. Só leitura: nenhuma view altera dado.',
                        'Requer SQL Server 2016 SP1 ou superior (CREATE OR ALTER).']),
            f"IF SCHEMA_ID({_lit(esq)}) IS NULL\n    EXEC(N'CREATE SCHEMA {sql_nome(esq)} AUTHORIZATION dbo');", 'GO', '']
-    for t in m['tabelas']:
-        if not t['origem']:
-            continue
+    for t in _da_fonte(m, fonte):
         cols = ',\n'.join(f'    {_expr(c)} AS {sql_nome(c["nome"])}' for c in t['colunas'])
         where = f'\nWHERE {t["filtro"]}' if t['filtro'] else ''
         desc = f'-- {t["descricao"]}\n' if t['descricao'] else ''
-        out.append(f'{desc}-- origem: {m["fonte"]["esquema_origem"]}.{t["origem"]}\n'
+        out.append(f'{desc}-- origem: {fonte["esquema_origem"]}.{t["origem"]}\n'
                    f'CREATE OR ALTER VIEW {nome_view(m, t)}\nAS\nSELECT\n{cols}\n'
-                   f'FROM {sql_nome(m["fonte"]["esquema_origem"])}.{sql_nome(t["origem"])} AS t{where};\nGO\n')
+                   f'FROM {sql_nome(fonte["esquema_origem"])}.{sql_nome(t["origem"])} AS t{where};\nGO\n')
     out.append('-- Permissão de leitura para a conta que o Power BI (gateway) usa:')
     out.append(f'-- GRANT SELECT ON SCHEMA::{sql_nome(esq)} TO [conta_do_gateway];')
     return '\n'.join(out) + '\n'
@@ -72,8 +80,8 @@ def _data_ativa(m, tabela):
     return None
 
 
-def conferencia(m):
-    """Total de cada indicador de agregação simples: geral e por ano da data ativa."""
+def conferencia(m, fonte):
+    """Total de cada indicador de agregação simples desta fonte: geral e por ano da data ativa."""
     out = [_cabecalho(m, 'conferência dos indicadores (homologação)', [
         'Rode depois de criar as views. Compare cada total com o cartão do Power BI',
         'sem nenhum segmentador marcado; o bloco por ano, com o segmentador de Ano.',
@@ -84,7 +92,7 @@ def conferencia(m):
         if not c:
             continue
         t = _tabela(m, c['tabela'])
-        if not t['origem']:
+        if t.get('fonte') != fonte['nome']:
             continue
         gerais.append(f"SELECT {_lit(md['nome'])} AS indicador, CAST({c['sql']} AS decimal(38,6)) AS total_no_banco "
                       f'FROM {nome_view(m, t)}')
@@ -103,8 +111,8 @@ def conferencia(m):
     return '\n'.join(out) + '\n'
 
 
-def qualidade(m):
-    """Checagens que derrubam ou distorcem a atualização. Resultado esperado: tudo zero."""
+def qualidade(m, fonte):
+    """Checagens que derrubam ou distorcem a atualização, nas tabelas desta fonte. Esperado: tudo zero."""
     out = [_cabecalho(m, 'qualidade dos dados antes da primeira atualização', [
         'Cada linha deve trazer ocorrencias = 0. Diferente de zero:',
         '  chave_repetida  -> o Power BI recusa a relação (lado "um" com duplicata);',
@@ -113,6 +121,8 @@ def qualidade(m):
     partes = []
     for r in m['relacionamentos']:
         de, para = _tabela(m, r['de']), _tabela(m, r['para'])
+        if de.get('fonte') != fonte['nome'] or (para['origem'] and para.get('fonte') != fonte['nome']):
+            continue                          # ligação com outra fonte: confere-se no Power BI
         rotulo = f'{r["de"]}[{r["de_coluna"]}] -> {r["para"]}[{r["para_coluna"]}]'
         if para['origem']:
             k = sql_nome(r['para_coluna'])

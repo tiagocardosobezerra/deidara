@@ -1,0 +1,275 @@
+{
+  "formato": "deidara-catalogo/1",
+  "fonte": "erp",
+  "tipo": "sqlserver",
+  "receita": "sql",
+  "coletado_em": "27/10/2026 14:03",
+  "tabelas": {
+    "F_FUNCIONARIO": {
+      "descricao": "Colaboradores da empresa",
+      "pk": [
+        "MATRICULA"
+      ],
+      "expressao_m": null,
+      "colunas": [
+        {
+          "coluna": "CODCARGO",
+          "tipo": "int",
+          "tamanho": 4,
+          "precisao": 10,
+          "escala": 0,
+          "nulo": 1,
+          "descricao": "Codigo do cargo do colaborador",
+          "familia": "inteiro"
+        },
+        {
+          "coluna": "CODEMPRESA",
+          "tipo": "int",
+          "tamanho": 4,
+          "precisao": 10,
+          "escala": 0,
+          "nulo": 1,
+          "descricao": "Codigo da empresa do colaborador",
+          "familia": "inteiro"
+        },
+        {
+          "coluna": "CPF",
+          "tipo": "char",
+          "tamanho": 14,
+          "precisao": 0,
+          "escala": 0,
+          "nulo": 1,
+          "descricao": "CPF do colaborador",
+          "familia": "texto"
+        },
+        {
+          "coluna": "DATAADMISSAO",
+          "tipo": "datetime",
+          "tamanho": 8,
+          "precisao": 23,
+          "escala": 3,
+          "nulo": 1,
+          "descricao": "Data de admissao do colaborador",
+          "familia": "datahora"
+        },
+        {
+          "coluna": "MATRICULA",
+          "tipo": "int",
+          "tamanho": 4,
+          "precisao": 10,
+          "escala": 0,
+          "nulo": 0,
+          "descricao": "Matricula do colaborador",
+          "familia": "inteiro"
+        },
+        {
+          "coluna": "NOME",
+          "tipo": "varchar",
+          "tamanho": 100,
+          "precisao": 0,
+          "escala": 0,
+          "nulo": 1,
+          "descricao": "Nome do colaborador",
+          "familia": "texto"
+        },
+        {
+          "coluna": "VALORREMUNERACAO",
+          "tipo": "decimal",
+          "tamanho": 9,
+          "precisao": 15,
+          "escala": 2,
+          "nulo": 1,
+          "descricao": "Valor da remuneracao mensal do colaborador",
+          "familia": "decimal"
+        }
+      ]
+    },
+    "F_CARGO": {
+      "descricao": "Cargos dos colaboradores",
+      "pk": [
+        "CODCARGO"
+      ],
+      "expressao_m": null,
+      "colunas": [
+        {
+          "coluna": "CODCARGO",
+          "tipo": "int",
+          "tamanho": 4,
+          "precisao": 10,
+          "escala": 0,
+          "nulo": 0,
+          "descricao": "Codigo do cargo",
+          "familia": "inteiro"
+        },
+        {
+          "coluna": "DESCRICAOCARGO",
+          "tipo": "varchar",
+          "tamanho": 100,
+          "precisao": 0,
+          "escala": 0,
+          "nulo": 1,
+          "descricao": "Descricao do cargo",
+          "familia": "texto"
+        }
+      ]
+    },
+    "N_EMPRESA": {
+      "descricao": "Empresas cadastradas no grupo",
+      "pk": [
+        "CODEMPRESA"
+      ],
+      "expressao_m": null,
+      "colunas": [
+        {
+          "coluna": "CNPJ",
+          "tipo": "char",
+          "tamanho": 14,
+          "precisao": 0,
+          "escala": 0,
+          "nulo": 1,
+          "descricao": "CNPJ da empresa",
+          "familia": "texto"
+        },
+        {
+          "coluna": "CODEMPRESA",
+          "tipo": "int",
+          "tamanho": 4,
+          "precisao": 10,
+          "escala": 0,
+          "nulo": 0,
+          "descricao": "Codigo da empresa",
+          "familia": "inteiro"
+        },
+        {
+          "coluna": "RAZAOSOCIAL",
+          "tipo": "varchar",
+          "tamanho": 100,
+          "precisao": 0,
+          "escala": 0,
+          "nulo": 1,
+          "descricao": "Razao social da empresa",
+          "familia": "texto"
+        }
+      ]
+    },
+    "F_DESLIGAMENTO": {
+      "descricao": "Dados de deligamento contratual do colaborador",
+      "pk": [
+        "MATRICULA"
+      ],
+      "expressao_m": null,
+      "colunas": [
+        {
+          "coluna": "CODMOTIVO",
+          "tipo": "int",
+          "tamanho": 4,
+          "precisao": 10,
+          "escala": 0,
+          "nulo": 1,
+          "descricao": "Codigo do motivo de deligamento",
+          "familia": "inteiro"
+        },
+        {
+          "coluna": "DATADESLIGAMENTO",
+          "tipo": "datetime",
+          "tamanho": 8,
+          "precisao": 23,
+          "escala": 3,
+          "nulo": 1,
+          "descricao": "Data de desligamento do colaborador",
+          "familia": "datahora"
+        },
+        {
+          "coluna": "MATRICULA",
+          "tipo": "int",
+          "tamanho": 4,
+          "precisao": 10,
+          "escala": 0,
+          "nulo": 0,
+          "descricao": "Matricula do colaborador",
+          "familia": "inteiro"
+        }
+      ]
+    },
+    "F_MOTIVO_DESLIGAMENTO": {
+      "descricao": "Motivos de desligamento do colaborador",
+      "pk": [
+        "CODMOTIVO"
+      ],
+      "expressao_m": null,
+      "colunas": [
+        {
+          "coluna": "CODMOTIVO",
+          "tipo": "int",
+          "tamanho": 4,
+          "precisao": 10,
+          "escala": 0,
+          "nulo": 0,
+          "descricao": "Codigo do motivo de desligamento",
+          "familia": "inteiro"
+        },
+        {
+          "coluna": "DESCRICAOMOTIVO",
+          "tipo": "varchar",
+          "tamanho": 100,
+          "precisao": 0,
+          "escala": 0,
+          "nulo": 1,
+          "descricao": "Descricao do motivo de desligamento",
+          "familia": "texto"
+        }
+      ]
+    }
+  },
+  "fks": [
+    {
+      "nome": "FK_F_DESLIGAMENTO_F_FUNCIONARIO_MATRICULA",
+      "origem": "constraint",
+      "tabela_filha": "F_DESLIGAMENTO",
+      "tabela_mae": "F_FUNCIONARIO",
+      "colunas": [
+        {
+          "campo_filho": "MATRICULA",
+          "campo_mae": "MATRICULA"
+        }
+      ]
+    },
+    {
+      "nome": "FK_F_FUNCIONARIO_F_CARGO_CODCARGO",
+      "origem": "constraint",
+      "tabela_filha": "F_FUNCIONARIO",
+      "tabela_mae": "F_CARGO",
+      "colunas": [
+        {
+          "campo_filho": "CODCARGO",
+          "campo_mae": "CODCARGO"
+        }
+      ]
+    },
+    {
+      "nome": "FK_F_FUNCIONARIO_N_EMPRESA_CODEMPRESA",
+      "origem": "constraint",
+      "tabela_filha": "F_FUNCIONARIO",
+      "tabela_mae": "N_EMPRESA",
+      "colunas": [
+        {
+          "campo_filho": "CODEMPRESA",
+          "campo_mae": "CODEMPRESA"
+        }
+      ]
+    },
+    {
+      "nome": "FK_F_DESLIGAMENTO_F_MOTIVO_DESLIGAMENTO_CODMOTIVO",
+      "origem": "constraint",
+      "tabela_filha": "F_DESLIGAMENTO",
+      "tabela_mae": "F_MOTIVO_DESLIGAMENTO",
+      "colunas": [
+        {
+          "campo_filho": "CODMOTIVO",
+          "campo_mae": "CODMOTIVO"
+        }
+      ]
+    }
+  ],
+  "expressoes": {}
+}

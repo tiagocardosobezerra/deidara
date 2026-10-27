@@ -2,7 +2,7 @@
 
 Carregado sob demanda pelo `SKILL.md`. Comandos rodados da pasta da skill.
 
-## Passo 1 — Entender o painel antes de abrir o banco
+## Passo 1 — Entender o painel antes de abrir qualquer fonte
 
 Um painel bom responde a decisões, não a tabelas. Antes de buscar qualquer
 coisa, feche com o usuário (em poucas perguntas, não um formulário):
@@ -14,28 +14,35 @@ coisa, feche com o usuário (em poucas perguntas, não um formulário):
    maior é melhor ou pior (`polaridade`) e se há meta.
 3. **Cortes.** Por quais dimensões o usuário quer abrir os números (cargo,
    empresa, motivo, mês). Cada corte vira um relacionamento que precisa de
-   prova no Vegapunk.
-4. **Páginas.** Normalmente uma visão geral (cartões + 2–3 gráficos) e uma
+   prova na fonte (ou ser declarado por quem conhece o dado).
+4. **Origem de cada dado.** Banco (qual), modelo Power BI que já existe,
+   planilha, lista do SharePoint? É isso que decide a receita.
+5. **Páginas.** Normalmente uma visão geral (cartões + 2–3 gráficos) e uma
    página por tema. Mais de 12 visuais por página é sinal para dividir.
 
 Se o indicador já existe em outro painel ou planilha, peça a definição de lá:
 número igual com definição diferente é o pior defeito de um painel.
 
-## Passo 2 — Descobrir as tabelas (Vegapunk)
+## Passo 2 — Receita e catálogo de cada fonte
 
 ```bash
-python3 <vegapunk>/stella.py buscar --dominio schema "desligamentos por motivo e cargo"
-python3 deidara.py coletar --vegapunk <vegapunk> F_DESLIGAMENTO F_FUNCIONARIO F_CARGO -o meu_painel/schema.json
+python3 deidara.py receita sql --esquema dbo --tabelas F_DESLIGAMENTO,F_FUNCIONARIO -o receita_erp.sql
+python3 deidara.py receita m --consultas Metas -o receita_metas.pq
 ```
 
-Siga o fluxo de schema do Vegapunk (Passo 1.5: desconfie de tabela
-staging/temporária no topo; ambiguidade se confirma com o usuário). O
-`coletar` recusa tabela que o Vegapunk não conhece.
+Mande a receita para quem tem acesso à fonte (o cabeçalho explica como
+rodar e copiar). Com o resultado colado num `.txt`:
 
-O `schema.json` traz só estrutura: colunas, descrições, tipos, PK e FKs com
-a prova do agrupamento. Pode ir para o repositório do painel? **Não** se o
-schema for de um sistema de terceiros com licença restrita: trate como o
-`egghead/` do Vegapunk (ver AVISO.md dele).
+```bash
+python3 deidara.py catalogar --de erp.txt --fonte erp -o meu_painel/catalogos/erp.json
+python3 deidara.py catalogar --de metas.txt --fonte metas --m pasta_dos_m -o meu_painel/catalogos/metas.json
+```
+
+Leia os avisos do `catalogar` com o usuário (coluna sem tipo, coluna
+calculada que ficou de fora). Detalhes: [fontes.md](fontes.md).
+
+O catálogo traz só estrutura. Pode ir para o repositório do painel? **Não**
+se a estrutura for de um sistema de terceiros com licença restrita.
 
 ## Passo 3 — Moldar a argila
 
@@ -48,11 +55,14 @@ usuário não precisa fazer, mas você precisa acertar:
   dimensão com medida de contagem.
 - **Relacionamento.** `"de"` é sempre o lado muitos (a filha da FK) e
   `"para"` o lado um (a mãe). Se o `validar` disser que a FK está invertida,
-  inverta.
+  inverta. Entre fontes diferentes, só `"declarada"`, depois de confirmar os
+  campos com o dono do dado ([fontes.md](fontes.md)).
 - **Calendário.** Toda análise no tempo passa por `calendario`; uma data por
   tabela é a ativa, as outras ficam `"ativo": false`.
-- **Medidas.** Prefira os tipos prontos (`agregacao`, `divisao`, tempo) ao
-  DAX livre: eles geram a consulta de conferência e a validação é completa.
+- **Medidas.** Comece por `deidara.py padroes "<assunto>"`. Prefira os tipos
+  prontos (`agregacao`, `divisao`, tempo, estoque) ao DAX livre: eles geram a
+  consulta de conferência e a validação é completa. DAX livre só com funções
+  do dicionário (`deidara.py funcoes buscar`); ver [metricas.md](metricas.md).
 
 ```bash
 python3 deidara.py validar meu_painel/argila.json
@@ -80,7 +90,7 @@ Só com o "sim" explícito:
 python3 deidara.py aprovar meu_painel/argila.json --por "Nome de quem aprovou"
 ```
 
-Grava `argila.aprovacao.json` com o hash do argila e do schema e os avisos
+Grava `argila.aprovacao.json` com o hash do argila e dos catálogos e os avisos
 aceitos. Mudou qualquer vírgula depois? O `gerar` recusa: protótipo de novo
 e novo aceite.
 
@@ -91,13 +101,9 @@ python3 deidara.py gerar meu_painel/argila.json [-o PASTA]
 ```
 
 Entregue ao usuário, em linguagem simples: (a) o que foi gerado; (b) o
-passo a passo do LEIA-ME (views → abrir .pbip → parâmetros → atualizar →
-conferir → salvar como .pbix → publicar); (c) as pendências aceitas. No
+passo a passo do LEIA-ME (views das fontes SQL → abrir .pbip → parâmetros e
+credenciais → atualizar → conferir → salvar como .pbix → publicar); (c) as
+pendências aceitas, com destaque para as ligações declaradas. No
 Windows, prefira uma pasta de saída curta (ex.: `C:\paineis\<nome>`): o
 caminho completo dos arquivos do .pbip passa fácil do limite de 260
 caracteres.
-
-## Passo 7 — Fechar o laço no Vegapunk
-
-Para cada tabela usada: `stella.py confirmar --dominio schema "<pedido>"
-TABELA`. É o que recalibra a busca dele.

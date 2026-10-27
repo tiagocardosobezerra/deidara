@@ -1,12 +1,13 @@
 """
 A argila: lê o argila.json (a especificação do painel), confere cada nome
-contra a estrutura que veio do Vegapunk e devolve o modelo resolvido que os
-geradores (protótipo, SQL, TMDL, PBIR, documentação) usam.
+contra o catálogo da fonte de cada tabela (catalogo.py) e devolve o modelo
+resolvido que os geradores (protótipo, SQL, TMDL, PBIR, documentação) usam.
 
-Regras que valem aqui, as mesmas do Vegapunk:
-- tabela ou coluna que não está no `detalhar` é ERRO, nunca palpite;
-- relacionamento só com FK de agrupamento provado; sem prova é erro, a não
-  ser que o argila.json diga `"aceitar_sem_prova": true` (vira aviso);
+Regras que valem aqui:
+- tabela ou coluna que não está no catálogo da fonte é ERRO, nunca palpite;
+- relacionamento só com prova do catálogo (FK do banco ou relação do modelo
+  Power BI de origem); entre fontes diferentes, ou sem prova, só DECLARADO
+  ("declarada": quem afirma e por quê), e isso vira aviso e documentação;
 - nenhum dado: o argila.json descreve estrutura e regra, não conteúdo.
 
 Formato completo do argila.json: referencias/argila.md.
@@ -15,8 +16,10 @@ Formato completo do argila.json: referencias/argila.md.
 import re
 from collections import deque
 
-from .util import (FORMATOS, NUMERICAS, chave, dax_coluna, dax_medida, dax_tabela, familia_da_coluna,
-                   sql_tipo, tipo_tmdl)
+from . import dicionario
+
+from .util import (FORMATOS, NUMERICAS, SQL_POR_FAMILIA, chave, dax_coluna, dax_medida, dax_tabela,
+                   familia_da_coluna, sql_tipo, tipo_tmdl)
 
 TIPOS_TABELA = {'fato', 'dimensao'}
 AGREGACOES = {
@@ -47,8 +50,13 @@ class Problemas:
 
 
 # ============================================================================
-def resolver(argila, schema):
-    """Devolve (modelo, problemas). Com erro, o modelo não deve ser usado."""
+def _familia(oc):
+    return oc.get('familia') or familia_da_coluna(oc)
+
+
+def resolver(argila, catalogos):
+    """`catalogos`: {nome da fonte: catalogo.Fonte}. Devolve (modelo, problemas).
+    Com erro, o modelo não deve ser usado."""
     p = Problemas()
     m = {
         'projeto': (argila.get('projeto') or '').strip(),
@@ -56,23 +64,34 @@ def resolver(argila, schema):
         'publico': argila.get('publico', ''),
         'responsavel': argila.get('responsavel', ''),
         'versao': str(argila.get('versao', '')),
-        'fonte': {'servidor': 'SEU_SERVIDOR', 'banco': 'SEU_BANCO', 'esquema_origem': 'dbo',
-                  'esquema_views': 'bi', **(argila.get('fonte') or {})},
+        'fontes': _fontes(argila, catalogos, p),
         'tema': {'cores': ['#118DFF', '#12239E', '#E66C37', '#6B007B', '#E044A7', '#744EC2', '#D9B300',
                            '#D64550'], 'fundo': '#FFFFFF', 'texto': '#252423', **(argila.get('tema') or {})},
         'tabelas': [], 'relacionamentos': [], 'medidas': [], 'paginas': [], 'seguranca': [],
     }
     if not m['projeto']:
         p.erro('projeto', 'informe o nome do projeto')
-    _tabelas(argila, schema, m, p)
+    _tabelas(argila, catalogos, m, p)
     _calendario(argila, m, p)
-    _relacionamentos(argila, schema, m, p)
+    _relacionamentos(argila, catalogos, m, p)
     _medidas(argila, m, p)
     _seguranca(argila, m, p)
     _paginas(argila, m, p)
     if not m['versao']:
         p.aviso('versao', 'sem "versao" no argila.json: informe (ex.: "1.0") para o histórico de mudanças')
     return m, p
+
+
+def _fontes(argila, catalogos, p):
+    out = {}
+    for nome, cat in catalogos.items():
+        cfg = dict((argila.get('fontes') or {}).get(nome) or {})
+        cfg.pop('catalogo', None)
+        f = {'nome': nome, 'tipo': cat.tipo, 'receita': cat.receita, 'expressoes': cat.expressoes, **cfg}
+        if cat.tipo == 'sqlserver':
+            f = {'servidor': 'SEU_SERVIDOR', 'banco': 'SEU_BANCO', 'esquema_origem': 'dbo', 'esquema_views': 'bi', **f}
+        out[nome] = f
+    return out
 
 
 def _seguranca(argila, m, p):
@@ -95,6 +114,7 @@ def _seguranca(argila, m, p):
                 tt = tabela_do_modelo(m, tn or t['nome'])
                 if not tt or not coluna_do_modelo(tt, cn):
                     p.erro(onde, f'regra {j + 1}: {tn or t["nome"]}[{cn}] não é coluna do modelo')
+            _conferir_funcoes(r['filtro'], p, f'{onde} regra {j + 1}')
             regras.append({'tabela': t['nome'], 'filtro': r['filtro'].strip()})
             if 'USERPRINCIPALNAME' not in r['filtro'].upper() and 'USERNAME' not in r['filtro'].upper():
                 p.aviso(onde, f'regra {j + 1} não usa USERPRINCIPALNAME(): o filtro vale igual para todos do papel')
@@ -105,8 +125,9 @@ def _seguranca(argila, m, p):
 
 
 # ------------------------------------------------------------------ tabelas
-def _tabelas(argila, schema, m, p):
+def _tabelas(argila, catalogos, m, p):
     nomes = set()
+    unica = next(iter(catalogos)) if len(catalogos) == 1 else None
     if not argila.get('tabelas'):
         p.erro('tabelas', 'nenhuma tabela no modelo')
     for i, t in enumerate(argila.get('tabelas') or []):
@@ -122,40 +143,51 @@ def _tabelas(argila, schema, m, p):
         tipo = t.get('tipo', 'dimensao')
         if tipo not in TIPOS_TABELA:
             p.erro(onde, f'tipo "{tipo}" inválido (use fato ou dimensao)')
-        origem = schema.tabela(t.get('origem', ''))
-        if not origem:
-            sug = schema.parecidas(t.get('origem', ''))
-            p.erro(onde, f'origem "{t.get("origem")}" não veio do Vegapunk (detalhar)'
-                         + (f'; parecidas: {", ".join(schema.tabelas[s]["nome"] for s in sug)}' if sug else
-                            '; rode o `detalhar` com essa tabela antes'))
+        nome_fonte = t.get('fonte') or unica
+        fonte = catalogos.get(nome_fonte or '')
+        if not fonte:
+            p.erro(onde, f'fonte "{t.get("fonte")}" não está em "fontes" ({", ".join(catalogos) or "nenhuma"})'
+                   if t.get('fonte') else 'informe "fonte" (o argila.json tem mais de uma)')
             continue
-        tab = {'nome': nome, 'tipo': tipo, 'origem': origem['nome'], 'descricao': t.get('descricao')
-               or origem['descricao'] or '', 'filtro': t.get('filtro'), 'colunas': [], 'calendario': False,
-               'pk': origem['pk']}
-        if t.get('filtro'):
+        origem = fonte.tabela(t.get('origem', ''))
+        if not origem:
+            sug = fonte.parecidas(t.get('origem', ''))
+            p.erro(onde, f'origem "{t.get("origem")}" não está no catálogo da fonte {fonte.nome}'
+                         + (f'; parecidas: {", ".join(sug)}' if sug else
+                            '; rode a receita com essa tabela e o `catalogar` de novo'))
+            continue
+        tab = {'nome': nome, 'tipo': tipo, 'origem': origem['nome'], 'fonte': fonte.nome, 'fonte_tipo': fonte.tipo,
+               'expressao_m': origem['expressao_m'], 'descricao': t.get('descricao') or origem['descricao'] or '',
+               'filtro': t.get('filtro'), 'colunas': [], 'calendario': False, 'pk': origem['pk']}
+        if t.get('filtro') and fonte.tipo != 'sqlserver':
+            p.erro(onde, '"filtro" (WHERE da view) só vale para fonte sqlserver; filtre na própria consulta Power Query')
+        elif t.get('filtro'):
             p.aviso(onde, 'o "filtro" entra no WHERE da view sem conferência de nomes: revise o SQL gerado')
+        if fonte.tipo != 'sqlserver' and not origem['expressao_m']:
+            p.erro(onde, f'a fonte {fonte.nome} não tem a consulta Power Query de {origem["nome"]}: rode o '
+                         '`catalogar` com --m (receita m) ou use a receita dax')
         cols = set()
         for j, c in enumerate(t.get('colunas') or []):
             if isinstance(c, str):
                 c = {'coluna': c}
-            oc = schema.coluna(origem['nome'], c.get('coluna', ''))
+            oc = fonte.coluna(origem['nome'], c.get('coluna', ''))
             ondec = f'{onde}.colunas[{j}]'
             if not oc:
-                sug = schema.colunas_parecidas(origem['nome'], c.get('coluna', ''))
+                sug = fonte.colunas_parecidas(origem['nome'], c.get('coluna', ''))
                 p.erro(ondec, f'coluna "{c.get("coluna")}" não existe em {origem["nome"]}'
                               + (f'; parecidas: {", ".join(sug)}' if sug else ''))
                 continue
-            familia = familia_da_coluna(oc)
+            familia = _familia(oc)
             if c.get('tipo'):
                 familia = c['tipo']
-            elif not familia:
+            elif not familia or oc.get('tipo_indefinido'):
                 familia = 'texto'
-                p.aviso(ondec, f'{origem["nome"]}.{oc["coluna"]} veio sem tipo (base não enriquecida): '
-                               'tratada como texto; informe "tipo" ou rode o `york.py enriquecer` no Vegapunk')
+                p.aviso(ondec, f'{origem["nome"]}.{oc["coluna"]} veio sem tipo da fonte {fonte.nome}: tratada como '
+                               'texto; defina o tipo na consulta de origem ou informe "tipo" aqui')
             col = _coluna(c.get('nome') or oc['coluna'], oc['coluna'], familia,
                           descricao=c.get('descricao') or oc.get('descricao') or '',
                           oculta=bool(c.get('oculta')), formato=c.get('formato'))
-            col['sql_tipo'] = sql_tipo(oc)
+            col['sql_tipo'] = sql_tipo(oc) if fonte.tipo == 'sqlserver' else None
             if chave(col['nome']) in cols:
                 p.erro(ondec, f'nome de coluna "{col["nome"]}" repetido')
             cols.add(chave(col['nome']))
@@ -173,7 +205,7 @@ def _coluna(nome, origem, familia, descricao='', oculta=False, formato=None, exp
                    'datahora': 'data', 'hora': 'hora'}.get(familia)
     return {'nome': nome, 'origem': origem, 'familia': familia, 'tipo_tmdl': tipo_tmdl(familia),
             'descricao': descricao, 'oculta': oculta, 'formato': formato, 'expressao_sql': expressao_sql,
-            'como_data': False, 'gerada': origem is None, 'sql_tipo': None, 'cast_sql': None}
+            'como_data': False, 'gerada': origem is None, 'sql_tipo': None, 'cast_sql': None, 'chave_campos': None}
 
 
 def tabela_do_modelo(m, nome):
@@ -192,7 +224,7 @@ def coluna_do_modelo(t, nome):
 
 def coluna_por_origem(t, origem):
     for c in t['colunas']:
-        if c['origem'] and chave(c['origem']) == chave(origem) and not c['expressao_sql']:
+        if c['origem'] and chave(c['origem']) == chave(origem) and not c.get('chave_campos'):
             return c
     return None
 
@@ -256,7 +288,7 @@ def _calendario(argila, m, p):
 
 
 # ---------------------------------------------------------- relacionamentos
-def _relacionamentos(argila, schema, m, p):
+def _relacionamentos(argila, catalogos, m, p):
     for i, r in enumerate(argila.get('relacionamentos') or []):
         onde = f'relacionamentos[{i}] {r.get("de")} -> {r.get("para")}'
         de, para = tabela_do_modelo(m, r.get('de', '')), tabela_do_modelo(m, r.get('para', ''))
@@ -266,83 +298,100 @@ def _relacionamentos(argila, schema, m, p):
         if not de['origem'] or not para['origem']:
             p.erro(onde, 'use "calendario.datas" para ligar ao calendário')
             continue
-        fks = schema.fks_entre(de['origem'], para['origem'])
+        if r.get('declarada'):
+            _declarada(catalogos, m, de, para, r, p, onde)
+            continue
+        if de['fonte'] != para['fonte']:
+            p.erro(onde, f'{de["nome"]} ({de["fonte"]}) e {para["nome"]} ({para["fonte"]}) vêm de fontes diferentes: '
+                         'não existe FK entre elas. Confirme os campos com o dono do dado e declare: "declarada": '
+                         '{"campos": [["CAMPO_DA_FILHA", "CAMPO_DA_MAE"]], "por": "quem confirmou", "motivo": "..."}')
+            continue
+        fonte = catalogos[de['fonte']]
+        fks = fonte.fks_entre(de['origem'], para['origem'])
         via = [chave(x) for x in (r.get('via') or [])]
         if via:
             fks = [fk for fk in fks if sorted(chave(x['campo_filho']) for x in fk['colunas']) == sorted(via)]
         if not fks:
-            invertida = schema.fks_entre(para['origem'], de['origem'])
-            sem = schema.sem_prova_entre(de['origem'], para['origem'])
-            if invertida:
-                p.erro(onde, f'a FK vai de {para["origem"]} (filha) para {de["origem"]} (mãe): inverta '
+            if fonte.fks_entre(para['origem'], de['origem']):
+                p.erro(onde, f'a ligação vai de {para["origem"]} (filha) para {de["origem"]} (mãe): inverta '
                              '"de" e "para" (o "para" é sempre o lado um, a tabela mãe)')
-                continue
-            if sem and r.get('aceitar_sem_prova'):
-                campos = [(l['campo_filho'], l['campo_mae']) for l in sem]
-                if via:
-                    campos = [c for c in campos if chave(c[0]) in via]
-                p.aviso(onde, 'ligação SEM agrupamento provado (' + ', '.join(sorted({l.get('motivo', '?')
-                              for l in sem})) + '), aceita no argila.json: confira os campos com o dono do dado')
-                _ligar(schema, m, de, para, campos, r, f'sem prova ({sem[0].get("motivo")})', p, onde)
-                continue
-            if sem:
-                p.erro(onde, 'só existe ligação sem agrupamento provado (motivo: '
-                             + ', '.join(sorted({l.get('motivo', '?') for l in sem}))
-                             + '); confirme os campos com o usuário e use "aceitar_sem_prova": true + "via"')
             else:
-                p.erro(onde, f'nenhuma FK de {de["origem"]} para {para["origem"]} no detalhar: não invente a '
-                             'ligação (rode o `detalhar` com as duas tabelas e veja os `caminhos`)')
+                p.erro(onde, f'o catálogo da fonte {fonte.nome} não tem ligação de {de["origem"]} para {para["origem"]}: '
+                             'não invente. Se o dono do dado confirmar os campos, use "declarada"')
             continue
         if len(fks) > 1:
-            p.erro(onde, 'mais de uma FK entre as tabelas; escolha com "via": '
+            p.erro(onde, 'mais de uma ligação entre as tabelas; escolha com "via": '
                          + ' | '.join('[' + ', '.join(x['campo_filho'] for x in fk['colunas']) + ']' for fk in fks))
             continue
         fk = fks[0]
-        if fk.get('cobre_chave_da_mae') is False:
-            p.aviso(onde, 'a FK não cobre a PK inteira da mãe: o lado "um" pode ter duplicatas e o Power BI '
-                          'vai recusar a relação 1:*; confirme com o dono do dado')
         campos = [(x['campo_filho'], x['campo_mae']) for x in fk['colunas']]
-        _ligar(schema, m, de, para, campos, r, f'{fk["origem"]}' + (f' ({fk["constraint"]})' if fk.get('constraint') else ''),
+        regra = dict(r)
+        regra.setdefault('ativo', fk.get('ativa', True))
+        _ligar(catalogos, m, de, para, campos, regra,
+               f'{fk["origem"]}' + (f' ({fk["nome"]})' if fk.get('nome') and fk['origem'] == 'constraint' else ''),
                p, onde)
     _conferir_ativos(m, p)
 
 
-def _ligar(schema, m, de, para, campos, r, prova, p, onde):
+def _declarada(catalogos, m, de, para, r, p, onde):
+    d = r['declarada']
+    campos = [tuple(x) for x in d.get('campos') or [] if isinstance(x, (list, tuple)) and len(x) == 2]
+    if not campos or not d.get('por'):
+        p.erro(onde, '"declarada" pede "campos" ([["CAMPO_DA_FILHA", "CAMPO_DA_MAE"]]) e "por" (quem confirmou)')
+        return
+    ok = True
+    for filho, mae in campos:
+        for t, campo in ((de, filho), (para, mae)):
+            if not catalogos[t['fonte']].coluna(t['origem'], campo):
+                sug = catalogos[t['fonte']].colunas_parecidas(t['origem'], campo)
+                p.erro(onde, f'campo "{campo}" não existe em {t["origem"]} (fonte {t["fonte"]})'
+                             + (f'; parecidas: {", ".join(sug)}' if sug else ''))
+                ok = False
+    if not ok:
+        return
+    p.aviso(onde, f'ligação DECLARADA por {d["por"]}, sem prova na fonte ({d.get("motivo") or "sem motivo informado"}): '
+                  'rode a checagem de qualidade depois da primeira atualização (chave repetida no lado um derruba a '
+                  'atualização; código sem par some do corte)')
+    _ligar(catalogos, m, de, para, campos, r, f'declarada por {d["por"]}', p, onde)
+
+
+def _ligar(catalogos, m, de, para, campos, r, prova, p, onde):
     if len(campos) == 1:
         filho, mae = campos[0]
-        cf = _garantir_coluna(schema, de, filho, p, onde)
-        cm = _garantir_coluna(schema, para, mae, p, onde)
+        cf = _garantir_coluna(catalogos, de, filho, p, onde)
+        cm = _garantir_coluna(catalogos, para, mae, p, onde)
         if not cf or not cm:
             return
         if cf['tipo_tmdl'] != cm['tipo_tmdl']:
-            # o modelo tabular não relaciona tipos diferentes: a view da filha converte para o tipo da mãe
-            if not cm.get('sql_tipo'):
-                p.erro(onde, f'tipos diferentes nas pontas ({cf["familia"]} x {cm["familia"]}) e a mãe veio sem tipo '
-                             'no detalhar: informe "tipo" nas duas colunas')
-                return
-            cf['cast_sql'], cf['familia'], cf['tipo_tmdl'] = cm['sql_tipo'], cm['familia'], cm['tipo_tmdl']
-            p.aviso(onde, f'tipos diferentes nas pontas: {de["nome"]}[{cf["nome"]}] é convertida para {cm["sql_tipo"]} '
-                          'na view (o Power BI não relaciona tipos diferentes); confira se a conversão não perde valor')
+            # o modelo tabular não relaciona tipos diferentes: a filha é convertida para o tipo da mãe
+            # (na view, se a filha vem do SQL Server; no Power Query, nos outros casos)
+            alvo = cm.get('sql_tipo') or SQL_POR_FAMILIA.get(cm['familia'], 'nvarchar(4000)')
+            if de['fonte_tipo'] == 'sqlserver':
+                cf['cast_sql'] = alvo
+            cf['familia'], cf['tipo_tmdl'] = cm['familia'], cm['tipo_tmdl']
+            onde_conv = f'na view ({alvo})' if de['fonte_tipo'] == 'sqlserver' else 'no Power Query'
+            p.aviso(onde, f'tipos diferentes nas pontas: {de["nome"]}[{cf["nome"]}] é convertida para {cm["familia"]} '
+                          f'{onde_conv} (o Power BI não relaciona tipos diferentes); confira se a conversão não perde valor')
         de_col, para_col, composta = cf['nome'], cm['nome'], False
     else:
         nome = f'Chave {para["nome"]}'
-        de_col = _chave_composta(schema, de, nome, [f for f, _ in campos])
-        para_col = _chave_composta(schema, para, nome, [mm for _, mm in campos])
+        de_col = _chave_composta(catalogos, de, nome, [f for f, _ in campos])
+        para_col = _chave_composta(catalogos, para, nome, [mm for _, mm in campos])
         composta = True
     m['relacionamentos'].append({'de': de['nome'], 'de_coluna': de_col, 'para': para['nome'], 'para_coluna': para_col,
                                  'ativo': r.get('ativo', True), 'prova': prova, 'composta': composta,
                                  'campos': campos, 'aviso': None})
 
 
-def _garantir_coluna(schema, t, origem, p, onde):
+def _garantir_coluna(catalogos, t, origem, p, onde):
     c = coluna_por_origem(t, origem)
     if c:
         return c
-    # a coluna de ligação não foi pedida: entra oculta, com o tipo do detalhar
-    oc = schema.coluna(t['origem'], origem) or {}
-    c = _coluna(oc.get('coluna', origem), oc.get('coluna', origem), familia_da_coluna(oc) or 'texto',
+    # a coluna de ligação não foi pedida: entra oculta, com o tipo do catálogo
+    oc = catalogos[t['fonte']].coluna(t['origem'], origem) or {}
+    c = _coluna(oc.get('coluna', origem), oc.get('coluna', origem), _familia(oc) or 'texto',
                 descricao=oc.get('descricao') or '', oculta=True)
-    c['sql_tipo'] = sql_tipo(oc)
+    c['sql_tipo'] = sql_tipo(oc) if t['fonte_tipo'] == 'sqlserver' else None
     c['auto'] = True
     if coluna_do_modelo(t, origem):
         p.erro(onde, f'{t["nome"]} já tem uma coluna chamada {origem} com outra origem')
@@ -351,22 +400,25 @@ def _garantir_coluna(schema, t, origem, p, onde):
     return c
 
 
-def _chave_composta(schema, t, nome, campos):
+def _chave_composta(catalogos, t, nome, campos):
     existente = coluna_do_modelo(t, nome)
     if existente:
         return existente['nome']
-    expr = 'CONCAT(' + ", N'|', ".join(_parte_da_chave(schema, t, c) for c in campos) + ')'
+    expr = None
+    if t['fonte_tipo'] == 'sqlserver':
+        expr = 'CONCAT(' + ", N'|', ".join(_parte_da_chave(catalogos, t, c) for c in campos) + ')'
     c = _coluna(nome, None, 'texto', descricao='Chave composta gerada pelo Deidara: ' + ' + '.join(campos),
                 oculta=True, expressao_sql=expr)
+    c['chave_campos'] = list(campos)
     t['colunas'].append(c)
     return nome
 
 
-def _parte_da_chave(schema, t, campo):
+def _parte_da_chave(catalogos, t, campo):
     """Um campo da chave composta como texto estável: data em ISO (independe do
     idioma da sessão), sem espaço à direita (char) e NULL marcado (senão NULL e
     '' viram a mesma chave)."""
-    familia = familia_da_coluna(schema.coluna(t['origem'], campo) or {})
+    familia = _familia(catalogos[t['fonte']].coluna(t['origem'], campo) or {})
     estilo = ', 126' if familia in ('data', 'datahora', 'hora') else ''
     return f"ISNULL(RTRIM(CONVERT(nvarchar(100), t.[{campo}]{estilo})), N'∅')"
 
@@ -631,7 +683,15 @@ def _medida_estoque(m, md, r, p, onde):
     r['tabelas_lidas'], r['le_calendario'], r['depende'] = lidas, True, []
 
 
+def _conferir_funcoes(dax, p, onde):
+    """Função que não está no dicionário DAX é erro: nunca se inventa função."""
+    for fn, sug in dicionario.desconhecidas(dax):
+        p.erro(onde, f'função {fn} não está no dicionário DAX' + (f'; parecidas: {", ".join(sug)}' if sug else '')
+               + ' (deidara.py funcoes buscar "<o que você quer fazer>")')
+
+
 def _conferir_refs(m, r, nomes, p, onde):
+    _conferir_funcoes(r['dax'], p, onde)
     deps = []
     for tn, n in referencias_dax(r['dax']):
         if tn:
@@ -727,8 +787,10 @@ def _conferir_pagina(m, pagina, p, onde, filtra):
             faltam = sorted(a for a in alvo if not chega(m, filtra, s['tabela'], a, nome))
             if faltam:
                 parte = 'a medida inteira' if len(faltam) == len(alvo) else 'parte da medida (' + ', '.join(faltam) + ')'
+                efeito = ('o número fica parado' if len(faltam) == len(alvo) else
+                          'o número fica distorcido (ex.: só o numerador muda)')
                 p.aviso(onde, f'o segmentador {s["tabela"]}[{s["nome"]}] não filtra {parte} de "{nome}": '
-                              'ao escolher um valor, o número fica parado ou distorcido (ex.: só o numerador muda)')
+                              f'ao escolher um valor, {efeito}')
     cal = (m.get('calendario') or {}).get('tabela')
     tem_ano = any(s['tabela'] == cal and s['nome'] in ('Ano', 'Ano-Mês', 'Mês/Ano', 'Ano-Trimestre', 'Data')
                   for s in segs)
