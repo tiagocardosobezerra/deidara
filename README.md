@@ -69,3 +69,7 @@ python3 ferramentas/validar_pbip.py <pasta gerada>
 - Nunca adivinha tabela, coluna ou ligação.
 - Só estrutura, nunca dados: o protótipo usa números fictícios.
 - Nada é gerado sem protótipo aprovado; mudou depois do aceite, aprova de novo.
+
+## Licença
+
+MIT, a mesma do Vegapunk. Ver [LICENSE](LICENSE).
