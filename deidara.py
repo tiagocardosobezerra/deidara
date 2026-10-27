@@ -11,6 +11,9 @@ Fluxo:
     receita     a consulta (SQL, DAX ou Power Query) que a pessoa roda onde os
                 dados estão; devolve só estrutura, nunca linhas de dado
     catalogar   transforma o resultado colado num catálogo da fonte
+    buscar      acha as tabelas de um pedido em todos os catálogos
+    relacionar  sugere as ligações que faltam, com a evidência de cada uma
+    provar      lê o resultado da receita de prova (percentuais, nunca linhas)
     validar     confere o argila.json contra os catálogos (nunca adivinha nome)
     prototipar  protótipo navegável em HTML, com números fictícios
     aprovar     grava o "sim" do usuário (hash do argila.json + do schema)
@@ -19,6 +22,10 @@ Fluxo:
 Uso:
     python3 deidara.py receita   sql [--esquema dbo] [--tabelas T1,T2] | dax | m [--consultas C1,C2] [-o ARQ]
     python3 deidara.py catalogar --de RESULTADO.txt --fonte NOME [--m PASTA_DOS_.m] [-o catalogo.json]
+    python3 deidara.py buscar    "<pedido>" (--argila argila.json | --catalogos A.json B.json)
+    python3 deidara.py relacionar (--argila argila.json | --catalogos A.json B.json [--tabelas T1,T2])
+    python3 deidara.py receita   prova --argila argila.json --de "Tabela[COLUNA]" --para "Tabela[COLUNA]"
+    python3 deidara.py provar    --de RESULTADO.txt
     python3 deidara.py validar   argila.json [--json]
     python3 deidara.py prototipar argila.json [-o prototipo.html]
     python3 deidara.py aprovar   argila.json --por NOME [--observacao TEXTO]
@@ -43,7 +50,8 @@ import sys
 RAIZ = os.path.dirname(os.path.abspath(__file__))
 sys.path.insert(0, RAIZ)
 
-from argila import VERSAO, catalogo, dicionario, docs, governanca, pbir, prototipo, receitas, sql, tmdl  # noqa: E402
+from argila import (VERSAO, catalogo, descoberta, dicionario, docs, governanca, pbir, prova,  # noqa: E402
+                    prototipo, receitas, sql, tmdl)
 from argila.especificacao import resolver  # noqa: E402
 from argila.util import gravar_json, gravar_texto, ident, ler_json, sha256_arquivo  # noqa: E402
 
@@ -98,7 +106,65 @@ def _arquivo_aprovacao(caminho_argila):
 
 
 # ---------------------------------------------------------------- comandos
+def _catalogos(a):
+    """Catálogos (e o modelo, se veio o argila.json) para buscar/relacionar/provar."""
+    if getattr(a, 'argila', None):
+        _, cats, modelo, _, _ = _carregar(a.argila)
+        return cats, modelo
+    if not getattr(a, 'catalogos', None):
+        raise SystemExit('informe --argila argila.json ou --catalogos A.json B.json')
+    cats = {}
+    for c in a.catalogos:
+        try:
+            f = catalogo.carregar(c)
+        except ValueError as e:
+            raise SystemExit(str(e))
+        cats[f.nome] = f
+    return cats, None
+
+
+def _ponta(cats, modelo, ref):
+    """'Tabela[COLUNA]' (nome no modelo ou origem no catálogo) -> dados da ponta para a receita de prova."""
+    import re as _re
+    mt = _re.fullmatch(r"\s*'?(.+?)'?\[(.+)\]\s*", ref or '')
+    if not mt:
+        raise SystemExit(f'"{ref}": use Tabela[COLUNA]')
+    tab, col = mt.group(1), mt.group(2)
+    cand = []
+    if modelo:
+        cand = [(t['fonte'], t['origem']) for t in modelo['tabelas']
+                if t.get('origem') and (t['nome'].upper() == tab.upper() or t['origem'].upper() == tab.upper())]
+    cand += [(n, f.tabela(tab)['nome']) for n, f in cats.items() if f.tabela(tab)]
+    if not cand:
+        raise SystemExit(f'tabela "{tab}" não está no modelo nem nos catálogos')
+    fonte, origem = cand[0]
+    oc = cats[fonte].coluna(origem, col)
+    if not oc:
+        sug = cats[fonte].colunas_parecidas(origem, col)
+        raise SystemExit(f'coluna "{col}" não existe em {origem} (fonte {fonte})' + (f'; parecidas: {", ".join(sug)}' if sug else ''))
+    cfg = (modelo or {}).get('fontes', {}).get(fonte, {})
+    return {'fonte': fonte, 'tipo': cats[fonte].tipo, 'origem': origem, 'coluna': oc['coluna'],
+            'rotulo': f'{tab}[{oc["coluna"]}]', 'servidor': cfg.get('servidor', 'SEU_SERVIDOR'),
+            'banco': cfg.get('banco', 'SEU_BANCO'), 'esquema': cfg.get('esquema_origem', 'dbo')}
+
+
 def cmd_receita(a):
+    if a.tipo == 'prova':
+        cats, modelo = _catalogos(a)
+        de, para = _ponta(cats, modelo, a.de), _ponta(cats, modelo, a.para)
+        if de['fonte'] == para['fonte'] and de['tipo'] == 'sqlserver':
+            texto = prova.receita_sql((de['origem'], de['coluna'], de['rotulo']), (para['origem'], para['coluna'], para['rotulo']),
+                                      de['esquema'], para['esquema'])
+        else:
+            texto = prova.receita_m(de, para)
+        if a.saida:
+            gravar_texto(a.saida, texto, bom=texto.startswith('/*'))
+            print(f'Receita de prova em {a.saida}')
+        else:
+            print(texto)
+        _lembrete('esta receita conta (percentuais e sim/não, nenhuma linha). Com o resultado colado: '
+                  '`deidara.py provar --de resultado.txt` e copie o "prova" para a ligação declarada.')
+        return 0
     if a.tipo == 'sql':
         texto = receitas.receita_sql(a.esquema, [t.strip() for t in (a.tabelas or '').split(',') if t.strip()])
     elif a.tipo == 'dax':
@@ -150,6 +216,67 @@ def cmd_catalogar(a):
         print(f'  AVISO  {x}')
     print(f'Catálogo: {saida}')
     _lembrete(f'aponte no argila.json: "fontes": {{"{a.fonte}": {{"catalogo": "<caminho relativo de {os.path.basename(saida)}>"}}}}')
+    return 0
+
+
+def cmd_buscar(a):
+    cats, _ = _catalogos(a)
+    achados = descoberta.buscar(cats, a.pedido, a.limite)
+    if not achados:
+        print('Nada encontrado. Tente palavras do negócio mais gerais, ou acrescente sinônimos em dicionario/sinonimos.json.')
+        return 0
+    for i, r in enumerate(achados, 1):
+        print(f'{i:>2}. {r["fonte"]} · {r["tabela"]}  (pontos {str(r["pontos"]).replace(".", ",")})'
+              + (f' — {r["descricao"]}' if r['descricao'] else ''))
+        if r['colunas']:
+            print(f'      colunas: {", ".join(r["colunas"][:8])}')
+    _lembrete('confirme com o usuário as tabelas antes de montar o argila.json; depois rode `relacionar`.')
+    return 0
+
+
+def cmd_relacionar(a):
+    cats, modelo = _catalogos(a)
+    if modelo:
+        tabelas = [(t['fonte'], t['origem'], t['nome']) for t in modelo['tabelas'] if t.get('origem')]
+        ja = {(r['de'], r['para']) for r in modelo['relacionamentos']}
+    else:
+        filtro = {x.strip().upper() for x in (a.tabelas or '').split(',') if x.strip()}
+        tabelas = [(n, t['nome'], t['nome']) for n, f in cats.items() for t in f.tabelas.values()
+                   if not filtro or t['nome'].upper() in filtro]
+        ja = set()
+    sugestoes = descoberta.relacionar(cats, tabelas, ja)
+    if not sugestoes:
+        print('Nenhuma ligação candidata. Se as tabelas se ligam, os nomes das colunas não deixam isso claro: '
+              'pergunte ao dono do dado e acrescente sinônimos em dicionario/sinonimos.json.')
+    for i, s in enumerate(sugestoes, 1):
+        selo = 'PROVADA NO CATÁLOGO' if s['provada_no_catalogo'] else f'confiança {s["confianca"]}'
+        if s.get('redundante'):
+            selo += '; redundante se aceitar as de cima'
+        print(f'{i:>2}. {s["de"]}[{s["campo_filho"]}] -> {s["para"]}[{s["campo_mae"]}]  ({selo}, {s["pontos"]} pts)')
+        for mo in s['motivos']:
+            print(f'      · {mo}')
+        if not s['provada_no_catalogo'] and a.json:
+            print('      ' + json.dumps(descoberta.trecho_argila(s), ensure_ascii=False))
+    ligadas = {n for s in sugestoes for n in (s['de'], s['para'])} | {n for par in ja for n in par}
+    soltas = [n for _, _, n in tabelas if n not in ligadas]
+    if soltas:
+        print(f'Sem nenhuma ligação nem candidata: {", ".join(soltas)}')
+    _lembrete('nenhuma sugestão vira ligação sozinha: confirme os campos com o dono do dado, declare com "por" e, '
+              'se puder, prove: `deidara.py receita prova --de "T[C]" --para "T[C]"`.')
+    return 0
+
+
+def cmd_provar(a):
+    cab, linhas = receitas.ler_colado(a.de)
+    provas = prova.ler(linhas)
+    if not provas:
+        print(f'{a.de}: não é resultado da receita de prova (cabeçalho: {", ".join(cab[:6])})')
+        return 1
+    for pv in provas:
+        veredito, explicacao = prova.avaliar(pv)
+        print(f'{pv["de"]} -> {pv["para"]}: {veredito.upper()} — {explicacao}')
+        print('  na ligação declarada do argila.json, acrescente:')
+        print('  "prova": ' + json.dumps({k: v for k, v in pv.items() if k not in ('de', 'para')}, ensure_ascii=False))
     return 0
 
 
@@ -346,7 +473,11 @@ def main(argv=None):
     ap = argparse.ArgumentParser(prog='deidara', description='Do schema ao painel Power BI.')
     sub = ap.add_subparsers(dest='cmd', required=True)
     r = sub.add_parser('receita', help='consulta que devolve a estrutura de uma fonte')
-    r.add_argument('tipo', choices=['sql', 'dax', 'm', 'funcoes-dax', 'funcoes-m'])
+    r.add_argument('tipo', choices=['sql', 'dax', 'm', 'funcoes-dax', 'funcoes-m', 'prova'])
+    r.add_argument('--argila')
+    r.add_argument('--catalogos', nargs='+')
+    r.add_argument('--de', help='prova: Tabela[COLUNA] da filha (lado muitos)')
+    r.add_argument('--para', help='prova: Tabela[COLUNA] da mãe (lado um)')
     r.add_argument('--esquema', default='dbo')
     r.add_argument('--tabelas', help='sql: tabelas separadas por vírgula (vazio = todas do esquema)')
     r.add_argument('--consultas', help='m: consultas Power Query separadas por vírgula')
@@ -370,6 +501,18 @@ def main(argv=None):
     g = sub.add_parser('gerar')
     g.add_argument('argila')
     g.add_argument('-o', '--saida')
+    bu = sub.add_parser('buscar', help='tabelas de um pedido, em todos os catálogos')
+    bu.add_argument('pedido')
+    bu.add_argument('--argila')
+    bu.add_argument('--catalogos', nargs='+')
+    bu.add_argument('--limite', type=int, default=10)
+    rl = sub.add_parser('relacionar', help='sugere ligações com evidência')
+    rl.add_argument('--argila')
+    rl.add_argument('--catalogos', nargs='+')
+    rl.add_argument('--tabelas', help='com --catalogos: só estas tabelas (separadas por vírgula)')
+    rl.add_argument('--json', action='store_true', help='mostra o trecho do argila.json de cada sugestão')
+    pv = sub.add_parser('provar', help='lê o resultado da receita de prova')
+    pv.add_argument('--de', required=True)
     fu = sub.add_parser('funcoes', help='dicionário de funções DAX e M')
     fu.add_argument('acao', choices=['buscar', 'ver'])
     fu.add_argument('termo')
@@ -382,7 +525,8 @@ def main(argv=None):
     sub.add_parser('status')
     a = ap.parse_args(argv)
     return {'receita': cmd_receita, 'catalogar': cmd_catalogar, 'validar': cmd_validar, 'prototipar': cmd_prototipar, 'aprovar': cmd_aprovar,
-            'gerar': cmd_gerar, 'diff': cmd_diff, 'funcoes': cmd_funcoes, 'padroes': cmd_padroes, 'status': cmd_status}[a.cmd](a) or 0
+            'gerar': cmd_gerar, 'diff': cmd_diff, 'funcoes': cmd_funcoes, 'padroes': cmd_padroes,
+            'buscar': cmd_buscar, 'relacionar': cmd_relacionar, 'provar': cmd_provar, 'status': cmd_status}[a.cmd](a) or 0
 
 
 if __name__ == '__main__':

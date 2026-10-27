@@ -1,3 +1,3 @@
 """Argila: o motor do Deidara (especificação, protótipo e geração do Power BI)."""
 
-VERSAO = '0.9.0'
+VERSAO = '0.10.0'

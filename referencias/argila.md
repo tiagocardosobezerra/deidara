@@ -58,7 +58,8 @@ Colunas de ligação que você não listou entram sozinhas, ocultas.
 - `via`: os campos da filha, quando há mais de uma ligação entre as tabelas.
 - `ativo`: só uma relação ativa por par de tabelas.
 - `declarada`: entre fontes diferentes ou sem prova, depois de confirmar os
-  campos com o dono do dado; `por` é obrigatório ([fontes.md](fontes.md)).
+  campos com o dono do dado; `por` é obrigatório; `prova` (opcional) é o bloco
+  impresso pelo `deidara.py provar` ([descoberta.md](descoberta.md)).
 
 ## calendario
 

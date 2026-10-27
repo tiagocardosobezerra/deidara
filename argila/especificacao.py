@@ -16,7 +16,7 @@ Formato completo do argila.json: referencias/argila.md.
 import re
 from collections import deque
 
-from . import dicionario
+from . import dicionario, prova
 
 from .util import (FORMATOS, NUMERICAS, SQL_POR_FAMILIA, chave, dax_coluna, dax_medida, dax_tabela,
                    familia_da_coluna, sql_tipo, tipo_tmdl)
@@ -349,10 +349,21 @@ def _declarada(catalogos, m, de, para, r, p, onde):
                 ok = False
     if not ok:
         return
-    p.aviso(onde, f'ligação DECLARADA por {d["por"]}, sem prova na fonte ({d.get("motivo") or "sem motivo informado"}): '
-                  'rode a checagem de qualidade depois da primeira atualização (chave repetida no lado um derruba a '
-                  'atualização; código sem par some do corte)')
-    _ligar(catalogos, m, de, para, campos, r, f'declarada por {d["por"]}', p, onde)
+    rotulo = f'declarada por {d["por"]}'
+    medida_na_fonte = d.get('prova')
+    if medida_na_fonte:
+        veredito, explicacao = prova.avaliar(medida_na_fonte)
+        rotulo += '; ' + prova.texto(medida_na_fonte)
+        if veredito == 'reprovada':
+            p.erro(onde, f'a receita de prova reprovou a ligação: {explicacao}')
+            return
+        if veredito != 'provada':
+            p.aviso(onde, f'ligação declarada por {d["por"]}, prova {veredito}: {explicacao}')
+    else:
+        p.aviso(onde, f'ligação DECLARADA por {d["por"]}, sem prova na fonte ({d.get("motivo") or "sem motivo informado"}): '
+                      'rode a receita de prova (`deidara.py receita prova`) ou confira na primeira atualização (chave '
+                      'repetida no lado um derruba a atualização; código sem par some do corte)')
+    _ligar(catalogos, m, de, para, campos, r, rotulo, p, onde)
 
 
 def _ligar(catalogos, m, de, para, campos, r, prova, p, onde):

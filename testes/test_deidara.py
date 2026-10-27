@@ -457,6 +457,103 @@ class TestDicionario(unittest.TestCase):
         self.assertEqual(sorted(loc['funcoes']), ['NOVAFUNCAO', 'SUM'])
 
 
+class TestDescoberta(unittest.TestCase):
+    def test_tokens_e_nucleo(self):
+        from argila import descoberta as d
+        self.assertEqual(d.nucleo('CODEMPRESA'), {'empresa'})
+        self.assertEqual(d.nucleo('Cód. Empresa'), {'empresa'})
+        self.assertEqual(d.nucleo('cod_empresa_fk'), {'empresa'})
+        self.assertEqual(d.nucleo('MATRICULA'), {'matricula'})
+        self.assertTrue(d.tem_marca_de_chave('MATRICULA'))
+        self.assertFalse(d.tem_marca_de_chave('Empresa'))
+
+    def test_buscar_por_pedido_em_todas_as_fontes(self):
+        from argila import descoberta as d
+        self.assertEqual(d.buscar(CATALOGOS, 'salário dos colaboradores')[0]['tabela'], 'F_FUNCIONARIO')
+        nomes = [r['tabela'] for r in d.buscar(CATALOGOS, 'meta de turnover por empresa')[:3]]
+        self.assertIn('Metas', nomes)
+
+    def _sem_ligacao_da_planilha(self):
+        a = _base()
+        a['relacionamentos'] = [r for r in a['relacionamentos'] if r['de'] != 'fMeta']
+        m, _ = _resolver(a)
+        from argila import descoberta as d
+        tabelas = [(t['fonte'], t['origem'], t['nome']) for t in m['tabelas'] if t.get('origem')]
+        return d.relacionar(CATALOGOS, tabelas, {(r['de'], r['para']) for r in m['relacionamentos']})
+
+    def test_descobre_a_ligacao_da_planilha_com_o_erp(self):
+        sug = self._sem_ligacao_da_planilha()
+        s = sug[0]
+        self.assertEqual((s['de'], s['campo_filho'], s['para'], s['campo_mae']),
+                         ('fMeta', 'Cód. Empresa', 'dEmpresa', 'CODEMPRESA'))
+        self.assertEqual(s['confianca'], 'alta')
+        self.assertFalse(s['redundante'])
+        self.assertTrue(all(x['redundante'] for x in sug[1:]))
+
+    def test_coluna_de_nome_nao_vira_chave_forte(self):
+        sug = self._sem_ligacao_da_planilha()
+        nome = [s for s in sug if s['campo_filho'] == 'Empresa' or s['campo_mae'] == 'Empresa']
+        self.assertTrue(all(s['confianca'] != 'alta' for s in nome))
+
+    def test_tabelas_ja_ligadas_nao_recebem_sugestao(self):
+        from argila import descoberta as d
+        m, _ = _resolver(_base())
+        tabelas = [(t['fonte'], t['origem'], t['nome']) for t in m['tabelas'] if t.get('origem')]
+        self.assertEqual(d.relacionar(CATALOGOS, tabelas, {(r['de'], r['para']) for r in m['relacionamentos']}), [])
+
+    def test_trecho_argila_pede_quem_confirmou(self):
+        from argila import descoberta as d
+        trecho = d.trecho_argila(self._sem_ligacao_da_planilha()[0])
+        self.assertEqual(trecho['declarada']['campos'], [['Cód. Empresa', 'CODEMPRESA']])
+        self.assertEqual(trecho['declarada']['por'], '<quem confirmou>')
+
+
+class TestProva(unittest.TestCase):
+    def test_receita_sql_na_mesma_fonte_e_m_entre_fontes(self):
+        from argila import prova
+        sql_ = prova.receita_sql(('F_DESLIGAMENTO', 'CODMOTIVO', 'fDesligamento[CODMOTIVO]'),
+                                 ('F_MOTIVO_DESLIGAMENTO', 'CODMOTIVO', 'dMotivo[CODMOTIVO]'), 'dbo', 'dbo')
+        for trecho in ('LEFT JOIN mae AS m ON m.k = f.k', 'AS mae_unica', 'pct_linhas_com_par', 'COUNT_BIG'):
+            self.assertIn(trecho, sql_)
+        self.assertNotIn('SELECT *', sql_)
+        m = prova.receita_m({'tipo': 'powerquery', 'origem': 'Metas', 'coluna': 'Cód. Empresa', 'rotulo': 'fMeta[x]'},
+                            {'tipo': 'sqlserver', 'origem': 'N_EMPRESA', 'coluna': 'CODEMPRESA', 'rotulo': 'dEmpresa[y]',
+                             'servidor': 'S', 'banco': 'B', 'esquema': 'dbo'})
+        self.assertIn('Table.Column(#"Metas", "Cód. Empresa")', m)
+        self.assertIn('Sql.Database("S", "B"){[Schema="dbo", Item="N_EMPRESA"]}[Data]', m)
+
+    def _provar(self, linhas):
+        from argila import prova
+        d = tempfile.mkdtemp(prefix='ddp')
+        arq = os.path.join(d, 'r.txt')
+        with open(arq, 'w', encoding='utf-8') as f:
+            f.write('de\tpara\tpct_nulos_filha\tpct_linhas_com_par\tpct_codigos_com_par\tmae_unica\n' + linhas)
+        return [prova.avaliar(x)[0] for x in prova.ler(receitas.ler_colado(arq)[1])]
+
+    def test_vereditos(self):
+        self.assertEqual(self._provar('a\tb\t0,0\t100,0\t100,0\tsim\n'), ['provada'])
+        self.assertEqual(self._provar('a\tb\t2\t95,5\t90\tsim\n'), ['provada com ressalva'])
+        self.assertEqual(self._provar('a\tb\t0\t40\t35\tsim\n'), ['fraca'])
+        self.assertEqual(self._provar('a\tb\t0\t100\t100\tnao\n'), ['reprovada'])
+
+    def _com_prova(self, **valores):
+        a = _base()
+        r = next(r for r in a['relacionamentos'] if r['de'] == 'fMeta')
+        r['declarada']['prova'] = {'pct_nulos_filha': 0.0, 'pct_linhas_com_par': 100.0, 'pct_codigos_com_par': 100.0,
+                                   'mae_unica': True, 'em': '27/10/2026', **valores}
+        return _resolver(a)
+
+    def test_prova_boa_tira_o_aviso_e_vai_para_a_documentacao(self):
+        m, p = self._com_prova()
+        self.assertFalse(any('fMeta -> dEmpresa' in x for x in p.avisos), p.avisos)
+        r = next(r for r in m['relacionamentos'] if r['de'] == 'fMeta')
+        self.assertIn('provada em 27/10/2026: 100,0% com par, chave única', r['prova'])
+
+    def test_prova_com_chave_repetida_e_erro(self):
+        _, p = self._com_prova(mae_unica=False)
+        self.assertTrue(any('reprovou' in e for e in p.erros), p.erros)
+
+
 class TestSimulacao(unittest.TestCase):
     def setUp(self):
         from argila.simulacao import Simulador, categorias

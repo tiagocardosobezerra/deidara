@@ -81,7 +81,10 @@ os campos, declare:
 ```
 
 `campos` = pares [coluna da filha, coluna da mãe], com os nomes do catálogo
-(conferidos). `por` é obrigatório. A ligação vira aviso na validação e fica
+(conferidos). `por` é obrigatório. Não sabe quais campos? `deidara.py
+relacionar` sugere, e a receita de prova mede: ver [descoberta.md](descoberta.md).
+Com o bloco `"prova"` (do `provar`), a ligação provada deixa de gerar aviso, e
+a reprovada (código repetido na mãe) vira erro. A ligação vira aviso na validação e fica
 registrada no dicionário de indicadores e no LEIA-ME ("declarada por …").
 Chave repetida no lado "um" derruba a atualização do Power BI; código sem par
 some do corte: confira na primeira atualização.

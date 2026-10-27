@@ -1,0 +1,22 @@
+{
+ "formato": "deidara-sinonimos/1",
+ "sobre": "Cada grupo reúne palavras que, no negócio do time, querem dizer a mesma coisa. Usado no `buscar` e no `relacionar`. Acrescente os do seu ERP (ex.: coligada, chapa).",
+ "grupos": [
+  ["empresa", "coligada", "companhia"],
+  ["colaborador", "funcionario", "empregado", "pessoa", "matricula", "chapa", "headcount", "rh"],
+  ["desligamento", "demissao", "rescisao", "turnover", "saida", "deligamento"],
+  ["admissao", "contratacao", "entrada"],
+  ["cargo", "funcao", "posicao"],
+  ["setor", "departamento", "area", "secao", "centro de custo", "ccusto"],
+  ["filial", "loja", "unidade", "estabelecimento"],
+  ["cliente", "consumidor", "comprador"],
+  ["fornecedor", "parceiro"],
+  ["produto", "item", "material", "sku", "mercadoria"],
+  ["venda", "pedido", "faturamento", "nota"],
+  ["remuneracao", "salario", "vencimento"],
+  ["meta", "objetivo", "alvo", "orcamento"],
+  ["motivo", "causa", "razao"],
+  ["data", "dia", "periodo", "competencia", "mes"],
+  ["chamado", "ticket", "ocorrencia", "atendimento"]
+ ]
+}

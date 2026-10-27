@@ -1,6 +1,6 @@
 ---
 name: deidara
-description: "Arquiteto de painéis Power BI para o time de indicadores. Descobre a estrutura das fontes por receitas (consulta SQL, DAX ou Power Query que a pessoa roda onde os dados estão: SQL Server, modelo Power BI existente, Excel, SharePoint, CSV, API), monta a especificação do painel (modelo estrela, medidas DAX, metas, páginas e visuais) sem adivinhar nome nem função, gera um PROTÓTIPO navegável em HTML com números fictícios e, só depois do aceite explícito, gera a estrutura completa: projeto Power BI (.pbip com modelo TMDL e relatório PBIR, que vira .pbix pelo Power BI Desktop), views SQL, conferência, qualidade e dicionário de indicadores. Traz dicionário de funções DAX e Power Query e padrões de indicador. Use sempre que o pedido envolver criar, prototipar ou especificar dashboard, painel, relatório Power BI, KPI, indicador, métrica, medida DAX, modelo estrela/dimensional, fonte Excel/SharePoint para Power BI ou .pbix/.pbip."
+description: "Arquiteto de painéis Power BI para o time de indicadores. Descobre a estrutura das fontes por receitas (consulta SQL, DAX ou Power Query que a pessoa roda onde os dados estão: SQL Server, modelo Power BI existente, Excel, SharePoint, CSV, API), acha as tabelas de um pedido e sugere as ligações que faltam entre fontes soltas, com evidência e receita de prova (só percentuais), monta a especificação do painel (modelo estrela, medidas DAX, metas, páginas e visuais) sem adivinhar nome nem função, gera um PROTÓTIPO navegável em HTML com números fictícios e, só depois do aceite explícito, gera a estrutura completa: projeto Power BI (.pbip com modelo TMDL e relatório PBIR, que vira .pbix pelo Power BI Desktop), views SQL, conferência, qualidade e dicionário de indicadores. Traz dicionário de funções DAX e Power Query e padrões de indicador. Use sempre que o pedido envolver criar, prototipar ou especificar dashboard, painel, relatório Power BI, KPI, indicador, métrica, medida DAX, modelo estrela/dimensional, fonte Excel/SharePoint para Power BI ou .pbix/.pbip."
 ---
 
 # Deidara
@@ -28,10 +28,13 @@ transforma isso no catálogo da fonte. Só estrutura volta, nunca linha de dado.
    (`deidara.py padroes`), que já trazem o DAX conferido.
 3. **Ligação só com prova ou declarada.** Prova = FK do banco ou relação do
    modelo Power BI de origem. Entre fontes diferentes (planilha x ERP) não
-   existe FK: só com `"declarada"` (campos, **quem confirmou** e por quê),
-   depois de perguntar ao dono do dado. Nunca declare por conta própria.
-4. **Só estrutura, nunca dados.** As receitas devolvem metadados; o protótipo
-   usa números fictícios e diz isso na tela. Se pedirem "com os dados
+   existe FK: o `relacionar` SUGERE as candidatas com evidência, mas só vira
+   `"declarada"` (campos, **quem confirmou** e por quê) depois de o dono do
+   dado confirmar. Nunca declare por conta própria. Sempre que der, rode a
+   receita de prova; o bloco `"prova"` só vem do resultado dela, nunca
+   escrito à mão ou estimado.
+4. **Só estrutura, nunca dados.** As receitas devolvem metadados (a de prova,
+   só percentuais e sim/não); o protótipo usa números fictícios e diz isso na tela. Se pedirem "com os dados
    reais", isso acontece no Power BI Desktop, depois de gerar.
 5. **Indicador sem definição não entra.** Toda medida tem `descricao` em
    linguagem de negócio. Se o usuário não sabe dizer o que o número
@@ -58,6 +61,7 @@ transforma isso no catálogo da fonte. Só estrutura volta, nunca linha de dado.
 | 1. Entender | objetivo, público, decisões, indicadores (definição, polaridade, meta), cortes, periodicidade, **de onde vem cada dado** | [referencias/fluxo.md](referencias/fluxo.md) |
 | 2. Receita | por fonte: `deidara.py receita sql` (SQL Server), `receita dax` (modelo Power BI existente, qualquer origem), `receita m --consultas A,B` (Excel, SharePoint, CSV, API...) → entregue ao usuário com as instruções do cabeçalho | [referencias/fontes.md](referencias/fontes.md) |
 | 3. Catalogar | com o resultado colado: `deidara.py catalogar --de resultado.txt --fonte NOME [--m PASTA]` → aponte em `"fontes"` do argila.json | [referencias/fontes.md](referencias/fontes.md) |
+| 3b. Descobrir | `deidara.py buscar "<pedido>" --catalogos ...` (quais tabelas) → confirme com o usuário → `deidara.py relacionar --catalogos ... --json` (que ligações faltam) → confirme cada uma com o dono do dado → `deidara.py receita prova --de "T[C]" --para "T[C]"` → `deidara.py provar --de resultado.txt` | [referencias/descoberta.md](referencias/descoberta.md) |
 | 4. Moldar | escreva `argila.json` (fontes, tabelas, relacionamentos, calendário, medidas, páginas); para cada indicador, `deidara.py padroes "<assunto>"`; DAX livre só com `funcoes buscar/ver` → `deidara.py validar` até zerar os erros | [referencias/argila.md](referencias/argila.md), [referencias/metricas.md](referencias/metricas.md) |
 | 5. Esculpir | `deidara.py prototipar argila.json` → mostre o HTML (com os avisos) | |
 | 6. Iterar | ajuste e prototipe de novo; painel já aprovado antes? `deidara.py diff argila.json` e mostre o que muda (fórmula que muda o número em destaque) | [referencias/argila.md](referencias/argila.md) |
@@ -72,6 +76,7 @@ Microsoft e as referências do TMDL.
 
 - [referencias/fluxo.md](referencias/fluxo.md): passo a passo e perguntas de descoberta
 - [referencias/fontes.md](referencias/fontes.md): receitas SQL, DAX e M, catalogar, fontes e ligação declarada
+- [referencias/descoberta.md](referencias/descoberta.md): buscar tabelas, sugerir ligações e provar com números agregados
 - [referencias/argila.md](referencias/argila.md): formato completo do argila.json
 - [referencias/metricas.md](referencias/metricas.md): onde criar cada métrica, padrões e dicionário de funções
 - [referencias/powerbi.md](referencias/powerbi.md): o que é gerado, .pbip x .pbix, como tornar real, limitações

@@ -42,6 +42,10 @@ abre e salva como `.pbix` em um clique, e o `.pbip` fica versionável no git. Ve
 ```bash
 python3 deidara.py receita sql --tabelas F_DESLIGAMENTO,F_FUNCIONARIO -o receita.sql   # ou: dax, m
 python3 deidara.py catalogar --de resultado.txt --fonte erp -o meu/catalogos/erp.json
+python3 deidara.py buscar "turnover por cargo com meta" --catalogos meu/catalogos/*.json
+python3 deidara.py relacionar --catalogos meu/catalogos/*.json --json   # ligações que faltam, com evidência
+python3 deidara.py receita prova --argila meu/argila.json --de "fMeta[Cód. Empresa]" --para "dEmpresa[CODEMPRESA]"
+python3 deidara.py provar --de prova.txt
 python3 deidara.py padroes turnover            # como criar o indicador
 python3 deidara.py validar meu/argila.json
 python3 deidara.py prototipar meu/argila.json
@@ -63,7 +67,10 @@ resultado colado ao painel: [exemplos/aurora](exemplos/aurora).
   ano anterior, variação, móvel de 12 meses; metas com status verde/vermelho pela polaridade.
 - **Modelo conferido:** avisa quando um segmentador ou corte não filtra (ou só filtra parte de) um
   indicador, quando um trimestre soma todos os anos e quando um corte mostra o cadastro atual.
-- **Várias fontes:** ligação entre fontes só declarada, com quem confirmou, registrada na entrega.
+- **Informações soltas:** `buscar` acha as tabelas de um pedido em todas as fontes; `relacionar` sugere
+  as ligações que faltam, com a evidência de cada uma (nome, chave, tipo, sinônimos); a receita de prova
+  mede a candidata na fonte (só percentuais e sim/não). A ligação entre fontes vira "declarada", com quem
+  confirmou e a prova, registrada na entrega.
 - **Governança:** versão, histórico de aprovações, `deidara.py diff` e segurança por linha (RLS).
 
 ## Instalação como skill
@@ -81,7 +88,9 @@ python3 ferramentas/validar_pbip.py <pasta gerada>
 ## Regras
 
 - Nunca adivinha tabela, coluna, ligação ou função.
-- Só estrutura, nunca dados: as receitas devolvem metadados e o protótipo usa números fictícios.
+- Só estrutura, nunca dados: as receitas devolvem metadados (a de prova, só percentuais) e o protótipo usa
+  números fictícios.
+- Sugere ligações, nunca as cria sozinho: quem confirma é uma pessoa.
 - Nada é gerado sem protótipo aprovado; mudou depois do aceite, aprova de novo.
 
 ## Sobre o dicionário de funções
