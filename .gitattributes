@@ -1,0 +1,8 @@
+# Fim de linha LF em todo checkout: os arquivos do projeto gerado e os
+# testes comparam texto; um checkout com CRLF no Windows mudaria o conteúdo
+# sem mudar nada de verdade.
+* text=auto eol=lf
+# Binários ficam byte a byte.
+*.zip binary
+*.png binary
+*.jpg binary

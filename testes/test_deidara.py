@@ -20,6 +20,7 @@ os.environ['DEIDARA_MEMORY_CARD_DIR'] = '-'      # o cartão de quem roda os tes
 sys.path.insert(0, os.path.join(RAIZ, 'ferramentas'))
 
 import deidara  # noqa: E402
+import empacotar  # noqa: E402
 import validar_pbip  # noqa: E402
 from argila.especificacao import referencias_dax, resolver  # noqa: E402
 from argila import catalogo, receitas  # noqa: E402
@@ -743,6 +744,21 @@ class TestMemoryCard(unittest.TestCase):
         sit, det = self.mc.conferir(self.cartao, cats, resolver)['recursos-humanos/turnover/quadro-e-turnover']
         self.assertEqual(sit, 'quebrado')
         self.assertTrue(any('DESCRICAOCARGO' in d for d in det))
+
+
+class TestEmpacotar(unittest.TestCase):
+    def test_zip_da_skill_sem_zip_dentro_nem_arquivo_local(self):
+        import zipfile
+        d = tempfile.mkdtemp(prefix='ddz')
+        destino = os.path.join(d, 'deidara-skill.zip')
+        with redirect_stdout(io.StringIO()):
+            empacotar.main(['-o', destino])
+        nomes = zipfile.ZipFile(destino).namelist()
+        self.assertIn('deidara/SKILL.md', nomes)
+        self.assertIn('deidara/deidara.py', nomes)
+        self.assertFalse([n for n in nomes if n.endswith(('.zip', '.pyc', '.aprovacao.json'))
+                          or '/assets/' in n or '/.git/' in n or '__pycache__' in n], nomes)
+        shutil.rmtree(d, ignore_errors=True)
 
 
 class TestExperiencia(unittest.TestCase):
