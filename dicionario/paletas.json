@@ -1,0 +1,66 @@
+{
+ "formato": "deidara-paletas/1",
+ "sobre": "Cores dos temas montados por Sajjad Ahmadi nos dashboards do Power BI Design Files (MIT; ver LICENCAS-DE-TERCEIROS.md). Uso: \"tema\": {\"paleta\": \"nome\"}.",
+ "paletas": {
+  "contraste-executivo": {
+   "cores": [
+    "#1800ED",
+    "#000000",
+    "#FA0C27",
+    "#B6B1AF",
+    "#E044A7",
+    "#744EC2",
+    "#D9B300",
+    "#D64550"
+   ],
+   "fundo": "#FFFFFF",
+   "texto": "#1B1B1B",
+   "origem": "Executive Sales Report"
+  },
+  "matrix-escuro": {
+   "cores": [
+    "#00B4FF",
+    "#6B7280",
+    "#8A8F99",
+    "#A1A6B0",
+    "#B8BDC7",
+    "#4B4E55",
+    "#D1D5DB",
+    "#E5E7EB"
+   ],
+   "fundo": "#141414",
+   "texto": "#E6EAF2",
+   "origem": "The Movie Success Matrix"
+  },
+  "azul-noturno": {
+   "cores": [
+    "#5B7BD6",
+    "#CECEDB",
+    "#061738",
+    "#FE1F3A",
+    "#5F6B6D",
+    "#8AD4EB",
+    "#FE9666",
+    "#A66999"
+   ],
+   "fundo": "#FFFFFF",
+   "texto": "#1B1B1B",
+   "origem": "Clickable KPI Cards / Pill Slicer"
+  },
+  "azul-carros": {
+   "cores": [
+    "#97AAE0",
+    "#163798",
+    "#1B54FA",
+    "#E9EAED",
+    "#0D111A",
+    "#744EC2",
+    "#416FCC",
+    "#CC333F"
+   ],
+   "fundo": "#FFFFFF",
+   "texto": "#1B1B1B",
+   "origem": "Cars Sales (Scatter Plot with Images)"
+  }
+ }
+}

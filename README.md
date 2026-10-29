@@ -7,7 +7,7 @@
 ![Python 3.8+](https://img.shields.io/badge/python-3.8%2B-3776AB?style=flat-square&logo=python&logoColor=white)
 ![Sem dependências](https://img.shields.io/badge/depend%C3%AAncias-nenhuma-2ea44f?style=flat-square)
 ![Power BI .pbip](https://img.shields.io/badge/Power%20BI-.pbip%20(TMDL%20%2B%20PBIR)-F2C811?style=flat-square&logo=powerbi&logoColor=black)
-![Testes](https://img.shields.io/badge/testes-98%20passando-2ea44f?style=flat-square)
+![Testes](https://img.shields.io/badge/testes-117%20passando-2ea44f?style=flat-square)
 ![MIT](https://img.shields.io/badge/licen%C3%A7a-MIT-blue?style=flat-square)
 
 <img width="100%" alt="Deidara: do pedido ao painel Power BI, com protótipo aprovado antes do projeto" src="assets/deidara-banner.svg" />
@@ -21,6 +21,8 @@ O Deidara é uma skill do Claude Code para times de indicadores. Ele transforma 
 * **Sugere ligações, nunca as cria sozinho.** Quando as tabelas não estão ligadas, ele sugere com a evidência (nome, chave, tipo, sinônimos) e mede a candidata na fonte com uma receita de prova que só devolve percentuais. Quem confirma é uma pessoa.
 * **Não adivinha nome nem função.** Todo nome vem do catálogo da fonte; toda função DAX, do dicionário. O `validar` recusa o resto e diz o que existe: medidas parecidas, colunas do catálogo que faltam no modelo e o trecho exato para acrescentar.
 * **Entende indicador de verdade.** Headcount é estoque na data, não contagem de cadastro; turnover usa o HC médio; metas têm polaridade e cor. Ele avisa quando um corte não filtra um indicador ou mostra o valor atual do cadastro em vez do histórico.
+* **Onze modelos de layout de dashboards premiados, com a formatação deles.** Trilho de páginas, faixa ou coluna de KPIs, seções com rolagem, KPIs clicáveis, história em página longa, executivo, mapa central, causa raiz, tabela lateral e equipes: o Deidara desenha o fundo de cada página (painéis, título, navegação) e encaixa os visuais nativos por cima, no protótipo e no `.pbip` (`deidara.py modelos`).
+* **Desenha com critério.** Layout que começa pela decisão, cor com significado e contraste conferido, técnicas de visual nativo (`deidara.py visuais`) e a barra contra a meta dentro da tabela, gerada como medida SVG que segue todas as regras.
 * **Mostra antes de construir.** O protótipo HTML tem números fictícios coerentes, um ⓘ em cada visual explicando o número e uma aba "Para aprovar" com checklist, comentários e um resumo do aceite com código.
 * **Entrega pronto para homologar.** Projeto `.pbip` (abre no Power BI Desktop, que salva como `.pbix`), views SQL, conferência dos totais (inclusive o headcount de cada fim de mês), checagem de qualidade, folha de homologação e dicionário de indicadores.
 * **Guarda o que o time aprova no Memory Card.** Cada painel e indicador fica salvo com versão, motivo de cada mudança e definição oficial, num repositório do time.
@@ -43,11 +45,13 @@ Medidos no exemplo do repositório (um ERP fictício em SQL Server e uma planilh
 
 | O quê | Resultado |
 |---|---|
-| Testes automatizados | **98 passando** |
+| Testes automatizados | **117 passando** |
 | Arquivos JSON do projeto gerado conferidos contra os schemas oficiais da Microsoft | **24 de 24** |
 | Tutorial, do zero ao projeto, rodado comando a comando | **15 minutos** |
 | Funções no dicionário (DAX / Power Query) | **462 / 667** |
 | Padrões de indicador prontos (taxa, estoque, acumulado, turnover completo...) | **17** |
+| Técnicas de visual catalogadas (meta na tabela, ranking, causa, status...) | **31**, todas geradas prontas (2 com visual do AppSource) |
+| Modelos de layout, do protótipo ao `.pbip` | **11** |
 | Linhas de dado que as receitas devolvem | **0** |
 
 ## Comece em 3 passos
@@ -92,6 +96,7 @@ python3 deidara.py validar meu/argila.json
 python3 deidara.py prototipar meu/argila.json
 python3 deidara.py aprovar meu/argila.json --por "Gestor de RH"
 python3 deidara.py gerar meu/argila.json -o C:/paineis/turnover
+python3 deidara.py gerar meu/argila.json -o C:/paineis/demo --demo   # com dados fictícios: abre e calcula sem banco
 python3 deidara.py situacao meu/argila.json                     # onde estou e o próximo passo
 ```
 
@@ -118,6 +123,14 @@ O `.pbix` é binário e fechado: o modelo vai num formato interno que só o Powe
 ### Dicionário de funções e padrões de indicador
 
 462 funções DAX e 667 de Power Query, com categoria, assinatura e link da documentação oficial; as mais usadas com descrição e uso em indicadores em pt-BR (`deidara.py funcoes buscar "ano anterior"`). Os padrões dizem como criar cada indicador e onde: medida, cálculo visual, grupo de cálculo, Power Query ou view SQL (`deidara.py padroes`). Guia em [`referencias/metricas.md`](referencias/metricas.md).
+
+### Design e visuais
+
+Os princípios de [`referencias/design.md`](referencias/design.md): comece pela decisão, uma página por pergunta, cor só com significado (e nunca como única pista), contraste conferido pelo `validar`. As técnicas com visuais nativos (segmentador de botões como controle segmentado, cartões clicáveis, melhores e piores na mesma tabela, Pareto, árvore de decomposição, marcadores no mapa) estão em `deidara.py visuais`. Medidas que desenham dentro da tabela seguem [`referencias/svg.md`](referencias/svg.md); a barra contra a meta o Deidara gera pronta (`"tipo": "svg_barra_meta"`).
+
+### Modelos de layout
+
+`"modelo": "faixa-de-kpis"` no `argila.json` (é o que o `esbocar` escreve) e o painel ganha a estrutura de um dashboard de verdade: fundo desenhado com os painéis, o título e a pergunta da página, navegação entre páginas e visuais nativos transparentes por cima. São onze, tirados da estrutura e da formatação dos dashboards do Power BI Design Files: `faixa-de-kpis`, `coluna-de-kpis`, `secoes-com-rolagem`, `trilho-escuro`, `kpis-clicaveis`, `historia-longa`, `executivo`, `mapa-central`, `causa-raiz`, `tabela-lateral` e `equipes`. Vêm junto segmentador de botões, cartão novo, árvore de decomposição, dispersão, área, mapa, as medidas de ranking (posição, Pareto, melhores e piores) e os SVGs de status, seta e selo, além das paletas dos temas dele. Guia em [`referencias/modelos.md`](referencias/modelos.md).
 
 ### Memory Card: os painéis do time
 
@@ -154,11 +167,12 @@ deidara/
 ├── README.en.md           # README em inglês
 ├── COMO-INSTALAR.md       # Instalação, conferência e atualização
 ├── AVISO.md               # Dados de terceiros e privacidade
+├── LICENCAS-DE-TERCEIROS.md  # Licença MIT do Power BI Design Files e créditos
 ├── LICENSE                # MIT License
 ├── deidara.py             # Porta de entrada (todos os comandos)
 ├── argila/                # O motor: receitas, catálogo, descoberta, esboço, validação, protótipo e geração
-├── dicionario/            # Funções DAX e Power Query, padrões de indicador e sinônimos
-├── referencias/           # Guias: fluxo, fontes, descoberta, argila.json, métricas, Memory Card, Power BI e tutorial
+├── dicionario/            # Funções DAX e Power Query, padrões de indicador, técnicas de visual e sinônimos
+├── referencias/           # Guias: fluxo, fontes, descoberta, argila.json, métricas, design, SVG, Memory Card, Power BI e tutorial
 ├── exemplos/aurora/       # Exemplo fictício completo, do resultado colado ao projeto gerado
 ├── ferramentas/           # Validador do .pbip contra os schemas da Microsoft e empacotador da skill
 ├── assets/                # Imagens do README
@@ -177,6 +191,7 @@ Os nomes, categorias, assinaturas e links do dicionário de funções vêm da re
 
 * Minha esposa **Júlia** e meus filhos **Arthur** e **Aurora**, o porto seguro onde encontro paz, inspiração e a leveza de que preciso todos os dias.
 * **Bruna Cardoso Bezerra** | [brunacbezerra](https://github.com/brunacbezerra), por me ensinar tudo o que sei sobre o Claude Code.
+* **Sajjad Ahmadi** | [Dashboard-Design](https://github.com/Dashboard-Design/Power-BI-Design-Files), por compartilhar os dashboards, as práticas de design de painéis e de SVG em DAX que viraram os modelos de layout do Deidara.
 * **Você**, por usar o Deidara!
 
 ## Aviso sobre dados de terceiros

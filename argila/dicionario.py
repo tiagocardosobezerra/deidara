@@ -47,6 +47,29 @@ def padroes():
     return _ler('padroes.json')
 
 
+def visuais():
+    return _ler('visuais.json')
+
+
+def estilos():
+    return _ler('estilos.json')
+
+
+def paletas():
+    return _ler('paletas.json')
+
+
+def visuais_para(termo):
+    """Técnicas de visual cujo id, nome ou termos batem com alguma palavra do assunto."""
+    t = chave(termo)
+    out = []
+    for v in visuais()['visuais']:
+        alvo = chave(' '.join([v['id'], v['nome'], ' '.join(v.get('termos', []))]))
+        if not t or any(w in alvo for w in t.split()):
+            out.append(v)
+    return out
+
+
 _CHAMADA = re.compile(r"(?<![\w.\]'\[])([A-Za-z][A-Za-z0-9_]*(?:\.[A-Za-z0-9_]+)*)\s*\(")
 
 

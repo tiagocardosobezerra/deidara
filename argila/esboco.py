@@ -249,7 +249,7 @@ def esbocar(catalogos, pedido, projeto=None, tabelas=None, limite=6):
         notas.append('medidas de outras tabelas fato (' + ', '.join(m['nome'] for m in outras)
                      + ') ficaram fora da página: ponha numa página própria ou ligue os cortes a elas')
 
-    argila = {'projeto': projeto or pedido[:60].strip().capitalize(), 'versao': '0.1',
+    argila = {'projeto': projeto or pedido[:60].strip().capitalize(), 'versao': '0.1', 'modelo': 'faixa-de-kpis',
               'descricao': f'{PENDENTE_DEF}: para que serve o painel e que decisão ele apoia',
               'publico': PENDENTE_DEF, 'fontes': {}, 'tabelas': tabs, 'relacionamentos': rels,
               'medidas': medidas, 'paginas': [{'nome': 'Visão Geral', 'visuais': vis}]}

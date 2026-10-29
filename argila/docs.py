@@ -118,7 +118,7 @@ def homologacao(m, nome, aprovacao):
                '| ✓ | Indicador | Onde ler no painel | Como conferir | Total na fonte | Total no painel |',
                '|---|---|---|---|---|---|']
     for md in m['medidas']:
-        if md['tipo'] in ('cor', 'meta'):
+        if md['tipo'] in ('cor', 'meta') or md.get('imagem'):
             continue
         tab = next((t for t in m['tabelas'] if t['nome'] == (md.get('conferencia') or {}).get('tabela')), None)
         da_planilha = tab is not None and tab.get('fonte_tipo') != 'sqlserver'

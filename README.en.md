@@ -7,7 +7,7 @@
 ![Python 3.8+](https://img.shields.io/badge/python-3.8%2B-3776AB?style=flat-square&logo=python&logoColor=white)
 ![No dependencies](https://img.shields.io/badge/dependencies-none-2ea44f?style=flat-square)
 ![Power BI .pbip](https://img.shields.io/badge/Power%20BI-.pbip%20(TMDL%20%2B%20PBIR)-F2C811?style=flat-square&logo=powerbi&logoColor=black)
-![Tests](https://img.shields.io/badge/tests-98%20passing-2ea44f?style=flat-square)
+![Tests](https://img.shields.io/badge/tests-117%20passing-2ea44f?style=flat-square)
 ![MIT](https://img.shields.io/badge/license-MIT-blue?style=flat-square)
 
 <img width="100%" alt="Deidara: from request to Power BI report, with an approved prototype before the project" src="assets/deidara-banner-en.svg" />
@@ -23,6 +23,8 @@ Deidara is a Claude Code skill for KPI and reporting teams. It turns a request (
 * **Suggests relationships, never creates them on its own.** When tables are not related, it suggests a link with the evidence (name, key, type, synonyms) and measures the candidate at the source with a proof recipe that only returns percentages. A person confirms it.
 * **Never guesses names or functions.** Every name comes from the source catalog; every DAX function, from the dictionary. `validar` rejects anything else and says what exists: similar measures, catalog columns missing from the model and the exact snippet to add.
 * **Understands real KPIs.** Headcount is a stock at a date, not a count of records; turnover uses the average headcount; targets have polarity and color. It warns when a slicer does not filter a measure or shows the current value instead of the historical one.
+* **Eleven layout templates from award-winning dashboards, with their formatting.** Page rail, KPI strip or column, scrolling sections, clickable KPIs, a long story page, executive, central map, root cause, side table and teams: Deidara draws each page's background (panels, title, navigation) and places native visuals on top, in the prototype and in the `.pbip` (`deidara.py modelos`).
+* **Designs with intent.** Layouts that start from the decision, color with meaning and checked contrast, native visual techniques (`deidara.py visuais`) and the bar-versus-target inside the table, generated as an SVG measure that follows every rule.
 * **Shows before it builds.** The HTML prototype has consistent fictional numbers, an ⓘ on every visual explaining the number and a "Para aprovar" (for approval) tab with a checklist, comments and an approval summary with a code.
 * **Delivers ready for sign-off.** A `.pbip` project (opens in Power BI Desktop, which saves it as `.pbix`), SQL views, total reconciliation (including headcount at each month end), data quality checks, a sign-off sheet and a KPI dictionary.
 * **Keeps what the team approves on the Memory Card.** Each report and KPI is saved with a version, the reason for each change and the official definition, in a team repository.
@@ -45,11 +47,13 @@ Measured on the repository example (a fictional ERP on SQL Server and a targets 
 
 | What | Result |
 |---|---|
-| Automated tests | **98 passing** |
+| Automated tests | **117 passing** |
 | JSON files of the generated project checked against Microsoft's official schemas | **24 of 24** |
 | Tutorial, from scratch to project, run command by command | **15 minutes** |
 | Functions in the dictionary (DAX / Power Query) | **462 / 667** |
 | Ready-made KPI patterns (rate, stock, year-to-date, full turnover...) | **17** |
+| Cataloged visual techniques (target in a table, ranking, root cause, status...) | **31**, all generated ready to use (2 with an AppSource visual) |
+| Layout templates, from prototype to `.pbip` | **11** |
 | Data rows returned by the recipes | **0** |
 
 ## Get started in 3 steps
@@ -94,6 +98,7 @@ python3 deidara.py validar meu/argila.json
 python3 deidara.py prototipar meu/argila.json
 python3 deidara.py aprovar meu/argila.json --por "Gestor de RH"
 python3 deidara.py gerar meu/argila.json -o C:/paineis/turnover
+python3 deidara.py gerar meu/argila.json -o C:/paineis/demo --demo   # fictional data: opens and calculates with no database
 python3 deidara.py situacao meu/argila.json                     # where am I and what's next
 ```
 
@@ -120,6 +125,14 @@ Sources other than SQL Server (Excel, SharePoint, APIs...) come in through **the
 ### Function dictionary and KPI patterns
 
 462 DAX and 667 Power Query functions, with category, signature and a link to the official documentation; the most used ones with a description and KPI usage in Portuguese (`deidara.py funcoes buscar "ano anterior"`). Patterns say how and where to build each KPI: measure, visual calculation, calculation group, Power Query or SQL view (`deidara.py padroes`). Guide in [`referencias/metricas.md`](referencias/metricas.md).
+
+### Design and visuals
+
+The principles in [`referencias/design.md`](referencias/design.md): start from the decision, one page per question, color only with meaning (and never as the only cue), contrast checked by `validar`. Native visual techniques (button slicer as a segmented control, clickable KPI cards, top and bottom in one table, Pareto, decomposition tree, map markers) are in `deidara.py visuais`. Measures that draw inside a table follow [`referencias/svg.md`](referencias/svg.md); Deidara generates the bar-versus-target ready to use (`"tipo": "svg_barra_meta"`).
+
+### Layout templates
+
+Put `"modelo": "faixa-de-kpis"` in `argila.json` (it is what `esbocar` writes) and the report gets the structure of a real dashboard: a drawn page background with panels, the page title and question, page navigation and transparent native visuals on top. There are eleven, taken from the structure and formatting of Power BI Design Files dashboards: `faixa-de-kpis`, `coluna-de-kpis`, `secoes-com-rolagem`, `trilho-escuro`, `kpis-clicaveis`, `historia-longa`, `executivo`, `mapa-central`, `causa-raiz`, `tabela-lateral` and `equipes`. They come with the button slicer, the new card, decomposition tree, scatter, area, map, ranking measures (position, Pareto, top and bottom) and status, arrow and badge SVGs, plus the palettes of his themes. Guide in [`referencias/modelos.md`](referencias/modelos.md).
 
 ### Memory Card: the team's reports
 
@@ -156,11 +169,12 @@ deidara/
 ├── README.en.md           # This file
 ├── COMO-INSTALAR.md       # Install, check and update
 ├── AVISO.md               # Third-party data and privacy
+├── LICENCAS-DE-TERCEIROS.md  # Power BI Design Files MIT license and credits
 ├── LICENSE                # MIT License
 ├── deidara.py             # Entry point (all commands)
 ├── argila/                # The engine: recipes, catalog, discovery, draft, validation, prototype and generation
-├── dicionario/            # DAX and Power Query functions, KPI patterns and synonyms
-├── referencias/           # Guides: flow, sources, discovery, argila.json, metrics, Memory Card, Power BI and tutorial
+├── dicionario/            # DAX and Power Query functions, KPI patterns, visual techniques and synonyms
+├── referencias/           # Guides: flow, sources, discovery, argila.json, metrics, design, SVG, Memory Card, Power BI and tutorial
 ├── exemplos/aurora/       # Complete fictional example, from pasted result to generated project
 ├── ferramentas/           # .pbip validator against Microsoft's schemas and skill packager
 ├── assets/                # README images
@@ -179,6 +193,7 @@ Function names, categories, signatures and links in the dictionary come from Mic
 
 * My wife **Júlia** and my children **Arthur** and **Aurora**, the safe harbor where I find peace, inspiration and the lightness I need every day.
 * **Bruna Cardoso Bezerra** | [brunacbezerra](https://github.com/brunacbezerra), for teaching me everything I know about Claude Code.
+* **Sajjad Ahmadi** | [Dashboard-Design](https://github.com/Dashboard-Design/Power-BI-Design-Files), for sharing the dashboards and the design and DAX SVG practices that became Deidara's layout templates.
 * **You**, for using Deidara!
 
 ## Third-party data notice

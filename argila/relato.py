@@ -17,6 +17,7 @@ TEMAS = (
     ('Filtros e cortes', ('segmentador', 'não filtra', 'filtra só parte', 'soma todos os anos')),
     ('Privacidade', ('[Privacidade]',)),
     ('Fontes', ('servidor/banco', 'SEU_SERVIDOR')),
+    ('Design', ('[Design]', '[SVG]')),
     ('Modelagem', ('valor ATUAL', 'estoque', 'sem tipo', 'calendário')),
 )
 
@@ -96,7 +97,7 @@ def validacao(modelo, problemas, caminho):
             grupos.setdefault(tema_do_aviso(a), []).append(a)
         for tema, _ in TEMAS + (('Outros', ()),):
             for a in grupos.get(tema, []):
-                linhas.append('  ' + _quebrar(f'[{tema}] {a}', 4))
+                linhas.append('  ' + _quebrar(f'[{tema}] ' + a.replace(f': [{tema}] ', ': '), 4))
         linhas.append('')
     if problemas.erros:
         linhas.append(f'Próximo passo: corrija os erros e rode de novo `deidara.py validar {caminho}`.')

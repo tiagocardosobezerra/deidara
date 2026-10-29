@@ -54,6 +54,17 @@ Ao catalogar uma fonte real:
 3. Mantenha esses arquivos fora de repositórios públicos. O cartão do time é
    criado **privado** por padrão.
 
+## Referências de design
+
+Os princípios de design, as técnicas de visual (`dicionario/visuais.json`) e
+as regras de SVG em DAX foram escritos para o Deidara a partir do estudo do
+repositório [Power BI Design Files](https://github.com/Dashboard-Design/Power-BI-Design-Files),
+de Sajjad Ahmadi (licença MIT). Os modelos de layout reproduzem a estrutura de páginas de dashboards dele (ver
+[LICENCAS-DE-TERCEIROS.md](LICENCAS-DE-TERCEIROS.md), com a licença); nenhuma imagem, dado ou arquivo dele foi copiado. Os temas,
+visuais personalizados, casos de estudo e arquivos de design de terceiros que
+aquele repositório reúne não vêm no Deidara: cada um tem o seu autor e a sua
+licença.
+
 ## Documentação da Microsoft
 
 Os nomes, as categorias, as assinaturas e os links do dicionário de funções

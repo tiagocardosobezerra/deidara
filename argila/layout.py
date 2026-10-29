@@ -16,9 +16,10 @@ TITULO = 48              # faixa do título da página
 
 def posicionar(visuais):
     """Devolve [(visual, {'x','y','w','h'})] na ordem de leitura."""
-    seg = [v for v in visuais if v['tipo'] == 'segmentador']
-    kpi = [v for v in visuais if v['tipo'] in ('cartao', 'medidor')]
-    graf = [v for v in visuais if v['tipo'] in ('barras', 'colunas', 'linha', 'rosca')]
+    from .modelos import GRAF, KPI, SEG
+    seg = [v for v in visuais if v['tipo'] in SEG]
+    kpi = [v for v in visuais if v['tipo'] in KPI]
+    graf = [v for v in visuais if v['tipo'] in GRAF]
     tab = [v for v in visuais if v['tipo'] in ('tabela', 'matriz')]
     util = LARGURA - 2 * MARGEM
     y = TITULO
@@ -33,8 +34,11 @@ def posicionar(visuais):
                 out.append((v, {'x': MARGEM + k * (w + ESPACO), 'y': y, 'w': w, 'h': altura}))
             y += altura + ESPACO
 
-    faixa(seg, 56, 6)
+    faixa([v for v in seg if v['tipo'] != 'aviso'], 56, 6)
     faixa([v for v in kpi if v['tipo'] == 'cartao'] + [v for v in kpi if v['tipo'] == 'medidor'], 104, 6)
+    faixa([v for v in kpi if v['tipo'] == 'cartoes'], 120, 1)
+    faixa([v for v in seg if v['tipo'] == 'aviso'], 56, 1)
+    faixa([v for v in kpi if v['tipo'] == 'abas'], 80, 1)
     resto = ALTURA - MARGEM - y
     linhas_graf = (len(graf) + 1) // 2
     blocos = linhas_graf + len(tab)

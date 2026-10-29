@@ -34,10 +34,28 @@ request e regenerável pelo Deidara.
   relacionamento a colunas que existem, `ref table`).
 - Todo campo usado num visual existe no modelo.
 
+Testado no Power BI Desktop 2.159 (outubro de 2026) com o projeto de
+demonstração no modelo `faixa-de-kpis`: o projeto abre, atualiza, calcula as
+medidas (inclusive estoque na data, meta e as medidas SVG), mostra o fundo
+desenhado e reconhece os botões como navegação de página.
+
 O que **não** dá para provar sem o Desktop: que a versão do Power BI da
 máquina do usuário aceita o formato PBIR (versões anteriores a 2024 pedem a
 opção em versão prévia) e que as views rodam no banco real. Por isso o
 LEIA-ME começa pelo SQL e pela homologação.
+
+## Projeto de demonstração (`--demo`)
+
+`deidara.py gerar argila.json -o PASTA --demo` gera o mesmo projeto com a
+origem de cada tabela trocada por linhas fictícias escritas no próprio
+`.pbip` (`#table` do Power Query): 8 linhas por dimensão, algumas centenas na
+tabela de pessoas e nos eventos, uma meta por empresa. Chaves batem entre as
+tabelas, cada evento acontece uma vez por pessoa e depois da entrada dela, e
+nada passa de hoje. Medidas, relacionamentos e páginas são os do projeto
+real: abra no Power BI Desktop, clique em **Atualizar** e todos os números são
+calculados de verdade, sem banco nenhum. O fundo das páginas leva o selo
+"Demonstração · dados fictícios" e o LEIA-ME começa avisando. Para o painel
+real, gere de novo sem `--demo`.
 
 ## Como cada fonte é lida
 

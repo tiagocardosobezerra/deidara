@@ -1,0 +1,975 @@
+{
+  "formato": "deidara-visuais/1",
+  "sobre": "Técnicas de visual para painéis Power BI, escritas para o Deidara a partir do estudo do repositório Power BI Design Files (Sajjad Ahmadi, licença MIT). Nenhum arquivo foi copiado; ver referencias/design.md.",
+  "visuais": [
+    {
+      "id": "barra_meta",
+      "nome": "Barra contra a meta, dentro da tabela",
+      "termos": [
+        "meta",
+        "alvo",
+        "real x meta",
+        "bullet",
+        "barra",
+        "atingimento",
+        "tabela"
+      ],
+      "quando": "comparar o valor de cada linha (empresa, cargo, região) com a meta daquela linha, sem um gráfico à parte",
+      "deidara": {
+        "gera": true,
+        "argila": {
+          "nome": "Turnover x Meta",
+          "tipo": "svg_barra_meta",
+          "medida": "Turnover",
+          "categoria": "dEmpresa[Empresa]"
+        },
+        "visual": {
+          "tipo": "tabela",
+          "campos": [
+            "dEmpresa[Empresa]",
+            "Turnover",
+            "Turnover x Meta"
+          ]
+        }
+      },
+      "power_bi": "o Deidara gera a medida SVG (com a categoria Image URL já marcada); ponha a medida numa tabela ao lado da coluna das linhas",
+      "cuidados": [
+        "a medida base precisa ter \"meta\"",
+        "o eixo é o mesmo para todas as linhas visíveis (ALLSELECTED)",
+        "no total a célula fica vazia, de propósito"
+      ],
+      "nativo": true,
+      "inspiracao": "Power BI Design Files (Sajjad Ahmadi)"
+    },
+    {
+      "id": "linha_meta_grafico",
+      "nome": "Linha de meta num gráfico de barras ou colunas",
+      "termos": [
+        "meta",
+        "linha de referência",
+        "alvo",
+        "gráfico"
+      ],
+      "quando": "mostrar a meta da empresa toda sobre a evolução no tempo ou sobre as categorias",
+      "deidara": {
+        "gera": true,
+        "visual": {
+          "tipo": "colunas",
+          "categoria": "dEmpresa[Empresa]",
+          "valores": [
+            "Remuneração Média"
+          ],
+          "meta": true
+        }
+      },
+      "power_bi": "o Deidara põe a linha constante tracejada \"Meta\" no eixo do gráfico (barras, colunas, linha ou área) quando a meta é um número fixo; \"meta\": true usa a meta da medida do gráfico",
+      "cuidados": [
+        "se a meta muda por categoria ou com o filtro, a linha única engana: o Deidara avisa e sugere a barra contra a meta na tabela (svg_barra_meta)"
+      ],
+      "nativo": true,
+      "inspiracao": "Power BI Design Files (Sajjad Ahmadi)"
+    },
+    {
+      "id": "controle_segmentado",
+      "nome": "Segmentador de botões como controle segmentado",
+      "termos": [
+        "segmentador",
+        "botões",
+        "abas",
+        "período",
+        "filtro",
+        "navegação"
+      ],
+      "quando": "trocar entre poucas opções (mês, trimestre, ano; real ou meta) com um clique, como um app",
+      "deidara": {
+        "gera": true,
+        "visual": {
+          "tipo": "botoes",
+          "campo": "dCalendario[Ano]"
+        }
+      },
+      "power_bi": "o Deidara gera o Segmentador de botões com a formatação do modelo; poucas opções (até 5 ou 6)",
+      "cuidados": [
+        "funciona com poucas opções (até 5 ou 6); com mais, use lista ou menu suspenso"
+      ],
+      "nativo": true,
+      "inspiracao": "Power BI Design Files (Sajjad Ahmadi)"
+    },
+    {
+      "id": "cartoes_clicaveis",
+      "nome": "Cartões de KPI clicáveis",
+      "termos": [
+        "cartão",
+        "kpi",
+        "clicável",
+        "seletor de medida",
+        "parâmetro de campo"
+      ],
+      "quando": "o gestor escolhe qual indicador os gráficos da página mostram clicando no próprio cartão",
+      "deidara": {
+        "gera": true
+      },
+      "power_bi": "use \"modelo\": \"kpis-clicaveis\": cada cartão leva a uma página com o gráfico e a tabela daquele KPI",
+      "cuidados": [
+        "os gráficos precisam usar o parâmetro de campo, não a medida fixa",
+        "deixe claro qual cartão está selecionado (cor de destaque, borda)"
+      ],
+      "nativo": true,
+      "inspiracao": "Power BI Design Files (Sajjad Ahmadi)"
+    },
+    {
+      "id": "topn_bottomn",
+      "nome": "Melhores e piores na mesma tabela",
+      "termos": [
+        "top",
+        "ranking",
+        "melhores",
+        "piores",
+        "bottom",
+        "topn"
+      ],
+      "quando": "ver ao mesmo tempo quem puxa o resultado para cima e quem puxa para baixo, sem trocar de visão",
+      "deidara": {
+        "gera": true,
+        "argila": {
+          "nome": "Desligamentos (3 mais e 3 menos)",
+          "tipo": "melhores_piores",
+          "medida": "Desligamentos",
+          "categoria": "dMotivo[Motivo]",
+          "n": 3
+        },
+        "visual": {
+          "tipo": "tabela",
+          "campos": [
+            "dMotivo[Motivo]",
+            "Desligamentos (3 mais e 3 menos)"
+          ]
+        }
+      },
+      "power_bi": "o Deidara gera a medida: fora dos N primeiros e dos N últimos ela fica em branco e a linha some da tabela",
+      "cuidados": [
+        "o N pode vir de um parâmetro numérico",
+        "empates mudam o tamanho dos grupos: decida o desempate"
+      ],
+      "nativo": true,
+      "inspiracao": "Power BI Design Files (Sajjad Ahmadi)"
+    },
+    {
+      "id": "pareto",
+      "nome": "Classificação com Pareto (80/20)",
+      "termos": [
+        "pareto",
+        "80/20",
+        "acumulado",
+        "concentração",
+        "ranking",
+        "curva abc"
+      ],
+      "quando": "mostrar quantos itens explicam a maior parte do resultado (clientes, motivos, produtos)",
+      "deidara": {
+        "gera": true,
+        "argila": {
+          "nome": "% acumulado (Pareto)",
+          "tipo": "pareto",
+          "medida": "Desligamentos",
+          "categoria": "dCargo[Cargo]"
+        },
+        "visual": {
+          "tipo": "tabela",
+          "campos": [
+            "dCargo[Cargo]",
+            "Desligamentos",
+            "% acumulado (Pareto)"
+          ]
+        }
+      },
+      "power_bi": "o Deidara gera o % acumulado (e \"posicao\" para o número da posição)",
+      "cuidados": [
+        "o acumulado depende da ordem: ordene pelo valor, do maior para o menor"
+      ],
+      "nativo": true,
+      "inspiracao": "Power BI Design Files (Sajjad Ahmadi)"
+    },
+    {
+      "id": "arvore_decomposicao",
+      "nome": "Árvore de decomposição para achar a causa",
+      "termos": [
+        "causa",
+        "raiz",
+        "decomposição",
+        "drill",
+        "por quê",
+        "investigar"
+      ],
+      "quando": "sair do número geral e chegar no que explica a variação (qual empresa, qual cargo, qual motivo)",
+      "deidara": {
+        "gera": true,
+        "visual": {
+          "tipo": "decomposicao",
+          "medida": "Desligamentos",
+          "cortes": [
+            "dMotivo[Motivo]",
+            "dCargo[Cargo]",
+            "dEmpresa[Empresa]"
+          ]
+        }
+      },
+      "power_bi": "o Deidara gera a Árvore de decomposição com a medida em Analisar e os cortes em Explicar por, na ordem",
+      "cuidados": [
+        "ofereça só os cortes que fazem sentido para o negócio",
+        "é visual de análise: fica melhor numa página própria"
+      ],
+      "nativo": true,
+      "inspiracao": "Power BI Design Files (Sajjad Ahmadi)"
+    },
+    {
+      "id": "pilula_status",
+      "nome": "Pílula de status (rótulo colorido)",
+      "termos": [
+        "status",
+        "pílula",
+        "etiqueta",
+        "situação",
+        "badge"
+      ],
+      "quando": "destacar uma situação ou categoria curta numa tabela (no prazo, atrasado, crítico)",
+      "deidara": {
+        "gera": true,
+        "argila": {
+          "nome": "Status da meta",
+          "tipo": "svg_pilula",
+          "medida": "Turnover",
+          "categoria": "dEmpresa[Empresa]"
+        },
+        "visual": {
+          "tipo": "tabela",
+          "campos": [
+            "dEmpresa[Empresa]",
+            "Turnover",
+            "Status da meta"
+          ]
+        }
+      },
+      "power_bi": "o Deidara gera a medida SVG \"Na meta\" / \"Fora da meta\" pela polaridade (a medida precisa de meta)",
+      "cuidados": [
+        "poucas categorias e cores fixas por categoria",
+        "a cor não pode ser a única pista: o texto diz a situação"
+      ],
+      "nativo": true,
+      "inspiracao": "Power BI Design Files (Sajjad Ahmadi)"
+    },
+    {
+      "id": "seta_variacao",
+      "nome": "Seta da variação entre dois períodos",
+      "termos": [
+        "variação",
+        "antes e depois",
+        "seta",
+        "comparação",
+        "período anterior"
+      ],
+      "quando": "mostrar de onde o valor saiu e para onde foi (ano anterior para este ano) em cada linha",
+      "deidara": {
+        "gera": true,
+        "argila": {
+          "nome": "Variação",
+          "tipo": "svg_seta",
+          "medida": "Desligamentos",
+          "comparar": "Desligamentos Ano Anterior",
+          "categoria": "dCargo[Cargo]"
+        },
+        "visual": {
+          "tipo": "tabela",
+          "campos": [
+            "dCargo[Cargo]",
+            "Desligamentos",
+            "Variação"
+          ]
+        }
+      },
+      "power_bi": "o Deidara gera a medida SVG: ponto cinza no valor anterior, seta até o atual, verde se melhorou pela polaridade",
+      "cuidados": [
+        "a cor da seta segue a polaridade do indicador (subir pode ser ruim)"
+      ],
+      "nativo": true,
+      "inspiracao": "Power BI Design Files (Sajjad Ahmadi)"
+    },
+    {
+      "id": "marcadores_mapa",
+      "nome": "Marcadores personalizados no mapa",
+      "termos": [
+        "mapa",
+        "geografia",
+        "região",
+        "marcador",
+        "azure maps"
+      ],
+      "quando": "ler o desempenho como território, com o indicador desenhado no próprio ponto do mapa",
+      "deidara": {
+        "gera": true,
+        "visual": {
+          "tipo": "mapa",
+          "local": "dLoja[Cidade]",
+          "valores": [
+            "Vendas"
+          ]
+        }
+      },
+      "power_bi": "o Deidara gera o Azure Maps com bolhas do tamanho da medida; marcador desenhado por SVG continua manual",
+      "cuidados": [
+        "o mapa precisa de localização confiável (cidade e UF, ou latitude e longitude)",
+        "confirme se o Azure Maps está liberado no tenant"
+      ],
+      "nativo": true,
+      "inspiracao": "Power BI Design Files (Sajjad Ahmadi)"
+    },
+    {
+      "id": "html_content",
+      "nome": "HTML e CSS dentro do relatório (visual personalizado)",
+      "termos": [
+        "html",
+        "css",
+        "tour",
+        "guia",
+        "personalizado"
+      ],
+      "quando": "um texto rico, um tour guiado pela página ou um layout que os visuais nativos não fazem",
+      "deidara": {
+        "gera": true,
+        "argila": {
+          "nome": "Faixa HTML",
+          "tipo": "html_kpis",
+          "medidas": [
+            "Headcount",
+            "Turnover"
+          ]
+        },
+        "visual": {
+          "tipo": "html",
+          "medida": "Faixa HTML"
+        }
+      },
+      "power_bi": "o Deidara gera a medida HTML (um bloco por indicador, com a cor da meta) e o visual HTML Content (versão certificada) já ligado a ela; qualquer medida que devolve HTML também serve",
+      "cuidados": [
+        "visual certificado do AppSource: o administrador do Power BI precisa liberar, e quem abre baixa o visual na primeira vez",
+        "a versão certificada remove script e recursos externos: teste dentro do Power BI, não no navegador",
+        "é o único caminho com visual de terceiros: prefira o cartão novo quando ele resolve"
+      ],
+      "nativo": false,
+      "inspiracao": "Power BI Design Files (Sajjad Ahmadi)"
+    },
+    {
+      "id": "deneb",
+      "nome": "Gráfico declarativo com Vega-Lite (visual personalizado)",
+      "termos": [
+        "deneb",
+        "vega",
+        "vega-lite",
+        "personalizado",
+        "gráfico especial"
+      ],
+      "quando": "um gráfico que não existe nativo (bullet completo, distribuição, slope, small multiples sob medida)",
+      "deidara": {
+        "gera": true,
+        "visual": {
+          "tipo": "vegalite",
+          "categoria": "dCargo[Cargo]",
+          "valores": [
+            "Remuneração Total"
+          ]
+        }
+      },
+      "power_bi": "o Deidara gera o Deneb com a especificação Vega-Lite pronta (pirulito da primeira medida, maior primeiro); \"spec\" troca pela sua",
+      "cuidados": [
+        "visual certificado do AppSource: o administrador do Power BI precisa liberar, e quem abre baixa o visual na primeira vez",
+        "quem mantém o painel precisa saber Vega-Lite: documente a especificação",
+        "os campos da especificação têm o nome que aparece no modelo; os dados vêm de {\"name\": \"dataset\"}"
+      ],
+      "nativo": false,
+      "inspiracao": "Power BI Design Files (Sajjad Ahmadi)"
+    },
+    {
+      "id": "cartao_novo",
+      "nome": "Cartão novo com vários indicadores",
+      "termos": [
+        "cartão",
+        "kpi",
+        "vários",
+        "cartao novo"
+      ],
+      "quando": "mostrar três ou quatro números relacionados no mesmo bloco (real, ano anterior, variação)",
+      "deidara": {
+        "gera": true,
+        "visual": {
+          "tipo": "cartoes",
+          "medidas": [
+            "Desligamentos",
+            "Desligamentos Ano Anterior",
+            "Var. Desligamentos A/A"
+          ]
+        }
+      },
+      "power_bi": "o Deidara gera o Cartão (novo) com as medidas lado a lado",
+      "cuidados": [
+        "até quatro indicadores; mais que isso vira tabela"
+      ],
+      "nativo": true,
+      "inspiracao": "Power BI Design Files (Sajjad Ahmadi)"
+    },
+    {
+      "id": "dispersao",
+      "nome": "Dispersão para comparar duas medidas",
+      "termos": [
+        "dispersão",
+        "scatter",
+        "correlação",
+        "quadrante"
+      ],
+      "quando": "ver quem está alto numa medida e baixo na outra (empresas por headcount e turnover)",
+      "deidara": {
+        "gera": true,
+        "visual": {
+          "tipo": "dispersao",
+          "categoria": "dEmpresa[Empresa]",
+          "x": "Headcount",
+          "y": "Turnover",
+          "tamanho": "Desligamentos"
+        }
+      },
+      "power_bi": "o Deidara gera o gráfico de dispersão com categoria, X, Y e tamanho",
+      "cuidados": [
+        "poucas categorias com nome; muitas viram nuvem sem leitura"
+      ],
+      "nativo": true,
+      "inspiracao": "Power BI Design Files (Sajjad Ahmadi)"
+    },
+    {
+      "id": "area",
+      "nome": "Área para volume acumulado",
+      "termos": [
+        "área",
+        "acumulado",
+        "volume",
+        "evolução"
+      ],
+      "quando": "mostrar a evolução de um total que se acumula (acumulado no ano)",
+      "deidara": {
+        "gera": true,
+        "visual": {
+          "tipo": "area",
+          "categoria": "dCalendario[Mês/Ano]",
+          "valores": [
+            "Desligamentos Acum. Ano"
+          ]
+        }
+      },
+      "power_bi": "o Deidara gera o gráfico de área",
+      "cuidados": [
+        "área empilhada com muitas séries fica ilegível"
+      ],
+      "nativo": true,
+      "inspiracao": "Power BI Design Files (Sajjad Ahmadi)"
+    },
+    {
+      "id": "selo_posicao",
+      "nome": "Selo com a posição no ranking",
+      "termos": [
+        "ranking",
+        "posição",
+        "selo",
+        "top 3"
+      ],
+      "quando": "mostrar a posição de cada linha com destaque para os três primeiros",
+      "deidara": {
+        "gera": true,
+        "argila": {
+          "nome": "Selo da posição",
+          "tipo": "svg_posicao",
+          "medida": "Desligamentos",
+          "categoria": "dCargo[Cargo]"
+        }
+      },
+      "power_bi": "o Deidara gera a medida SVG do selo (e \"posicao\" para o número puro)",
+      "cuidados": [
+        "empate pega a mesma posição (Dense)"
+      ],
+      "nativo": true,
+      "inspiracao": "Power BI Design Files (Sajjad Ahmadi)"
+    },
+    {
+      "id": "tela_de_ajuda",
+      "nome": "Tela de ajuda sobre o painel",
+      "termos": [
+        "ajuda",
+        "modal",
+        "explicação",
+        "como ler"
+      ],
+      "quando": "explicar como ler a página sem sair dela (o que cada visual mostra)",
+      "deidara": {
+        "gera": true,
+        "pagina": {
+          "nome": "Turnover",
+          "ajuda": true
+        }
+      },
+      "power_bi": "página com \"ajuda\": true ganha o botão \"?\" que leva a uma página escondida com uma nota sobre cada visual (título e definição dos indicadores) e o botão Voltar",
+      "cuidados": [
+        "a nota sai das definições: indicador sem descrição deixa a ajuda vazia",
+        "é navegação entre páginas, não indicador (bookmark): funciona igual no Desktop e no serviço"
+      ],
+      "nativo": true,
+      "inspiracao": "Power BI Design Files (Sajjad Ahmadi)"
+    },
+    {
+      "id": "aviso_na_tela",
+      "nome": "Aviso que aparece na tela (toast)",
+      "termos": [
+        "aviso",
+        "alerta",
+        "toast",
+        "notificação"
+      ],
+      "quando": "chamar atenção para um número fora do esperado assim que a página abre",
+      "deidara": {
+        "gera": true,
+        "argila": {
+          "nome": "Aviso do teto",
+          "tipo": "aviso",
+          "medida": "Remuneração Média",
+          "categoria": "dCargo[Cargo]"
+        },
+        "visual": {
+          "tipo": "aviso",
+          "medida": "Aviso do teto"
+        }
+      },
+      "power_bi": "o Deidara gera, com visual nativo (cartão novo), a faixa que avisa quantos e quais estão fora da meta; o fundo fica vermelho claro só quando há aviso",
+      "cuidados": [
+        "a medida precisa de meta",
+        "mostra os três mais distantes da meta; o resto vira \"…\""
+      ],
+      "nativo": false,
+      "inspiracao": "Power BI Design Files (Sajjad Ahmadi)"
+    },
+    {
+      "id": "skyline",
+      "nome": "Colunas \"skyline\" para uma série longa",
+      "termos": [
+        "skyline",
+        "colunas",
+        "muitas",
+        "linha do tempo"
+      ],
+      "quando": "mostrar centenas de pontos no tempo (dias, semanas) sem virar borrão",
+      "deidara": {
+        "gera": true,
+        "visual": {
+          "tipo": "skyline",
+          "categoria": "dCalendario[Mês/Ano]",
+          "legenda": "dMotivo[Motivo]",
+          "valores": [
+            "Desligamentos"
+          ]
+        }
+      },
+      "power_bi": "o Deidara gera as colunas empilhadas com um respiro branco entre os blocos",
+      "cuidados": [
+        "mais de 6 ou 7 blocos por coluna não se lê: agrupe a legenda"
+      ],
+      "nativo": true,
+      "inspiracao": "Power BI Design Files (Sajjad Ahmadi)"
+    },
+    {
+      "id": "barras_com_seta_nativa",
+      "nome": "Setas de variação com gráfico de barras nativo",
+      "termos": [
+        "seta",
+        "variação",
+        "barras",
+        "antes e depois"
+      ],
+      "quando": "o mesmo efeito da seta de variação sem SVG, num gráfico de barras",
+      "deidara": {
+        "gera": true,
+        "visual": {
+          "tipo": "setas",
+          "categoria": "dEmpresa[Empresa]",
+          "medida": "Headcount",
+          "comparar": "Headcount Ano Anterior"
+        }
+      },
+      "power_bi": "o Deidara gera o gráfico de barras nativo com as barras invisíveis e a barra de erro ligando o anterior (ponto cinza) ao atual (ponto colorido), com a variação em percentual",
+      "cuidados": [
+        "a cor da ligação é uma só: a direção aparece pela posição dos pontos e pelo sinal da variação"
+      ],
+      "nativo": true,
+      "inspiracao": "Power BI Design Files (Sajjad Ahmadi)"
+    },
+    {
+      "id": "destaque_dinamico",
+      "nome": "Destaque do item escolhido nas barras",
+      "termos": [
+        "destaque",
+        "selecionado",
+        "realce",
+        "barras"
+      ],
+      "quando": "manter todas as barras visíveis e realçar só a escolhida no segmentador",
+      "deidara": {
+        "gera": true,
+        "argila": {
+          "nome": "Cor do destaque",
+          "tipo": "cor_destaque",
+          "categoria": "dCargo[Cargo]"
+        },
+        "visual": {
+          "tipo": "barras",
+          "categoria": "dCargo[Cargo]",
+          "valores": [
+            "Remuneração Total"
+          ],
+          "cor": "Cor do destaque"
+        }
+      },
+      "power_bi": "o Deidara gera a cópia solta da coluna (tabela Destacar <coluna>) e a medida de cor; um segmentador sobre a cópia escolhe o que acende, sem filtrar o gráfico",
+      "cuidados": [
+        "só vale para gráfico de uma série (sem legenda)",
+        "ponha o segmentador da cópia perto do gráfico"
+      ],
+      "nativo": true,
+      "inspiracao": "Power BI Design Files (Sajjad Ahmadi)"
+    },
+    {
+      "id": "radar_svg",
+      "nome": "Radar em SVG",
+      "termos": [
+        "radar",
+        "aranha",
+        "perfil",
+        "competências"
+      ],
+      "quando": "comparar o perfil de um item em vários eixos (competências, notas)",
+      "deidara": {
+        "gera": true,
+        "argila": {
+          "nome": "Perfil do cargo",
+          "tipo": "svg_radar",
+          "medidas": [
+            "Headcount",
+            "Remuneração Média",
+            "Desligamentos",
+            "Turnover"
+          ],
+          "categoria": "dCargo[Cargo]"
+        },
+        "visual": {
+          "tipo": "tabela",
+          "campos": [
+            "dCargo[Cargo]",
+            "Perfil do cargo",
+            "Headcount",
+            "Turnover"
+          ]
+        }
+      },
+      "power_bi": "o Deidara gera a medida SVG: um eixo por medida (3 a 8), cada um de zero ao maior valor entre as linhas visíveis, e a tabela já sai com a imagem em 64 x 64",
+      "cuidados": [
+        "mais de 6 ou 7 eixos fica ilegível",
+        "radar compara mal valores próximos: mostre os números ao lado (ou prefira barras)",
+        "cada eixo tem a própria escala: o polígono mostra o perfil, não o tamanho absoluto"
+      ],
+      "nativo": true,
+      "inspiracao": "Power BI Design Files (Sajjad Ahmadi)"
+    },
+    {
+      "id": "bolhas_na_matriz",
+      "nome": "Bolhas dentro da matriz",
+      "termos": [
+        "bolhas",
+        "matriz",
+        "mapa de calor",
+        "intensidade"
+      ],
+      "quando": "ver a intensidade de cada cruzamento linha × coluna pelo tamanho de um círculo",
+      "deidara": {
+        "gera": true,
+        "argila": {
+          "nome": "Bolha do custo",
+          "tipo": "svg_bolha",
+          "medida": "Remuneração Total",
+          "categoria": "dCargo[Cargo]",
+          "colunas": "dEmpresa[Empresa]"
+        },
+        "visual": {
+          "tipo": "matriz",
+          "linhas": [
+            "dCargo[Cargo]"
+          ],
+          "colunas": [
+            "dEmpresa[Empresa]"
+          ],
+          "valores": [
+            "Bolha do custo"
+          ]
+        }
+      },
+      "power_bi": "o Deidara gera a medida SVG do círculo (raio pela raiz do valor, a área fica proporcional), no mesmo eixo para a matriz toda; \"categoria\" é a coluna das linhas e \"colunas\" a das colunas da matriz",
+      "cuidados": [
+        "o círculo não mostra o número: deixe o valor no tooltip ou numa tabela ao lado",
+        "no total a célula fica vazia, de propósito"
+      ],
+      "nativo": true,
+      "inspiracao": "Power BI Design Files (Sajjad Ahmadi)"
+    },
+    {
+      "id": "dispersao_com_imagens",
+      "nome": "Dispersão com imagens nos pontos",
+      "termos": [
+        "imagem",
+        "logo",
+        "dispersão",
+        "foto"
+      ],
+      "quando": "reconhecer cada ponto pela imagem (logo do produto, foto da loja)",
+      "deidara": {
+        "gera": true,
+        "argila": {
+          "nome": "Dispersão dos cargos",
+          "tipo": "svg_dispersao",
+          "categoria": "dCargo[Cargo]",
+          "x": "Headcount",
+          "y": "Remuneração Média"
+        },
+        "visual": {
+          "tipo": "imagem",
+          "medida": "Dispersão dos cargos"
+        }
+      },
+      "power_bi": "o Deidara gera a dispersão inteira numa medida SVG, mostrada no cartão novo; cada ponto é a imagem do item (\"imagem\") ou um círculo com as iniciais",
+      "cuidados": [
+        "a imagem de cada ponto precisa vir em data:image/... (base64): link externo não carrega dentro do SVG",
+        "é uma imagem: não tem dica de ferramenta nem clique por ponto"
+      ],
+      "nativo": true,
+      "inspiracao": "Power BI Design Files (Sajjad Ahmadi)"
+    },
+    {
+      "id": "variacao_ibcs",
+      "nome": "Variação no estilo IBCS",
+      "termos": [
+        "ibcs",
+        "variação",
+        "real x plano",
+        "desvio"
+      ],
+      "quando": "mostrar real, plano e desvio com a notação padronizada (real sólido, plano vazado, desvio verde ou vermelho)",
+      "deidara": {
+        "gera": true,
+        "argila": {
+          "nome": "Desvio do quadro",
+          "tipo": "svg_variacao",
+          "medida": "Headcount",
+          "comparar": "Headcount Ano Anterior",
+          "categoria": "dEmpresa[Empresa]"
+        },
+        "visual": {
+          "tipo": "tabela",
+          "campos": [
+            "dEmpresa[Empresa]",
+            "Headcount",
+            "Headcount Ano Anterior",
+            "Desvio do quadro"
+          ]
+        }
+      },
+      "power_bi": "o Deidara gera a medida SVG do desvio (real menos comparação) a partir de um eixo no centro, verde ou vermelho pela polaridade, no mesmo eixo para todas as linhas",
+      "cuidados": [
+        "a notação só funciona se for a mesma em todos os painéis do time",
+        "ponha o real e a comparação ao lado, em número: a barra mostra só o tamanho do desvio"
+      ],
+      "nativo": true,
+      "inspiracao": "Power BI Design Files (Sajjad Ahmadi)"
+    },
+    {
+      "id": "lista_dinamica",
+      "nome": "Lista numerada dinâmica",
+      "termos": [
+        "lista",
+        "top",
+        "texto",
+        "resumo"
+      ],
+      "quando": "resumir os N primeiros num bloco de texto (os 5 produtos que mais venderam)",
+      "deidara": {
+        "gera": true,
+        "argila": {
+          "nome": "Cargos mais caros",
+          "tipo": "lista_top",
+          "medida": "Remuneração Total",
+          "categoria": "dCargo[Cargo]",
+          "n": 5
+        },
+        "visual": {
+          "tipo": "cartao",
+          "medida": "Cargos mais caros"
+        }
+      },
+      "power_bi": "o Deidara gera a medida de texto com TOPN e CONCATENATEX (nome e valor dos N primeiros, separados por ·), para um cartão",
+      "cuidados": [
+        "no Power BI o cartão mostra a lista numa linha só: com muitos itens ou nomes longos, prefira a tabela com melhores e piores",
+        "o texto respeita os filtros da página, como qualquer medida"
+      ],
+      "nativo": true,
+      "inspiracao": "Power BI Design Files (Sajjad Ahmadi)"
+    },
+    {
+      "id": "abas_estilo_ga",
+      "nome": "Abas de indicador no topo da página",
+      "termos": [
+        "abas",
+        "métrica",
+        "escolher indicador",
+        "topo"
+      ],
+      "quando": "trocar o indicador da página inteira por abas, como em ferramentas de análise web",
+      "deidara": {
+        "gera": true,
+        "argila": {
+          "nome": "Indicador escolhido",
+          "tipo": "escolha",
+          "opcoes": {
+            "Pessoas": "Headcount",
+            "Custo": "Remuneração Total"
+          }
+        },
+        "visual": {
+          "tipo": "abas",
+          "medida": "Indicador escolhido"
+        }
+      },
+      "power_bi": "o Deidara gera a tabela das opções, a medida que vale a opção escolhida (com formato dinâmico) e as abas com a barra de destaque em cima da escolhida",
+      "cuidados": [
+        "use a medida \"escolha\" nos gráficos da página: eles mudam com a aba",
+        "até 5 ou 6 abas; mais que isso, use um segmentador"
+      ],
+      "nativo": true,
+      "inspiracao": "Power BI Design Files (Sajjad Ahmadi)"
+    },
+    {
+      "id": "botao_alternar",
+      "nome": "Botão de alternar (liga/desliga)",
+      "termos": [
+        "alternar",
+        "toggle",
+        "ligar",
+        "comparar"
+      ],
+      "quando": "ligar e desligar uma comparação (com ou sem ano anterior) num clique",
+      "deidara": {
+        "gera": true,
+        "argila": {
+          "nome": "Quadro ou custo",
+          "tipo": "alternar",
+          "rotulo": "Ver custo",
+          "desligado": "Headcount",
+          "ligado": "Remuneração Total"
+        },
+        "visual": {
+          "tipo": "alternar",
+          "medida": "Quadro ou custo"
+        }
+      },
+      "power_bi": "o Deidara gera a tabela da chave, a medida que troca de valor e o botão com a imagem da chave desligada e ligada",
+      "cuidados": [
+        "o rótulo diz o que acontece ao ligar (\"Ver custo\"), não o estado"
+      ],
+      "nativo": true,
+      "inspiracao": "Power BI Design Files (Sajjad Ahmadi)"
+    },
+    {
+      "id": "icone_de_selecao",
+      "nome": "Ícone de selecionado no segmentador de botões",
+      "termos": [
+        "ícone",
+        "selecionado",
+        "check",
+        "botões"
+      ],
+      "quando": "mostrar com um ícone qual opção está marcada",
+      "deidara": {
+        "gera": true,
+        "visual": {
+          "tipo": "botoes",
+          "campo": "dEmpresa[Empresa]",
+          "icone": true
+        }
+      },
+      "power_bi": "o Deidara liga o ícone de selecionado do segmentador de botões (cinza em repouso, cor de destaque no escolhido)",
+      "cuidados": [
+        "o ícone só reforça: o botão escolhido continua mudando de cor"
+      ],
+      "nativo": true,
+      "inspiracao": "Power BI Design Files (Sajjad Ahmadi)"
+    },
+    {
+      "id": "itens_com_imagens",
+      "nome": "Segmentador com imagens",
+      "termos": [
+        "imagem",
+        "segmentador",
+        "logo",
+        "produto"
+      ],
+      "quando": "escolher produtos, lojas ou marcas pela imagem",
+      "deidara": {
+        "gera": true,
+        "argila": {
+          "nome": "Iniciais da empresa",
+          "tipo": "svg_iniciais",
+          "categoria": "dEmpresa[Empresa]"
+        },
+        "visual": {
+          "tipo": "botoes",
+          "campo": "dEmpresa[Empresa]",
+          "imagem": "Iniciais da empresa"
+        }
+      },
+      "power_bi": "o Deidara gera a imagem de cada botão por medida (as iniciais, apagadas e acesas); para logo ou foto, use uma medida que devolve a imagem da sua coluna (data:image/... ou link)",
+      "cuidados": [
+        "a imagem vem de uma medida: a mesma coluna das opções precisa estar no segmentador"
+      ],
+      "nativo": true,
+      "inspiracao": "Power BI Design Files (Sajjad Ahmadi)"
+    },
+    {
+      "id": "mapa_com_pizza",
+      "nome": "Mapa com pizzas nos pontos",
+      "termos": [
+        "mapa",
+        "pizza",
+        "composição",
+        "geografia"
+      ],
+      "quando": "mostrar a composição (categorias) em cada local do mapa",
+      "deidara": {
+        "gera": true,
+        "visual": {
+          "tipo": "mapa",
+          "local": "dLocal[Cidade]",
+          "valores": [
+            "Vendas"
+          ],
+          "legenda": "dProduto[Linha]"
+        }
+      },
+      "power_bi": "o Deidara gera o Azure Maps com legenda (Series): cada ponto vira uma pizza com a composição",
+      "cuidados": [
+        "pizza com mais de 3 ou 4 fatias não se lê no mapa",
+        "o Azure Maps precisa estar liberado pelo administrador do Power BI"
+      ],
+      "nativo": true,
+      "inspiracao": "Power BI Design Files (Sajjad Ahmadi)"
+    }
+  ]
+}

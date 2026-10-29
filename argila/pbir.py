@@ -7,10 +7,11 @@ Cada arquivo segue o JSON Schema público da Microsoft que vai no `$schema`
 cada visual vem de `layout.posicionar`, a mesma do protótipo aprovado.
 """
 
+import copy
 import os
 
 from .especificacao import TIPOS_VISUAL, medida
-from .layout import LARGURA, altura_da_pagina, posicionar
+from .modelos import montar, paginas_do_relatorio
 from .prototipo import titulo_do_cartao
 from .util import curto, gravar_json
 
@@ -27,6 +28,15 @@ PAPEIS = {
     'clusteredColumnChart': {'categoria': 'Category', 'legenda': 'Series', 'valores': 'Y'},
     'lineChart': {'categoria': 'Category', 'legenda': 'Series', 'valores': 'Y'},
     'donutChart': {'categoria': 'Category', 'valores': 'Y'},
+    'advancedSlicerVisual': {'categoria': 'Values'},
+    'cardVisual': {'valores': 'Data'},
+    'decompositionTreeVisual': {'valores': 'Analyze', 'linhas': 'ExplainBy'},
+    'areaChart': {'categoria': 'Category', 'legenda': 'Series', 'valores': 'Y'},
+    'azureMap': {'categoria': 'Category', 'legenda': 'Series', 'valores': 'Size'},
+    'scatterChart': {'categoria': 'Category'},          # X, Y e Size saem de "valores", na ordem
+    'columnChart': {'categoria': 'Category', 'legenda': 'Series', 'valores': 'Y'},
+    'htmlContent443BE3AD55E043BF878BED274D3A6865': {'valores': 'content'},
+    'deneb7E15AEF80B9E4D4F8E12924291ECE89A': {'categoria': 'dataset', 'valores': 'dataset'},
 }
 
 
@@ -36,6 +46,10 @@ def _lit(valor):
     if isinstance(valor, (int, float)):
         return {'expr': {'Literal': {'Value': f'{valor}D'}}}
     return {'expr': {'Literal': {'Value': "'" + str(valor).replace("'", "''") + "'"}}}
+
+
+def _int(valor):
+    return {'expr': {'Literal': {'Value': f'{int(valor)}L'}}}
 
 
 def _projecao(campo):
@@ -54,11 +68,165 @@ def _query(v):
         campos = valor if isinstance(valor, list) else ([valor] if valor else [])
         if campos:
             estado.setdefault(papel, {'projections': []})['projections'].extend(_projecao(c) for c in campos)
+    if tipo == 'scatterChart':
+        for papel, c in zip(('X', 'Y', 'Size'), v.get('valores') or []):
+            if c:
+                estado[papel] = {'projections': [_projecao(c)]}
     q = {'queryState': estado}
     if tipo in ('clusteredBarChart', 'donutChart') and v.get('valores'):
-        q['sortDefinition'] = {'sort': [{'field': _projecao(v['valores'][0])['field'], 'direction': 'Descending'}],
+        principal = v['valores'][-1] if v['tipo'] == 'setas' else v['valores'][0]    # setas: ordena pelo atual
+        q['sortDefinition'] = {'sort': [{'field': _projecao(principal)['field'], 'direction': 'Descending'}],
                                'isDefaultSort': True}
     return q
+
+
+def _estilo(m, tipo):
+    """Estilo do tipo de visual no modelo do painel; o layout padrão fica com a formatação do Power BI."""
+    modelo = m.get('modelo') or 'padrao'
+    if modelo == 'padrao':
+        return None
+    from .dicionario import estilos
+    dados = estilos()
+    return (dados['modelos'].get(modelo) or {}).get(tipo) or dados['base'].get(tipo)
+
+
+def _medida_expr(m, nome):
+    md = medida(m, nome)
+    return {'expr': {'Measure': {'Expression': {'SourceRef': {'Entity': md['tabela']}}, 'Property': md['nome']}}}
+
+
+def _filtro_padrao(tabela, coluna, valor):
+    """O valor que já vem selecionado no segmentador (a primeira aba)."""
+    return {'filter': {'Version': 2, 'From': [{'Name': 'o', 'Entity': tabela, 'Type': 0}],
+                       'Where': [{'Condition': {'In': {
+                           'Expressions': [{'Column': {'Expression': {'SourceRef': {'Source': 'o'}}, 'Property': coluna}}],
+                           'Values': [[_lit(valor)['expr']]]}}}]}}
+
+
+def _imagens_por_estado(m, apagada, acesa):
+    """A imagem de cada botão vem de uma medida: uma para o botão em repouso, outra para o selecionado."""
+    base = {'sourceType': _lit('imageUrl'), 'enhancedFit': _lit('Fit'), 'show': _lit(True), 'padding': _int(4)}
+    out = []
+    for estado, nome in (('interaction:rest', apagada), ('interaction:hover', acesa), ('selection:selected', acesa)):
+        out += [{'properties': base, 'selector': {'id': estado}},
+                {'properties': {'url': _medida_expr(m, nome)},
+                 'selector': {'data': [{'dataViewWildcard': {'matchingOption': 1}}], 'id': estado, 'hierarchyMatching': 1}}]
+    return out
+
+
+def _tecnicas(m, v, vis, container, pos):
+    """A formatação das técnicas do Power BI Design Files que saem prontas (dicionario/visuais.json)."""
+    objs = vis.setdefault('objects', {})
+    acento = m['tema']['cores'][0]
+    if v['tipo'] == 'abas':                  # abas: uma por opção, barra de destaque em cima da escolhida
+        alvo = medida(m, v['controla'])
+        rotulos = alvo['extra']['rotulos']
+        objs['layout'] = [{'properties': {'autoGrid': _lit(False), 'rowCount': _int(1), 'columnCount': _int(len(rotulos)),
+                                          'cellPadding': _int(4)}}]
+        objs['selection'] = [{'properties': {'strictSingleSelect': _lit(True)}}]
+        objs['fillCustom'] = [{'properties': {'show': _lit(False)}, 'selector': {'id': 'default'}},
+                              {'properties': {'show': _lit(True), 'fillColor': {'solid': {'color': _lit(acento)}},
+                                              'transparency': _lit(90)}, 'selector': {'id': 'selection:selected'}}]
+        objs['outline'] = [{'properties': {'show': _lit(False)}, 'selector': {'id': 'default'}}]
+        objs['accentBar'] = [{'properties': {'show': _lit(False), 'position': _lit('Top')}, 'selector': {'id': 'default'}},
+                             {'properties': {'show': _lit(True), 'color': {'solid': {'color': _lit(acento)}},
+                                             'width': _lit(5)}, 'selector': {'id': 'selection:selected'}}]
+        objs['general'] = [{'properties': _filtro_padrao(alvo['extra']['tabela'], alvo['extra']['coluna'], rotulos[0])}]
+        objs['value'] = [{'properties': {'fontColor': {'solid': {'color': _lit(m['tema']['texto'])}}, 'fontSize': _lit(14)},
+                          'selector': {'id': 'default'}},
+                         {'properties': {'fontColor': {'solid': {'color': _lit(acento)}}, 'bold': _lit(True)},
+                          'selector': {'id': 'selection:selected'}}]
+    elif v['tipo'] == 'alternar':            # chave liga/desliga: um botão só, com a imagem de cada estado
+        objs['layout'] = [{'properties': {'autoGrid': _lit(False), 'rowCount': _int(1), 'columnCount': _int(1),
+                                          'cellPadding': _int(2)}}]
+        objs['selection'] = [{'properties': {'singleSelect': _lit(True)}}]
+        objs['value'] = [{'properties': {'fontColor': {'solid': {'color': _lit(m['tema']['texto'])}}, 'fontSize': _lit(13)},
+                          'selector': {'id': 'default'}}]               # o rótulo ("Ver custo") ao lado da chave
+        objs['fillCustom'] = [{'properties': {'show': _lit(False)}, 'selector': {'id': 'default'}}]
+        objs['outline'] = [{'properties': {'show': _lit(False)}, 'selector': {'id': 'default'}}]
+        desligada, ligada = medida(m, v['controla'])['chave']
+        objs['image'] = _imagens_por_estado(m, desligada, ligada)
+        container['title'] = [{'properties': {'show': _lit(False)}}]
+    elif v['tipo'] == 'botoes':
+        if v.get('icone'):                   # o ícone de "selecionado" no próprio botão
+            objs['selectionIcon'] = [
+                {'properties': {'show': _lit(True)}},
+                {'properties': {'size': _int(15), 'spacing': _int(6)}, 'selector': {'id': 'default'}},
+                {'properties': {'color': {'solid': {'color': _lit('#A19F9D')}}}, 'selector': {'id': 'interaction:rest'}},
+                {'properties': {'color': {'solid': {'color': _lit(acento)}}}, 'selector': {'id': 'selection:selected'}}]
+        if v.get('imagem'):                  # uma imagem por item, da medida (apagada) e da (ligado), se houver
+            img = medida(m, v['imagem'])
+            ligada = medida(m, img.get('ligado') or '') or img
+            objs['image'] = _imagens_por_estado(m, img['nome'], ligada['nome'])
+    elif v['tipo'] == 'skyline':             # blocos empilhados com um respiro entre eles
+        objs['layout'] = [{'properties': {'stackedGapSize': _lit(3), 'stackedGapExplodes': _lit(False)}}]
+        objs['categoryAxis'] = [{'properties': {'innerPadding': _int(8), 'showAxisTitle': _lit(False)}}]
+        objs['valueAxis'] = [{'properties': {'showAxisTitle': _lit(False)}}]
+        objs['dataPoint'] = [{'properties': {'borderShow': _lit(True), 'borderColorMatchFill': _lit(False),
+                                             'borderColor': {'solid': {'color': _lit('#FFFFFF')}}, 'borderSize': _lit(1)}}]
+    elif v['tipo'] == 'setas':               # barras invisíveis; a barra de erro liga o anterior (cinza) ao atual
+        ant, atual = v['valores']
+        qa, qb = f'{ant["tabela"]}.{ant["nome"]}', f'{atual["tabela"]}.{atual["nome"]}'
+        def ate(nome):                       # a barra de erro vai do valor da série até o limite; o marcador fica no limite
+            return {'errorRange': {'kind': 'ErrorRange', 'explicit': {
+                'isRelative': _lit(False), 'lowerBound': _medida_expr(m, nome), 'upperBound': _medida_expr(m, nome)}}}
+        todos = [{'dataViewWildcard': {'matchingOption': 0}}]
+        objs['dataPoint'] = [{'properties': {'fillTransparency': _lit(100)}}]
+        objs['layout'] = [{'properties': {'clusteredGapSize': _lit(100), 'clusteredGapOverlaps': _lit(True)}}]
+        objs['legend'] = [{'properties': {'show': _lit(False)}}]
+        objs['valueAxis'] = [{'properties': {'showAxisTitle': _lit(False), 'gridlineShow': _lit(True),
+                                             'gridlineColor': {'solid': {'color': _lit('#E1E1E1')}}}}]
+        objs['categoryAxis'] = [{'properties': {'showAxisTitle': _lit(False), 'innerPadding': _int(53)}}]
+        objs['error'] = [                    # do atual até o anterior: ponto cinza no anterior
+            {'properties': {'enabled': _lit(True), 'markerSize': _lit(8), 'markerShape': _lit('circle'),
+                            'barColor': {'solid': {'color': _lit('#A19F9D')}}, 'barWidth': _int(2), 'barBorderSize': _int(0),
+                            'labelShow': _lit(False)}, 'selector': {'metadata': qb}},
+            {'properties': ate(ant['nome']), 'selector': {'data': todos, 'metadata': qb, 'highlightMatching': 1}},
+            # do anterior até o atual: ponto colorido no atual, com a variação em percentual
+            {'properties': {'enabled': _lit(True), 'markerSize': _lit(9), 'markerShape': _lit('circle'),
+                            'barColor': {'solid': {'color': _lit(acento)}}, 'barWidth': _int(3), 'barBorderSize': _int(0),
+                            'labelShow': _lit(True), 'labelFormat': _lit('relativePercentage'),
+                            'labelMatchSeriesColor': _lit(False)}, 'selector': {'metadata': qa}},
+            {'properties': ate(atual['nome']), 'selector': {'data': todos, 'metadata': qa, 'highlightMatching': 1}}]
+    elif v['tipo'] == 'imagem':              # a medida SVG ocupa o cartão novo inteiro
+        objs['value'] = [{'properties': {'show': _lit(False)}}]
+        objs['label'] = [{'properties': {'show': _lit(False)}, 'selector': {'id': 'default'}}]
+        objs['image'] = [{'properties': {'show': _lit(True), 'imageType': _lit('imageUrl'),
+                                         'imageUrl': _medida_expr(m, v['valores'][0]['nome']), 'imageAreaSize': _int(100),
+                                         'padding': _int(0), 'position': _lit('Left')}, 'selector': {'id': 'default'}}]
+    elif v['tipo'] == 'aviso':               # a faixa de aviso: texto vermelho, fundo vermelho claro só quando avisa
+        objs['value'] = [{'properties': {'fontSize': _lit(14), 'fontColor': {'solid': {'color': _lit('#A4262C')}},
+                                         'horizontalAlignment': _lit('left')}, 'selector': {'id': 'default'}}]
+        objs['label'] = [{'properties': {'show': _lit(False)}, 'selector': {'id': 'default'}}]
+        container['title'] = [{'properties': {'show': _lit(False)}}]
+        if v.get('cor_fundo'):
+            container['background'] = [{'properties': {'show': _lit(True), 'transparency': _lit(0),
+                                                       'color': _cor_da_medida(m, v['cor_fundo'])}}]
+    elif v['tipo'] == 'vegalite':            # Deneb: a especificação Vega-Lite vai pronta
+        objs['vega'] = [{'properties': {'provider': _lit('vegaLite'), 'renderMode': _lit('svg'),
+                                        'jsonSpec': _lit(_spec_vegalite(v)), 'jsonConfig': _lit('{}'),
+                                        'isNewDialogOpen': _lit(False)}}]
+    if v.get('cor'):                         # cor de cada barra pela medida (o destaque do item escolhido)
+        objs['dataPoint'] = [{'properties': {'fill': _cor_da_medida(m, v['cor'])},
+                              'selector': {'data': [{'dataViewWildcard': {'matchingOption': 1}}]}}]
+    if not objs:
+        vis.pop('objects')
+
+
+def _spec_vegalite(v):
+    """Pirulito (linha e ponto) da primeira medida por categoria, maior primeiro; a segunda medida vira o tamanho."""
+    import json
+    if v.get('spec'):
+        return v['spec'] if isinstance(v['spec'], str) else json.dumps(v['spec'], ensure_ascii=False)
+    cat, val = v['categoria']['nome'], v['valores'][0]['nome']
+    ordem = {'field': val, 'order': 'descending'}
+    spec = {'$schema': 'https://vega.github.io/schema/vega-lite/v5.json', 'data': {'name': 'dataset'},
+            'encoding': {'y': {'field': cat, 'type': 'nominal', 'sort': ordem, 'title': None},
+                         'x': {'field': val, 'type': 'quantitative', 'title': None}},
+            'layer': [{'mark': {'type': 'rule', 'color': '#C8C6C4'}},
+                      {'mark': {'type': 'circle', 'size': 160, 'opacity': 1}},
+                      {'mark': {'type': 'text', 'align': 'left', 'dx': 10}, 'encoding': {'text': {'field': val, 'format': ',.0f'}}}]}
+    return json.dumps(spec, ensure_ascii=False)
 
 
 def _cor_da_medida(m, nome_cor):
@@ -67,13 +235,14 @@ def _cor_da_medida(m, nome_cor):
                                                      'Property': md['nome']}}}}}
 
 
-def visual(m, v, pos, nome, ordem):
+def visual(m, v, pos, nome, ordem, transparente=False):
     tipo = TIPOS_VISUAL[v['tipo']]
-    container = {'title': [{'properties': {'show': _lit(True), 'text': _lit(v['titulo'])}}]}
+    container = {'title': [{'properties': {'show': _lit(bool(v['titulo'])), 'text': _lit(v['titulo'] or '')}}]}
     vis = {'visualType': tipo, 'query': _query(v), 'visualContainerObjects': container,
            'drillFilterOtherVisuals': True}
     if tipo == 'slicer':
-        vis['objects'] = {'data': [{'properties': {'mode': _lit('Dropdown')}}]}
+        vis['objects'] = {'data': [{'properties': {'mode': _lit('Dropdown')}}],
+                          'header': [{'properties': {'show': _lit(False)}}]}
     if tipo == 'card':
         meta = titulo_do_cartao(m, v)
         rotulo = (medida(m, v['valores'][0]['nome']) or {}).get('rotulo_meta')
@@ -91,6 +260,51 @@ def visual(m, v, pos, nome, ordem):
                                'selector': {'metadata': f'{c["tabela"]}.{c["nome"]}'}})
         if regras:
             vis['objects'] = {'values': regras}
+        if any(c and c['tipo'] == 'medida' and (medida(m, c['nome']) or {}).get('imagem') for c in v['campos'] + v['valores']):
+            # medida SVG (Image URL): o tamanho padrão da imagem na tabela é pequeno demais para a barra
+            tipos_img = {(medida(m, c['nome']) or {}).get('tipo') for c in v['campos'] + v['valores'] if c and c['tipo'] == 'medida'}
+            alto, largo = (64, 64) if 'svg_radar' in tipos_img else (24, 24) if tipos_img & {'svg_bolha'} else (24, 180)
+            vis.setdefault('objects', {})['grid'] = [{'properties': {'imageHeight': _lit(alto), 'imageWidth': _lit(largo)}}]
+    if tipo == 'advancedSlicerVisual':       # botões: uma linha se o espaço é largo, duas se é estreito; sem título repetido
+        minimo = 130 if v.get('imagem') or v.get('icone') else 80   # ícone e imagem tomam parte do botão
+        colunas = max(2, min(7, int(pos['w'] // minimo)))       # cada botão com pelo menos 80 px (130 com imagem)
+        vis['objects'] = {'layout': [{'properties': {'autoGrid': _lit(False), 'rowCount': _int(1 if colunas >= 7 or pos['h'] < 90 else 2),
+                                                     'columnCount': _int(colunas), 'cellPadding': _int(6)}}],
+                          # o botão é claro por padrão: o texto segue a cor de texto do tema, nunca a do estilo de origem
+                          'value': [{'properties': {'fontColor': {'solid': {'color': _lit(m['tema']['texto'])}},
+                                                    'fontSize': _lit(12 if pos['h'] < 90 else 14)}}]}
+        container['title'] = [{'properties': {'show': _lit(False)}}]
+        if pos['h'] < 90:                    # faixa baixa (canto dos filtros): o respiro de 20 px do estilo de origem
+            container['padding'] = [{'properties': {k: _lit(2) for k in ('top', 'bottom', 'left', 'right')}}]
+            vis['objects']['padding'] = [{'properties': {'paddingSelection': _lit('Custom'), 'topMargin': _int(2),
+                                                         'bottomMargin': _int(2), 'leftMargin': _int(6), 'rightMargin': _int(6)},
+                                          'selector': {'id': 'default'}}]                      # não deixa o botão cortar o texto
+    meta = v.get('meta') and medida(m, v['meta']['nome'])
+    if tipo in ('clusteredBarChart', 'clusteredColumnChart', 'lineChart', 'areaChart') and meta and meta.get('tipo') == 'meta':
+        vis.setdefault('objects', {})['y1AxisReferenceLine'] = [{'properties': {
+            'show': _lit(True), 'displayName': _lit('Meta'), 'value': _lit(float(meta['dax'])),
+            'lineColor': {'solid': {'color': _lit('#252423')}}, 'style': _lit('dashed'),
+            'dataLabelShow': _lit(True)}, 'selector': {'id': '1'}}]
+    if tipo == 'cardVisual':                 # número do cartão novo legível em qualquer estilo de origem
+        vis['objects'] = {'value': [{'properties': {'fontSize': _lit(max(16, min(30, round(pos['h'] / 4))))}}]}
+    if transparente:                         # o fundo desenhado da página faz o painel (referencias/modelos.md)
+        container['background'] = [{'properties': {'show': _lit(False)}}]
+    _tecnicas(m, v, vis, container, pos)
+    est = _estilo(m, tipo)
+    if est:                                  # a formatação do dashboard de origem do modelo (dicionario/estilos.json)
+        objetos = copy.deepcopy(est['objects'])
+        objetos.update(vis.get('objects') or {})
+        if objetos:
+            vis['objects'] = objetos
+        cont = copy.deepcopy(est['container'])
+        for k, valor in container.items():
+            if k == 'title' and cont.get('title'):
+                props = dict(cont['title'][0]['properties'])
+                props.update(valor[0]['properties'])
+                cont['title'] = [{'properties': props}]
+            else:
+                cont[k] = valor
+        vis['visualContainerObjects'] = cont
     return {
         '$schema': f'{S}/visualContainer/2.0.0/schema.json',
         'name': nome,
@@ -102,10 +316,92 @@ def visual(m, v, pos, nome, ordem):
 
 def _tema(m):
     t = m['tema']
-    return {'name': 'Deidara', 'dataColors': t['cores'], 'background': t['fundo'], 'foreground': t['texto'],
+    tema = {'name': 'Deidara', 'dataColors': t['cores'], 'background': t['fundo'], 'foreground': t['texto'],
             'tableAccent': t['cores'][0],
             'textClasses': {'title': {'fontFace': 'Segoe UI Semibold', 'fontSize': 12, 'color': t['texto']},
                             'callout': {'fontFace': 'Segoe UI Semibold', 'fontSize': 32, 'color': t['texto']}}}
+    if (m.get('modelo') or 'padrao') != 'padrao':     # página de 1920: letras maiores, como nos modelos de origem
+        tema['textClasses'] = {'title': {'fontFace': 'Segoe UI Semibold', 'fontSize': 16, 'color': t['texto']},
+                               'callout': {'fontFace': 'Segoe UI Semibold', 'fontSize': 44, 'color': t['texto']},
+                               'header': {'fontFace': 'Segoe UI Semibold', 'fontSize': 14, 'color': t['texto']},
+                               'label': {'fontFace': 'Segoe UI', 'fontSize': 13, 'color': t['texto']}}
+    return tema
+
+
+def botao(n, destino, nome, ordem):
+    """Botão transparente sobre o desenho da navegação, que leva a outra página."""
+    return {
+        '$schema': f'{S}/visualContainer/2.0.0/schema.json',
+        'name': nome,
+        'position': {'x': n['x'], 'y': n['y'], 'z': 90000 + ordem, 'width': n['w'], 'height': n['h'],
+                     'tabOrder': 90000 + ordem},
+        'visual': {
+            'visualType': 'actionButton',
+            'objects': {'icon': [{'properties': {'shapeType': _lit('blank')}, 'selector': {'id': 'default'}},
+                                 {'properties': {'show': _lit(False)}}],
+                        'outline': [{'properties': {'show': _lit(False)}}],
+                        'fill': [{'properties': {'show': _lit(False)}}]},
+            'visualContainerObjects': {'visualLink': [{'properties': {
+                'show': _lit(True), 'type': _lit('PageNavigation'), 'navigationSection': _lit(destino),
+                'tooltip': _lit(n['rotulo'])}}]},
+            'drillFilterOtherVisuals': True},
+        'howCreated': 'InsertVisualButton',
+    }
+
+
+def _texto(nome, pos, paragrafos, z, fundo='#FFFFFF'):
+    """Caixa de texto (a nota da tela de ajuda)."""
+    corpo = []
+    for k, t in enumerate(paragrafos):
+        estilo = {'fontWeight': 'bold', 'fontSize': '13pt'} if k == 0 else {'fontSize': '11pt'}
+        corpo.append({'textRuns': [{'value': t, 'textStyle': dict(estilo, color='#252423')}]})
+    return {'$schema': f'{S}/visualContainer/2.0.0/schema.json', 'name': nome,
+            'position': {'x': pos['x'], 'y': pos['y'], 'z': z, 'width': pos['w'], 'height': pos['h'], 'tabOrder': z},
+            'visual': {'visualType': 'textbox', 'objects': {'general': [{'properties': {'paragraphs': corpo}}]},
+                       'visualContainerObjects': {
+                           'background': [{'properties': {'show': _lit(True), 'color': {'solid': {'color': _lit(fundo)}},
+                                                          'transparency': _lit(4)}}],
+                           'border': [{'properties': {'show': _lit(True), 'color': {'solid': {'color': _lit('#118DFF')}},
+                                                      'radius': _lit(8)}}]},
+                       'drillFilterOtherVisuals': True}}
+
+
+def _botao_ajuda(nome, pos, destino, icone, rotulo, z):
+    return {'$schema': f'{S}/visualContainer/2.0.0/schema.json', 'name': nome,
+            'position': {'x': pos['x'], 'y': pos['y'], 'z': z, 'width': pos['w'], 'height': pos['h'], 'tabOrder': z},
+            'visual': {'visualType': 'actionButton',
+                       'objects': {'icon': [{'properties': {'shapeType': _lit(icone), 'lineWeight': _int(2)},
+                                             'selector': {'id': 'default'}}],
+                                   'text': [{'properties': {'show': _lit(icone == 'back')}},
+                                            {'properties': {'text': _lit(rotulo)}, 'selector': {'id': 'default'}}]},
+                       'visualContainerObjects': {'visualLink': [{'properties': {
+                           'show': _lit(True), 'type': _lit('PageNavigation'), 'navigationSection': _lit(destino),
+                           'tooltip': _lit(rotulo)}}]},
+                       'drillFilterOtherVisuals': True},
+            'howCreated': 'InsertVisualButton'}
+
+
+def _nota_de_ajuda(m, v):
+    """O que a nota da ajuda diz sobre o visual: o título e o que cada medida significa."""
+    from .especificacao import _medidas_do_visual
+    linhas = [v.get('titulo') or (v['categoria']['nome'] if v.get('categoria') else v['tipo'])]
+    if v.get('categoria') and v['tipo'] in ('segmentador', 'botoes', 'abas', 'alternar'):
+        linhas.append(f'Escolha aqui para filtrar a página por {v["categoria"]["nome"]}.' if v['tipo'] in
+                      ('segmentador', 'botoes') else 'Troque o indicador que os visuais mostram.')
+    for x in _medidas_do_visual(v)[:2]:
+        d = (medida(m, x['nome']) or {}).get('descricao')
+        if d:
+            linhas.append(f'{x["nome"]}: {d}')
+    return linhas
+
+
+def _fundo_da_pagina(arquivo):
+    return {'background': [{'properties': {
+        'image': {'image': {'name': _lit(arquivo),
+                            'url': {'expr': {'ResourcePackageItem': {'PackageName': 'RegisteredResources', 'PackageType': 1,
+                                                                     'ItemName': arquivo}}},
+                            'scaling': _lit('Fit')}},
+        'transparency': {'expr': {'Literal': {'Value': '0D'}}}}}]}
 
 
 def gravar(m, pasta_projeto, nome):
@@ -120,28 +416,42 @@ def gravar(m, pasta_projeto, nome):
     tema_dir = os.path.join(raiz, 'StaticResources', 'RegisteredResources')
     os.makedirs(tema_dir, exist_ok=True)
     gravar_json(os.path.join(tema_dir, 'Deidara.json'), _tema(m))
-    gravar_json(os.path.join(defi, 'report.json'), {
-        '$schema': f'{S}/report/1.0.0/schema.json',
-        'themeCollection': {'customTheme': {'name': 'Deidara.json', 'reportVersionAtImport': '5.59',
-                                            'type': 'RegisteredResources'}},
-        'layoutOptimization': 'None',
-        'resourcePackages': [{'name': 'RegisteredResources', 'type': 'RegisteredResources',
-                              'items': [{'name': 'Deidara.json', 'path': 'Deidara.json', 'type': 'CustomTheme'}]}],
-        'settings': {'useStylableVisualContainerHeader': True, 'defaultDrillFilterOtherVisuals': True,
-                     'allowChangeFilterTypes': True, 'useEnhancedTooltips': True},
-    })
-    ordem = []
-    for i, pg in enumerate(m['paginas']):
-        pid = curto('pagina', pg['nome'])
-        ordem.append(pid)
+    rel = paginas_do_relatorio(m)
+    ordem = [curto('pagina', pg['nome']) for pg in rel]
+    imagens, ajudas = [], []
+    visuais = [v for pg in m['paginas'] for v in pg['visuais']]
+    for i, pg in enumerate(rel):
+        pid = ordem[i]
         pdir = os.path.join(defi, 'pages', pid)
         os.makedirs(pdir, exist_ok=True)
-        posicoes = posicionar(pg['visuais'])
-        gravar_json(os.path.join(pdir, 'page.json'), {
-            '$schema': f'{S}/page/2.0.0/schema.json', 'name': pid, 'displayName': pg['nome'],
-            'displayOption': 'FitToWidth' if altura_da_pagina(posicoes) > 720 else 'FitToPage',
-            'height': altura_da_pagina(posicoes), 'width': LARGURA})
+        lay = montar(m, rel, i)
+        alto = 720 if lay['w'] <= 1280 else 1080
+        page = {'$schema': f'{S}/page/2.0.0/schema.json', 'name': pid, 'displayName': pg['nome'],
+                'displayOption': 'FitToWidth' if lay['h'] > alto else 'FitToPage',
+                'height': lay['h'], 'width': lay['w']}
+        if pg['oculta']:
+            page['visibility'] = 'HiddenInViewMode'
+        if lay['fundo']:
+            arquivo = f'fundo_{pid}.svg'
+            with open(os.path.join(tema_dir, arquivo), 'w', encoding='utf-8', newline='\n') as f:
+                f.write(lay['fundo'])
+            imagens.append(arquivo)
+            page['objects'] = _fundo_da_pagina(arquivo)
+        gravar_json(os.path.join(pdir, 'page.json'), page)
+        for k, n in enumerate(lay['nav']):
+            bid = curto('navegacao', pg['nome'], str(k))
+            os.makedirs(os.path.join(pdir, 'visuals', bid), exist_ok=True)
+            gravar_json(os.path.join(pdir, 'visuals', bid, 'visual.json'), botao(n, ordem[n['alvo']], bid, k))
+        if pg.get('ajuda'):                    # tela de ajuda: o botão "?" leva a uma página escondida com as notas
+            aid = curto('ajuda', pg['nome'])
+            ajudas.append((pg, lay, aid, pid, page.get('objects')))
+            bid = curto('botao_ajuda', pg['nome'])
+            os.makedirs(os.path.join(pdir, 'visuals', bid), exist_ok=True)
+            gravar_json(os.path.join(pdir, 'visuals', bid, 'visual.json'),
+                        _botao_ajuda(bid, {'x': lay['w'] - 64, 'y': lay['h'] - 104, 'w': 44, 'h': 44}, aid, 'help',
+                                     'Como ler esta página', 95000))
         usados = set()
+        posicoes = [(dict(v, titulo='') if id(v) in lay['sem_titulo'] else v, p) for v, p in lay['posicoes']]
         for k, (v, pos) in enumerate(posicoes):
             vid = v.get('id') or curto('visual', pg['nome'], v['tipo'], v['titulo'] or '')
             n = 1
@@ -151,7 +461,37 @@ def gravar(m, pasta_projeto, nome):
             usados.add(vid)
             vdir = os.path.join(pdir, 'visuals', vid)
             os.makedirs(vdir, exist_ok=True)
-            gravar_json(os.path.join(vdir, 'visual.json'), visual(m, v, pos, vid, k))
+            gravar_json(os.path.join(vdir, 'visual.json'), visual(m, v, pos, vid, k, transparente=bool(lay['fundo'])))
+    for pg, lay, aid, pid, fundo in ajudas:
+        adir = os.path.join(defi, 'pages', aid)
+        os.makedirs(adir, exist_ok=True)
+        page = {'$schema': f'{S}/page/2.0.0/schema.json', 'name': aid, 'displayName': f'Ajuda · {pg["nome"]}',
+                'displayOption': 'FitToPage', 'height': lay['h'], 'width': lay['w'], 'visibility': 'HiddenInViewMode'}
+        if fundo:
+            page['objects'] = fundo
+        gravar_json(os.path.join(adir, 'page.json'), page)
+        for k, (v, pos) in enumerate(lay['posicoes']):
+            tid = curto('nota', pg['nome'], str(k))
+            os.makedirs(os.path.join(adir, 'visuals', tid), exist_ok=True)
+            gravar_json(os.path.join(adir, 'visuals', tid, 'visual.json'), _texto(tid, pos, _nota_de_ajuda(m, v), k * 1000))
+        vid = curto('voltar', pg['nome'])
+        os.makedirs(os.path.join(adir, 'visuals', vid), exist_ok=True)
+        gravar_json(os.path.join(adir, 'visuals', vid, 'visual.json'),
+                    _botao_ajuda(vid, {'x': lay['w'] - 184, 'y': 16, 'w': 164, 'h': 44}, pid, 'back', 'Voltar', 95000))
+        ordem.append(aid)
+    terceiros = sorted({TIPOS_VISUAL[v['tipo']] for v in visuais if v['tipo'] in ('html', 'vegalite')})
+    gravar_json(os.path.join(defi, 'report.json'), {
+        '$schema': f'{S}/report/1.0.0/schema.json',
+        'themeCollection': {'customTheme': {'name': 'Deidara.json', 'reportVersionAtImport': '5.59',
+                                            'type': 'RegisteredResources'}},
+        'layoutOptimization': 'None',
+        'resourcePackages': [{'name': 'RegisteredResources', 'type': 'RegisteredResources',
+                              'items': [{'name': 'Deidara.json', 'path': 'Deidara.json', 'type': 'CustomTheme'}]
+                              + [{'name': a, 'path': a, 'type': 'Image'} for a in imagens]}],
+        'settings': {'useStylableVisualContainerHeader': True, 'defaultDrillFilterOtherVisuals': True,
+                     'allowChangeFilterTypes': True, 'useEnhancedTooltips': True},
+        **({'publicCustomVisuals': terceiros} if terceiros else {}),
+    })
     gravar_json(os.path.join(defi, 'pages', 'pages.json'), {
         '$schema': f'{S}/pagesMetadata/1.0.0/schema.json', 'pageOrder': ordem, 'activePageName': ordem[0]})
     return raiz

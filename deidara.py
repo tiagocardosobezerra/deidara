@@ -42,6 +42,7 @@ Uso:
     python3 deidara.py diff      argila.json [--contra OUTRO.json]
     python3 deidara.py funcoes   buscar "acumulado" | ver SAMEPERIODLASTYEAR [--linguagem dax|m]
     python3 deidara.py padroes   [turnover | taxa | estoque | ...]
+    python3 deidara.py visuais   [meta | ranking | causa | status | ...]
     python3 deidara.py status
 
 O argila.json lista as fontes em "fontes" ({"erp": {"catalogo": "catalogos/erp.json"}}),
@@ -667,6 +668,34 @@ def cmd_padroes(a):
     return 0
 
 
+def cmd_visuais(a):
+    achados = dicionario.visuais_para(a.termo or '')
+    if not achados:
+        print(f'Nenhuma técnica para "{a.termo}". Sem assunto, `deidara.py visuais` lista todas.')
+        return 1
+    for v in achados:
+        selo = 'o Deidara gera' if v['deidara'].get('gera') else ('nativo' if v['nativo'] else 'visual personalizado')
+        print(f'\n{v["nome"]}  [{v["id"]}] · {selo}')
+        print(f'  Quando: {v["quando"]}')
+        if v['deidara'].get('argila'):
+            print(f'  argila.json (medida): {json.dumps(v["deidara"]["argila"], ensure_ascii=False)}')
+        if v['deidara'].get('visual'):
+            print(f'  argila.json (visual): {json.dumps(v["deidara"]["visual"], ensure_ascii=False)}')
+        print(f'  No Power BI: {v["power_bi"]}')
+        for x in v.get('cuidados') or []:
+            print(f'  Atenção: {x}')
+    print('\nGuia de design: referencias/design.md · medidas SVG: referencias/svg.md')
+    return 0
+
+
+def cmd_modelos(a):
+    from argila.modelos import MODELOS
+    print('Modelos de layout ("modelo" no argila.json; ver referencias/modelos.md):')
+    for k, v in MODELOS.items():
+        print(f'  {k:<20} {v}')
+    return 0
+
+
 def cmd_validar(a):
     _, _, modelo, problemas, _ = _carregar(a.argila)
     if a.json:
@@ -782,6 +811,9 @@ def cmd_gerar(a):
         'version': '1.0', 'artifacts': [{'report': {'path': f'{nome}.Report'}}],
         'settings': {'enableAutoRecovery': True}})
     gravar_texto(os.path.join(pasta, '.gitignore'), '**/.pbi/localSettings.json\n**/.pbi/cache.abf\n')
+    if a.demo:
+        from argila import demo
+        modelo['_demo'] = demo.expressoes(modelo)
     tmdl.gravar(modelo, pasta, nome)
     pbir.gravar(modelo, pasta, nome)
     for f in sql.fontes_sql(modelo):
@@ -794,13 +826,20 @@ def cmd_gerar(a):
     gravar_texto(os.path.join(pasta, 'docs', 'dicionario_indicadores.md'),
                  docs.dicionario(modelo, aprov.get('historico') or []))
     gravar_texto(os.path.join(pasta, 'docs', 'medidas.dax'), docs.medidas_dax(modelo))
-    gravar_texto(os.path.join(pasta, 'LEIA-ME.md'), docs.leia_me(modelo, nome, aprov, problemas.avisos))
+    leia = docs.leia_me(modelo, nome, aprov, problemas.avisos)
+    if a.demo:
+        leia = ('> **DEMONSTRAÇÃO.** Este projeto traz linhas fictícias embutidas (geradas pelo Deidara, sem fonte de '
+                'dados): abra o .pbip, clique em **Atualizar** e todos os números são calculados pelo Power BI. Serve '
+                'para testar e mostrar o painel; para o painel real, gere de novo sem `--demo`.\n\n') + leia
+    gravar_texto(os.path.join(pasta, 'LEIA-ME.md'), leia)
     gravar_texto(os.path.join(pasta, 'HOMOLOGACAO.md'), docs.homologacao(modelo, nome, aprov))
     gravar_texto(os.path.join(pasta, 'prototipo.html'), prototipo.gerar_html(modelo, problemas, VERSAO))
     aprov['ultima_geracao'] = {'em': datetime.datetime.now().strftime('%d/%m/%Y %H:%M'), 'pasta': os.path.abspath(pasta),
                                'deidara': VERSAO}
     gravar_json(arq, aprov)
-    print(f'Katsu! Projeto gerado em {pasta}')
+    print(f'Katsu! Projeto {"de DEMONSTRAÇÃO (linhas fictícias embutidas) " if a.demo else ""}gerado em {pasta}')
+    if a.demo:
+        print('  Abra o .pbip e clique em Atualizar: as tabelas vêm do próprio projeto, sem banco nenhum.')
     print(f'  {nome}.pbip  ·  LEIA-ME.md  ·  HOMOLOGACAO.md' + ''.join(f'  ·  sql/{f["nome"]}/' for f in sql.fontes_sql(modelo)))
     print('Agora:')
     passo = 1
@@ -929,6 +968,8 @@ O fluxo
 
 Apoio
   padroes [assunto]           como criar cada indicador e onde
+  visuais [assunto]           técnicas de visual: meta na tabela, ranking, causa, status...
+  modelos                     os seis modelos de layout ("modelo" no argila.json)
   funcoes buscar|ver          dicionário de funções DAX e Power Query
   diff                        o que mudou desde a aprovação
 
@@ -1008,6 +1049,8 @@ def main(argv=None):
     g = sub.add_parser('gerar', help='gera o projeto Power BI, SQL e documentação')
     g.add_argument('argila')
     g.add_argument('-o', '--saida')
+    g.add_argument('--demo', action='store_true',
+                   help='projeto de demonstração: linhas fictícias embutidas, abre e calcula sem banco nenhum')
     bu = sub.add_parser('buscar', help='tabelas de um pedido, em todos os catálogos')
     bu.add_argument('pedido')
     bu.add_argument('--argila')
@@ -1054,6 +1097,9 @@ def main(argv=None):
     fu.add_argument('--linguagem', choices=['dax', 'm'])
     pa = sub.add_parser('padroes', help='padrões de indicador e onde criar cada coisa')
     pa.add_argument('termo', nargs='?')
+    sub.add_parser('modelos', help='os modelos de layout (faixa de KPIs, coluna de KPIs, história longa...)')
+    vs = sub.add_parser('visuais', help='técnicas de visual (meta, ranking, causa, status...) e como fazer')
+    vs.add_argument('termo', nargs='?')
     df = sub.add_parser('diff', help='o que mudou desde a aprovação')
     df.add_argument('argila')
     df.add_argument('--contra')
@@ -1083,7 +1129,7 @@ def main(argv=None):
         if a.acao == 'marcar' and (not a.ref or not a.status):
             ap.error('memory-card marcar pede REF e --status')
     return {'receita': cmd_receita, 'catalogar': cmd_catalogar, 'validar': cmd_validar, 'prototipar': cmd_prototipar, 'aprovar': cmd_aprovar,
-            'gerar': cmd_gerar, 'diff': cmd_diff, 'funcoes': cmd_funcoes, 'padroes': cmd_padroes,
+            'gerar': cmd_gerar, 'diff': cmd_diff, 'funcoes': cmd_funcoes, 'padroes': cmd_padroes, 'visuais': cmd_visuais, 'modelos': cmd_modelos,
             'buscar': cmd_buscar, 'relacionar': cmd_relacionar, 'provar': cmd_provar,
             'memory-card': cmd_memory_card, 'confirmar': cmd_confirmar, 'situacao': cmd_situacao, 'novo': cmd_novo, 'esbocar': cmd_esbocar, 'status': cmd_status}[a.cmd](a) or 0
 

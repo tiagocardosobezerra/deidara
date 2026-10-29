@@ -74,8 +74,12 @@ def _m_sobre_consulta(t):
 def _particao(m, t):
     if t.get('calendario'):
         return _particao_calendario(m, t)
+    if t.get('calculada'):                          # tabela auxiliar do Deidara, em DAX (opções, chave, cópia solta)
+        return f'\tpartition {tmdl_nome(t["nome"])} = calculated\n\t\tmode: import\n\t\tsource = {t["calculada"]}\n'
     fonte = m['fontes'][t['fonte']]
-    if fonte['tipo'] == 'sqlserver':
+    if (m.get('_demo') or {}).get(t['nome']):        # demonstração: linhas fictícias no próprio projeto (demo.py)
+        m_expr = m['_demo'][t['nome']]
+    elif fonte['tipo'] == 'sqlserver':
         serv, banco = parametros(fonte)
         m_expr = (f'let\n    Fonte = Sql.Database({serv}, {banco}),\n'
                   f'    Dados = Fonte{{[Schema={m_texto(fonte["esquema_views"])}, Item={m_texto("vw_" + t["nome"])}]}}[Data]\n'
@@ -121,14 +125,20 @@ def tabela(m, t):
         else:
             cab = f'\tmeasure {tmdl_nome(md["nome"])} = {dax}'
         props = [f'\t\tformatString: {FORMATOS[md["formato"]]}'] if md['formato'] else []
+        if md.get('formato_dinamico'):               # o formato muda com a opção escolhida (vai no fim)
+            props = []
         if md.get('oculta'):
             props.append('\t\tisHidden')
+        if md.get('imagem'):
+            props.append('\t\tdataCategory: ImageUrl')
         if md['pasta']:
             props.append(f'\t\tdisplayFolder: {md["pasta"]}')
         props.append(f'\t\tlineageTag: {guid("medida", md["nome"])}')
-        if md['formato'] == 'moeda':
+        if md['formato'] == 'moeda' and not md.get('formato_dinamico'):
             props.append('')
             props.append('\t\tannotation PBI_FormatHint = {"currencyCulture":"pt-BR"}')
+        if md.get('formato_dinamico'):
+            props += ['', f'\t\tformatStringDefinition = {md["formato_dinamico"]}']
         linhas.append(_desc(md['descricao'], 1) + cab + '\n' + '\n'.join(props) + '\n')
     for c in t['colunas']:
         props = [f'\t\tdataType: {c["tipo_tmdl"]}']
@@ -142,9 +152,11 @@ def tabela(m, t):
             props.append('\t\tisKey')
         props.append(f'\t\tlineageTag: {guid("coluna", t["nome"], c["nome"])}')
         props.append('\t\tsummarizeBy: none')
-        props.append(f'\t\tsourceColumn: {c["nome"]}')
+        props.append(f'\t\tsourceColumn: [{c["nome"]}]' if t.get('calculada') else f'\t\tsourceColumn: {c["nome"]}')
         if c['nome'] in ORDENAR_POR and t.get('calendario'):
             props.append(f'\t\tsortByColumn: {tmdl_nome(ORDENAR_POR[c["nome"]])}')
+        if c.get('ordenar_por'):
+            props.append(f'\t\tsortByColumn: {tmdl_nome(c["ordenar_por"])}')
         props.append('')
         props.append('\t\tannotation SummarizationSetBy = User')
         if c['familia'] == 'data':
@@ -223,7 +235,8 @@ def gravar(m, pasta_projeto, nome):
     gravar_json(os.path.join(raiz, 'definition.pbism'), {
         '$schema': 'https://developer.microsoft.com/json-schemas/fabric/item/semanticModel/definitionProperties/1.0.0/schema.json',
         'version': '4.0', 'settings': {}})
-    gravar_texto(os.path.join(defi, 'database.tmdl'), f'database\n\tcompatibilityLevel: {COMPATIBILIDADE}\n')
+    nivel = 1601 if any(md.get('formato_dinamico') for md in m['medidas']) else COMPATIBILIDADE   # formato dinâmico
+    gravar_texto(os.path.join(defi, 'database.tmdl'), f'database\n\tcompatibilityLevel: {nivel}\n')
     gravar_texto(os.path.join(defi, 'model.tmdl'), modelo(m))
     exprs = expressoes(m)
     if exprs:

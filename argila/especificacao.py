@@ -18,7 +18,7 @@ from collections import deque
 
 from . import dicionario, prova
 
-from .util import (FORMATOS, NUMERICAS, SQL_POR_FAMILIA, chave, dax_coluna, dax_medida, dax_tabela,
+from .util import (FORMATOS, numero_br, NUMERICAS, SQL_POR_FAMILIA, chave, dax_coluna, dax_medida, dax_tabela,
                    familia_da_coluna, sql_tipo, tipo_tmdl)
 
 TIPOS_TABELA = {'fato', 'dimensao'}
@@ -34,7 +34,14 @@ TIPOS_VISUAL = {
     'cartao': 'card', 'barras': 'clusteredBarChart', 'colunas': 'clusteredColumnChart',
     'linha': 'lineChart', 'rosca': 'donutChart', 'tabela': 'tableEx', 'matriz': 'pivotTable',
     'segmentador': 'slicer', 'medidor': 'gauge',
+    'botoes': 'advancedSlicerVisual', 'cartoes': 'cardVisual', 'decomposicao': 'decompositionTreeVisual',
+    'dispersao': 'scatterChart', 'area': 'areaChart', 'mapa': 'azureMap',
+    'abas': 'advancedSlicerVisual', 'alternar': 'advancedSlicerVisual', 'skyline': 'columnChart',
+    'setas': 'clusteredBarChart', 'imagem': 'cardVisual', 'aviso': 'cardVisual',
+    'html': 'htmlContent443BE3AD55E043BF878BED274D3A6865', 'vegalite': 'deneb7E15AEF80B9E4D4F8E12924291ECE89A',
 }
+VISUAIS_DE_TERCEIROS = ('html', 'vegalite')           # visual certificado do AppSource, só quando a pessoa pede
+SEGMENTADORES = ('segmentador', 'botoes')
 LIMITE_VISUAIS_POR_PAGINA = 12
 
 
@@ -140,11 +147,14 @@ def resolver(argila, catalogos):
         'fontes': _fontes(argila, catalogos, p),
         '_catalogos': catalogos,
         'tema': {'cores': ['#118DFF', '#12239E', '#E66C37', '#6B007B', '#E044A7', '#744EC2', '#D9B300',
-                           '#D64550'], 'fundo': '#FFFFFF', 'texto': '#252423', **(argila.get('tema') or {})},
+                           '#D64550'], 'fundo': '#FFFFFF', 'texto': '#252423',
+                 **{k: v for k, v in (argila.get('tema') if isinstance(argila.get('tema'), dict) else {}).items()
+                    if k != 'paleta'}},
         'tabelas': [], 'relacionamentos': [], 'medidas': [], 'paginas': [], 'seguranca': [], 'pendencias': [],
     }
     if not m['projeto']:
         p.erro('projeto', 'informe o nome do projeto')
+    _modelo(argila, m, p)
     _tabelas(argila, catalogos, m, p)
     _calendario(argila, m, p)
     _relacionamentos(argila, catalogos, m, p)
@@ -152,6 +162,7 @@ def resolver(argila, catalogos):
     _seguranca(argila, m, p)
     _paginas(argila, m, p)
     _privacidade(m, p)
+    _design(argila, m, p)
     if not m['versao']:
         p.aviso('versao', 'sem "versao" no argila.json: informe (ex.: "1.0") para o histórico de mudanças')
     for campo in ('descricao', 'publico'):
@@ -620,13 +631,32 @@ def _medidas(argila, m, p):
                 _medida_tempo(m, md, r, p, onde, nomes)
             elif md.get('tipo') == 'estoque_na_data':
                 _medida_estoque(m, md, r, p, onde)
+            elif md.get('tipo') in SVG_GERADAS:
+                r['tipo'], r['formato'], r['imagem'], r['dax'] = md['tipo'], None, True, ''
+                r['svg'] = {'medida': md.get('medida') or (md.get('medidas') or [None])[0], 'categoria': md.get('categoria'),
+                            'comparar': md.get('comparar'), 'ordem': md.get('ordem'), 'medidas': md.get('medidas'),
+                            'coluna_matriz': md.get('colunas')}
+            elif md.get('tipo') in EXTRAS:
+                r['tipo'], r['dax'], r['extra'] = md['tipo'], '', dict(md)
+                if md['tipo'] in ('svg_iniciais', 'svg_dispersao'):
+                    r['imagem'], r['formato'] = True, None
+                if md['tipo'] in ('cor_destaque', 'aviso', 'html_kpis'):
+                    r['formato'] = None
+            elif md.get('tipo') in RANKINGS:
+                r['tipo'], r['dax'] = md['tipo'], ''
+                r['ranking'] = {'medida': md.get('medida'), 'categoria': md.get('categoria'), 'ordem': md.get('ordem'),
+                                'n': md.get('n', 5), 'formato_dado': md.get('formato')}
             elif md.get('dax'):
                 r['tipo'] = 'dax'
                 r['dax'] = md['dax'].strip()
                 _conferir_refs(m, r, nomes, p, onde)
+                if 'data:image/svg+xml' in r['dax']:
+                    r['imagem'], r['formato'] = True, None
+                    conferir_svg(r['dax'], p, onde)
             else:
                 p.erro(onde, 'informe "agregacao", "tipo" (divisao, acumulado_ano, ano_anterior, '
-                             'variacao_ano_anterior, variacao_mes_anterior) ou "dax"')
+                             'variacao_ano_anterior, variacao_mes_anterior, estoque_na_data, media_mensal, '
+                             'svg_barra_meta...) ou "dax"')
                 continue
         except KeyError as e:
             p.erro(onde, f'falta o campo {e}')
@@ -642,6 +672,8 @@ def _medidas(argila, m, p):
             r['tabela'] = home['nome']
         m['medidas'].append(r)
     _metas(m, p)
+    _svgs(m, p)
+    _extras(m, p)
     _ciclos(m, p)
     for md in m['medidas']:
         if md.get('tipo') not in ('cor', 'meta') and (not (md.get('descricao') or '').strip()
@@ -652,6 +684,643 @@ def _medidas(argila, m, p):
 
 
 COR_BOA, COR_RUIM = '#107C10', '#D13438'
+COR_TRILHO, COR_MARCA = '#EDEBE9', '#252423'
+SVG_GERADAS = ('svg_barra_meta', 'svg_pilula', 'svg_seta', 'svg_posicao', 'svg_radar', 'svg_bolha', 'svg_variacao')
+RANKINGS = ('posicao', 'pareto', 'melhores_piores', 'lista_top')
+PREFIXO_SVG = 'data:image/svg+xml;charset=utf-8,'
+
+
+def _svgs(m, p):
+    """As medidas que o Deidara escreve a partir de outra medida e da coluna das linhas da tabela: as imagens SVG
+    (barra contra a meta, pílula de status, seta de variação, selo de posição; referencias/svg.md) e as de
+    classificação (posição, Pareto, melhores e piores; dicionario/visuais.json). Todas param no total."""
+    todas = {chave(x['nome']): x for x in m['medidas'] if x['tipo'] not in ('cor',)}
+    for md in m['medidas']:
+        if md.get('tipo') not in SVG_GERADAS + RANKINGS:
+            continue
+        onde = f'medida {md["nome"]}'
+        cfg = md.get('svg') or md.get('ranking')
+        base = medida(m, cfg.get('medida') or '')
+        if not base:
+            p.erro(onde, f'"medida" ("{cfg.get("medida")}") não é uma medida do modelo' + _pista_medida(cfg.get('medida'), todas))
+            continue
+        tc, cc = _resolver_coluna(m, cfg.get('categoria'))
+        if not cc:
+            p.erro(onde, f'"categoria" ("{cfg.get("categoria")}") precisa ser a coluna das linhas da tabela'
+                         + pista_coluna(m, cfg.get('categoria')))
+            continue
+        col = dax_coluna(tc['nome'], cc['nome'])
+        maior = base['polaridade'] == 'maior_melhor'
+        ordem = cfg.get('ordem') or ('maior_primeiro' if maior else 'menor_primeiro')
+        if ordem not in ('maior_primeiro', 'menor_primeiro'):
+            p.erro(onde, '"ordem" deve ser maior_primeiro ou menor_primeiro')
+            continue
+        sentido = 'DESC' if ordem == 'maior_primeiro' else 'ASC'
+        b = dax_medida(base['nome'])
+        cfg.update({'base': base['nome'], 'tabela': tc['nome'], 'coluna': cc['nome'], 'ordem': ordem})
+        md['polaridade'] = base['polaridade']
+        md['depende'] = [base['nome']]
+        tipo = md['tipo']
+        if tipo == 'svg_radar':
+            eixos = [medida(m, x) for x in (cfg.get('medidas') or [])]
+            if not 3 <= len(eixos) <= 8 or not all(eixos):
+                p.erro(onde, '"medidas" pede de 3 a 8 medidas do modelo (um eixo do radar por medida)')
+                continue
+            cfg['medidas'] = [x['nome'] for x in eixos]
+            md['depende'] = list(cfg['medidas'])
+        if tipo == 'svg_bolha':
+            tl, cl = _resolver_coluna(m, cfg.get('coluna_matriz'))
+            if not cl:
+                p.erro(onde, '"colunas" precisa ser a coluna das colunas da matriz' + pista_coluna(m, cfg.get('coluna_matriz')))
+                continue
+            cfg['coluna_matriz'] = [tl['nome'], cl['nome']]
+        if tipo in ('svg_barra_meta', 'svg_pilula') and not base.get('meta_medida'):
+            p.erro(onde, f'a medida "{base["nome"]}" não tem meta: dê "meta" (número ou medida) a ela primeiro')
+            continue
+        if tipo in ('svg_seta', 'svg_variacao'):
+            comp = medida(m, cfg.get('comparar') or '')
+            if not comp:
+                p.erro(onde, f'"comparar" ("{cfg.get("comparar")}") precisa ser a medida do valor anterior '
+                             '(ex.: a de ano anterior)' + _pista_medida(cfg.get('comparar'), todas))
+                continue
+            cfg['comparar'] = comp['nome']
+            md['depende'].append(comp['nome'])
+        if base.get('meta_medida'):
+            cfg['meta'] = base['meta_medida']
+        op = '>=' if maior else '<='
+        if tipo == 'svg_barra_meta':
+            md['depende'].append(base['meta_medida'])
+            md['dax'] = _svg_barra_meta(b, dax_medida(base['meta_medida']), col, op)
+        elif tipo == 'svg_pilula':
+            md['depende'].append(base['meta_medida'])
+            md['dax'] = _svg_pilula(b, dax_medida(base['meta_medida']), col, op)
+        elif tipo == 'svg_seta':
+            md['dax'] = _svg_seta(b, dax_medida(cfg['comparar']), col, op)
+        elif tipo == 'svg_posicao':
+            md['dax'] = _svg_posicao(b, col, sentido, (m['tema']['cores'] or ['#118DFF'])[0])
+        elif tipo == 'svg_radar':
+            md['dax'] = _svg_radar([dax_medida(x) for x in cfg['medidas']], col, (m['tema']['cores'] or ['#118DFF'])[0])
+        elif tipo == 'svg_bolha':
+            md['dax'] = _svg_bolha(b, col, dax_coluna(*cfg['coluna_matriz']), (m['tema']['cores'] or ['#118DFF'])[0])
+        elif tipo == 'svg_variacao':
+            md['dax'] = _svg_variacao(b, dax_medida(cfg['comparar']), col, '>=' if maior else '<=')
+        elif tipo == 'lista_top':
+            n = cfg.get('n')
+            if not isinstance(n, int) or n < 1:
+                p.erro(onde, '"n" deve ser um número inteiro (quantos itens na lista)')
+                continue
+            md['formato'] = None
+            fmt = {'inteiro': '#,0', 'percentual': '0.0%', 'moeda': 'R$ #,0', 'decimal': '#,0.00'}.get(base['formato'], '#,0.00')
+            md['dax'] = (f'VAR _primeiros = TOPN({n}, ALLSELECTED({col}), {b}, {sentido})\n'
+                         f'RETURN\n    CONCATENATEX(_primeiros, {col} & ": " & FORMAT({b}, "{fmt}"), "  ·  ", {b}, {sentido})')
+        elif tipo == 'posicao':
+            md['formato'] = 'inteiro'
+            md['dax'] = (f'IF(\n    HASONEVALUE({col}) && NOT ISBLANK({b}),\n'
+                         f'    RANKX(ALLSELECTED({col}), {b}, , {sentido}, Dense)\n)')
+        elif tipo == 'pareto':
+            md['formato'] = 'percentual'
+            md['dax'] = (f'VAR _valor = {b}\nVAR _total = CALCULATE({b}, ALLSELECTED({col}))\n'
+                         f'VAR _acumulado = SUMX(FILTER(ALLSELECTED({col}), {b} >= _valor), {b})\n'
+                         f'RETURN\n    IF(HASONEVALUE({col}) && NOT ISBLANK(_valor), DIVIDE(_acumulado, _total))')
+        elif tipo == 'melhores_piores':
+            n = cfg.get('n')
+            if not isinstance(n, int) or n < 1:
+                p.erro(onde, '"n" deve ser um número inteiro (quantos melhores e quantos piores)')
+                continue
+            md['formato'] = cfg.get('formato_dado') or base['formato']
+            md['dax'] = (f'VAR _posicao = RANKX(ALLSELECTED({col}), {b}, , {sentido}, Dense)\n'
+                         f'VAR _linhas = COUNTROWS(ALLSELECTED({col}))\n'
+                         f'RETURN\n    IF(HASONEVALUE({col}) && (_posicao <= {n} || _posicao > _linhas - {n}), {b})')
+        _conferir_funcoes(md['dax'], p, onde)
+        if md.get('imagem'):
+            conferir_svg(md['dax'], p, onde)
+
+
+EXTRAS = ('escolha', 'alternar', 'cor_destaque', 'aviso', 'svg_iniciais', 'svg_dispersao', 'html_kpis')
+COR_APAGADA = '#C8C6C4'
+
+
+def _tabela_auxiliar(m, p, onde, nome, dax, colunas, descricao):
+    """Tabela calculada em DAX que o Deidara cria para uma técnica (opções das abas, chave de alternar, cópia
+    solta da coluna do destaque). Não tem fonte nem relacionamento: só as medidas leem a escolha."""
+    if tabela_do_modelo(m, nome):
+        p.erro(onde, f'já existe uma tabela chamada "{nome}"')
+        return None
+    t = {'nome': nome, 'tipo': 'dimensao', 'origem': None, 'fonte': None, 'descricao': descricao, 'filtro': None,
+         'colunas': [], 'pk': [], 'auxiliar': True, 'calculada': dax}
+    for c in colunas:
+        col = _coluna(c['nome'], None, c.get('familia', 'texto'), oculta=c.get('oculta', False))
+        col['ordenar_por'] = c.get('ordenar_por')
+        t['colunas'].append(col)
+    m['tabelas'].append(t)
+    _conferir_funcoes(dax, p, onde)
+    return t
+
+
+def _texto_dax(s):
+    return '"' + str(s).replace('"', '""') + '"'
+
+
+FORMATO_DAX = {'inteiro': '#,0', 'percentual': '0.0%', 'moeda': '"R$" #,0.00', 'decimal': '#,0.00', 'data': 'dd/mm/yyyy'}
+
+
+def _extras(m, p):
+    """As técnicas que pedem mais que uma medida: escolha (abas), alternar, destaque, aviso, imagens e HTML.
+    Cada uma escreve a medida e, quando precisa, a tabela auxiliar que o segmentador de botões usa."""
+    novas = []
+    acento = (m['tema']['cores'] or ['#118DFF'])[0]
+    for md in m['medidas']:
+        if md.get('tipo') not in EXTRAS:
+            continue
+        cfg, onde, nome = md['extra'], f'medida {md["nome"]}', md['nome']
+        tipo = md['tipo']
+        md['depende'] = []
+        if tipo == 'escolha':
+            ops = cfg.get('opcoes')
+            pares = list(ops.items()) if isinstance(ops, dict) else [(x, x) for x in (ops or [])]
+            alvos = [(r, medida(m, x)) for r, x in pares]
+            if len(alvos) < 2 or not all(a for _, a in alvos):
+                p.erro(onde, '"opcoes" pede de 2 em diante medidas do modelo (lista, ou {"rótulo": "medida"})')
+                continue
+            tab = cfg.get('tabela_opcoes') or f'{nome} (opções)'
+            linhas = ', '.join(f'{{ {_texto_dax(r)}, {k} }}' for k, (r, _) in enumerate(alvos, 1))
+            if not _tabela_auxiliar(m, p, onde, tab, f'DATATABLE("Opção", STRING, "Ordem", INTEGER, {{ {linhas} }})',
+                                    [{'nome': 'Opção', 'ordenar_por': 'Ordem'}, {'nome': 'Ordem', 'familia': 'inteiro',
+                                                                                  'oculta': True}],
+                                    f'Opções de "{nome}" (uma por botão).'):
+                continue
+            col = dax_coluna(tab, 'Opção')
+            ramos = ', '.join(f'{_texto_dax(r)}, {dax_medida(a["nome"])}' for r, a in alvos)
+            md['dax'] = (f'VAR _escolha = SELECTEDVALUE({col}, {_texto_dax(alvos[0][0])})\n'
+                         f'RETURN\n    SWITCH(_escolha, {ramos})')
+            formatos = {a['formato'] for _, a in alvos}
+            md['formato'] = alvos[0][1]['formato']
+            if len(formatos) > 1:                     # cada opção com o próprio formato (formato dinâmico)
+                md['formato_dinamico'] = (f'SWITCH(SELECTEDVALUE({col}, {_texto_dax(alvos[0][0])}), '
+                                          + ', '.join(f'{_texto_dax(r)}, {_texto_dax(FORMATO_DAX.get(a["formato"], "#,0.00"))}'
+                                                      for r, a in alvos) + ')')
+            md['depende'] = [a['nome'] for _, a in alvos]
+            md['polaridade'] = alvos[0][1]['polaridade']
+            cfg.update({'tabela': tab, 'coluna': 'Opção', 'rotulos': [r for r, _ in alvos], 'medidas': md['depende']})
+        elif tipo == 'alternar':
+            lig, des = medida(m, cfg.get('ligado') or ''), medida(m, cfg.get('desligado') or '')
+            if not lig or not des:
+                p.erro(onde, '"ligado" e "desligado" pedem as duas medidas do modelo (a de quando a chave está ligada '
+                             'e a de quando está desligada)')
+                continue
+            rotulo = cfg.get('rotulo') or lig['nome']
+            tab = cfg.get('tabela_opcoes') or f'{nome} (chave)'
+            if not _tabela_auxiliar(m, p, onde, tab, f'DATATABLE("Estado", STRING, {{ {{ {_texto_dax(rotulo)} }} }})',
+                                    [{'nome': 'Estado'}], f'Chave de "{nome}": ligada quando o botão está selecionado.'):
+                continue
+            col = dax_coluna(tab, 'Estado')
+            md['dax'] = f'IF(ISFILTERED({col}), {dax_medida(lig["nome"])}, {dax_medida(des["nome"])})'
+            md['formato'] = des['formato']
+            if lig['formato'] != des['formato']:
+                md['formato_dinamico'] = (f'IF(ISFILTERED({col}), {_texto_dax(FORMATO_DAX.get(lig["formato"], "#,0.00"))}, '
+                                          f'{_texto_dax(FORMATO_DAX.get(des["formato"], "#,0.00"))})')
+            md['depende'] = [lig['nome'], des['nome']]
+            md['polaridade'] = des['polaridade']
+            for sufixo, cor, cx in ((' · chave', '%23C8C6C4', 18), (' · chave ligada', '%23' + acento[1:], 46)):
+                svg = (f"<svg xmlns='http://www.w3.org/2000/svg' width='64' height='36' viewBox='0 0 64 36'>"
+                       f"<rect x='2' y='4' width='60' height='28' rx='14' fill='{cor}'/>"
+                       f"<circle cx='{cx}' cy='18' r='11' fill='%23FFFFFF'/></svg>")
+                novas.append({'nome': nome + sufixo, 'tipo': 'svg_iniciais', 'formato': None, 'imagem': True,
+                              'pasta': md['pasta'], 'tabela': md['tabela'], 'depende': [], 'extra': {},
+                              'dax': f'"{PREFIXO_SVG}{svg}"',
+                              'descricao': f'Imagem da chave de "{nome}" ({"ligada" if cx > 20 else "desligada"}).',
+                              'meta': None, 'polaridade': 'maior_melhor', 'oculta': True, 'meta_medida': None,
+                              'cor_medida': None, 'conferencia_sql': None})
+            md['chave'] = (nome + ' · chave', nome + ' · chave ligada')
+            cfg.update({'tabela': tab, 'coluna': 'Estado', 'rotulo': rotulo, 'ligado': lig['nome'], 'desligado': des['nome']})
+        elif tipo == 'cor_destaque':
+            tc, cc = _resolver_coluna(m, cfg.get('categoria'))
+            if not cc:
+                p.erro(onde, '"categoria" precisa ser a coluna das barras' + pista_coluna(m, cfg.get('categoria')))
+                continue
+            tab = cfg.get('tabela_opcoes') or f'Destacar {cc["nome"]}'
+            if not _tabela_auxiliar(m, p, onde, tab, f'DISTINCT({dax_coluna(tc["nome"], cc["nome"])})',
+                                    [{'nome': cc['nome']}],
+                                    f'Cópia solta de {tc["nome"]}[{cc["nome"]}]: o segmentador escolhe o que fica em destaque '
+                                    'sem filtrar o gráfico.'):
+                continue
+            solta, real = dax_coluna(tab, cc['nome']), dax_coluna(tc['nome'], cc['nome'])
+            md['dax'] = (f'IF(\n    NOT ISFILTERED({solta}) || SELECTEDVALUE({real}) IN VALUES({solta}),\n'
+                         f'    "{acento}",\n    "{COR_APAGADA}"\n)')
+            md['oculta'] = True
+            cfg.update({'tabela': tab, 'coluna': cc['nome'], 'origem': [tc['nome'], cc['nome']]})
+        elif tipo == 'aviso':
+            base = medida(m, cfg.get('medida') or '')
+            tc, cc = _resolver_coluna(m, cfg.get('categoria'))
+            if not base or not base.get('meta_medida') or not cc:
+                p.erro(onde, '"aviso" pede "medida" (com meta) e "categoria" (a coluna em que o aviso procura quem está '
+                             'fora da meta)')
+                continue
+            col, b, mt = dax_coluna(tc['nome'], cc['nome']), dax_medida(base['nome']), dax_medida(base['meta_medida'])
+            op = '<' if base['polaridade'] == 'maior_melhor' else '>'
+            md['dax'] = (f'VAR _fora = FILTER(ALLSELECTED({col}), NOT ISBLANK({b}) && {b} {op} {mt})\n'
+                         f'VAR _n = COUNTROWS(_fora)\n'
+                         f'RETURN\n    IF(\n        _n > 0,\n'
+                         f'        UNICHAR(9888) & " " & _n & " de " & COUNTROWS(ALLSELECTED({col})) & " fora da meta de '
+                         f'{base["nome"]}: " & CONCATENATEX(TOPN(3, _fora, ABS({b} - {mt}), DESC), {col}, ", ", '
+                         f'ABS({b} - {mt}), DESC) & IF(_n > 3, "…"),\n        ""\n    )')
+            md['depende'] = [base['nome'], base['meta_medida']]
+            cor = f'{nome} · fundo'
+            novas.append({'nome': cor, 'tipo': 'cor', 'formato': None, 'pasta': md['pasta'] or 'Avisos', 'tabela': md['tabela'],
+                          'descricao': f'Fundo do aviso "{nome}": vermelho claro quando há algo fora da meta.',
+                          'dax': f'IF({dax_medida(nome)} <> "", "#FDE7E9", "{m["tema"]["fundo"]}")', 'depende': [nome],
+                          'meta': None, 'polaridade': 'maior_melhor', 'oculta': True, 'meta_medida': None,
+                          'cor_medida': None, 'conferencia_sql': None})
+            md['cor_fundo'] = cor
+            cfg.update({'base': base['nome'], 'tabela': tc['nome'], 'coluna': cc['nome'], 'meta': base['meta_medida']})
+        elif tipo == 'svg_iniciais':
+            tc, cc = _resolver_coluna(m, cfg.get('categoria'))
+            if not cc:
+                p.erro(onde, '"categoria" precisa ser a coluna dos botões' + pista_coluna(m, cfg.get('categoria')))
+                continue
+            col = dax_coluna(tc['nome'], cc['nome'])
+            for sufixo, fundo, texto in (('', '%23EDEBE9', '%23605E5C'), (' (ligado)', '%23' + acento[1:], '%23FFFFFF')):
+                dax = _svg_iniciais(col, fundo, texto)
+                if sufixo:
+                    novas.append({'nome': nome + sufixo, 'tipo': 'svg_iniciais', 'formato': None, 'imagem': True,
+                                  'pasta': md['pasta'], 'tabela': md['tabela'], 'dax': dax, 'depende': [],
+                                  'descricao': f'{md["descricao"]} (botão selecionado)'.strip(), 'meta': None,
+                                  'polaridade': 'maior_melhor', 'oculta': True, 'meta_medida': None, 'cor_medida': None,
+                                  'conferencia_sql': None, 'extra': {}})
+                else:
+                    md['dax'] = dax
+            md['ligado'] = nome + ' (ligado)'
+            cfg.update({'tabela': tc['nome'], 'coluna': cc['nome']})
+        elif tipo == 'svg_dispersao':
+            tc, cc = _resolver_coluna(m, cfg.get('categoria'))
+            mx, my = medida(m, cfg.get('x') or ''), medida(m, cfg.get('y') or '')
+            if not cc or not mx or not my:
+                p.erro(onde, '"svg_dispersao" pede "categoria" (os pontos), "x" e "y" (medidas do modelo)')
+                continue
+            img = cfg.get('imagem')
+            img_md = medida(m, img) if img and '[' not in img else None
+            ti, ci = _resolver_coluna(m, img) if img and '[' in img else (None, None)
+            if img and not (img_md or ci):
+                p.erro(onde, '"imagem" precisa ser a coluna (ou a medida) com a imagem de cada ponto, em data:image/...')
+                continue
+            fonte_img = (dax_medida(img_md['nome']) if img_md else f'MAX({dax_coluna(ti["nome"], ci["nome"])})') if img else None
+            md['dax'] = _svg_dispersao(dax_coluna(tc['nome'], cc['nome']), dax_medida(mx['nome']), dax_medida(my['nome']),
+                                       fonte_img, acento, mx['nome'], my['nome'])
+            md['depende'] = [mx['nome'], my['nome']] + ([img_md['nome']] if img_md else [])
+            cfg.update({'tabela': tc['nome'], 'coluna': cc['nome'], 'x': mx['nome'], 'y': my['nome']})
+            if img:
+                p.aviso(onde, '[Design] a imagem de cada ponto precisa vir em data:image/... (base64): link externo não '
+                              'carrega dentro de uma imagem SVG no Power BI')
+        elif tipo == 'html_kpis':
+            itens = [medida(m, x) for x in (cfg.get('medidas') or [])]
+            if not itens or not all(itens):
+                p.erro(onde, '"medidas" pede as medidas do modelo que viram os blocos do HTML')
+                continue
+            md['dax'] = _html_kpis(itens, acento)
+            md['depende'] = [x['nome'] for x in itens] + [x['meta_medida'] for x in itens if x.get('meta_medida')]
+            cfg['medidas'] = [x['nome'] for x in itens]
+        _conferir_funcoes(md['dax'], p, onde)
+        if md.get('imagem'):
+            conferir_svg(md['dax'], p, onde, por_linha=tipo != 'svg_dispersao')    # a dispersão é o gráfico inteiro
+    m['medidas'].extend(novas)
+
+
+def _svg_iniciais(col, fundo, texto):
+    return f"""-- Configuração: círculo com as duas primeiras letras do item, para o segmentador de botões
+VAR _nome = SELECTEDVALUE({col})
+VAR _espaco = SEARCH(" ", _nome, 1, 0)
+VAR _iniciais = UPPER(IF(_espaco > 0, LEFT(_nome, 1) & MID(_nome, _espaco + 1, 1), LEFT(_nome, 2)))
+-- Desenho (o # vira %23)
+VAR _svg =
+    "<svg xmlns='http://www.w3.org/2000/svg' width='40' height='40' viewBox='0 0 40 40' display='block'>"
+        & "<circle cx='20' cy='20' r='19' fill='{fundo}'/>"
+        & "<text x='20' y='26' text-anchor='middle' font-family='Segoe UI' font-size='16' font-weight='600' "
+        & "fill='{texto}'>" & _iniciais & "</text>"
+        & "</svg>"
+RETURN
+    IF(HASONEVALUE({col}), "{PREFIXO_SVG}" & _svg, BLANK())"""
+
+
+def _svg_dispersao(col, x, y, imagem, acento, nx, ny):
+    """Um SVG só com todos os pontos (para o cartão novo): cada eixo vai do menor ao maior valor, com folga."""
+    ponto = (f'"<image href=\'" & {imagem} & "\' x=\'" & FORMAT(_px - 14, "0.0", "en-US") & "\' y=\'" '
+             f'& FORMAT(_py - 14, "0.0", "en-US") & "\' width=\'28\' height=\'28\'/>"' if imagem else
+             f'"<circle cx=\'" & FORMAT(_px, "0.0", "en-US") & "\' cy=\'" & FORMAT(_py, "0.0", "en-US") '
+             f'& "\' r=\'13\' fill=\'%23{acento[1:]}\' fill-opacity=\'0.85\'/>"'
+             f' & "<text x=\'" & FORMAT(_px, "0.0", "en-US") & "\' y=\'" & FORMAT(_py + 4, "0.0", "en-US") '
+             f'& "\' text-anchor=\'middle\' font-family=\'Segoe UI\' font-size=\'10\' font-weight=\'600\' fill=\'%23FFFFFF\'>" '
+             f'& UPPER(LEFT({col}, 1) & MID({col}, SEARCH(" ", {col}, 1, 0) + 1, 1)) & "</text>"')
+    return f"""-- Configuração: área de 400 x 300, com 40 de margem para os eixos
+VAR _minX = MINX(ALLSELECTED({col}), {x})
+VAR _minY = MINX(ALLSELECTED({col}), {y})
+VAR _folgaX = (MAXX(ALLSELECTED({col}), {x}) - _minX) * 0.1 + 1
+VAR _folgaY = (MAXX(ALLSELECTED({col}), {y}) - _minY) * 0.1 + 1
+VAR _baseX = _minX - _folgaX
+VAR _baseY = _minY - _folgaY
+VAR _faixaX = MAXX(ALLSELECTED({col}), {x}) + _folgaX - _baseX
+VAR _faixaY = MAXX(ALLSELECTED({col}), {y}) + _folgaY - _baseY
+VAR _pontos =
+    CONCATENATEX(
+        ALLSELECTED({col}),
+        VAR _px = 40 + 350 * DIVIDE({x} - _baseX, _faixaX)
+        VAR _py = 270 - 250 * DIVIDE({y} - _baseY, _faixaY)
+        RETURN
+            IF(NOT ISBLANK({x}) && NOT ISBLANK({y}), {ponto})
+    )
+-- Desenho (o # vira %23)
+VAR _svg =
+    "<svg xmlns='http://www.w3.org/2000/svg' width='100%25' height='100%25' viewBox='0 0 400 300' display='block'>"
+        & "<line x1='40' y1='270' x2='395' y2='270' stroke='%23C8C6C4'/>"
+        & "<line x1='40' y1='10' x2='40' y2='270' stroke='%23C8C6C4'/>"
+        & "<text x='395' y='290' text-anchor='end' font-family='Segoe UI' font-size='11' fill='%23605E5C'>{nx} →</text>"
+        & "<text x='44' y='20' font-family='Segoe UI' font-size='11' fill='%23605E5C'>↑ {ny}</text>"
+        & _pontos
+        & "</svg>"
+RETURN
+    "{PREFIXO_SVG}" & _svg"""
+
+
+def _html_kpis(itens, acento):
+    blocos = []
+    for x in itens:
+        fmt = FORMATO_DAX.get(x['formato'], '#,0.00')
+        cor = (f'IF({dax_medida(x["nome"])} {">=" if x["polaridade"] == "maior_melhor" else "<="} '
+               f'{dax_medida(x["meta_medida"])}, "{COR_BOA}", "{COR_RUIM}")' if x.get('meta_medida') else f'"{COR_MARCA}"')
+        blocos.append(f'"<div class=\'kpi\'><div class=\'rotulo\'>{x["nome"]}</div>'
+                      f'<div class=\'valor\' style=\'color:" & {cor} & "\'>" & FORMAT({dax_medida(x["nome"])}, {_texto_dax(fmt)}) '
+                      f'& "</div></div>"')
+    corpo = '\n        & '.join(blocos)
+    return f"""-- HTML para o visual HTML Content: um bloco por indicador, a cor do valor segue a meta
+VAR _estilo =
+    "<style>.faixa{{display:flex;gap:12px;font-family:Segoe UI}}.kpi{{flex:1;border-top:4px solid {acento};"
+        & "padding:8px 12px;background:#FFFFFF}}.rotulo{{font-size:12px;color:#605E5C}}.valor{{font-size:26px;"
+        & "font-weight:600}}</style>"
+RETURN
+    _estilo & "<div class='faixa'>"
+        & {corpo}
+        & "</div>"
+"""
+
+
+def _svg_barra_meta(b, meta, col, op):
+    return f"""-- Configuração: a imagem tem 100 x 20 e preenche a célula
+VAR _valor = {b}
+VAR _meta = {meta}
+-- Cálculo: o mesmo eixo para todas as linhas visíveis (maior valor ou meta, com folga)
+VAR _maximo =
+    MAXX(ALLSELECTED({col}), MAX({b}, {meta})) * 1.1
+VAR _largura = IF(_maximo > 0, MAX(0, DIVIDE(_valor, _maximo) * 100), 0)
+VAR _posMeta = IF(_maximo > 0, MAX(0, DIVIDE(_meta, _maximo) * 100), 0)
+VAR _ordem = FORMAT(ROUND(MAX(0, DIVIDE(_valor, _maximo)) * 1000000000, 0), "000000000000")
+-- Cores (o # vira %23)
+VAR _corBarra = IF(_valor {op} _meta, "%23{COR_BOA[1:]}", "%23{COR_RUIM[1:]}") -- verde bateu / vermelho não bateu
+VAR _corTrilho = "%23{COR_TRILHO[1:]}" -- cinza claro
+VAR _corMeta = "%23{COR_MARCA[1:]}" -- quase preto
+-- Desenho
+VAR _svg =
+    "<svg xmlns='http://www.w3.org/2000/svg' width='100%25' height='100%25' viewBox='-2 -2 104 24' "
+        & "overflow='visible' preserveAspectRatio='none' display='block'>"
+        & "<desc>" & _ordem & "</desc>"
+        & "<rect x='0' y='0' width='100' height='20' rx='3' fill='" & _corTrilho & "'/>"
+        & "<rect x='0' y='3' width='" & FORMAT(_largura, "0.00", "en-US") & "' height='14' rx='3' fill='" & _corBarra & "'/>"
+        & "<line x1='" & FORMAT(_posMeta, "0.00", "en-US") & "' y1='-2' x2='" & FORMAT(_posMeta, "0.00", "en-US")
+        & "' y2='22' stroke='" & _corMeta & "' stroke-width='2' stroke-dasharray='3 2'/>"
+        & "</svg>"
+RETURN
+    IF(HASONEVALUE({col}) && NOT ISBLANK(_valor), "{PREFIXO_SVG}" & _svg, BLANK())"""
+
+
+def _svg_pilula(b, meta, col, op):
+    return f"""-- Configuração: a largura acompanha o texto
+VAR _valor = {b}
+VAR _meta = {meta}
+VAR _bateu = _valor {op} _meta
+VAR _texto = IF(_bateu, "Na meta", "Fora da meta")
+VAR _largura = LEN(_texto) * 7 + 20
+-- Cores (o # vira %23)
+VAR _corFundo = IF(_bateu, "%23DFF6DD", "%23FDE7E9") -- verde claro / vermelho claro
+VAR _corTexto = IF(_bateu, "%23107C10", "%23A4262C") -- verde / vermelho escuro
+-- Desenho
+VAR _svg =
+    "<svg xmlns='http://www.w3.org/2000/svg' width='" & _largura & "' height='22' viewBox='-1 -1 "
+        & (_largura + 2) & " 24' overflow='visible' display='block'>"
+        & "<desc>" & IF(_bateu, "1", "0") & "</desc>"
+        & "<rect x='0' y='0' width='" & _largura & "' height='22' rx='11' fill='" & _corFundo & "'/>"
+        & "<text x='" & FORMAT(_largura / 2, "0.0", "en-US") & "' y='15' text-anchor='middle' "
+        & "font-family='Segoe UI' font-size='12' font-weight='600' fill='" & _corTexto & "'>" & _texto & "</text>"
+        & "</svg>"
+RETURN
+    IF(HASONEVALUE({col}) && NOT ISBLANK(_valor) && NOT ISBLANK(_meta), "{PREFIXO_SVG}" & _svg, BLANK())"""
+
+
+def _svg_seta(b, antes, col, op):
+    return f"""-- Configuração: a imagem tem 100 x 20; a seta vai do valor anterior (ponto cinza) ao atual
+VAR _atual = {b}
+VAR _antes = {antes}
+-- Cálculo: o mesmo eixo para todas as linhas visíveis
+VAR _maximo =
+    MAXX(ALLSELECTED({col}), MAX({b}, {antes})) * 1.1
+VAR _x1 = IF(_maximo > 0, MAX(0, DIVIDE(_antes, _maximo) * 100), 0)
+VAR _x2 = IF(_maximo > 0, MAX(0, DIVIDE(_atual, _maximo) * 100), 0)
+VAR _ponta = IF(_x2 >= _x1, -4, 4)
+VAR _ordem = FORMAT(ROUND(MAX(0, DIVIDE(_atual, _maximo)) * 1000000000, 0), "000000000000")
+-- Cores (o # vira %23): a cor segue a polaridade do indicador
+VAR _cor = IF(_atual {op} _antes, "%23{COR_BOA[1:]}", "%23{COR_RUIM[1:]}") -- verde melhorou / vermelho piorou
+VAR _corTrilho = "%23{COR_TRILHO[1:]}" -- cinza claro
+VAR _corAntes = "%23A19F9D" -- cinza médio
+-- Desenho
+VAR _svg =
+    "<svg xmlns='http://www.w3.org/2000/svg' width='100%25' height='100%25' viewBox='-6 -2 112 24' "
+        & "overflow='visible' preserveAspectRatio='none' display='block'>"
+        & "<desc>" & _ordem & "</desc>"
+        & "<line x1='0' y1='10' x2='100' y2='10' stroke='" & _corTrilho & "' stroke-width='2'/>"
+        & "<circle cx='" & FORMAT(_x1, "0.00", "en-US") & "' cy='10' r='3' fill='" & _corAntes & "'/>"
+        & "<line x1='" & FORMAT(_x1, "0.00", "en-US") & "' y1='10' x2='" & FORMAT(_x2, "0.00", "en-US")
+        & "' y2='10' stroke='" & _cor & "' stroke-width='3'/>"
+        & "<path d='M" & FORMAT(_x2 + _ponta, "0.00", "en-US") & " 5 L" & FORMAT(_x2, "0.00", "en-US") & " 10 L"
+        & FORMAT(_x2 + _ponta, "0.00", "en-US") & " 15' fill='none' stroke='" & _cor & "' stroke-width='3'/>"
+        & "</svg>"
+RETURN
+    IF(HASONEVALUE({col}) && NOT ISBLANK(_atual), "{PREFIXO_SVG}" & _svg, BLANK())"""
+
+
+def _svg_radar(eixos, col, acento):
+    """Um polígono por linha: cada eixo é uma medida, dividida pelo maior valor dela entre as linhas visíveis."""
+    import math
+    n = len(eixos)
+    ang = [(-math.pi / 2 + 2 * math.pi * k / n) for k in range(n)]
+    grade = ' '.join(f'{50 + 40 * math.cos(a):.1f},{50 + 40 * math.sin(a):.1f}' for a in ang)
+    meio = ' '.join(f'{50 + 20 * math.cos(a):.1f},{50 + 20 * math.sin(a):.1f}' for a in ang)
+    raios = ''.join(f"<line x1='50' y1='50' x2='{50 + 40 * math.cos(a):.1f}' y2='{50 + 40 * math.sin(a):.1f}' "
+                    "stroke='%23E4E7EC'/>" for a in ang)
+    linhas = []
+    for k, (e, a) in enumerate(zip(eixos, ang), 1):
+        linhas.append(f'VAR _v{k} = MIN(1, MAX(0, DIVIDE({e}, MAXX(ALLSELECTED({col}), {e}))))')
+    pts = ' & " " & '.join(f'FORMAT(50 + 40 * _v{k} * {math.cos(a):.4f}, "0.0", "en-US") & "," & '
+                           f'FORMAT(50 + 40 * _v{k} * {math.sin(a):.4f}, "0.0", "en-US")' for k, a in enumerate(ang, 1))
+    return (f"""-- Configuração: radar de {n} eixos em 100 x 100; cada eixo vai de 0 ao maior valor entre as linhas
+{chr(10).join(linhas)}
+VAR _pontos = {pts}
+-- Cores (o # vira %23)
+VAR _cor = "%23{acento[1:]}" -- destaque do tema
+-- Desenho
+VAR _svg =
+    "<svg xmlns='http://www.w3.org/2000/svg' width='100%25' height='100%25' viewBox='-2 -2 104 104' overflow='visible' display='block'>"
+        & "<polygon points='{grade}' fill='none' stroke='%23D0D5DD'/>"
+        & "<polygon points='{meio}' fill='none' stroke='%23E4E7EC'/>"
+        & "{raios}"
+        & "<polygon points='" & _pontos & "' fill='" & _cor & "' fill-opacity='0.35' stroke='" & _cor & "' stroke-width='2'/>"
+        & "</svg>"
+RETURN
+    IF(HASONEVALUE({col}), "{PREFIXO_SVG}" & _svg, BLANK())""")
+
+
+def _svg_bolha(b, linha, coluna, acento):
+    return f"""-- Configuração: um círculo por célula da matriz; o raio segue a raiz do valor (a área fica proporcional)
+VAR _valor = {b}
+VAR _maximo = MAXX(CROSSJOIN(ALLSELECTED({linha}), ALLSELECTED({coluna})), {b})
+VAR _raio = IF(_maximo > 0, SQRT(MAX(0, DIVIDE(_valor, _maximo))) * 10, 0)
+VAR _ordem = FORMAT(ROUND(MAX(0, DIVIDE(_valor, _maximo)) * 1000000000, 0), "000000000000")
+-- Cores (o # vira %23)
+VAR _cor = "%23{acento[1:]}" -- destaque do tema
+-- Desenho
+VAR _svg =
+    "<svg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='-1 -1 24 24' overflow='visible' display='block'>"
+        & "<desc>" & _ordem & "</desc>"
+        & "<circle cx='11' cy='11' r='" & FORMAT(_raio, "0.00", "en-US") & "' fill='" & _cor & "' fill-opacity='0.7'/>"
+        & "</svg>"
+RETURN
+    IF(HASONEVALUE({linha}) && HASONEVALUE({coluna}) && NOT ISBLANK(_valor), "{PREFIXO_SVG}" & _svg, BLANK())"""
+
+
+def _svg_variacao(b, plano, col, op):
+    return f"""-- Configuração: barra do desvio (real menos comparação) a partir do centro, no estilo IBCS
+VAR _desvio = {b} - {plano}
+VAR _maximo = MAXX(ALLSELECTED({col}), ABS({b} - {plano})) * 1.1
+VAR _largura = IF(_maximo > 0, DIVIDE(ABS(_desvio), _maximo) * 50, 0)
+VAR _x = IF(_desvio >= 0, 50, 50 - _largura)
+VAR _ordem = FORMAT(ROUND((DIVIDE(_desvio, _maximo) + 1) * 500000000, 0), "000000000000")
+-- Cores (o # vira %23): a cor segue a polaridade do indicador
+VAR _cor = IF({b} {op} {plano}, "%23{COR_BOA[1:]}", "%23{COR_RUIM[1:]}") -- verde melhor / vermelho pior
+VAR _corEixo = "%23{COR_MARCA[1:]}" -- quase preto
+-- Desenho
+VAR _svg =
+    "<svg xmlns='http://www.w3.org/2000/svg' width='100%25' height='100%25' viewBox='-2 -2 104 24' "
+        & "overflow='visible' preserveAspectRatio='none' display='block'>"
+        & "<desc>" & _ordem & "</desc>"
+        & "<rect x='" & FORMAT(_x, "0.00", "en-US") & "' y='3' width='" & FORMAT(_largura, "0.00", "en-US")
+        & "' height='14' fill='" & _cor & "'/>"
+        & "<line x1='50' y1='-2' x2='50' y2='22' stroke='" & _corEixo & "' stroke-width='1.5'/>"
+        & "</svg>"
+RETURN
+    IF(HASONEVALUE({col}) && NOT ISBLANK({b}), "{PREFIXO_SVG}" & _svg, BLANK())"""
+
+
+def _svg_posicao(b, col, sentido, acento):
+    return f"""-- Configuração: um selo redondo com a posição; os três primeiros na cor de destaque
+VAR _posicao = RANKX(ALLSELECTED({col}), {b}, , {sentido}, Dense)
+-- Cores (o # vira %23)
+VAR _cor = IF(_posicao <= 3, "%23{acento[1:]}", "%23A19F9D") -- destaque do tema / cinza médio
+-- Desenho
+VAR _svg =
+    "<svg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='-1 -1 26 26' overflow='visible' display='block'>"
+        & "<desc>" & FORMAT(_posicao, "000000") & "</desc>"
+        & "<circle cx='12' cy='12' r='11' fill='" & _cor & "'/>"
+        & "<text x='12' y='16.5' text-anchor='middle' font-family='Segoe UI' font-size='12' font-weight='700' "
+        & "fill='%23FFFFFF'>" & _posicao & "</text>"
+        & "</svg>"
+RETURN
+    IF(HASONEVALUE({col}) && NOT ISBLANK({b}), "{PREFIXO_SVG}" & _svg, BLANK())"""
+
+
+def _literais(dax):
+    return re.findall(r'"((?:[^"]|"")*)"', re.sub(r'--[^\n]*', '', dax))
+
+
+def conferir_svg(dax, p, onde, por_linha=True):
+    """As regras de medida SVG em DAX (referencias/svg.md): erro quando a imagem quebra, aviso quando falha em
+    algum lugar (total, borda, exportação)."""
+    texto = ''.join(_literais(dax))
+    if not re.search(r'data:image/svg\+xml(;[^,]*)?,', texto):
+        p.erro(onde, '[SVG] o texto precisa começar com "data:image/svg+xml;charset=utf-8," (a vírgula final é '
+                     'obrigatória)')
+    if re.search(r"(fill|stroke|stop-color|color|background)\s*[=:]\s*['\"]?#[0-9A-Fa-f]{3,8}", texto):
+        p.erro(onde, '[SVG] cor com "#" dentro da imagem: troque por "%23" (ex.: fill=\'%23107C10\'); sem isso a '
+                     'imagem não aparece')
+    marcacao = ''.join(x for x in _literais(dax) if '<' in x or '=' in x)
+    if re.search(r'%(?![0-9A-Fa-f]{2})', marcacao):
+        p.erro(onde, '[SVG] "%" solto dentro da imagem: escreva "%25" (ex.: width=\'100%25\')')
+    if 'viewbox' not in texto.lower():
+        p.aviso(onde, '[SVG] sem viewBox: a imagem pode sair cortada ou fora de escala; use viewBox com folga e '
+                      'overflow=\'visible\'')
+    if por_linha and not re.search(r'HASONEVALUE|ISINSCOPE', dax, re.I):
+        p.aviso(onde, '[SVG] sem HASONEVALUE (ou ISINSCOPE) no RETURN: na linha de total a imagem sai quebrada')
+    if 'foreignobject' in texto.lower():
+        p.aviso(onde, '[SVG] foreignObject (HTML dentro do SVG) não funciona em todo lugar (celular, exportação): '
+                      'prefira formas SVG')
+    if '""' in dax:
+        p.aviso(onde, '[SVG] aspas duplas escapadas no SVG: use aspas simples nos atributos (attr=\'" & _var & "\')')
+
+
+def _modelo(argila, m, p):
+    """O modelo de layout (referencias/modelos.md). A história longa é escura: sem tema próprio, ganha o escuro."""
+    from .modelos import ESCURO, MODELOS
+    modelo = argila.get('modelo') or 'padrao'
+    if modelo not in MODELOS:
+        import difflib
+        perto = difflib.get_close_matches(str(modelo), MODELOS, n=1)
+        p.erro('modelo', f'"{modelo}" não é um modelo de layout' + (f'; quis dizer "{perto[0]}"?' if perto else '')
+               + f' (modelos: {", ".join(MODELOS)}; `deidara.py modelos`)')
+        modelo = 'padrao'
+    m['modelo'] = modelo
+    dado = argila.get('tema') or {}
+    if isinstance(dado, str):
+        dado = {'paleta': dado}
+    if dado.get('paleta'):                         # as paletas dos temas do Power BI Design Files (dicionario/paletas.json)
+        from .dicionario import paletas
+        todas = paletas()['paletas']
+        pal = todas.get(dado['paleta'])
+        if not pal:
+            p.erro('tema', f'paleta "{dado["paleta"]}" não existe (paletas: {", ".join(todas)})')
+        else:
+            m['tema'].update({k: pal[k] for k in ('cores', 'fundo', 'texto')})
+            m['tema'].update({k: v for k, v in dado.items() if k != 'paleta'})
+    elif modelo == 'historia-longa':
+        for k, v in ESCURO.items():
+            if k not in dado:
+                m['tema'][k] = v
+
+
+def _contraste(c1, c2):
+    def lum(c):
+        c = c.lstrip('#')
+        if len(c) == 3:
+            c = ''.join(x * 2 for x in c)
+        rgb = [int(c[i:i + 2], 16) / 255 for i in (0, 2, 4)]
+        lin = [x / 12.92 if x <= 0.04045 else ((x + 0.055) / 1.055) ** 2.4 for x in rgb]
+        return 0.2126 * lin[0] + 0.7152 * lin[1] + 0.0722 * lin[2]
+    a, b = sorted((lum(c1), lum(c2)), reverse=True)
+    return (a + 0.05) / (b + 0.05)
+
+
+def _design(argila, m, p):
+    """Tema legível: texto sobre o fundo com contraste de 4,5:1; as cores dos dados escolhidas pelo time, 3:1."""
+    t, dado = m['tema'], argila.get('tema') if isinstance(argila.get('tema'), dict) else {}
+    hexa = re.compile(r'#?[0-9A-Fa-f]{6}$|#?[0-9A-Fa-f]{3}$')
+    cores = [t.get('texto'), t.get('fundo')] + list(t.get('cores') or [])
+    ruins = [c for c in cores if not isinstance(c, str) or not hexa.match(c)]
+    if ruins:
+        p.erro('tema', f'cor inválida: {", ".join(map(str, ruins))} (use #RRGGBB)')
+        return
+    r = _contraste(t['texto'], t['fundo'])
+    if r < 4.5:
+        p.aviso('tema', f'[Design] o texto ({t["texto"]}) sobre o fundo ({t["fundo"]}) tem contraste '
+                        f'{numero_br(r, 1)}:1; o mínimo para leitura é 4,5:1')
+    if dado.get('cores'):
+        fracas = [c for c in t['cores'] if _contraste(c, t['fundo']) < 3]
+        if fracas:
+            p.aviso('tema', f'[Design] cores de dados com pouco contraste sobre o fundo (menos de 3:1): '
+                            f'{", ".join(fracas)}; elas somem em barras finas e linhas')
 
 
 def _metas(m, p):
@@ -922,7 +1591,7 @@ def _paginas(argila, m, p):
         if chave(nome) in nomes:
             p.erro(onde, 'nome de página repetido')
         nomes.add(chave(nome))
-        pagina = {'nome': nome, 'descricao': pg.get('descricao', ''), 'visuais': []}
+        pagina = {'nome': nome, 'descricao': pg.get('descricao', ''), 'visuais': [], 'ajuda': bool(pg.get('ajuda'))}
         vis = pg.get('visuais') or []
         if not vis:
             p.erro(onde, 'página sem visuais')
@@ -943,7 +1612,9 @@ def _medidas_do_visual(r):
 
 
 def _conferir_pagina(m, pagina, p, onde, filtra):
-    segs = [v['categoria'] for v in pagina['visuais'] if v['tipo'] == 'segmentador' and v['categoria']]
+    auxiliares = {t['nome'] for t in m['tabelas'] if t.get('auxiliar')}
+    segs = [v['categoria'] for v in pagina['visuais'] if v['tipo'] in SEGMENTADORES and v['categoria']
+            and v['categoria']['tabela'] not in auxiliares]
     medidas = {md['nome'] for v in pagina['visuais'] for md in _medidas_do_visual(v)}
     for s in segs:
         for nome in sorted(medidas):
@@ -961,7 +1632,7 @@ def _conferir_pagina(m, pagina, p, onde, filtra):
     if cal and not tem_ano:
         for v in pagina['visuais']:
             for c in [v['categoria'], v['legenda']] + v['linhas'] + v['colunas']:
-                if c and c['tabela'] == cal and c['nome'] in CALENDARIO_SEM_ANO and v['tipo'] != 'segmentador':
+                if c and c['tabela'] == cal and c['nome'] in CALENDARIO_SEM_ANO and v['tipo'] not in SEGMENTADORES:
                     p.aviso(onde, f'"{v["titulo"]}" usa {cal}[{c["nome"]}] sem segmentador de ano na página: '
                                   f'soma todos os anos; prefira {cal}[Ano-Trimestre] ou {cal}[Mês/Ano], ou ponha um '
                                   'segmentador de Ano')
@@ -990,6 +1661,10 @@ def _visual(m, v, p, onde, filtra):
     r = {'tipo': tipo, 'titulo': v.get('titulo'), 'id': v.get('id'), 'categoria': None, 'legenda': None, 'valores': [],
          'campos': [], 'linhas': [], 'colunas': [], 'meta': None}
     ok = True
+    if tipo in VISUAIS_DE_TERCEIROS:
+        p.aviso(onde, f'[Design] {"HTML Content" if tipo == "html" else "Deneb"} é um visual certificado do AppSource, não '
+                      'nativo: o administrador do Power BI precisa liberar visuais do AppSource, e quem abre o painel '
+                      'baixa o visual na primeira vez')
 
     def campo(ref, quer, rotulo):
         nonlocal ok
@@ -1013,8 +1688,77 @@ def _visual(m, v, p, onde, filtra):
             r['meta'] = campo(v['meta'], 'medida', 'meta')
         elif alvo and alvo.get('meta_medida'):
             r['meta'] = _campo(m, alvo['meta_medida'])
-    elif tipo == 'segmentador':
+    elif tipo in SEGMENTADORES:
         r['categoria'] = campo(v.get('campo'), 'coluna', 'campo')
+        r['icone'] = bool(v.get('icone'))              # ícone de selecionado no botão
+        if v.get('imagem'):                            # imagem por item, de uma medida SVG (svg_iniciais) ou de URL
+            img = medida(m, v['imagem'])
+            if not img or not img.get('imagem'):
+                p.erro(onde, f'"imagem" ("{v["imagem"]}") precisa ser uma medida de imagem (svg_iniciais ou DAX com '
+                             'data:image/...)')
+                ok = False
+            else:
+                r['imagem'] = img['nome']
+        if tipo == 'segmentador' and (r['icone'] or v.get('imagem')):
+            p.aviso(onde, '[Design] ícone e imagem só aparecem no segmentador de botões: use "tipo": "botoes"')
+    elif tipo in ('abas', 'alternar'):                  # o segmentador de botões sobre a tabela auxiliar da medida
+        alvo = medida(m, v.get('medida') or '')
+        quer = 'escolha' if tipo == 'abas' else 'alternar'
+        if not alvo or alvo.get('tipo') != quer or not (alvo.get('extra') or {}).get('tabela'):
+            p.erro(onde, f'{tipo} pede "medida": uma medida do tipo {quer}')
+            return None
+        cfg = alvo['extra']
+        r['categoria'] = _campo(m, f'{cfg["tabela"]}[{cfg["coluna"]}]')
+        r['controla'] = alvo['nome']
+        if not r['titulo']:
+            r['titulo'] = cfg.get('rotulo') if tipo == 'alternar' else ''
+    elif tipo == 'setas':                              # do valor anterior ao atual, com barras de erro nativas
+        r['categoria'] = campo(v.get('categoria'), 'coluna', 'categoria')
+        r['valores'] = [campo(v.get('comparar'), 'medida', 'comparar'), campo(v.get('medida'), 'medida', 'medida')]
+    elif tipo in ('imagem', 'aviso', 'html'):
+        r['valores'] = [campo(v.get('medida'), 'medida', 'medida')]
+        alvo = medida(m, v.get('medida') or '')
+        if alvo and tipo == 'imagem' and not alvo.get('imagem'):
+            p.erro(onde, f'imagem pede uma medida de imagem (svg_dispersao, svg_radar...), veio "{alvo["nome"]}"')
+            ok = False
+        if alvo and tipo == 'aviso' and alvo.get('tipo') != 'aviso':
+            p.erro(onde, f'aviso pede uma medida do tipo aviso, veio "{alvo["nome"]}"')
+            ok = False
+        if alvo and tipo == 'aviso':
+            r['cor_fundo'] = alvo.get('cor_fundo')
+    elif tipo == 'vegalite':
+        r['categoria'] = campo(v.get('categoria'), 'coluna', 'categoria')
+        r['valores'] = [campo(x, 'medida', 'valor') for x in v.get('valores') or []][:2]
+        r['spec'] = v.get('spec')
+        if not r['valores']:
+            p.erro(onde, 'vegalite pede "valores" (as medidas do gráfico)')
+            ok = False
+    elif tipo == 'cartoes':
+        r['valores'] = [campo(x, 'medida', 'medida') for x in v.get('medidas') or []]
+        if not r['valores']:
+            p.erro(onde, 'cartoes pede "medidas" (a lista de indicadores do cartão)')
+            ok = False
+    elif tipo == 'decomposicao':
+        r['valores'] = [campo(v.get('medida'), 'medida', 'medida')]
+        r['linhas'] = [campo(x, 'coluna', 'corte') for x in v.get('cortes') or []]
+        if not r['linhas']:
+            p.erro(onde, 'decomposicao pede "cortes" (as colunas para abrir o número, na ordem)')
+            ok = False
+    elif tipo == 'dispersao':
+        r['categoria'] = campo(v.get('categoria'), 'coluna', 'categoria')
+        r['valores'] = [campo(v.get(k), 'medida', k) for k in ('x', 'y')]
+        if v.get('tamanho'):
+            r['valores'].append(campo(v['tamanho'], 'medida', 'tamanho'))
+    elif tipo == 'mapa':
+        r['categoria'] = campo(v.get('local'), 'coluna', 'local')
+        r['valores'] = [campo(x, 'medida', 'valor') for x in v.get('valores') or []][:1]
+        if not r['valores']:
+            p.erro(onde, 'mapa pede "valores" (a medida que dá o tamanho da bolha)')
+            ok = False
+        if v.get('legenda'):                           # cada ponto vira uma pizza com a composição
+            r['legenda'] = campo(v['legenda'], 'coluna', 'legenda')
+        p.aviso(onde, '[Design] o mapa (Azure Maps) precisa estar liberado pelo administrador do Power BI e de uma '
+                      'coluna de local confiável (cidade com UF, ou país)')
     elif tipo == 'tabela':
         r['campos'] = [campo(x, None, 'campo') for x in v.get('campos') or []]
         if not r['campos']:
@@ -1032,6 +1776,31 @@ def _visual(m, v, p, onde, filtra):
         r['valores'] = [campo(x, 'medida', 'valor') for x in v.get('valores') or []]
         if v.get('legenda'):
             r['legenda'] = campo(v['legenda'], 'coluna', 'legenda')
+        if tipo == 'skyline' and not v.get('legenda'):
+            p.erro(onde, 'skyline pede "legenda": a coluna de cada bloco empilhado (ex.: o projeto, o tipo)')
+            ok = False
+        if v.get('cor'):                               # cor de cada barra por medida (ex.: cor_destaque)
+            cor = medida(m, v['cor'])
+            if not cor or cor.get('tipo') not in ('cor', 'cor_destaque'):
+                p.erro(onde, f'"cor" ("{v["cor"]}") precisa ser uma medida de cor (cor_destaque)')
+                ok = False
+            else:
+                r['cor'] = cor['nome']
+                if len(v.get('valores') or []) > 1 or v.get('legenda'):
+                    p.aviso(onde, '[Design] a cor por medida só vale para gráfico de uma série (sem legenda)')
+        if v.get('meta'):                              # linha de meta constante no gráfico ("meta": true usa a do valor)
+            nome_meta = v['meta']
+            if nome_meta is True:
+                base = medida(m, (v.get('valores') or [''])[0])
+                nome_meta = (base or {}).get('meta_medida')
+                if not nome_meta:
+                    p.erro(onde, '"meta": true pede que a medida do gráfico tenha meta; ou dê o nome da medida de meta')
+                    return None
+            r['meta'] = campo(nome_meta, 'medida', 'meta')
+            alvo = medida(m, nome_meta)
+            if alvo and alvo.get('tipo') != 'meta':
+                p.aviso(onde, f'[Design] a linha de meta só sai com meta fixa (número); "{nome_meta}" muda com o filtro: '
+                              'use a barra contra a meta na tabela (svg_barra_meta)')
         if not r['valores']:
             p.erro(onde, 'informe "valores" (medidas)')
             ok = False
@@ -1039,10 +1808,24 @@ def _visual(m, v, p, onde, filtra):
             p.aviso(onde, 'rosca com mais de uma medida: só a primeira aparece bem')
     if not ok:
         return None
+    for x in r['valores'] + r['campos']:
+        md = medida(m, x['nome']) if x and x['tipo'] == 'medida' else None
+        if md and md.get('imagem') and tipo not in ('tabela', 'matriz', 'imagem'):
+            p.erro(onde, f'"{md["nome"]}" é uma imagem (SVG): só aparece em tabela ou matriz')
+            return None
+        if md and md.get('tipo') in SVG_GERADAS + RANKINGS and (md.get('svg') or md.get('ranking') or {}).get('coluna'):
+            cfg = md.get('svg') or md.get('ranking')
+            cols = [c for c in r['campos'] if c and c['tipo'] == 'coluna']
+            if md['tipo'] == 'lista_top':
+                pass
+            elif tipo not in ('tabela', 'matriz') or not any((c['tabela'], c['nome']) == (cfg['tabela'], cfg['coluna'])
+                                                            for c in cols + [x for x in r['linhas'] if x]):
+                p.aviso(onde, f'"{md["nome"]}" foi feita para as linhas de {cfg["tabela"]}[{cfg["coluna"]}]: '
+                              'ponha essa coluna na mesma tabela, senão o valor some')
     if not r['titulo']:
         vals = [x['nome'] for x in r['valores'] if x] or [x['nome'] for x in r['campos'] if x]
         cat = r['categoria']['nome'] if r['categoria'] else ''
-        r['titulo'] = cat if tipo == 'segmentador' else (' e '.join(vals[:2]) + (f' por {cat}' if cat and vals else ''))
+        r['titulo'] = cat if tipo in SEGMENTADORES else (' e '.join(vals[:2]) + (f' por {cat}' if cat and vals else ''))
     # a coluna filtra a medida? (a categoria de um gráfico precisa chegar na tabela da medida)
     filtros = [x for x in [r['categoria'], r['legenda']] + r['linhas'] + r['colunas'] + r['campos']
                if x and x['tipo'] == 'coluna']
@@ -1109,6 +1892,10 @@ def _tabelas_da_medida(m, nome, vistos=None):
     if not md:
         return set()
     out = set()
+    if md.get('tipo') in SVG_GERADAS + RANKINGS + EXTRAS:   # a coluna das linhas só organiza; os dados vêm das medidas
+        for n in md.get('depende') or []:
+            out |= _tabelas_da_medida(m, n, vistos)
+        return out or {md['tabela']}
     for tn, n in referencias_dax(md['dax'] or ''):
         if tn and tabela_do_modelo(m, tn):
             out.add(tabela_do_modelo(m, tn)['nome'])
@@ -1118,4 +1905,5 @@ def _tabelas_da_medida(m, nome, vistos=None):
         out.add(md['tabela'])
     out |= set(md.get('tabelas_lidas') or [])
     # CALCULATE de tempo lê o calendário, mas o valor vem da base
-    return {t for t in out if not (m.get('calendario') and t == m['calendario']['tabela'])} or {md['tabela']}
+    auxiliares = {t['nome'] for t in m['tabelas'] if t.get('auxiliar')}        # a escolha não traz dados
+    return {t for t in out if not (m.get('calendario') and t == m['calendario']['tabela']) and t not in auxiliares}         or {md['tabela']}

@@ -14,12 +14,14 @@ import json
 import math
 
 from .especificacao import COR_BOA, COR_RUIM, medida
-from .layout import LARGURA, altura_da_pagina, posicionar
+from .modelos import montar, paginas_do_relatorio
 from .simulacao import Simulador, categorias
 from .util import numero_br
 
 
 def formatar(v, formato, compacto=False):
+    if v is None:                                    # medida que fica em branco nesta linha (ex.: fora dos melhores/piores)
+        return ''
     if formato == 'percentual':
         return numero_br(v * 100, 1) + '%'
     pref = 'R$ ' if formato == 'moeda' else ''
@@ -48,7 +50,10 @@ def _corta(s, n):
 def svg_visual(sim, v, pos, cores):
     w, h = pos['w'], pos['h']
     corpo = {'cartao': _cartao, 'medidor': _medidor, 'segmentador': _segmentador, 'tabela': _tabela,
-             'matriz': _matriz, 'rosca': _rosca, 'linha': _linha, 'barras': _barras, 'colunas': _colunas}[v['tipo']]
+             'matriz': _matriz, 'rosca': _rosca, 'linha': _linha, 'barras': _barras, 'colunas': _colunas,
+             'botoes': _botoes, 'cartoes': _cartoes, 'decomposicao': _decomposicao, 'dispersao': _dispersao,
+             'area': _area, 'mapa': _mapa, 'abas': _abas, 'alternar': _alternar, 'skyline': _skyline,
+             'setas': _setas, 'imagem': _imagem, 'aviso': _aviso, 'html': _html, 'vegalite': _vegalite}[v['tipo']]
     return (f'<svg viewBox="0 0 {w} {h}" width="{w}" height="{h}" role="img" aria-label="{_e(v["titulo"])}">'
             f'{corpo(sim, v, w, h, cores)}</svg>')
 
@@ -77,15 +82,30 @@ def titulo_do_cartao(m, v, sim=None):
 
 def _cartao(sim, v, w, h, cores):
     md = v['valores'][0]
+    mdl = medida(sim.m, md['nome'])
+    if mdl and mdl['tipo'] == 'lista_top':          # texto: um item por linha, como a medida concatena
+        base = medida(sim.m, mdl['ranking']['base'])
+        itens = sim.lista(mdl)
+        out = [f'<text x="12" y="20" class="sub">{_e(_corta(v["titulo"], int(w / 6.5)))}</text>']
+        passo = max(16, min(26, (h - 34) / max(1, len(itens))))
+        for i, (r, val) in enumerate(itens):
+            y = 30 + passo * (i + 0.75)
+            out.append(f'<text x="12" y="{y:.0f}" class="cel" style="font-weight:600">{i + 1}. {_e(_corta(r, int((w - 110) / 7)))}</text>'
+                       f'<text x="{w - 12}" y="{y:.0f}" class="cel" text-anchor="end">{_e(formatar(val, base["formato"], True))}</text>')
+        return ''.join(out)
     val = sim.valor(md['nome'])
     meta = titulo_do_cartao(sim.m, v, sim)
     topo = f'<text x="12" y="20" class="sub">{_e(meta)}</text>' if meta else ''
     st = sim.status(md['nome'])
-    selo = '' if st is None else (f'<text x="{w - 12}" y="20" class="sub" text-anchor="end"{_cor_status(sim, md["nome"])}>'
-                                  f'{"✓ na meta" if st else "✗ fora da meta"}</text>')
-    return (topo + selo + f'<text x="{w / 2}" y="{h / 2 + 8}" class="kpi" text-anchor="middle"{_cor_status(sim, md["nome"])}>'
+    selo = '' if st is None or w < 300 else (f'<text x="{w - 36}" y="20" class="sub" text-anchor="end"{_cor_status(sim, md["nome"])}>'
+                                             f'{"✓ na meta" if st else "✗ fora da meta"}</text>')   # estreito: a cor já diz
+    txt = formatar(val, md['formato'], True)
+    tam = max(16, min(54, (h - 44) * 0.62, (w - 24) / (0.58 * max(1, len(txt)))))  # cabe na altura e na largura
+    cor = _cor_status(sim, md['nome'])
+    estilo = f' style="font-size:{tam:.0f}px;{cor[8:-1]}"' if cor else f' style="font-size:{tam:.0f}px"'
+    return (topo + selo + f'<text x="{w / 2}" y="{h / 2 + tam * 0.3:.0f}" class="kpi" text-anchor="middle"{estilo}>'
             f'{_e(formatar(val, md["formato"], True))}</text>'
-            f'<text x="{w / 2}" y="{h / 2 + 32}" class="sub" text-anchor="middle">{_e(_corta(v["titulo"], int(w / 6.5)))}</text>')
+            f'<text x="{w / 2}" y="{h / 2 + tam * 0.3 + 22:.0f}" class="sub" text-anchor="middle">{_e(_corta(v["titulo"], int(w / 6.5)))}</text>')
 
 
 def _medidor(sim, v, w, h, cores):
@@ -111,6 +131,443 @@ def _medidor(sim, v, w, h, cores):
             f'<text x="{cx}" y="{cy + 14}" class="sub" text-anchor="middle">meta {_e(formatar(meta, md["formato"], True))}</text>')
 
 
+def _pilula(sim, md, filtros, x, y, w):
+    st = sim.status(md['svg']['base'], filtros)
+    if st is None:
+        return ''
+    texto = 'Na meta' if st else 'Fora da meta'
+    lw = len(texto) * 7 + 20
+    return (f'<rect x="{x:.1f}" y="{y:.1f}" width="{lw}" height="16" rx="8" fill="{"#DFF6DD" if st else "#FDE7E9"}"/>'
+            f'<text x="{x + lw / 2:.1f}" y="{y + 12:.1f}" text-anchor="middle" class="sub" '
+            f'style="fill:{"#107C10" if st else "#A4262C"};font-weight:600">{texto}</text>')
+
+
+def _seta(sim, md, filtros, x, y, w):
+    cfg = md['svg']
+    _, vals = sim.classificacao({**cfg}, filtros)
+    rotulos = [r for r, _ in vals] or [None]
+    filtro_linha = [(c, r) for c, r in filtros if (c['tabela'], c['nome']) == (cfg['tabela'], cfg['coluna'])]
+    outros = [(c, r) for c, r in filtros if (c, r) not in filtro_linha]
+    col = filtro_linha[0][0] if filtro_linha else None
+    mx = max([max(sim.valor(cfg['base'], outros + [(col, r)]), sim.valor(cfg['comparar'], outros + [(col, r)]))
+              for r in rotulos if col] + [1e-9]) * 1.1
+    atual, antes = sim.valor(cfg['base'], filtros), sim.valor(cfg['comparar'], filtros)
+    x1, x2 = x + w * antes / mx, x + w * atual / mx
+    melhor = atual >= antes if md['polaridade'] == 'maior_melhor' else atual <= antes
+    cor = '#107C10' if melhor else '#D13438'
+    p = -4 if x2 >= x1 else 4
+    return (f'<line x1="{x:.1f}" x2="{x + w:.1f}" y1="{y + 8:.1f}" y2="{y + 8:.1f}" stroke="#EDEBE9" stroke-width="2"/>'
+            f'<circle cx="{x1:.1f}" cy="{y + 8:.1f}" r="3" fill="#A19F9D"/>'
+            f'<line x1="{x1:.1f}" x2="{x2:.1f}" y1="{y + 8:.1f}" y2="{y + 8:.1f}" stroke="{cor}" stroke-width="3"/>'
+            f'<path d="M{x2 + p:.1f} {y + 3:.1f} L{x2:.1f} {y + 8:.1f} L{x2 + p:.1f} {y + 13:.1f}" fill="none" stroke="{cor}" stroke-width="3"/>')
+
+
+def _selo(sim, md, filtros, x, y, w):
+    cfg = {**md['svg']}
+    rotulo, vals = sim.classificacao(cfg, filtros)
+    nomes = [r for r, _ in vals]
+    if rotulo not in nomes:
+        return ''
+    pos = nomes.index(rotulo) + 1
+    cor = sim.m['tema']['cores'][0] if pos <= 3 else '#A19F9D'
+    return (f'<circle cx="{x + 9:.1f}" cy="{y + 8:.1f}" r="9" fill="{cor}"/>'
+            f'<text x="{x + 9:.1f}" y="{y + 12:.1f}" text-anchor="middle" class="sub" style="fill:#FFFFFF;font-weight:700">{pos}</text>')
+
+
+def _linha_e_resto(cfg, filtros):
+    linha = [(c, r) for c, r in filtros if (c['tabela'], c['nome']) == (cfg['tabela'], cfg['coluna'])]
+    return (linha[0][0] if linha else None), [(c, r) for c, r in filtros if (c, r) not in linha]
+
+
+def _variacao(sim, md, filtros, x, y, w):
+    """Desvio contra a comparação, a partir do centro (IBCS): verde melhor, vermelho pior."""
+    cfg = md['svg']
+    col, outros = _linha_e_resto(cfg, filtros)
+    if not col:
+        return ''
+    desvio = lambda f: sim.valor(cfg['base'], f) - sim.valor(cfg['comparar'], f)
+    mx = max([abs(desvio(outros + [(col, r)])) for r in categorias(sim.m, col)] + [1e-9]) * 1.1
+    d = desvio(filtros)
+    bw = abs(d) / mx * w / 2
+    melhor = d >= 0 if md['polaridade'] == 'maior_melhor' else d <= 0
+    meio = x + w / 2
+    return (f'<rect x="{meio if d >= 0 else meio - bw:.1f}" y="{y + 1:.1f}" width="{bw:.1f}" height="14" '
+            f'fill="{"#107C10" if melhor else "#D13438"}"/>'
+            f'<line x1="{meio:.1f}" x2="{meio:.1f}" y1="{y - 3:.1f}" y2="{y + 19:.1f}" stroke="#252423" stroke-width="1.5"/>')
+
+
+def _radar(sim, md, filtros, x, y, w, h):
+    """Um polígono por linha: cada eixo é uma medida, dividida pelo maior valor dela entre as linhas."""
+    cfg = md['svg']
+    col, outros = _linha_e_resto(cfg, filtros)
+    if not col:
+        return ''
+    eixos = cfg['medidas']
+    lado = min(w, h)
+    cx, cy, raio = x + lado / 2, y + lado / 2, lado / 2 - 4
+    ang = [-math.pi / 2 + 2 * math.pi * k / len(eixos) for k in range(len(eixos))]
+    pts = []
+    for e, a in zip(eixos, ang):
+        mx = max([sim.valor(e, outros + [(col, r)]) for r in categorias(sim.m, col)] + [1e-9])
+        f = max(0, min(1, sim.valor(e, filtros) / mx))
+        pts.append(f'{cx + raio * f * math.cos(a):.1f},{cy + raio * f * math.sin(a):.1f}')
+    grade = ' '.join(f'{cx + raio * math.cos(a):.1f},{cy + raio * math.sin(a):.1f}' for a in ang)
+    meio = ' '.join(f'{cx + raio / 2 * math.cos(a):.1f},{cy + raio / 2 * math.sin(a):.1f}' for a in ang)
+    cor = sim.m['tema']['cores'][0]
+    return (f'<polygon points="{grade}" fill="none" stroke="#D0D5DD"/><polygon points="{meio}" fill="none" stroke="#E4E7EC"/>'
+            + ''.join(f'<line x1="{cx:.1f}" y1="{cy:.1f}" x2="{cx + raio * math.cos(a):.1f}" y2="{cy + raio * math.sin(a):.1f}" '
+                      'stroke="#E4E7EC"/>' for a in ang)
+            + f'<polygon points="{" ".join(pts)}" fill="{cor}" fill-opacity=".35" stroke="{cor}" stroke-width="2"/>')
+
+
+def _barra_meta(sim, escala, filtros, x, y, w):
+    """A mesma barra que a medida SVG desenha no Power BI: trilho, valor (verde/vermelho) e meta tracejada."""
+    w = max(20, w)
+    if not escala:                                   # SVG em DAX livre: o desenho é do analista
+        return (f'<rect x="{x:.1f}" y="{y:.1f}" width="{w:.1f}" height="14" rx="3" class="caixa"/>'
+                f'<text x="{x + w / 2:.1f}" y="{y + 11:.1f}" class="sub" text-anchor="middle">{"SVG · só no Power BI" if w >= 110 else "SVG"}</text>')
+    md, maximo = escala
+    v, meta = sim.valor(md['svg']['base'], filtros), sim.valor(md['svg']['meta'], filtros)
+    bw = max(0, v / maximo * w) if maximo else 0
+    mx = max(0, meta / maximo * w) if maximo else 0
+    ok = v >= meta if md['polaridade'] == 'maior_melhor' else v <= meta
+    cor = '#107C10' if ok else '#D13438'
+    return (f'<rect x="{x:.1f}" y="{y:.1f}" width="{w:.1f}" height="14" rx="3" fill="#EDEBE9"/>'
+            f'<rect x="{x:.1f}" y="{y + 2:.1f}" width="{bw:.1f}" height="10" rx="3" fill="{cor}"/>'
+            f'<line x1="{x + mx:.1f}" x2="{x + mx:.1f}" y1="{y - 2:.1f}" y2="{y + 16:.1f}" stroke="#252423" '
+            f'stroke-width="2" stroke-dasharray="3 2"/>')
+
+
+def _botoes(sim, v, w, h, cores):
+    """Segmentador de botões: as opções lado a lado, a primeira marcada (com ícone ou imagem, se pedidos)."""
+    com_imagem = bool(v.get('imagem'))
+    rot = ([] if com_imagem else ['Tudo']) + categorias(sim.m, v['categoria'])[:5 if not com_imagem else 6]
+    gap = 6
+    bw = (w - 24 - gap * (len(rot) - 1)) / len(rot)
+    bh = max(18, h - 34)
+    out = [f'<text x="12" y="18" class="sub">{_e(_corta(v["titulo"], int(w / 6.5)))} · filtro ilustrativo</text>']
+    for i, r in enumerate(rot):
+        x = 12 + i * (bw + gap)
+        ativo = i == 0
+        if com_imagem:                               # o círculo com as iniciais, aceso no escolhido
+            raio = max(8, min(bh / 2 - 12, bw / 2 - 6, 20))
+            ini = _iniciais(r)
+            out.append(f'<rect x="{x:.1f}" y="26" width="{bw:.1f}" height="{bh:.1f}" rx="8" fill="#FFFFFF" '
+                       f'stroke="{cores[0] if ativo else "#E1DFDD"}"/>'
+                       f'<circle cx="{x + bw / 2:.1f}" cy="{26 + raio + 4:.1f}" r="{raio:.1f}" fill="{cores[0] if ativo else "#EDEBE9"}"/>'
+                       f'<text x="{x + bw / 2:.1f}" y="{26 + raio + 9:.1f}" class="cel" text-anchor="middle" '
+                       f'style="fill:{"#FFFFFF" if ativo else "#605E5C"};font-weight:600">{_e(ini)}</text>'
+                       + (f'<text x="{x + bw / 2:.1f}" y="{26 + bh - 6:.1f}" class="eixo" text-anchor="middle">'
+                          f'{_e(_corta(r, max(3, int(bw / 6.5))))}</text>' if bh >= 2 * raio + 24 else '')
+                       + f'<title>{_e(r)}</title>')
+            continue
+        marca = '✓ ' if v.get('icone') and ativo else ''
+        out.append(f'<rect x="{x:.1f}" y="26" width="{bw:.1f}" height="{bh:.1f}" rx="8" fill="{cores[0] if ativo else "#FFFFFF"}" '
+                   f'stroke="{cores[0]}"/><text x="{x + bw / 2:.1f}" y="{26 + bh / 2 + 5:.1f}" class="cel" text-anchor="middle" '
+                   f'style="fill:{"#FFFFFF" if ativo else cores[0]}">{_e(marca + _corta(r, max(3, int(bw / 7.5))))}</text>')
+    return ''.join(out)
+
+
+def _iniciais(nome):
+    partes = str(nome).split()
+    return (partes[0][:1] + partes[-1][:1] if len(partes) > 1 else str(nome)[:2]).upper()
+
+
+def _abas(sim, v, w, h, cores):
+    """Abas de indicador: o rótulo e o valor de cada opção, a primeira escolhida com a barra de destaque."""
+    alvo = medida(sim.m, v['controla'])
+    rot, mds = alvo['extra']['rotulos'], alvo['extra']['medidas']
+    bw = (w - 24) / len(rot)
+    out = []
+    for i, (r, nome) in enumerate(zip(rot, mds)):
+        x = 12 + i * bw
+        md = medida(sim.m, nome)
+        if i == 0:
+            out.append(f'<rect x="{x:.1f}" y="6" width="{bw - 4:.1f}" height="{h - 12:.1f}" fill="{cores[0]}" fill-opacity=".1"/>'
+                       f'<rect x="{x:.1f}" y="6" width="{bw - 4:.1f}" height="5" fill="{cores[0]}"/>')
+        out.append(f'<text x="{x + 12:.1f}" y="{min(34, h / 2):.1f}" class="sub">{_e(_corta(r, int(bw / 7)))}</text>'
+                   f'<text x="{x + 12:.1f}" y="{min(h - 14, h / 2 + 22):.1f}" class="kpi2">{_e(formatar(sim.valor(nome), md["formato"], True))}</text>')
+    return ''.join(out)
+
+
+def _alternar(sim, v, w, h, cores):
+    """A chave liga/desliga (desenhada desligada) com o rótulo."""
+    y = max(4, h / 2 - 14)
+    return (f'<rect x="12" y="{y:.1f}" width="52" height="28" rx="14" fill="#C8C6C4"/>'
+            f'<circle cx="26" cy="{y + 14:.1f}" r="10" fill="#FFFFFF"/>'
+            f'<text x="74" y="{y + 19:.1f}" class="cel">{_e(_corta(v["titulo"] or "", int((w - 80) / 7)))}</text>')
+
+
+def _skyline(sim, v, w, h, cores):
+    """Colunas empilhadas com um respiro branco entre os blocos."""
+    rot = categorias(sim.m, v['categoria'])
+    leg = categorias(sim.m, v['legenda'])[:6]
+    md = v['valores'][0]
+    vals = [[sim.valor(md['nome'], [(v['categoria'], r), (v['legenda'], l)]) for l in leg] for r in rot]
+    mx = max([sum(x) for x in vals] + [1e-9]) * 1.08
+    top, base = 52, h - 30
+    gw = (w - 24) / len(rot)
+    out = [_titulo(v, w), _legenda([(l, [0], None) for l in leg], cores, w, 42)]
+    for i, r in enumerate(rot):
+        y = base
+        for k, val in enumerate(vals[i]):
+            bh = (base - top) * val / mx
+            out.append(f'<rect x="{12 + i * gw + 1:.1f}" y="{y - bh:.1f}" width="{gw - 2:.1f}" height="{max(0, bh - 2):.1f}" '
+                       f'fill="{cores[k % len(cores)]}"/>')
+            y -= bh
+        if len(rot) <= 14 or i % 2 == 0:
+            out.append(f'<text x="{12 + i * gw + gw / 2:.1f}" y="{base + 16}" class="eixo" text-anchor="middle">'
+                       f'{_e(_corta(r, max(3, int(gw / 6))))}</text>')
+    return ''.join(out)
+
+
+def _setas(sim, v, w, h, cores):
+    """Do valor anterior (ponto cinza) ao atual (ponto colorido), por categoria, com a variação ao lado."""
+    rot = categorias(sim.m, v['categoria'])
+    ant, atual = v['valores']
+    pares = [(r, sim.valor(ant['nome'], [(v['categoria'], r)]), sim.valor(atual['nome'], [(v['categoria'], r)])) for r in rot]
+    pares.sort(key=lambda x: -x[2])
+    mx = max([max(a, b) for _, a, b in pares] + [1e-9]) * 1.1
+    top, esq = 40, min(150, w * 0.3)
+    gh = (h - top - 10) / max(1, len(pares))
+    largura = w - esq - 70
+    out = [_titulo(v, w)]
+    for i, (r, a, b) in enumerate(pares):
+        y = top + i * gh + gh / 2
+        xa, xb = esq + largura * a / mx, esq + largura * b / mx
+        var = (b - a) / a if a else 0
+        out.append(f'<text x="{esq - 8}" y="{y + 4:.1f}" class="eixo" text-anchor="end">{_e(_corta(r, int(esq / 6.5)))}</text>'
+                   f'<line x1="{xa:.1f}" x2="{xb:.1f}" y1="{y:.1f}" y2="{y:.1f}" stroke="{cores[0]}" stroke-width="3"/>'
+                   f'<circle cx="{xa:.1f}" cy="{y:.1f}" r="5" fill="#A19F9D"/><circle cx="{xb:.1f}" cy="{y:.1f}" r="5" fill="{cores[0]}"/>'
+                   f'<text x="{max(xa, xb) + 10:.1f}" y="{y + 4:.1f}" class="eixo">{"+" if var >= 0 else ""}{numero_br(var * 100, 1)}%</text>')
+    return ''.join(out)
+
+
+def _imagem(sim, v, w, h, cores):
+    """Medida SVG no cartão inteiro: a dispersão com os pontos (iniciais) ou o radar."""
+    md = medida(sim.m, v['valores'][0]['nome'])
+    out = [_titulo(v, w)]
+    if md['tipo'] == 'svg_dispersao':
+        cfg = md['extra']
+        col = {'tabela': cfg['tabela'], 'nome': cfg['coluna'], 'tipo': 'coluna'}
+        rot = categorias(sim.m, col)
+        xs = [sim.valor(cfg['x'], [(col, r)]) for r in rot]
+        ys = [sim.valor(cfg['y'], [(col, r)]) for r in rot]
+        def escala(vals):
+            folga = (max(vals) - min(vals)) * 0.1 + 1
+            return min(vals) - folga, max(vals) - min(vals) + 2 * folga
+        (bx, fx), (by, fy) = escala(xs), escala(ys)
+        x0, y0, x1, y1 = 50, h - 30, w - 20, 40
+        out.append(f'<line x1="{x0}" y1="{y0}" x2="{x1}" y2="{y0}" class="grade"/><line x1="{x0}" y1="{y1}" x2="{x0}" y2="{y0}" class="grade"/>'
+                   f'<text x="{x1}" y="{y0 + 18}" class="eixo" text-anchor="end">{_e(cfg["x"])} →</text>'
+                   f'<text x="{x0 + 4}" y="{y1 + 4}" class="eixo">↑ {_e(cfg["y"])}</text>')
+        for r, a, b in zip(rot, xs, ys):
+            px, py = x0 + (x1 - x0) * (a - bx) / fx, y0 - (y0 - y1) * (b - by) / fy
+            out.append(f'<circle cx="{px:.1f}" cy="{py:.1f}" r="14" fill="{cores[0]}" fill-opacity=".85"><title>{_e(r)}</title></circle>'
+                       f'<text x="{px:.1f}" y="{py + 4:.1f}" text-anchor="middle" class="eixo" style="fill:#FFFFFF;font-weight:600">'
+                       f'{_e(_iniciais(r))}</text>')
+        return ''.join(out)
+    return ''.join(out) + (f'<rect x="12" y="34" width="{w - 24}" height="{h - 46}" rx="8" class="caixa"/>'
+                           f'<text x="{w / 2}" y="{h / 2}" class="sub" text-anchor="middle">imagem SVG · só no Power BI</text>')
+
+
+def _aviso(sim, v, w, h, cores):
+    """A faixa de aviso: só aparece quando há algo fora da meta."""
+    texto = sim.valor(v['valores'][0]['nome'])
+    if not texto:
+        return f'<text x="12" y="{h / 2 + 5:.0f}" class="sub">(sem aviso: tudo dentro da meta)</text>'
+    return (f'<rect x="0" y="0" width="{w}" height="{h}" rx="8" fill="#FDE7E9"/>'
+            f'<text x="14" y="{h / 2 + 5:.0f}" class="cel" style="fill:#A4262C;font-weight:600">{_e(_corta(texto, int((w - 24) / 7)))}</text>')
+
+
+def _html(sim, v, w, h, cores):
+    """HTML Content: os blocos de indicador que a medida HTML monta."""
+    md = medida(sim.m, v['valores'][0]['nome'])
+    nomes = (md.get('extra') or {}).get('medidas') or []
+    if not nomes:
+        return _titulo(v, w) + f'<text x="12" y="{h / 2}" class="sub">HTML · só no Power BI (visual HTML Content)</text>'
+    bw = (w - 24 - 12 * (len(nomes) - 1)) / len(nomes)
+    out = []
+    for i, n in enumerate(nomes):
+        x = 12 + i * (bw + 12)
+        base = medida(sim.m, n)
+        out.append(f'<rect x="{x:.1f}" y="8" width="{bw:.1f}" height="{h - 16:.1f}" fill="#FFFFFF"/>'
+                   f'<rect x="{x:.1f}" y="8" width="{bw:.1f}" height="4" fill="{cores[0]}"/>'
+                   f'<text x="{x + 12:.1f}" y="32" class="sub">{_e(_corta(n, int(bw / 7)))}</text>'
+                   f'<text x="{x + 12:.1f}" y="{min(h - 16, 64)}" class="kpi2"{_cor_status(sim, n)}>'
+                   f'{_e(formatar(sim.valor(n), base["formato"], True))}</text>')
+    return ''.join(out)
+
+
+def _vegalite(sim, v, w, h, cores):
+    """Deneb (Vega-Lite): o pirulito da especificação padrão."""
+    rot = categorias(sim.m, v['categoria'])
+    md = v['valores'][0]
+    vals = sorted(((r, sim.valor(md['nome'], [(v['categoria'], r)])) for r in rot), key=lambda x: -x[1])
+    mx = max([x for _, x in vals] + [1e-9]) * 1.15
+    top, esq = 40, min(150, w * 0.3)
+    gh = (h - top - 10) / max(1, len(vals))
+    out = [_titulo(v, w)]
+    for i, (r, val) in enumerate(vals):
+        y = top + i * gh + gh / 2
+        x = esq + (w - esq - 70) * val / mx
+        out.append(f'<text x="{esq - 8}" y="{y + 4:.1f}" class="eixo" text-anchor="end">{_e(_corta(r, int(esq / 6.5)))}</text>'
+                   f'<line x1="{esq}" x2="{x:.1f}" y1="{y:.1f}" y2="{y:.1f}" stroke="#C8C6C4" stroke-width="2"/>'
+                   f'<circle cx="{x:.1f}" cy="{y:.1f}" r="7" fill="{cores[0]}"/>'
+                   f'<text x="{x + 12:.1f}" y="{y + 4:.1f}" class="eixo">{_e(formatar(val, md["formato"], True))}</text>')
+    return ''.join(out)
+
+
+def _cartoes(sim, v, w, h, cores):
+    """Cartão novo com vários indicadores lado a lado."""
+    mds = [x for x in v['valores'] if x]
+    n = max(1, len(mds))
+    if h > w * 1.2:                                  # coluna estreita: os indicadores um embaixo do outro
+        ch = (h - 24) / n
+        tam = max(18, min(44, ch * 0.35, w / 5))
+        out = []
+        for i, md in enumerate(mds):
+            y0 = 12 + i * ch
+            if i:
+                out.append(f'<line x1="16" x2="{w - 16}" y1="{y0:.1f}" y2="{y0:.1f}" class="grade"/>')
+            cor = _cor_status(sim, md['nome'])
+            estilo = f' style="font-size:{tam:.0f}px;{cor[8:-1]}"' if cor else f' style="font-size:{tam:.0f}px"'
+            out.append(f'<text x="{w / 2:.1f}" y="{y0 + ch / 2 + tam * 0.3:.0f}" class="kpi" text-anchor="middle"{estilo}>'
+                       f'{_e(formatar(sim.valor(md["nome"]), md["formato"], True))}</text>'
+                       f'<text x="{w / 2:.1f}" y="{y0 + ch / 2 + tam * 0.3 + 22:.0f}" class="sub" text-anchor="middle">'
+                       f'{_e(_corta(md["nome"], int(w / 7)))}</text>')
+        return ''.join(out)
+    cw = (w - 24) / n
+    tam = max(18, min(44, (h - 50) * 0.5, cw / 5))
+    out = []
+    for i, md in enumerate(mds):
+        x = 12 + i * cw
+        if i:
+            out.append(f'<line x1="{x:.1f}" x2="{x:.1f}" y1="16" y2="{h - 16}" class="grade"/>')
+        cor = _cor_status(sim, md['nome'])
+        txt = formatar(sim.valor(md['nome']), md['formato'], True) + _simbolo(sim, md['nome'])
+        t2 = min(tam, (cw - 16) / (0.58 * max(1, len(txt))))
+        estilo = f' style="font-size:{t2:.0f}px;{cor[8:-1]}"' if cor else f' style="font-size:{t2:.0f}px"'
+        out.append(f'<text x="{x + cw / 2:.1f}" y="{h / 2 + tam * 0.3:.0f}" class="kpi" text-anchor="middle"{estilo}>'
+                   f'{_e(formatar(sim.valor(md["nome"]), md["formato"], True))}{_e(_simbolo(sim, md["nome"]))}</text>'
+                   f'<text x="{x + cw / 2:.1f}" y="{h / 2 + tam * 0.3 + 22:.0f}" class="sub" text-anchor="middle">'
+                   f'{_e(_corta(md["nome"], int(cw / 7)))}</text>')
+    return ''.join(out)
+
+
+def _decomposicao(sim, v, w, h, cores):
+    """Árvore de decomposição: o total à esquerda e o primeiro corte aberto em ramos, do maior para o menor."""
+    md, corte = v['valores'][0], v['linhas'][0]
+    rot = categorias(sim.m, corte)[:6]
+    vals = sorted(((r, sim.valor(md['nome'], [(corte, r)])) for r in rot), key=lambda x: -x[1])
+    out = [_titulo(v, w), f'<text x="12" y="42" class="sub">abrir por: {_e(" › ".join(c["nome"] for c in v["linhas"]))}</text>']
+    bw, bh = min(240, w * 0.3), 64
+    bx, by = 12, (h + 30) / 2 - bh / 2
+    total = formatar(sim.valor(md['nome']), md['formato'], True)
+    t2 = max(14, min(30, (bw - 20) / (0.6 * max(1, len(total)))))
+    out.append(f'<rect x="{bx}" y="{by:.1f}" width="{bw:.1f}" height="{bh}" rx="10" fill="{cores[0]}"/>'
+               f'<text x="{bx + 12}" y="{by + 24:.1f}" class="sub" style="fill:#FFFFFF">{_e(_corta(md["nome"], int(bw / 7.5)))}</text>'
+               f'<text x="{bx + 12}" y="{by + 52:.1f}" class="kpi2" style="fill:#FFFFFF;font-size:{t2:.0f}px">{_e(total)}</text>')
+    x0 = bx + bw + 48
+    larg = max(40, w - x0 - 90)
+    gh = (h - 64) / max(1, len(vals))
+    mx = max([x[1] for x in vals] + [1e-9])
+    for i, (r, val) in enumerate(vals):
+        y = 56 + i * gh + gh / 2
+        out.append(f'<path d="M{bx + bw} {by + bh / 2:.1f} C{x0 - 24} {by + bh / 2:.1f} {x0 - 24} {y:.1f} {x0} {y:.1f}" '
+                   f'fill="none" class="trilho"/>'
+                   f'<text x="{x0}" y="{y - 6:.1f}" class="eixo">{_e(_corta(r, int(larg / 7)))}</text>'
+                   f'<rect x="{x0}" y="{y:.1f}" width="{larg * val / mx:.1f}" height="{min(12, gh * 0.3):.1f}" rx="3" fill="{cores[1 % len(cores)]}"/>'
+                   f'<text x="{x0 + larg * val / mx + 6:.1f}" y="{y + 10:.1f}" class="eixo">{_e(formatar(val, md["formato"], True))}</text>')
+    return ''.join(out)
+
+
+def _dispersao(sim, v, w, h, cores):
+    """Dispersão: cada categoria é um ponto (x, y) e, se houver, o tamanho é a terceira medida."""
+    cat = v['categoria']
+    mx_, my_ = v['valores'][0], v['valores'][1]
+    tam = v['valores'][2] if len(v['valores']) > 2 else None
+    rot = categorias(sim.m, cat)
+    pts = [(r, sim.valor(mx_['nome'], [(cat, r)]), sim.valor(my_['nome'], [(cat, r)]),
+            sim.valor(tam['nome'], [(cat, r)]) if tam else 1) for r in rot]
+    esq, top, base, dir_ = 60, 40, h - 34, w - 20
+    xs, ys, ss = [p[1] for p in pts], [p[2] for p in pts], [p[3] for p in pts]
+    x0, x1 = min(xs), max(xs) or 1
+    y0, y1 = min(ys), max(ys) or 1
+    smax = max(ss) or 1
+    out = [_titulo(v, w)]
+    for g in range(4):
+        y = top + (base - top) * g / 3
+        out.append(f'<line x1="{esq}" x2="{dir_}" y1="{y:.1f}" y2="{y:.1f}" class="grade"/>')
+    for r, x, y, s in pts:
+        px = esq + (dir_ - esq) * ((x - x0) / ((x1 - x0) or 1)) * 0.9 + (dir_ - esq) * 0.05
+        py = base - (base - top) * ((y - y0) / ((y1 - y0) or 1)) * 0.85 - (base - top) * 0.07
+        raio = 5 + 14 * (s / smax) if tam else 7
+        rot_ = _e(_corta(r, 12))
+        lado = (f'x="{px - raio - 3:.1f}" text-anchor="end"' if px + raio + 8 * len(rot_) > dir_
+                else f'x="{px + raio + 3:.1f}"')
+        out.append(f'<circle cx="{px:.1f}" cy="{py:.1f}" r="{raio:.1f}" fill="{cores[0]}" fill-opacity=".55" stroke="{cores[0]}">'
+                   f'<title>{_e(r)}</title></circle><text {lado} y="{py + 4:.1f}" class="eixo">{rot_}</text>')
+    out.append(f'<text x="{(esq + dir_) / 2:.1f}" y="{h - 8}" class="eixo" text-anchor="middle">{_e(mx_["nome"])} →</text>'
+               f'<text x="14" y="{(top + base) / 2:.1f}" class="eixo" transform="rotate(-90 14 {(top + base) / 2:.1f})" '
+               f'text-anchor="middle">{_e(my_["nome"])} →</text>')
+    return ''.join(out)
+
+
+def _area(sim, v, w, h, cores):
+    """Área: a linha com o espaço até o eixo preenchido."""
+    rot, ss = _series(sim, v)
+    top, base, esq = (52 if len(ss) > 1 else 36), h - 30, 34
+    meta = _meta_fixa(sim, v)
+    mx = _escala(ss, meta)
+    gw = (w - 2 * esq) / max(1, len(rot) - 1)
+    out = [_titulo(v, w), _legenda(ss, cores, w, 42)]
+    if meta is not None:
+        ym = base - (base - top) * meta / mx
+        out.append(_linha_meta(esq, ym, w - esq, ym, formatar(meta, ss[0][2], True), w - esq, ym - 4))
+    for k, (nome, s, fmt) in enumerate(ss):
+        pts = [f'{esq + i * gw:.1f},{base - (base - top) * s[i] / mx:.1f}' for i in range(len(rot))]
+        out.append(f'<polygon points="{esq},{base} {" ".join(pts)} {esq + (len(rot) - 1) * gw:.1f},{base}" '
+                   f'fill="{cores[k % len(cores)]}" fill-opacity=".25"/>'
+                   f'<polyline points="{" ".join(pts)}" fill="none" stroke="{cores[k % len(cores)]}" stroke-width="2.5"/>')
+    passo = max(1, -(-len(rot) // max(1, int((w - 2 * esq) / 64))))
+    for i in range(0, len(rot), passo):
+        out.append(f'<text x="{esq + i * gw:.1f}" y="{base + 16}" class="eixo" text-anchor="middle">{_e(rot[i])}</text>')
+    return ''.join(out)
+
+
+def _mapa(sim, v, w, h, cores):
+    """Mapa ilustrativo: uma bolha por local, do tamanho do valor (o Power BI desenha o mapa de verdade)."""
+    cat, md = v['categoria'], v['valores'][0]
+    rot = categorias(sim.m, cat)
+    vals = [sim.valor(md['nome'], [(cat, r)]) for r in rot]
+    mx = max(vals + [1e-9])
+    out = [_titulo(v, w), f'<rect x="12" y="34" width="{w - 24}" height="{h - 46}" rx="10" class="caixa" style="fill:#EEF3F8;stroke:#D0DAE6"/>',
+           f'<text x="{w - 20}" y="{h - 20}" class="sub" text-anchor="end">mapa ilustrativo</text>']
+    import random as _r
+    g = _r.Random(cat['nome'])
+    leg = categorias(sim.m, v['legenda'])[:5] if v.get('legenda') else []
+    for r, val in zip(rot, vals):
+        cx, cy = g.uniform(40, w - 60), g.uniform(60, h - 40)
+        raio = 6 + 22 * (val / mx)
+        if leg:                                      # cada local vira uma pizza com a composição da legenda
+            partes = [sim.valor(md['nome'], [(cat, r), (v['legenda'], l)]) for l in leg]
+            tot, a = sum(partes) or 1, -math.pi / 2
+            for k, pv in enumerate(partes):
+                b = a + 2 * math.pi * pv / tot
+                grande = 1 if b - a > math.pi else 0
+                out.append(f'<path d="M{cx:.1f},{cy:.1f} L{cx + raio * math.cos(a):.1f},{cy + raio * math.sin(a):.1f} '
+                           f'A{raio:.1f},{raio:.1f} 0 {grande} 1 {cx + raio * math.cos(b):.1f},{cy + raio * math.sin(b):.1f} Z" '
+                           f'fill="{cores[k % len(cores)]}" stroke="#FFFFFF" stroke-width="1"/>')
+                a = b
+        else:
+            out.append(f'<circle cx="{cx:.1f}" cy="{cy:.1f}" r="{raio:.1f}" fill="{cores[0]}" fill-opacity=".55" stroke="{cores[0]}"/>')
+        out.append(f'<text x="{cx:.1f}" y="{cy - raio - 4:.1f}" class="eixo" text-anchor="middle">{_e(_corta(r, 14))}</text>')
+    if leg:
+        out.append(_legenda([(l, [0], None) for l in leg], cores, w, 46))
+    return ''.join(out)
+
+
 def _segmentador(sim, v, w, h, cores):
     return (f'<text x="12" y="20" class="sub">{_e(_corta(v["titulo"], int(w / 6.5)))} · filtro ilustrativo</text>'
             f'<rect x="12" y="28" width="{w - 24}" height="22" rx="3" class="caixa"/>'
@@ -121,7 +578,12 @@ def _tabela(sim, v, w, h, cores):
     cols = v['campos']
     chaves = [c for c in cols if c['tipo'] == 'coluna']
     linhas = [[(chaves[0], r)] for r in categorias(sim.m, chaves[0])] if chaves else [[]]
-    n = max(1, min(len(linhas), int((h - 84) // 22)))
+    medidas_t = [c for c in cols if c['tipo'] == 'medida']
+    if chaves and medidas_t:                       # linha em que toda medida fica em branco some, como no Power BI
+        linhas = [l for l in linhas if any(sim.valor(c['nome'], l) is not None for c in medidas_t)] or linhas
+    radar = next((c for c in medidas_t if (medida(sim.m, c['nome']) or {}).get('tipo') == 'svg_radar'), None)
+    rh = 64 if radar else 22                         # o radar pede uma linha alta (a imagem tem 64 x 64)
+    n = max(1, min(len(linhas), int((h - 84) // rh)))
     if len(linhas) > n:
         n = max(1, n - 1)                            # espaço para a linha "Outros"
     cw = (w - 24) / len(cols)
@@ -134,12 +596,30 @@ def _tabela(sim, v, w, h, cores):
         anc = 'end' if c['tipo'] == 'medida' else 'start'
         out.append(f'<text x="{x_de(k, c):.1f}" y="48" class="cab" text-anchor="{anc}">{_e(_corta(c["nome"], int(cw / 7)))}</text>')
     out.append(f'<line x1="12" x2="{w - 12}" y1="54" y2="54" class="grade"/>')
+    escala = {}                                      # barra x meta: o mesmo eixo para todas as linhas
+    for c in cols:
+        md = medida(sim.m, c['nome']) if c['tipo'] == 'medida' else None
+        if md and md['tipo'] == 'svg_barra_meta' and md['svg'].get('meta'):
+            vals = [max(sim.valor(md['svg']['base'], l), sim.valor(md['svg']['meta'], l)) for l in linhas]
+            escala[c['nome']] = (md, (max(vals) if vals else 0) * 1.1)
     for i in range(n):
-        y = 72 + i * 22
+        topo = 57 + i * rh
+        y = topo + rh / 2 + 4
         if i % 2:
-            out.append(f'<rect x="12" y="{y - 15}" width="{w - 24}" height="22" class="zebra"/>')
+            out.append(f'<rect x="12" y="{topo}" width="{w - 24}" height="{rh}" class="zebra"/>')
         for k, c in enumerate(cols):
             cor = ''
+            md_img = medida(sim.m, c['nome']) if c['tipo'] == 'medida' else None
+            if md_img and md_img.get('imagem'):
+                desenho = {'svg_pilula': _pilula, 'svg_seta': _seta, 'svg_posicao': _selo,
+                           'svg_variacao': _variacao}.get(md_img['tipo'])
+                if md_img['tipo'] == 'svg_radar':
+                    out.append(_radar(sim, md_img, linhas[i], 12 + k * cw + 4, topo + 2, cw - 10, rh - 4))
+                elif desenho:
+                    out.append(desenho(sim, md_img, linhas[i], 12 + k * cw + 4, y - 12, cw - 10))
+                else:
+                    out.append(_barra_meta(sim, escala.get(c['nome']), linhas[i], 12 + k * cw + 4, y - 12, cw - 10))
+                continue
             if c['tipo'] == 'medida':
                 txt = formatar(sim.valor(c['nome'], linhas[i]), c['formato']) + _simbolo(sim, c['nome'], linhas[i])
                 cor = _cor_status(sim, c['nome'], linhas[i])
@@ -151,11 +631,13 @@ def _tabela(sim, v, w, h, cores):
             anc = 'end' if c['tipo'] == 'medida' else 'start'
             out.append(f'<text x="{x_de(k, c):.1f}" y="{y}" class="cel" text-anchor="{anc}"{cor}>{_e(_corta(txt, int(cw / 6.5)))}</text>')
     if len(linhas) > n and n > 1:                    # as linhas que não couberam viram "Outros", e o total fecha
-        y = 72 + n * 22
+        y = 57 + n * rh + 15
         restantes = linhas[n:]
         for k, c in enumerate(cols):
             if c['tipo'] == 'medida':
                 md = medida(sim.m, c['nome'])
+                if md.get('imagem'):
+                    continue
                 if sim.aditiva(md):
                     resto = sum(sim.valor(c['nome'], l) for l in restantes)
                     txt = formatar(resto, c['formato'])
@@ -165,9 +647,11 @@ def _tabela(sim, v, w, h, cores):
             elif k == 0:
                 out.append(f'<text x="12" y="{y}" class="cel">Outros ({len(restantes)})</text>')
         n += 1
-    y = 72 + n * 22
+    y = 57 + n * rh + 15
     out.append(f'<line x1="12" x2="{w - 12}" y1="{y - 14}" y2="{y - 14}" class="grade"/>')
     for k, c in enumerate(cols):
+        if c['tipo'] == 'medida' and (medida(sim.m, c['nome']) or {}).get('imagem'):
+            continue                                 # no total a imagem fica vazia (HASONEVALUE)
         if c['tipo'] == 'medida':
             out.append(f'<text x="{x_de(k, c):.1f}" y="{y + 2}" class="cab" text-anchor="end">'
                        f'{_e(formatar(sim.valor(c["nome"]), c["formato"]))}</text>')
@@ -186,13 +670,23 @@ def _matriz(sim, v, w, h, cores):
     n = max(1, min(len(linhas), int((h - 84) // 22)))
     cw = (w - 24) / (len(heads) + 3.5)
     out = [_titulo(v, w), f'<text x="12" y="48" class="cab">{_e(_corta(linha_c["nome"], int(2.2 * cw / 7)))}</text>']
-    for k, hd in enumerate(heads + (['Total'] if colunas else [])):
+    bolha = (medida(sim.m, md['nome']) or {}).get('tipo') == 'svg_bolha' and colunas
+    for k, hd in enumerate(heads + (['Total'] if colunas and not bolha else [])):
         out.append(f'<text x="{12 + (k + 3.5) * cw - 6:.1f}" y="48" class="cab" text-anchor="end">{_e(_corta(hd, int(cw / 7)))}</text>')
     out.append(f'<line x1="12" x2="{w - 12}" y1="54" y2="54" class="grade"/>')
+    bolha = (medida(sim.m, md['nome']) or {}).get('tipo') == 'svg_bolha' and colunas
+    if bolha:                                        # o raio segue a raiz do valor: a área fica proporcional
+        base = medida(sim.m, md['nome'])['svg']['base']
+        maior = max([sim.valor(base, [(linha_c, l), (col_c, c)]) for l in linhas for c in colunas] + [1e-9])
     for i in range(n):
         y = 72 + i * 22
         out.append(f'<text x="12" y="{y}" class="cel">{_e(_corta(linhas[i], int(2.2 * cw / 7)))}</text>')
         for k, hd in enumerate(heads):
+            if bolha:
+                val = sim.valor(base, [(linha_c, linhas[i]), (col_c, hd)])
+                out.append(f'<circle cx="{12 + (k + 3.5) * cw - cw / 2:.1f}" cy="{y - 4}" r="{math.sqrt(max(0, val / maior)) * 10:.1f}" '
+                           f'fill="{cores[0]}" fill-opacity=".7"><title>{_e(hd)}: {_e(formatar(val, medida(sim.m, base)["formato"]))}</title></circle>')
+                continue
             if colunas:
                 filtros, nome = [(linha_c, linhas[i]), (col_c, hd)], md['nome']
                 fmt = md['formato']
@@ -202,7 +696,7 @@ def _matriz(sim, v, w, h, cores):
             val = sim.valor(nome, filtros)
             out.append(f'<text x="{12 + (k + 3.5) * cw - 6:.1f}" y="{y}" class="cel" text-anchor="end"'
                        f'{_cor_status(sim, nome, filtros)}>{_e(formatar(val, fmt, True) + _simbolo(sim, nome, filtros))}</text>')
-        if colunas:
+        if colunas and not bolha:
             tot = sim.valor(md['nome'], [(linha_c, linhas[i])])
             out.append(f'<text x="{12 + (len(heads) + 3.5) * cw - 6:.1f}" y="{y}" class="cab" text-anchor="end">'
                        f'{_e(formatar(tot, md["formato"], True))}</text>')
@@ -229,14 +723,26 @@ def _legenda(series, cores, w, y):
     return ''.join(out)
 
 
-def _escala(series):
-    return max([max(s) for _, s, _ in series] + [1e-9]) * 1.12
+def _escala(series, meta=None):
+    return max([max(s) for _, s, _ in series] + [meta or 0, 1e-9]) * 1.12
+
+
+def _meta_fixa(sim, v):
+    """O valor da linha de meta do gráfico (só meta fixa, como no Power BI) ou None."""
+    md = v.get('meta') and medida(sim.m, v['meta']['nome'])
+    return float(md['dax']) if md and md['tipo'] == 'meta' else None
+
+
+def _linha_meta(x1, y1, x2, y2, rotulo, tx, ty, anc='end'):
+    return (f'<line x1="{x1:.1f}" y1="{y1:.1f}" x2="{x2:.1f}" y2="{y2:.1f}" stroke="#252423" stroke-width="1.5" stroke-dasharray="6 4"/>'
+            f'<text x="{tx:.1f}" y="{ty:.1f}" class="eixo" text-anchor="{anc}" style="font-weight:600">Meta {_e(rotulo)}</text>')
 
 
 def _colunas(sim, v, w, h, cores):
     rot, ss = _series(sim, v)
     top, base, esq = (48 if len(ss) > 1 else 34), h - 30, 12
-    mx = _escala(ss)
+    meta = _meta_fixa(sim, v)
+    mx = _escala(ss, meta)
     gw = (w - 2 * esq) / len(rot)
     bw = gw * 0.7 / len(ss)
     out = [_titulo(v, w), _legenda(ss, cores, w, 42)]
@@ -245,15 +751,19 @@ def _colunas(sim, v, w, h, cores):
         for k, (_, s, fmt) in enumerate(ss):
             bh = max(0, (base - top - 14) * s[i] / mx)
             x = esq + i * gw + gw * 0.15 + k * bw
-            out.append(f'<rect x="{x:.1f}" y="{base - bh:.1f}" width="{max(1, bw - 1):.1f}" height="{bh:.1f}" fill="{cores[k % len(cores)]}">'
+            cor = cores[k % len(cores)] if not v.get('cor') or i == 0 else '#C8C6C4'   # destaque: só o escolhido aceso
+            out.append(f'<rect x="{x:.1f}" y="{base - bh:.1f}" width="{max(1, bw - 1):.1f}" height="{bh:.1f}" fill="{cor}">'
                        f'<title>{_e(r)}: {_e(formatar(s[i], fmt))}</title></rect>')
-        out.append(f'<text x="{esq + i * gw + gw / 2:.1f}" y="{base + 16}" class="eixo" text-anchor="middle">{_e(_corta(r, max(3, int(gw / 6))))}</text>')
-    if len(ss) == 1 and gw > 44:
+        out.append(f'<text x="{esq + i * gw + gw / 2:.1f}" y="{base + 16}" class="eixo" text-anchor="middle">{_e(_corta(r, max(3, int((gw - 4) / 8))))}</text>')
+    if len(ss) == 1 and gw > max(44, 6.5 * max(len(formatar(x, ss[0][2], True)) for x in ss[0][1])):   # rótulo só se couber
         s, fmt = ss[0][1], ss[0][2]
         for i in range(len(rot)):
             bh = max(0, (base - top - 14) * s[i] / mx)
             out.append(f'<text x="{esq + i * gw + gw / 2:.1f}" y="{base - bh - 4:.1f}" class="eixo" text-anchor="middle">'
                        f'{_e(formatar(s[i], fmt, True))}</text>')
+    if meta is not None:
+        ym = base - (base - top - 14) * meta / mx
+        out.append(_linha_meta(esq, ym, w - esq, ym, formatar(meta, ss[0][2], True), w - esq, ym - 4))
     return ''.join(out)
 
 
@@ -263,7 +773,8 @@ def _barras(sim, v, w, h, cores):
     rot = [rot[i] for i in ordem]
     ss = [(n, [s[i] for i in ordem], f) for n, s, f in ss]
     top, esq = (52 if len(ss) > 1 else 36), min(150, w * 0.32)
-    mx = _escala(ss)
+    meta = _meta_fixa(sim, v)
+    mx = _escala(ss, meta)
     gh = (h - top - 10) / len(rot)
     bh = gh * 0.7 / len(ss)
     out = [_titulo(v, w), _legenda(ss, cores, w, 42)]
@@ -272,19 +783,27 @@ def _barras(sim, v, w, h, cores):
         for k, (_, s, fmt) in enumerate(ss):
             bw = max(0, (w - esq - 70) * s[i] / mx)
             y = top + i * gh + gh * 0.15 + k * bh
-            out.append(f'<rect x="{esq}" y="{y:.1f}" width="{bw:.1f}" height="{max(1, bh - 1):.1f}" fill="{cores[k % len(cores)]}">'
+            cor = cores[k % len(cores)] if not v.get('cor') or i == 0 else '#C8C6C4'   # destaque: só o escolhido aceso
+            out.append(f'<rect x="{esq}" y="{y:.1f}" width="{bw:.1f}" height="{max(1, bh - 1):.1f}" fill="{cor}">'
                        f'<title>{_e(r)}: {_e(formatar(s[i], fmt))}</title></rect>')
             if len(ss) == 1:
                 out.append(f'<text x="{esq + bw + 6:.1f}" y="{y + bh / 2 + 4:.1f}" class="eixo">{_e(formatar(s[i], fmt, True))}</text>')
+    if meta is not None:
+        xm = esq + (w - esq - 70) * meta / mx
+        out.append(_linha_meta(xm, top - 4, xm, h - 8, formatar(meta, ss[0][2], True), xm - 4, h - 12))
     return ''.join(out)
 
 
 def _linha(sim, v, w, h, cores):
     rot, ss = _series(sim, v)
     top, base, esq = (52 if len(ss) > 1 else 36), h - 30, 34
-    mx = _escala(ss)
+    meta = _meta_fixa(sim, v)
+    mx = _escala(ss, meta)
     gw = (w - 2 * esq) / max(1, len(rot) - 1)
     out = [_titulo(v, w), _legenda(ss, cores, w, 42)]
+    if meta is not None:
+        ym = base - (base - top) * meta / mx
+        out.append(_linha_meta(esq, ym, w - esq, ym, formatar(meta, ss[0][2], True), w - esq, ym - 4))
     for g in range(4):
         y = top + (base - top) * g / 3
         out.append(f'<line x1="{esq}" x2="{w - esq}" y1="{y:.1f}" y2="{y:.1f}" class="grade"/>')
@@ -417,7 +936,22 @@ main{padding:16px 20px 40px}section{display:none}section.ativa{display:block}
 .palco{width:100%;overflow:hidden}.pagina{position:relative;transform-origin:0 0;background:var(--pagina);box-shadow:0 1px 4px rgba(0,0,0,.15)}
 .pagina h2{position:absolute;left:16px;top:8px;margin:0;font-size:20px;color:#252423}
 .vis{position:absolute;background:#fff;border:1px solid #EDEBE9;border-radius:4px}
-.vis.segmentador{border-color:transparent;background:transparent}
+.vis.segmentador,.vis.botoes{border-color:transparent;background:transparent}
+.fundo{position:absolute;left:0;top:0;line-height:0}.fundo svg{display:block}
+.desenhada .vis{background:transparent;border:0}
+.desenhada .t{font-size:19px}.desenhada .sub{font-size:14px}.desenhada .kpi{font-size:54px}.desenhada .kpi2{font-size:30px}
+.desenhada .eixo{font-size:13px}.desenhada .cab,.desenhada .cel{font-size:15px}.desenhada .info{width:26px;height:26px;font-size:14px;line-height:24px}.desenhada .vis.segmentador .caixa{fill:#fff}
+.ir{position:absolute;background:transparent;border:0;padding:0;cursor:pointer;border-radius:12px;z-index:3}
+.ir:hover{background:rgba(127,127,127,.12)}.ir:focus-visible{outline:3px solid var(--destaque)}
+.ajuda{position:absolute;width:44px;height:44px;border-radius:50%;border:2px solid var(--destaque);background:#fff;
+color:var(--destaque);font:700 20px Segoe UI,sans-serif;cursor:pointer;z-index:6}
+.notas{position:absolute;inset:0;z-index:5;background:rgba(255,255,255,.35)}
+.nota-ajuda{position:absolute;box-sizing:border-box;padding:10px 12px;background:rgba(255,255,255,.96);
+border:2px solid var(--destaque);border-radius:8px;font:13px Segoe UI,sans-serif;color:#252423;overflow:auto}
+.nota-ajuda b{display:block;margin-bottom:4px}.nota-ajuda p{margin:0 0 4px}
+.escura .vis text{fill:#E6EAF2}.escura .vis .sub,.escura .vis .eixo{fill:#9AA4B8}.escura .grade,.escura .trilho{stroke:#2A3346}
+.escura .zebra{fill:#1F2738}.escura .vis .caixa,.escura.desenhada .vis.segmentador .caixa{fill:#1A2130;stroke:#3A4560}
+.escura .info{background:#1A2130;color:#C8D0E0;border-color:#3A4560}
 .vis svg{display:block;font-family:"Segoe UI",system-ui,sans-serif}
 .t{font-size:14px;font-weight:600;fill:#252423}.sub{font-size:12px;fill:#605E5C}.kpi{font-size:34px;font-weight:600;fill:#252423}
 .kpi2{font-size:22px;font-weight:600;fill:#252423}.eixo{font-size:11px;fill:#605E5C}.cab{font-size:12px;font-weight:600;fill:#252423}
@@ -434,7 +968,7 @@ th{position:sticky;top:0;background:#F3F2F1}code,pre{font-family:Consolas,monosp
 .palco{height:auto!important;overflow:visible}.pagina{transform:none!important;width:auto!important;height:auto!important;
 background:transparent;box-shadow:none}.pagina h2{position:static;margin:0 0 10px;color:var(--texto)}
 .vis{position:relative!important;left:auto!important;top:auto!important;width:auto!important;height:auto!important;margin:0 0 10px}
-.vis svg{width:100%;height:auto}}
+.vis svg{width:100%;height:auto}.fundo,.ir{display:none}}
 .decisao{display:flex;flex-direction:column;gap:6px;margin:6px 0 12px}.decisao label{display:flex;gap:8px;align-items:center}
 #aprovador{font:inherit;padding:6px 8px;border:1px solid var(--borda);border-radius:6px;margin-left:6px}
 .info{position:absolute;top:4px;right:4px;width:22px;height:22px;border-radius:50%;border:1px solid #C8C6C4;background:#fff;
@@ -456,15 +990,18 @@ background:var(--destaque);color:#fff;padding:10px 16px;cursor:pointer}.botao:fo
 
 JS = """
 const botoes=[...document.querySelectorAll('nav button')];
-function abrir(id){botoes.forEach(b=>b.setAttribute('aria-selected',b.dataset.alvo===id));
+function abrir(id){const sec=document.getElementById(id);const aba=(sec&&sec.dataset.aba)||id;
+botoes.forEach(b=>b.setAttribute('aria-selected',b.dataset.alvo===aba));
 document.querySelectorAll('section').forEach(s=>s.classList.toggle('ativa',s.id===id));escalar();
 try{history.replaceState(null,'','#'+id)}catch(e){}}
 botoes.forEach(b=>b.addEventListener('click',()=>abrir(b.dataset.alvo)));
+document.querySelectorAll('.ir').forEach(b=>b.addEventListener('click',()=>{abrir(b.dataset.ir);scrollTo(0,0);}));
+document.querySelectorAll('.ajuda').forEach(b=>b.addEventListener('click',()=>{const n=b.nextElementSibling;n.hidden=!n.hidden;}));
 function escalar(){if(innerWidth<=700){document.querySelectorAll('.pagina').forEach(pg=>pg.style.transform='');return;}
 document.querySelectorAll('section.ativa .palco').forEach(p=>{const pg=p.firstElementChild;
 const k=Math.min(1,p.clientWidth/pg.offsetWidth);pg.style.transform='scale('+k+')';p.style.height=(pg.offsetHeight*k)+'px';});}
 addEventListener('resize',escalar);
-const h=location.hash.slice(1);abrir(botoes.some(b=>b.dataset.alvo===h)?h:botoes[0].dataset.alvo);
+const h=location.hash.slice(1);abrir(h&&document.getElementById(h)&&document.getElementById(h).dataset.aba?h:botoes[0].dataset.alvo);
 const painel=document.getElementById('painel');
 function esc(s){return String(s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));}
 document.querySelectorAll('.info').forEach(b=>b.addEventListener('click',ev=>{ev.stopPropagation();
@@ -519,7 +1056,7 @@ def codigo_do_prototipo(m):
 
 def _excecoes_do_filtro(m, v, pagina):
     from .especificacao import _grafo_de_filtro, _tabelas_da_medida, chega
-    if v['tipo'] != 'segmentador' or not v.get('categoria'):
+    if v['tipo'] not in ('segmentador', 'botoes', 'abas', 'alternar') or not v.get('categoria'):
         return []
     g = _grafo_de_filtro(m)
     nomes = {x['nome'] for o in pagina['visuais'] for x in o['valores'] + o['campos'] if x and x['tipo'] == 'medida'}
@@ -585,17 +1122,36 @@ def gerar_html(m, problemas, versao):
     cores = m['tema']['cores']
     sim = Simulador(m)
     abas, secoes = [], []
-    for i, pg in enumerate(m['paginas']):
-        sid = f'p{i + 1}'
-        abas.append((sid, pg['nome']))
-        posicoes = posicionar(pg['visuais'])
-        alt = altura_da_pagina(posicoes)
-        vis = ''.join(
-            f'<div class="vis {v["tipo"]}" style="left:{p["x"]}px;top:{p["y"]}px;width:{p["w"]}px;height:{p["h"]}px">'
-            f'{_botao_info(m, v, pg)}{svg_visual(sim, v, p, cores)}</div>' for v, p in posicoes)
-        desc = f'<p class="nota">{_e(pg["descricao"])}</p>' if pg['descricao'] else ''
-        secoes.append(f'<section id="{sid}"><div class="palco"><div class="pagina" style="width:{LARGURA}px;height:{alt}px">'
-                      f'<h2>{_e(pg["nome"])}</h2>{vis}</div></div>{desc}</section>')
+    rel = paginas_do_relatorio(m)
+    ids = [f'p{k + 1}' for k in range(len(rel))]
+    aba_do_grupo = {}
+    for i, pg in enumerate(rel):
+        sid = ids[i]
+        if not pg['oculta']:
+            abas.append((sid, pg['nome']))
+            aba_do_grupo[pg['grupo']] = sid
+        lay = montar(m, rel, i)
+        vis = []
+        for v, p in lay['posicoes']:
+            vv = dict(v, titulo='') if id(v) in lay['sem_titulo'] else v
+            vis.append(f'<div class="vis {v["tipo"]}" style="left:{p["x"]}px;top:{p["y"]}px;width:{p["w"]}px;height:{p["h"]}px">'
+                       f'{_botao_info(m, v, pg)}{svg_visual(sim, vv, p, cores)}</div>')
+        ir = ''.join(f'<button type="button" class="ir" data-ir="{ids[n["alvo"]]}" title="{_e(n["rotulo"])}" '
+                     f'aria-label="{_e(n["rotulo"])}" style="left:{n["x"]}px;top:{n["y"]}px;width:{n["w"]}px;height:{n["h"]}px">'
+                     f'</button>' for n in lay['nav'])
+        if pg.get('ajuda'):
+            from .pbir import _nota_de_ajuda
+            notas = ''.join(f'<div class="nota-ajuda" style="left:{p["x"]}px;top:{p["y"]}px;width:{p["w"]}px;height:{p["h"]}px">'
+                            + ''.join(f'<{"b" if k == 0 else "p"}>{_e(t)}</{"b" if k == 0 else "p"}>'
+                                      for k, t in enumerate(_nota_de_ajuda(m, v))) + '</div>' for v, p in lay['posicoes'])
+            ir += (f'<button type="button" class="ajuda" aria-label="Como ler esta página" title="Como ler esta página" '
+                   f'style="left:{lay["w"] - 64}px;top:{lay["h"] - 104}px">?</button><div class="notas" hidden>{notas}</div>')
+        classes = 'pagina' + (' desenhada' if lay['fundo'] else '') + (' escura' if lay['escuro'] else '')
+        fundo = f'<div class="fundo" aria-hidden="true">{lay["fundo"]}</div>' if lay['fundo'] else f'<h2>{_e(pg["nome"])}</h2>'
+        desc = f'<p class="nota">{_e(pg["descricao"])}</p>' if pg['descricao'] and not lay['fundo'] else ''
+        secoes.append(f'<section id="{sid}" data-aba="{aba_do_grupo.get(pg["grupo"], sid)}"><div class="palco">'
+                      f'<div class="{classes}" style="width:{lay["w"]}px;height:{lay["h"]}px">'
+                      f'{fundo}{"".join(vis)}{ir}</div></div>{desc}</section>')
     abas.append(('aprovar', 'Para aprovar'))
     secoes.append(_secao_aprovar(m, problemas))
     abas.append(('modelo', 'Modelo de dados'))

@@ -1,6 +1,6 @@
 ---
 name: deidara
-description: "Arquiteto de painéis Power BI para o time de indicadores. Descobre a estrutura das fontes por receitas que a pessoa roda onde os dados estão (SQL Server, modelo Power BI existente, Excel, SharePoint, CSV, API), sugere tabelas e ligações com evidência, esboça a especificação (modelo, medidas DAX, metas, páginas) sem adivinhar nome nem função, gera um PROTÓTIPO HTML com números fictícios para o gestor aprovar e, só depois do aceite, o projeto Power BI completo (.pbip TMDL/PBIR, que vira .pbix no Desktop), views SQL, homologação e dicionário de indicadores. Guarda painéis e indicadores oficiais no Memory Card do time. Use para criar, prototipar ou especificar dashboard, painel, relatório Power BI, KPI, indicador, métrica, medida DAX, modelo dimensional, fonte Excel/SharePoint para Power BI ou .pbix/.pbip."
+description: "Arquiteto de painéis Power BI para o time de indicadores. Descobre a estrutura das fontes por receitas que a pessoa roda onde os dados estão (SQL Server, modelo Power BI existente, Excel, SharePoint, CSV, API), sugere tabelas e ligações com evidência, esboça a especificação (modelo, medidas DAX, metas, páginas) sem adivinhar nome nem função, gera um PROTÓTIPO HTML com números fictícios para o gestor aprovar e, só depois do aceite, o projeto Power BI completo (.pbip TMDL/PBIR, que vira .pbix no Desktop), views SQL, homologação e dicionário de indicadores. Segue princípios de design (layout, cor, contraste, técnicas de visual nativo e medidas SVG em DAX). Guarda painéis e indicadores oficiais no Memory Card do time. Use para criar, prototipar ou especificar dashboard, painel, relatório Power BI, KPI, indicador, métrica, medida DAX, modelo dimensional, fonte Excel/SharePoint para Power BI ou .pbix/.pbip."
 ---
 
 # Deidara
@@ -65,7 +65,10 @@ roda onde os dados estão e cola o resultado. Só estrutura volta, nunca dado.
    com `--tabelas fonte:TAB,...`. Para cada indicador: `padroes <assunto>`
    (`padroes turnover` traz a cadeia inteira: contagem, headcount, HC médio,
    taxa). Preencha `descricao` de cada medida e `descricao`/`publico` do painel
-   com as palavras do usuário.
+   com as palavras do usuário. Para o visual: escolha o `"modelo"` de layout
+   com o usuário (`modelos`; o esboço vem com `faixa-de-kpis`), e use
+   `visuais <assunto>` (meta na tabela, ranking, causa, status) e
+   [design.md](referencias/design.md).
 5. **Validar** até zerar os erros: `validar <pasta>/argila.json`. O relatório
    traz a causa primeiro (as consequências vêm agrupadas embaixo), os avisos
    por tema e o próximo passo. Os erros dizem o que existe: medidas parecidas,
@@ -80,7 +83,10 @@ roda onde os dados estão e cola o resultado. Só estrutura volta, nunca dado.
    gestor usou "Copiar resumo do aceite", salve o texto num arquivo e passe
    `--resumo <arquivo>` (o Deidara confere o código do protótipo e a decisão).
 9. **Katsu!**: `gerar <pasta>/argila.json -o C:/paineis/<nome>` (pasta curta;
-   sem `-o`, a saída vai para `<pasta>/saida/<projeto>`).
+   sem `-o`, a saída vai para `<pasta>/saida/<projeto>`). Para testar ou
+   mostrar o painel antes de a fonte estar pronta, `gerar ... --demo`: o
+   mesmo projeto com linhas fictícias embutidas, que abre e calcula no Power BI
+   Desktop sem banco nenhum (clique em Atualizar).
    Entregue o LEIA-ME (com papéis e "se algo der errado") e o
    `HOMOLOGACAO.md`. Depois, ofereça o `memory-card enviar`.
 
@@ -98,6 +104,23 @@ roda onde os dados estão e cola o resultado. Só estrutura volta, nunca dado.
   gestor, publique o HTML como página (artifact) ou envie o arquivo. Os
   comentários da aba Para aprovar ficam só no navegador de quem escreveu: o que
   volta para você é o resumo copiado.
+- **Mostre o layout cedo**: pergunte para que o painel vai ser usado e
+  sugira o modelo (visão geral: `faixa-de-kpis`; várias páginas em ordem:
+  `coluna-de-kpis`; conferência linha a linha: `secoes-com-rolagem`;
+  operacional: `trilho-escuro`; vários KPIs no mesmo formato:
+  `kpis-clicaveis`; apresentação: `historia-longa`; tendência para diretoria:
+  `executivo`; território: `mapa-central`; investigação: `causa-raiz`; conferência:
+  `tabela-lateral`; equipes e pessoas: `equipes`). Trocar é uma linha. Para
+  ranking, Pareto, melhores e piores, status, setas e selos na tabela, use as
+  medidas geradas (`visuais ranking`, [argila.md](referencias/argila.md)).
+- **No visual, comece pela decisão** ([design.md](referencias/design.md)): uma
+  página por pergunta, poucos cartões, cor só com significado. Prefira visual
+  nativo; medida SVG para meta, status e variação dentro da tabela
+  (`svg_barra_meta` o Deidara gera; à mão, siga [svg.md](referencias/svg.md)).
+  Abas, chave liga/desliga, destaque, aviso, setas, skyline e ajuda também
+  saem prontas (`deidara.py visuais`). HTML Content e Deneb (`html`,
+  `vegalite`) só quando a pessoa pede: o administrador precisa liberar os
+  visuais do AppSource; registre no LEIA-ME.
 - **Na entrega**, diga quem faz o quê (DBA, analista, dono do indicador), o
   que ficou pendente e que a homologação vem antes de publicar.
 
@@ -109,5 +132,8 @@ roda onde os dados estão e cola o resultado. Só estrutura volta, nunca dado.
 - [referencias/descoberta.md](referencias/descoberta.md): buscar, relacionar e provar
 - [referencias/argila.md](referencias/argila.md): formato do argila.json
 - [referencias/metricas.md](referencias/metricas.md): onde criar cada métrica, padrões, dicionário de funções
+- [referencias/design.md](referencias/design.md): princípios de design, página, cor, tema e técnicas de visual
+- [referencias/svg.md](referencias/svg.md): medidas que desenham (SVG em DAX), regras e conferência
+- [referencias/modelos.md](referencias/modelos.md): os seis modelos de layout (fundo desenhado, navegação)
 - [referencias/memory-card.md](referencias/memory-card.md): o cartão do time
 - [referencias/powerbi.md](referencias/powerbi.md): o que é gerado, .pbip x .pbix, limitações
