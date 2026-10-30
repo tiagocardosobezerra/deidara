@@ -15,8 +15,8 @@ Cada tabela lê da sua fonte:
 
 import os
 
-from .sql import nome_view  # noqa: F401  (documenta a ligação tabela -> view)
-from .util import FORMATOS, M_POR_FAMILIA, gravar_json, gravar_texto, guid, ident, m_texto, tmdl_nome
+from tecnicas.c3.sql import nome_view  # noqa: F401  (documenta a ligação tabela -> view)
+from kibaku_nendo.util import FORMATOS, M_POR_FAMILIA, gravar_json, gravar_texto, guid, ident, m_texto, tmdl_nome
 
 COMPATIBILIDADE = 1567
 

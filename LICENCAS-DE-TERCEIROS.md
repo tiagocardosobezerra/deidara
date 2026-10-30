@@ -2,7 +2,7 @@
 
 ## Power BI Design Files (Sajjad Ahmadi)
 
-Os modelos de layout (`argila/modelos.py`, [referencias/modelos.md](referencias/modelos.md))
+Os modelos de layout (`tecnicas/arte/modelos.py`, [referencias/modelos.md](referencias/modelos.md))
 reproduzem a estrutura de páginas de dashboards do repositório
 [Power BI Design Files](https://github.com/Dashboard-Design/Power-BI-Design-Files):
 a divisão em regiões, as proporções e a técnica de fundo desenhado com
@@ -13,7 +13,7 @@ personalizados daqueles dashboards não vêm no Deidara. As práticas de design
 e de SVG em DAX ([referencias/design.md](referencias/design.md),
 [referencias/svg.md](referencias/svg.md), `dicionario/visuais.json`) foram
 escritas para o Deidara a partir do mesmo repositório. O tour guiado
-(`argila/tour.py`) e o agrupador de textos (`ferramentas/agrupar_textos.py`)
+(`tecnicas/c1/tour.py`) e o agrupador de textos (`ferramentas/agrupar_textos.py`)
 seguem as ideias do Interactive Dashboard Tour e do Clustering & Similarity
 Score dele, com código escrito para o Deidara.
 

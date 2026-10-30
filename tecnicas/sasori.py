@@ -1,5 +1,11 @@
 """
-O dicionário de funções: nenhuma função é inventada.
+================================================================================
+ SASORI — o parceiro da arte eterna
+================================================================================
+Nome de referência: Sasori, o parceiro do Deidara na Akatsuki, defendia a arte
+que dura para sempre, contra a explosão que dura um instante. Aqui é o que é
+permanente e conferido: o dicionário de funções e os padrões de indicador.
+Nenhuma função é inventada.
 
 Mesma regra das tabelas e colunas: função DAX que não está no dicionário é
 erro. O dicionário traz, de cada função, nome, categoria, assinatura e o link
@@ -18,7 +24,7 @@ import json
 import os
 import re
 
-from .util import chave
+from kibaku_nendo.util import chave
 
 PASTA = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), 'dicionario')
 _cache = {}

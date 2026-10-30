@@ -22,8 +22,9 @@ sys.path.insert(0, os.path.join(RAIZ, 'ferramentas'))
 import deidara  # noqa: E402
 import empacotar  # noqa: E402
 import validar_pbip  # noqa: E402
-from argila.especificacao import referencias_dax, resolver  # noqa: E402
-from argila import catalogo, receitas  # noqa: E402
+from kibaku_nendo.especificacao import referencias_dax, resolver  # noqa: E402
+from tecnicas.luneta import catalogo  # noqa: E402
+from tecnicas.luneta import receitas  # noqa: E402
 
 EXEMPLO = os.path.join(RAIZ, 'exemplos', 'aurora')
 
@@ -137,7 +138,7 @@ class TestValidacao(unittest.TestCase):
 
     def test_estoque_na_data(self):
         m, _ = _resolver(_base())
-        from argila.especificacao import medida
+        from kibaku_nendo.especificacao import medida
         hc = medida(m, 'Headcount')
         self.assertIn('dColaborador[Data de Admissão] <= _fim', hc['dax'])
         self.assertIn('fDesligamento[Data do Desligamento] <= _fim', hc['dax'])
@@ -241,7 +242,7 @@ class TestTipos(unittest.TestCase):
         c = self._col('fPedido', 'CODCLI')
         self.assertEqual((c['cast_sql'], c['tipo_tmdl']), ('int', 'int64'))
         self.assertTrue(any('convertida para int' in a for a in self.p.avisos))
-        from argila.sql import views
+        from tecnicas.c3.sql import views
         self.assertIn('CAST(t.[CODCLI] AS int) AS [CODCLI]', views(self.m, self.m['fontes']['loja']))
 
     def test_decimal_com_mais_de_4_casas_vira_double(self):
@@ -262,13 +263,13 @@ class TestTipos(unittest.TestCase):
         self.assertTrue(md['dax'].startswith('DISTINCTCOUNTNOBLANK('))
 
     def test_chave_composta_estavel_no_sql(self):
-        from argila.sql import views
+        from tecnicas.c3.sql import views
         v = views(self.m, self.m['fontes']['loja'])
         self.assertIn("ISNULL(RTRIM(CONVERT(nvarchar(100), t.[EMP])), N'∅')", v)
         self.assertIn("N'|'", v)
 
     def test_conferencia_sem_overflow_e_qualidade_com_nomes(self):
-        from argila.sql import conferencia, qualidade
+        from tecnicas.c3.sql import conferencia, qualidade
         f = self.m['fontes']['loja']
         self.assertIn('COUNT_BIG(*)', conferencia(self.m, f))
         for linha in qualidade(self.m, f).split('UNION ALL'):
@@ -276,7 +277,7 @@ class TestTipos(unittest.TestCase):
                 self.assertIn('AS ocorrencias', linha)
 
     def test_tmdl_de_data_e_moeda(self):
-        from argila import tmdl
+        from tecnicas.c3 import tmdl
         texto = tmdl.tabela(self.m, next(t for t in self.m['tabelas'] if t['nome'] == 'fPedido'))
         self.assertIn('annotation SummarizationSetBy = User', texto)
         self.assertIn('discourageImplicitMeasures', tmdl.modelo(self.m))
@@ -289,15 +290,15 @@ class TestMetas(unittest.TestCase):
         self.m, self.p = _resolver(a)
 
     def test_meta_numerica_vira_medidas(self):
-        from argila.especificacao import medida
+        from kibaku_nendo.especificacao import medida
         meta, cor = medida(self.m, 'Meta Turnover'), medida(self.m, 'Cor Turnover')
         self.assertEqual((meta['dax'], meta['formato']), ('0.05', 'percentual'))
         self.assertTrue(cor['oculta'])
         self.assertIn('_valor <= _meta', cor['dax'])          # turnover: menor é melhor
 
     def test_visuais_usam_a_cor(self):
-        from argila import pbir
-        from argila.layout import posicionar
+        from tecnicas.c3 import pbir
+        from tecnicas.arte.layout import posicionar
         pg = self.m['paginas'][1]
         jsons = [json.dumps(pbir.visual(self.m, v, pos, 'x', 0), ensure_ascii=False) for v, pos in posicionar(pg['visuais'])]
         self.assertTrue(any('"labels"' in j and 'Cor Turnover' in j and 'Meta: 5,0%' in j for j in jsons))
@@ -312,7 +313,7 @@ class TestMetas(unittest.TestCase):
 
 class TestGovernanca(unittest.TestCase):
     def test_rls_gera_papel(self):
-        from argila import tmdl
+        from tecnicas.c3 import tmdl
         a = copy.deepcopy(ARGILA_PEDIDOS)
         a['seguranca'] = [{'papel': 'Por cliente', 'regras': [
             {'tabela': 'dCliente', 'filtro': 'dCliente[NOME] = USERPRINCIPALNAME()'}]}]
@@ -330,7 +331,7 @@ class TestGovernanca(unittest.TestCase):
 
     def test_id_do_visual_nao_depende_da_ordem(self):
         import tempfile as tf
-        from argila import pbir
+        from tecnicas.c3 import pbir
 
         def ids(argila):
             m, _ = _resolver(argila)
@@ -413,7 +414,7 @@ class TestFontes(unittest.TestCase):
         self.assertTrue(any('"Cod Empresa" não existe' in e and 'Cód. Empresa' in e for e in p.erros), p.erros)
 
     def test_power_query_reaproveita_a_consulta_do_usuario(self):
-        from argila import tmdl
+        from tecnicas.c3 import tmdl
         m, _ = _resolver(_base())
         fmeta = next(t for t in m['tabelas'] if t['nome'] == 'fMeta')
         texto = tmdl.tabela(m, fmeta)
@@ -429,7 +430,7 @@ class TestFontes(unittest.TestCase):
         self.assertTrue(any('só vale para fonte sqlserver' in e for e in p.erros), p.erros)
 
     def test_chave_composta_em_power_query(self):
-        from argila import tmdl
+        from tecnicas.c3 import tmdl
         cat, _ = receitas.catalogar(TestReceitas()._colar(COLADO_DAX), 'vendas')
         fonte = catalogo.Fonte('vendas', cat, '')
         a = {'projeto': 'V', 'fontes': {'vendas': {}}, 'tabelas': [
@@ -452,7 +453,7 @@ class TestDicionario(unittest.TestCase):
         self.assertTrue(any('SAMEPERIODLASTYAER' in e and 'SAMEPERIODLASTYEAR' in e for e in p.erros), p.erros)
 
     def test_dax_gerado_e_padroes_so_usam_funcoes_do_dicionario(self):
-        from argila import dicionario
+        from tecnicas import sasori as dicionario
         m, _ = _resolver(_base())
         for md in m['medidas']:
             self.assertEqual(dicionario.desconhecidas(md['dax']), [], md['nome'])
@@ -462,11 +463,11 @@ class TestDicionario(unittest.TestCase):
                     self.assertEqual(dicionario.desconhecidas(dax), [], pd['id'])
 
     def test_nomes_de_coluna_e_texto_nao_viram_funcao(self):
-        from argila import dicionario
+        from tecnicas import sasori as dicionario
         self.assertEqual(dicionario.funcoes_usadas("SUM('T x'[A(b)]) + LEN(\"ABC(\") // FOO(1)"), ['SUM', 'LEN'])
 
     def test_toda_funcao_tem_link_oficial_e_as_principais_tem_descricao(self):
-        from argila import dicionario
+        from tecnicas import sasori as dicionario
         dax = dicionario.funcoes('dax')
         for n in ('CALCULATE', 'DIVIDE', 'TOTALYTD', 'DATESINPERIOD', 'USERELATIONSHIP'):
             self.assertTrue(dax[n]['url'].startswith('https://learn.microsoft.com/pt-br/dax/'), n)
@@ -484,7 +485,7 @@ class TestDicionario(unittest.TestCase):
 
 class TestDescoberta(unittest.TestCase):
     def test_tokens_e_nucleo(self):
-        from argila import descoberta as d
+        from tecnicas.luneta import descoberta as d
         self.assertEqual(d.nucleo('CODEMPRESA'), {'empresa'})
         self.assertEqual(d.nucleo('Cód. Empresa'), {'empresa'})
         self.assertEqual(d.nucleo('cod_empresa_fk'), {'empresa'})
@@ -493,7 +494,7 @@ class TestDescoberta(unittest.TestCase):
         self.assertFalse(d.tem_marca_de_chave('Empresa'))
 
     def test_buscar_por_pedido_em_todas_as_fontes(self):
-        from argila import descoberta as d
+        from tecnicas.luneta import descoberta as d
         self.assertEqual(d.buscar(CATALOGOS, 'salário dos colaboradores')[0]['tabela'], 'F_FUNCIONARIO')
         nomes = [r['tabela'] for r in d.buscar(CATALOGOS, 'meta de turnover por empresa')[:3]]
         self.assertIn('Metas', nomes)
@@ -502,7 +503,7 @@ class TestDescoberta(unittest.TestCase):
         a = _base()
         a['relacionamentos'] = [r for r in a['relacionamentos'] if r['de'] != 'fMeta']
         m, _ = _resolver(a)
-        from argila import descoberta as d
+        from tecnicas.luneta import descoberta as d
         tabelas = [(t['fonte'], t['origem'], t['nome']) for t in m['tabelas'] if t.get('origem')]
         return d.relacionar(CATALOGOS, tabelas, {(r['de'], r['para']) for r in m['relacionamentos']})
 
@@ -521,13 +522,13 @@ class TestDescoberta(unittest.TestCase):
         self.assertTrue(all(s['confianca'] != 'alta' for s in nome))
 
     def test_tabelas_ja_ligadas_nao_recebem_sugestao(self):
-        from argila import descoberta as d
+        from tecnicas.luneta import descoberta as d
         m, _ = _resolver(_base())
         tabelas = [(t['fonte'], t['origem'], t['nome']) for t in m['tabelas'] if t.get('origem')]
         self.assertEqual(d.relacionar(CATALOGOS, tabelas, {(r['de'], r['para']) for r in m['relacionamentos']}), [])
 
     def test_trecho_argila_pede_quem_confirmou(self):
-        from argila import descoberta as d
+        from tecnicas.luneta import descoberta as d
         trecho = d.trecho_argila(self._sem_ligacao_da_planilha()[0])
         self.assertEqual(trecho['declarada']['campos'], [['Cód. Empresa', 'CODEMPRESA']])
         self.assertEqual(trecho['declarada']['por'], '<quem confirmou>')
@@ -535,7 +536,7 @@ class TestDescoberta(unittest.TestCase):
 
 class TestProva(unittest.TestCase):
     def test_receita_sql_na_mesma_fonte_e_m_entre_fontes(self):
-        from argila import prova
+        from tecnicas.luneta import prova
         sql_ = prova.receita_sql(('F_DESLIGAMENTO', 'CODMOTIVO', 'fDesligamento[CODMOTIVO]'),
                                  ('F_MOTIVO_DESLIGAMENTO', 'CODMOTIVO', 'dMotivo[CODMOTIVO]'), 'dbo', 'dbo')
         for trecho in ('LEFT JOIN mae AS m ON m.k = f.k', 'AS mae_unica', 'pct_linhas_com_par', 'COUNT_BIG'):
@@ -548,7 +549,7 @@ class TestProva(unittest.TestCase):
         self.assertIn('Sql.Database("S", "B"){[Schema="dbo", Item="N_EMPRESA"]}[Data]', m)
 
     def _provar(self, linhas):
-        from argila import prova
+        from tecnicas.luneta import prova
         d = tempfile.mkdtemp(prefix='ddp')
         arq = os.path.join(d, 'r.txt')
         with open(arq, 'w', encoding='utf-8') as f:
@@ -596,7 +597,7 @@ class TestMemoryCard(unittest.TestCase):
     """Cartão do time local (sem GitHub); o Deidara usa a seção deidara/ com a estrutura padrão."""
 
     def setUp(self):
-        from argila import memory_card
+        from tecnicas import memory_card
         self.mc = memory_card
         self.dir = tempfile.mkdtemp(prefix='ddm')
         self.cartao = os.path.join(self.dir, 'cartao')
@@ -755,8 +756,9 @@ class TestDesign(unittest.TestCase):
         return a
 
     def test_barra_meta_segue_as_regras_de_svg(self):
-        from argila import dicionario, tmdl
-        from argila.especificacao import medida
+        from tecnicas import sasori as dicionario
+        from tecnicas.c3 import tmdl
+        from kibaku_nendo.especificacao import medida
         m, p = _resolver(self._com_barra())
         self.assertEqual(p.erros, [])
         self.assertFalse([x for x in p.avisos if '[SVG]' in x], p.avisos)
@@ -910,7 +912,7 @@ class TestModelos(unittest.TestCase):
 
 class TestDemo(unittest.TestCase):
     def test_linhas_coerentes(self):
-        from argila import demo
+        from tecnicas.bunshin import demo
         m, _ = _resolver(_base())
         d = demo.linhas(m)
         self.assertEqual(len(d['dEmpresa']), 8)
@@ -991,8 +993,8 @@ class TestMigracao(unittest.TestCase):
         return a
 
     def test_medidas_de_ranking_e_svg(self):
-        from argila import dicionario
-        from argila.especificacao import medida
+        from tecnicas import sasori as dicionario
+        from kibaku_nendo.especificacao import medida
         m, p = _resolver(self._argila())
         self.assertEqual(p.erros, [])
         self.assertFalse([x for x in p.avisos if '[SVG]' in x or 'não filtra parte' in x], p.avisos)
@@ -1005,7 +1007,7 @@ class TestMigracao(unittest.TestCase):
         self.assertEqual(medida(m, 'Posição')['formato'], 'inteiro')
         self.assertEqual(medida(m, 'Pareto')['formato'], 'percentual')
         self.assertTrue(medida(m, 'Seta')['imagem'])
-        from argila.simulacao import Simulador, categorias
+        from tecnicas.bunshin.simulacao import Simulador, categorias
         sim = Simulador(m)
         cargo = {'tipo': 'coluna', 'tabela': 'dCargo', 'nome': 'Cargo', 'familia': 'texto'}
         pos = sorted(sim.valor('Posição', [(cargo, r)]) for r in categorias(m, cargo))
@@ -1075,8 +1077,8 @@ class TestMigracao(unittest.TestCase):
         return a
 
     def test_radar_bolha_desvio_e_lista(self):
-        from argila import dicionario
-        from argila.especificacao import medida
+        from tecnicas import sasori as dicionario
+        from kibaku_nendo.especificacao import medida
         m, p = _resolver(self._tecnicas())
         self.assertEqual(p.erros, [])
         self.assertFalse([x for x in p.avisos if '[SVG]' in x], p.avisos)
@@ -1089,7 +1091,7 @@ class TestMigracao(unittest.TestCase):
             self.assertEqual(dicionario.desconhecidas(md['dax']), [], nome)
         self.assertTrue(medida(m, 'Radar')['imagem'])
         self.assertIsNone(medida(m, 'Top 3')['formato'])
-        from argila.simulacao import Simulador
+        from tecnicas.bunshin.simulacao import Simulador
         self.assertEqual(len(Simulador(m).lista(medida(m, 'Top 3'))), 3)
         a = self._tecnicas()
         _md(a, 'Radar')['medidas'] = ['Headcount', 'Desligamentos']
@@ -1099,7 +1101,7 @@ class TestMigracao(unittest.TestCase):
         self.assertTrue(any('"colunas"' in e for e in p.erros), p.erros)
 
     def test_linha_de_meta_so_com_meta_fixa(self):
-        from argila import pbir
+        from tecnicas.c3 import pbir
         m, p = _resolver(self._tecnicas())
         v = m['paginas'][1]['visuais'][1]
         ref = pbir.visual(m, v, {'x': 0, 'y': 0, 'w': 400, 'h': 300}, 'x', 0)['visual']['objects']['y1AxisReferenceLine'][0]
@@ -1141,7 +1143,7 @@ class TestMigracao(unittest.TestCase):
         shutil.rmtree(d, ignore_errors=True)
 
     def test_mapa_com_pizza_usa_series(self):
-        from argila import pbir
+        from tecnicas.c3 import pbir
         a = _base()
         a['paginas'][1]['visuais'] = [{'tipo': 'mapa', 'local': 'dEmpresa[Empresa]', 'valores': ['Headcount'],
                                        'legenda': 'dCargo[Cargo]'}]
@@ -1150,11 +1152,11 @@ class TestMigracao(unittest.TestCase):
         v = m['paginas'][1]['visuais'][0]
         q = pbir.visual(m, v, {'x': 0, 'y': 0, 'w': 400, 'h': 300}, 'x', 0)['visual']['query']['queryState']
         self.assertEqual(set(q), {'Category', 'Series', 'Size'})
-        from argila import prototipo
+        from tecnicas.c1 import prototipo
         self.assertIn('<path d="M', prototipo._mapa(prototipo.Simulador(m), v, 400, 300, ['#118DFF', '#E66C37']))
 
     def test_padrao_continua_sem_estilo(self):
-        from argila import pbir
+        from tecnicas.c3 import pbir
         m, _ = _resolver(_base())
         v = next(v for pg in m['paginas'] for v in pg['visuais'] if v['tipo'] == 'tabela')
         self.assertNotIn('columnHeaders', (pbir.visual(m, v, {'x': 0, 'y': 0, 'w': 10, 'h': 10}, 'x', 0)['visual']
@@ -1198,8 +1200,8 @@ class TestTecnicasCompletas(unittest.TestCase):
         return a
 
     def test_medidas_e_tabelas_auxiliares(self):
-        from argila import dicionario
-        from argila.especificacao import medida, tabela_do_modelo
+        from tecnicas import sasori as dicionario
+        from kibaku_nendo.especificacao import medida, tabela_do_modelo
         m, p = _resolver(self._argila())
         self.assertEqual(p.erros, [])
         self.assertFalse([x for x in p.avisos if '[SVG]' in x or 'não chega em' in x or 'fica parado' in x], p.avisos)
@@ -1217,7 +1219,7 @@ class TestTecnicasCompletas(unittest.TestCase):
         for t in ('Escolhido (opções)', 'Chave (chave)', 'Destacar Cargo'):
             self.assertTrue(tabela_do_modelo(m, t)['auxiliar'], t)
         self.assertTrue(medida(m, 'Iniciais (ligado)') and medida(m, 'Chave · chave ligada') and medida(m, 'Aviso · fundo'))
-        from argila.simulacao import Simulador, categorias
+        from tecnicas.bunshin.simulacao import Simulador, categorias
         sim = Simulador(m)
         self.assertEqual(categorias(m, {'tabela': 'Escolhido (opções)', 'nome': 'Opção'}), ['Pessoas', 'Custo'])
         self.assertEqual(sim.valor('Escolhido'), sim.valor('Headcount'))
@@ -1290,8 +1292,8 @@ class TestCausaRaiz(unittest.TestCase):
         return a
 
     def test_medidas(self):
-        from argila import dicionario
-        from argila.especificacao import medida
+        from tecnicas import sasori as dicionario
+        from kibaku_nendo.especificacao import medida
         m, p = _resolver(self._argila())
         self.assertEqual(p.erros, [])
         self.assertFalse([x for x in p.avisos if '[SVG]' in x or 'foi feita para as linhas' in x], p.avisos)
@@ -1305,7 +1307,7 @@ class TestCausaRaiz(unittest.TestCase):
         self.assertTrue(medida(m, 'Espinha')['imagem'])
         self.assertEqual(medida(m, 'Impacto')['cor_medida'], 'Cor Impacto')
         self.assertIn('_impacto <= 0', medida(m, 'Cor Impacto')['dax'])                 # menos desligamento é bom
-        from argila.simulacao import Simulador
+        from tecnicas.bunshin.simulacao import Simulador
         sim = Simulador(m)
         cargo = {'tabela': 'dCargo', 'nome': 'Cargo', 'tipo': 'coluna'}
         r = 'Cargo A'
@@ -1379,7 +1381,7 @@ class TestExperiencia(unittest.TestCase):
         self.assertEqual(len(p.consequencias[p.erros[0]]), 5)
 
     def test_relatorio_tem_proximo_passo(self):
-        from argila import relato
+        from kibaku_nendo import relato
         m, p = _resolver(_base())
         texto = relato.validacao(m, p, 'x.json')
         self.assertIn('Próximo passo', texto)
@@ -1463,7 +1465,7 @@ class TestComeco(unittest.TestCase):
 
 class TestPrototipoParaAprovar(unittest.TestCase):
     def setUp(self):
-        from argila import prototipo
+        from tecnicas.c1 import prototipo
         a = _base()
         _md(a, 'Turnover')['meta'] = 0.05
         self.m, self.p = _resolver(a)
@@ -1492,7 +1494,7 @@ class TestPrototipoParaAprovar(unittest.TestCase):
         self.assertNotIn("b.versao+')\n", js)
 
     def test_resumo_traz_codigo_decisao_e_aprovador(self):
-        from argila import prototipo
+        from tecnicas.c1 import prototipo
         self.assertIn(f'data-codigo="{prototipo.codigo_do_prototipo(self.m)}"', self.html)
         self.assertIn('name="decisao" value="Aprovo"', self.html)
         self.assertIn('id="aprovador"', self.html)
@@ -1528,7 +1530,7 @@ def _catalogo_grande(n=600, colunas=15):
 class TestEscala(unittest.TestCase):
     def test_relacionar_com_indice_e_rapido(self):
         import time
-        from argila import descoberta
+        from tecnicas.luneta import descoberta
         f = _catalogo_grande()
         tabs = [('erp', t['nome'], t['nome']) for t in list(f.tabelas.values())[:40]]
         inicio = time.time()
@@ -1551,7 +1553,7 @@ class TestEscala(unittest.TestCase):
 
 class TestSimulacao(unittest.TestCase):
     def setUp(self):
-        from argila.simulacao import Simulador, categorias
+        from tecnicas.bunshin.simulacao import Simulador, categorias
         self.m, _ = _resolver(_base())
         self.sim, self.cat = Simulador(self.m), categorias
         self.cargo = {'tipo': 'coluna', 'tabela': 'dCargo', 'nome': 'Cargo', 'familia': 'texto'}

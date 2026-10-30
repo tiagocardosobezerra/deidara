@@ -10,10 +10,10 @@ cada visual vem de `layout.posicionar`, a mesma do protótipo aprovado.
 import copy
 import os
 
-from .especificacao import TIPOS_VISUAL, medida
-from .modelos import montar, paginas_do_relatorio
-from .prototipo import titulo_do_cartao
-from .util import curto, gravar_json
+from kibaku_nendo.especificacao import TIPOS_VISUAL, medida
+from tecnicas.arte.modelos import montar, paginas_do_relatorio
+from tecnicas.c1.prototipo import titulo_do_cartao
+from kibaku_nendo.util import curto, gravar_json
 
 S = 'https://developer.microsoft.com/json-schemas/fabric/item/report/definition'
 
@@ -85,7 +85,7 @@ def _estilo(m, tipo):
     modelo = m.get('modelo') or 'padrao'
     if modelo == 'padrao':
         return None
-    from .dicionario import estilos
+    from tecnicas.sasori import estilos
     dados = estilos()
     return (dados['modelos'].get(modelo) or {}).get(tipo) or dados['base'].get(tipo)
 
@@ -404,7 +404,7 @@ def _botao_ajuda(nome, pos, destino, icone, rotulo, z):
 
 def _nota_de_ajuda(m, v):
     """O que a nota da ajuda diz sobre o visual: o título e o que cada medida significa."""
-    from .especificacao import _medidas_do_visual
+    from kibaku_nendo.especificacao import _medidas_do_visual
     linhas = [v.get('titulo') or (v['categoria']['nome'] if v.get('categoria') else v['tipo'])]
     if v.get('categoria') and v['tipo'] in ('segmentador', 'botoes', 'abas', 'alternar'):
         linhas.append(f'Escolha aqui para filtrar a página por {v["categoria"]["nome"]}.' if v['tipo'] in

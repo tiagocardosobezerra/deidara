@@ -7,6 +7,19 @@
 mostra a escultura (o protótipo) e, só depois do "sim" do usuário, detona
 (gera o projeto Power BI completo).
 
+Nome de referência: o Deidara da Akatsuki, o artista da argila explosiva. Este
+arquivo é ele: recebe o comando e chama a técnica certa, como a Stella faz com
+os satélites do Vegapunk. O motor é a argila (`kibaku_nendo/`) e cada etapa é
+uma técnica dele (`tecnicas/`):
+
+    luneta        receita, catalogar, buscar, relacionar, provar
+    te_no_kuchi   novo, esbocar
+    c1 + bunshin  prototipar (números fictícios)
+    katsu         aprovar, diff
+    c3            gerar
+    sasori        funcoes, padroes
+    arte          modelos, visuais
+
 Fluxo:
     receita     a consulta (SQL, DAX ou Power Query) que a pessoa roda onde os
                 dados estão; devolve só estrutura, nunca linhas de dado
@@ -61,10 +74,23 @@ import sys
 RAIZ = os.path.dirname(os.path.abspath(__file__))
 sys.path.insert(0, RAIZ)
 
-from argila import (VERSAO, catalogo, descoberta, dicionario, docs, esboco, governanca, memory_card,  # noqa: E402
-                    pbir, prova, prototipo, receitas, relato, sql, tmdl)
-from argila.especificacao import resolver  # noqa: E402
-from argila.util import ErroDeUso, gravar_json, gravar_texto, ident, ler_json, sha256_arquivo  # noqa: E402
+from kibaku_nendo import VERSAO  # noqa: E402
+from tecnicas.luneta import catalogo  # noqa: E402
+from tecnicas.luneta import descoberta  # noqa: E402
+from tecnicas import sasori as dicionario  # noqa: E402
+from tecnicas.c3 import docs  # noqa: E402
+from tecnicas import te_no_kuchi as esboco  # noqa: E402
+from tecnicas import katsu as governanca  # noqa: E402
+from tecnicas import memory_card  # noqa: E402
+from tecnicas.c3 import pbir  # noqa: E402
+from tecnicas.luneta import prova  # noqa: E402
+from tecnicas.c1 import prototipo  # noqa: E402
+from tecnicas.luneta import receitas  # noqa: E402
+from kibaku_nendo import relato  # noqa: E402
+from tecnicas.c3 import sql  # noqa: E402
+from tecnicas.c3 import tmdl  # noqa: E402
+from kibaku_nendo.especificacao import resolver  # noqa: E402
+from kibaku_nendo.util import ErroDeUso, gravar_json, gravar_texto, ident, ler_json, sha256_arquivo  # noqa: E402
 
 
 # pasta do projeto + nome + o arquivo mais fundo do .pbip (visual.json de uma página)
@@ -730,7 +756,7 @@ def cmd_visuais(a):
 
 
 def cmd_modelos(a):
-    from argila.modelos import MODELOS
+    from tecnicas.arte.modelos import MODELOS
     print('Modelos de layout ("modelo" no argila.json; ver referencias/modelos.md):')
     for k, v in MODELOS.items():
         print(f'  {k:<20} {v}')
@@ -822,7 +848,8 @@ def cmd_aprovar(a):
                       'observacao': reg['observacao'], 'mudancas': ['primeira versão aprovada']}]
     reg['historico'], reg['retrato'] = historico, retrato
     gravar_json(arq, reg)
-    print(f'Aprovado por {a.por} em {reg["em"]} ({len(problemas.avisos)} aviso(s) aceito(s)).')
+    print(f'Katsu! Aprovado por {a.por} em {reg["em"]} ({len(problemas.avisos)} aviso(s) aceito(s)). '
+          'A geração (`gerar`) está liberada.')
     for x in mudancas:
         print(f'  MUDOU  {x}')
     print(f'Registro: {_arquivo_aprovacao(a.argila)}')
@@ -866,7 +893,7 @@ def cmd_gerar(a):
         'settings': {'enableAutoRecovery': True}})
     gravar_texto(os.path.join(pasta, '.gitignore'), '**/.pbi/localSettings.json\n**/.pbi/cache.abf\n')
     if a.demo:
-        from argila import demo
+        from tecnicas.bunshin import demo
         modelo['_demo'] = demo.expressoes(modelo)
     tmdl.gravar(modelo, pasta, nome)
     pbir.gravar(modelo, pasta, nome)
@@ -935,7 +962,7 @@ def _mais_novo(arq, *outros):
 
 def _conferir_resumo(caminho, modelo):
     """O resumo copiado da aba Para aprovar: confere código do protótipo e decisão. None = ok."""
-    from argila import prototipo as _p
+    from tecnicas.c1 import prototipo as _p
     with open(caminho, encoding='utf-8-sig') as f:
         texto = f.read()
     codigo = _p.codigo_do_prototipo(modelo)

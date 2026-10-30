@@ -15,7 +15,7 @@ direto e a planilha pela consulta que já existe no arquivo.
 
 import datetime
 
-from .util import m_texto, sql_nome
+from kibaku_nendo.util import m_texto, sql_nome
 
 LIMITES = {'provada': 99.0, 'ressalva': 90.0}
 

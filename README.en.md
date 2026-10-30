@@ -171,8 +171,18 @@ deidara/
 ├── AVISO.md               # Third-party data and privacy
 ├── LICENCAS-DE-TERCEIROS.md  # Power BI Design Files MIT license and credits
 ├── LICENSE                # MIT License
-├── deidara.py             # Entry point (all commands)
-├── argila/                # The engine: recipes, catalog, discovery, draft, validation, prototype and generation
+├── deidara.py             # Deidara himself: entry point that calls each technique (all commands)
+├── kibaku_nendo/          # Explosive clay: the engine that reads and validates the spec
+├── tecnicas/              # Deidara's techniques, one per step of the flow:
+│   ├── luneta/            #   scope eye: recipes, catalog, discovery and proof (sees the source without touching it)
+│   ├── te_no_kuchi.py     #   hand mouths: drafts argila.json from the request
+│   ├── c1/                #   small figures: the HTML prototype and the guided tour
+│   ├── bunshin/           #   clay clone: fictitious numbers and demo project
+│   ├── katsu.py           #   "Katsu!": the sign-off and the approved snapshot
+│   ├── c3/                #   the big work: TMDL, PBIR, SQL views and documentation
+│   ├── arte/              #   "art is an explosion": layout models and visual placement
+│   ├── sasori.py          #   eternal art: function dictionary and checked patterns
+│   └── memory_card.py     #   the team's memory card
 ├── dicionario/            # DAX and Power Query functions, KPI patterns, visual techniques and synonyms
 ├── referencias/           # Guides: flow, sources, discovery, argila.json, metrics, design, SVG, Memory Card, Power BI and tutorial
 ├── exemplos/aurora/       # Complete fictional example, from pasted result to generated project
@@ -191,9 +201,9 @@ Function names, categories, signatures and links in the dictionary come from Mic
 
 ## Acknowledgements
 
-* My wife **Júlia** and my children **Arthur** and **Aurora**, the safe harbor where I find peace, inspiration and the lightness I need every day.
+* My wife **Júlia** and my children **Arthur** and **Dante**, the safe harbor where I find peace, inspiration and the lightness I need every day.
 * **Bruna Cardoso Bezerra** | [brunacbezerra](https://github.com/brunacbezerra), for teaching me everything I know about Claude Code.
-* **Sajjad Ahmadi** | [Dashboard-Design](https://github.com/Dashboard-Design/Power-BI-Design-Files), for sharing the dashboards and the design and DAX SVG practices that became Deidara's layout templates.
+* **Sajjad Ahmadi** | [Dashboard-Design](https://github.com/Dashboard-Design), for sharing in [Power BI Design Files](https://github.com/Dashboard-Design/Power-BI-Design-Files) the dashboards, visual techniques and design and DAX SVG practices that became Deidara's layout templates, techniques, palettes, root cause visuals and tour (MIT license; see [`LICENCAS-DE-TERCEIROS.md`](LICENCAS-DE-TERCEIROS.md)).
 * **You**, for using Deidara!
 
 ## Third-party data notice

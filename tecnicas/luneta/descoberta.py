@@ -23,9 +23,9 @@ import re
 from collections import Counter, defaultdict
 from functools import lru_cache
 
-from .util import sem_acento
+from kibaku_nendo.util import sem_acento
 
-PASTA_DICIONARIO = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), 'dicionario')
+PASTA_DICIONARIO = os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))), 'dicionario')
 
 # prefixos que marcam código/chave e que vêm colados no nome (CODEMPRESA, IDCLIENTE, NRPEDIDO);
 # saem do núcleo do nome. Chaves naturais (MATRICULA, CPF) ficam no núcleo, mas também contam como chave.

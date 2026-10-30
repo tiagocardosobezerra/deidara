@@ -1,5 +1,11 @@
 """
-Governança: o retrato do que foi aprovado e a diferença entre duas versões.
+================================================================================
+ KATSU — a palavra que detona
+================================================================================
+Nome de referência: "Katsu!" é o que o Deidara diz para a argila explodir.
+Nada explode antes dele. Aqui é o aceite: o "sim" do usuário que libera a
+geração (C3), com o retrato do que foi aprovado e a diferença entre duas
+versões.
 
 O retrato é só o que importa para quem consome o painel (tabelas e colunas,
 relacionamentos, definição e DAX de cada indicador, páginas e visuais, papéis

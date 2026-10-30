@@ -3,8 +3,8 @@ A documentação que acompanha a entrega: o passo a passo para tornar o
 protótipo real, o dicionário de indicadores e as medidas em .dax.
 """
 
-from .sql import nome_view
-from .util import FORMATOS
+from tecnicas.c3.sql import nome_view
+from kibaku_nendo.util import FORMATOS
 
 
 def medidas_dax(m):
@@ -62,7 +62,7 @@ def dicionario(m, historico=()):
 
 
 def _pendencias_por_tema(avisos):
-    from .relato import TEMAS, tema_do_aviso
+    from kibaku_nendo.relato import TEMAS, tema_do_aviso
     if not avisos:
         return '- Nenhuma.'
     grupos = {}
@@ -97,7 +97,7 @@ def _onde_ler(m, nome):
 
 def homologacao(m, nome, aprovacao):
     """A folha de homologação: o que conferir, onde anotar e o critério de cada item."""
-    from .sql import fontes_sql
+    from tecnicas.c3.sql import fontes_sql
     linhas = [f'# {m["projeto"]} — homologação', '',
               f'Painel aprovado por **{aprovacao.get("aprovado_por", "?")}** em {aprovacao.get("em", "?")}. '
               'Preencha depois da primeira atualização no Power BI Desktop. Só publique com tudo marcado.', '',
@@ -140,8 +140,8 @@ def homologacao(m, nome, aprovacao):
 
 
 def _passos_fontes(m, nome):
-    from .tmdl import parametros
-    from .sql import fontes_sql
+    from tecnicas.c3.tmdl import parametros
+    from tecnicas.c3.sql import fontes_sql
     linhas, n = [], 1
     for f in fontes_sql(m):
         serv, banco = parametros(f)
@@ -162,7 +162,7 @@ def _passos_fontes(m, nome):
 
 
 def leia_me(m, nome, aprovacao, avisos):
-    from .sql import fontes_sql
+    from tecnicas.c3.sql import fontes_sql
     pend = _pendencias_por_tema(avisos)
     fontes, n = _passos_fontes(m, nome)
     sqls = fontes_sql(m)

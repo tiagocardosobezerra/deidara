@@ -16,7 +16,7 @@ TITULO = 48              # faixa do título da página
 
 def posicionar(visuais):
     """Devolve [(visual, {'x','y','w','h'})] na ordem de leitura."""
-    from .modelos import GRAF, KPI, SEG
+    from tecnicas.arte.modelos import GRAF, KPI, SEG
     seg = [v for v in visuais if v['tipo'] in SEG]
     kpi = [v for v in visuais if v['tipo'] in KPI]
     graf = [v for v in visuais if v['tipo'] in GRAF]

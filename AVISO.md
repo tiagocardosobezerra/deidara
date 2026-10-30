@@ -9,7 +9,7 @@ quem é a responsabilidade.
 
 | Vem junto | Não vem |
 |---|---|
-| o motor (`deidara.py`, `argila/`), o dicionário de funções e os padrões de indicador, as referências, as ferramentas e os testes | nenhum metadado de sistema real |
+| o motor (`deidara.py`, `kibaku_nendo/`, `tecnicas/`), o dicionário de funções e os padrões de indicador, as referências, as ferramentas e os testes | nenhum metadado de sistema real |
 | um exemplo **fictício** (`exemplos/aurora`): um ERP inventado e uma planilha de metas inventada, do resultado colado ao projeto gerado | nenhum catálogo, painel, aprovação ou cartão de quem usa |
 
 O motor **não contém, nunca conteve e nunca vai conter** estrutura de nenhum

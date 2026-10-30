@@ -16,9 +16,10 @@ Formato completo do argila.json: referencias/argila.md.
 import re
 from collections import deque
 
-from . import dicionario, prova
+from tecnicas import sasori as dicionario
+from tecnicas.luneta import prova
 
-from .util import (FORMATOS, numero_br, NUMERICAS, SQL_POR_FAMILIA, chave, dax_coluna, dax_medida, dax_tabela,
+from kibaku_nendo.util import (FORMATOS, numero_br, NUMERICAS, SQL_POR_FAMILIA, chave, dax_coluna, dax_medida, dax_tabela,
                    familia_da_coluna, sql_tipo, tipo_tmdl)
 
 TIPOS_TABELA = {'fato', 'dimensao'}
@@ -194,7 +195,7 @@ def _fontes(argila, catalogos, p):
 
 def _privacidade(m, p):
     """Dado pessoal (CPF, e-mail, nome de pessoa...) no modelo sem nenhum uso: aviso."""
-    from .esboco import _pessoal
+    from tecnicas.te_no_kuchi import _pessoal
     usados = set()
     for pg in m['paginas']:
         for v in pg['visuais']:
@@ -1422,7 +1423,7 @@ def conferir_svg(dax, p, onde, por_linha=True):
 
 def _modelo(argila, m, p):
     """O modelo de layout (referencias/modelos.md). A história longa é escura: sem tema próprio, ganha o escuro."""
-    from .modelos import ESCURO, MODELOS
+    from tecnicas.arte.modelos import ESCURO, MODELOS
     modelo = argila.get('modelo') or 'padrao'
     if modelo not in MODELOS:
         import difflib
@@ -1457,7 +1458,7 @@ def _modelo(argila, m, p):
                 p.aviso('tema', f'[Design] o tema "{dado["arquivo"]}" vai inteiro no relatório: confira a licença de quem '
                                 'fez e dê o crédito no LEIA-ME')
     elif dado.get('paleta'):                       # as paletas dos temas do Power BI Design Files (dicionario/paletas.json)
-        from .dicionario import paletas
+        from tecnicas.sasori import paletas
         todas = paletas()['paletas']
         pal = todas.get(dado['paleta'])
         if not pal:
@@ -1872,9 +1873,9 @@ def _tours(m, p):
     pedidas = [pg for pg in m['paginas'] if pg.get('tour')]
     if not pedidas:
         return
-    from .modelos import montar, paginas_do_relatorio
-    from .pbir import _nota_de_ajuda
-    from .tour import dax_do_tour, html_do_tour, passos
+    from tecnicas.arte.modelos import montar, paginas_do_relatorio
+    from tecnicas.c3.pbir import _nota_de_ajuda
+    from tecnicas.c1.tour import dax_do_tour, html_do_tour, passos
     if (m.get('modelo') or 'padrao') == 'historia-longa':
         p.aviso('tour', '[Design] a história longa é uma página só e rola: o tour guiado fica de fora; use "ajuda"')
         return

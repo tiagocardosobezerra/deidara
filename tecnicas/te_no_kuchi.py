@@ -1,6 +1,11 @@
 """
-Esboço: um primeiro argila.json a partir dos catálogos e de um pedido em
-português, para chegar rápido ao primeiro protótipo.
+================================================================================
+ TE NO KUCHI — as bocas das mãos
+================================================================================
+Nome de referência: as mãos do Deidara têm bocas que mastigam a argila e dão a
+ela a primeira forma. Aqui é o esboço: um primeiro argila.json a partir dos
+catálogos e de um pedido em português, para chegar rápido ao primeiro
+protótipo.
 
 É um ponto de partida, não uma decisão: o que precisa de uma pessoa sai
 marcado e o `validar` não deixa passar:
@@ -10,8 +15,8 @@ marcado e o `validar` não deixa passar:
 
 import re
 
-from . import descoberta
-from .util import chave, sem_acento
+from tecnicas.luneta import descoberta
+from kibaku_nendo.util import chave, sem_acento
 
 PENDENTE_POR = 'A CONFIRMAR'
 PENDENTE_DEF = 'A DEFINIR'
@@ -133,7 +138,7 @@ def cadeias_do_pedido(catalogos, pedido, dentro=None):
     """Os padrões com a cadeia inteira (dicionario/padroes.json) que o pedido cita, com cada papel já achado nos
     catálogos: [{'padrao', 'tabelas': {papel: (fonte, origem, tipo)}, 'colunas': {papel: [(coluna, nome)]},
     'medidas'}] e as notas do que não deu para achar. `dentro`: só estas (fonte, origem) (escolha à mão)."""
-    from .dicionario import padroes
+    from tecnicas.sasori import padroes
     termos = descoberta._expandir(frozenset(descoberta.tokens(pedido)), descoberta._sinonimos())
     achadas, notas = [], []
     for p in padroes()['padroes']:

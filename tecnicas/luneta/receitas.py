@@ -22,8 +22,8 @@ import io
 import os
 import re
 
-from .catalogo import FORMATO
-from .util import chave, familia_da_coluna, m_texto, sem_acento
+from tecnicas.luneta.catalogo import FORMATO
+from kibaku_nendo.util import chave, familia_da_coluna, m_texto, sem_acento
 
 # quebras de linha e tabulações viajam codificadas, para caber numa célula da grade
 QUEBRA, TABULACAO = '⏎', '⇥'

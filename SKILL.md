@@ -17,6 +17,14 @@ Sem argumentos, `deidara.py` mostra o roteiro.
 O Deidara **não se conecta a nenhuma fonte**: entrega uma receita, a pessoa
 roda onde os dados estão e cola o resultado. Só estrutura volta, nunca dado.
 
+Todos os comandos entram pelo `deidara.py`, que chama a técnica certa sobre a
+argila explosiva (`kibaku_nendo/`, o motor). Cada etapa é uma técnica dele, em
+`tecnicas/`: **Luneta** (receitas e descoberta, vê a fonte sem tocar),
+**Te no Kuchi** (o esboço), **C1** (o protótipo), **Bunshin** (os números
+fictícios), **Katsu** (o aceite), **C3** (o projeto completo), **Arte**
+(layout) e **Sasori** (funções e padrões conferidos). Use os nomes só para se
+situar no código; com o usuário, fale da etapa ("o protótipo", "o aceite").
+
 ## Regras que valem sempre
 
 1. **Nunca adivinhe nome de tabela, coluna ou função.** Tudo vem do catálogo

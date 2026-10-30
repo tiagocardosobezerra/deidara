@@ -27,7 +27,7 @@ CSV, API...). Só estrutura: nenhuma linha de dado entra no catálogo.
 
 import difflib
 
-from .util import chave, ler_json
+from kibaku_nendo.util import chave, ler_json
 
 FORMATO = 'deidara-catalogo/1'
 TIPOS_FONTE = {'sqlserver', 'powerbi', 'powerquery'}

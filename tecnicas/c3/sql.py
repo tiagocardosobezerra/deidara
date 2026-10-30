@@ -14,7 +14,7 @@ falhar ou mentir (chave repetida no lado um, órfãos, data fora do
 calendário). Tudo lê só as views: SQL Server 2016 SP1 ou superior.
 """
 
-from .util import sql_nome
+from kibaku_nendo.util import sql_nome
 
 
 def nome_view(m, t):

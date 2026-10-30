@@ -1,5 +1,6 @@
 """
-Memory Card: a seção do Deidara no cartão de memória do time.
+Memory Card: a seção do Deidara no cartão de memória do time. Foge do tema
+de propósito, como no Vegapunk: o nome é o da ideia, não de uma técnica.
 
 Como o memory card de um videogame: cada painel aprovado fica salvo (um
 "save"), com versão e histórico, para ser carregado de novo quando precisar.
@@ -39,7 +40,7 @@ import re
 import shutil
 import subprocess
 
-from .util import chave, gravar_json, gravar_texto, ler_json, sem_acento
+from kibaku_nendo.util import chave, gravar_json, gravar_texto, ler_json, sem_acento
 
 NOME_PADRAO = 'memory-card'
 SECAO = 'deidara'
@@ -261,7 +262,7 @@ def avisos_do_modelo(pasta, modelo):
 # ================================================================== enviar
 def planejar(pasta, argila, modelo, aprovacao, categoria, secao, artigo, motivo, texto, relacionados, status):
     """A prévia do `enviar`: o que vai mudar, versões, bloqueios e o artigo como vai ficar."""
-    from . import governanca
+    from tecnicas import katsu as governanca
     ref = f'{slug(categoria)}/{slug(secao)}/{slug(artigo or modelo["projeto"])}'
     atual = dict(saves(pasta)).get(ref)
     retrato = governanca.retrato(modelo)

@@ -36,8 +36,8 @@ def _argila():
 
 class TestMarcadores(unittest.TestCase):
     def test_medidas_svg(self):
-        from argila import dicionario
-        from argila.especificacao import medida
+        from tecnicas import sasori as dicionario
+        from kibaku_nendo.especificacao import medida
         m, p = _resolver(_argila())
         self.assertEqual(p.erros, [])
         self.assertFalse([x for x in p.avisos if '[SVG]' in x or 'marcador' in x], p.avisos)
@@ -68,7 +68,7 @@ class TestMarcadores(unittest.TestCase):
 
 class TestTour(unittest.TestCase):
     def test_medida_do_tour(self):
-        from argila.especificacao import medida
+        from kibaku_nendo.especificacao import medida
         m, p = _resolver(_argila())
         md = medida(m, 'Tour · Visão Geral')
         self.assertEqual(md['tipo'], 'html_tour')
@@ -89,7 +89,7 @@ class TestTour(unittest.TestCase):
 
 class TestTemaDeArquivo(unittest.TestCase):
     def test_tema_inteiro_no_relatorio(self):
-        from argila import pbir
+        from tecnicas.c3 import pbir
         d = tempfile.mkdtemp(prefix='ddt')
         tema = {'name': 'Comunidade', 'dataColors': ['#123456', '#654321'], 'background': '#FAFAFA',
                 'foreground': '#111111', 'visualStyles': {'*': {'*': {'border': [{'show': True}]}}}}
@@ -160,9 +160,10 @@ class TestGrupoDeCalculo(unittest.TestCase):
         return a
 
     def test_tabela_e_tmdl(self):
-        from argila import dicionario, tmdl
-        from argila.especificacao import tabela_do_modelo
-        from argila.simulacao import categorias
+        from tecnicas import sasori as dicionario
+        from tecnicas.c3 import tmdl
+        from kibaku_nendo.especificacao import tabela_do_modelo
+        from tecnicas.bunshin.simulacao import categorias
         m, p = _resolver(self._argila())
         self.assertEqual(p.erros, [])
         t = tabela_do_modelo(m, 'Período')
@@ -232,7 +233,7 @@ class TestDicaEDetalhe(unittest.TestCase):
             self.assertTrue(any(trecho in e for e in p.erros), (trecho, p.erros))
 
     def test_pbip(self):
-        from argila.modelos import paginas_do_relatorio
+        from tecnicas.arte.modelos import paginas_do_relatorio
         d = tempfile.mkdtemp(prefix='ddd')
         shutil.copytree(os.path.join(EXEMPLO, 'catalogos'), os.path.join(d, 'catalogos'))
         arq = os.path.join(d, 'argila.json')

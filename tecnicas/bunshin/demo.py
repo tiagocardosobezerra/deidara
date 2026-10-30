@@ -22,7 +22,7 @@ As linhas são inventadas, nunca lidas de lugar nenhum, e coerentes entre si:
 import datetime
 import random
 
-from .util import M_POR_FAMILIA, m_texto
+from kibaku_nendo.util import M_POR_FAMILIA, m_texto
 
 LINHAS_DIMENSAO = 8
 LINHAS_ENTIDADE = 600

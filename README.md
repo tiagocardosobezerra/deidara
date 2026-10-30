@@ -169,8 +169,18 @@ deidara/
 ├── AVISO.md               # Dados de terceiros e privacidade
 ├── LICENCAS-DE-TERCEIROS.md  # Licença MIT do Power BI Design Files e créditos
 ├── LICENSE                # MIT License
-├── deidara.py             # Porta de entrada (todos os comandos)
-├── argila/                # O motor: receitas, catálogo, descoberta, esboço, validação, protótipo e geração
+├── deidara.py             # O Deidara: porta de entrada que chama cada técnica (todos os comandos)
+├── kibaku_nendo/          # A argila explosiva: o motor que lê e valida a especificação
+├── tecnicas/              # As técnicas do Deidara, uma por etapa do fluxo:
+│   ├── luneta/            #   olho-luneta: receitas, catálogo, descoberta e prova (vê a fonte sem tocar)
+│   ├── te_no_kuchi.py     #   bocas das mãos: o esboço do argila.json a partir do pedido
+│   ├── c1/                #   figuras pequenas: o protótipo HTML e o tour guiado
+│   ├── bunshin/           #   clone de argila: números fictícios e projeto de demonstração
+│   ├── katsu.py           #   "Katsu!": o aceite e o retrato aprovado
+│   ├── c3/                #   a grande obra: TMDL, PBIR, views SQL e documentação
+│   ├── arte/              #   "a arte é uma explosão": modelos de layout e posição dos visuais
+│   ├── sasori.py          #   arte eterna: dicionário de funções e padrões conferidos
+│   └── memory_card.py     #   o cartão de memória do time
 ├── dicionario/            # Funções DAX e Power Query, padrões de indicador, técnicas de visual e sinônimos
 ├── referencias/           # Guias: fluxo, fontes, descoberta, argila.json, métricas, design, SVG, Memory Card, Power BI e tutorial
 ├── exemplos/aurora/       # Exemplo fictício completo, do resultado colado ao projeto gerado
@@ -189,9 +199,9 @@ Os nomes, categorias, assinaturas e links do dicionário de funções vêm da re
 
 ## Agradecimentos
 
-* Minha esposa **Júlia** e meus filhos **Arthur** e **Aurora**, o porto seguro onde encontro paz, inspiração e a leveza de que preciso todos os dias.
+* Minha esposa **Júlia** e meus filhos **Arthur** e **Dante**, o porto seguro onde encontro paz, inspiração e a leveza de que preciso todos os dias.
 * **Bruna Cardoso Bezerra** | [brunacbezerra](https://github.com/brunacbezerra), por me ensinar tudo o que sei sobre o Claude Code.
-* **Sajjad Ahmadi** | [Dashboard-Design](https://github.com/Dashboard-Design/Power-BI-Design-Files), por compartilhar os dashboards, as práticas de design de painéis e de SVG em DAX que viraram os modelos de layout do Deidara.
+* **Sajjad Ahmadi** | [Dashboard-Design](https://github.com/Dashboard-Design), por compartilhar no [Power BI Design Files](https://github.com/Dashboard-Design/Power-BI-Design-Files) os dashboards, as técnicas de visual e as práticas de design e de SVG em DAX que viraram os modelos de layout, as técnicas, as paletas, a causa raiz e o tour do Deidara (licença MIT; ver [`LICENCAS-DE-TERCEIROS.md`](LICENCAS-DE-TERCEIROS.md)).
 * **Você**, por usar o Deidara!
 
 ## Aviso sobre dados de terceiros
