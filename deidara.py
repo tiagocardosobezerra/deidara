@@ -13,11 +13,12 @@ os satélites do Vegapunk. O motor é a argila (`kibaku_nendo/`) e cada etapa é
 uma técnica dele (`tecnicas/`):
 
     luneta        receita, catalogar, buscar, relacionar, provar
-    te_no_kuchi   novo, esbocar
+    te_no_kuchi   novo, esbocar (com o C2, que escolhe os visuais, e o Tobi, a frase)
     c1 + bunshin  prototipar (números fictícios)
     katsu         aprovar, diff
     c3            gerar
     sasori        funcoes, padroes
+    onoki         onoki (o acerto da busca)
     arte          modelos, visuais
 
 Fluxo:
@@ -73,7 +74,7 @@ sys.path.insert(0, RAIZ)
 from kibaku_nendo import VERSAO  # noqa: E402
 from kibaku_nendo.util import ErroDeUso  # noqa: E402
 from kibaku_nendo.comandos import (cmd_aprovar, cmd_diff, cmd_gerar, cmd_prototipar, cmd_situacao, cmd_validar)  # noqa: E402
-from tecnicas.consultas import cmd_funcoes, cmd_memory_card, cmd_modelos, cmd_padroes, cmd_visuais  # noqa: E402
+from tecnicas.consultas import cmd_onoki, cmd_funcoes, cmd_memory_card, cmd_modelos, cmd_padroes, cmd_visuais  # noqa: E402
 from tecnicas.luneta.comandos import (cmd_buscar, cmd_catalogar, cmd_confirmar, cmd_provar, cmd_receita,
                                       cmd_relacionar)  # noqa: E402
 from tecnicas.te_no_kuchi_comandos import cmd_esbocar, cmd_novo  # noqa: E402
@@ -102,6 +103,7 @@ Apoio
   modelos                     os onze modelos de layout ("modelo" no argila.json)
   funcoes buscar|ver          dicionário de funções DAX e Power Query
   diff                        o que mudou desde a aprovação
+  onoki --casos C.json        o acerto da busca nos pedidos do time (e o que mudou de ordem)
 
 Ajuda de um comando: python deidara.py COMANDO --help
 """
@@ -183,6 +185,12 @@ def main(argv=None):
     g.add_argument('-o', '--saida')
     g.add_argument('--demo', action='store_true',
                    help='projeto de demonstração: linhas fictícias embutidas, abre e calcula sem banco nenhum')
+    on = sub.add_parser('onoki', help='Ōnoki mede a busca contra os pedidos de verdade do time (e pega regressão)')
+    on.add_argument('--casos', required=True, help='JSON com os casos: [{"pedido", "esperadas"}] e o retrato gravado')
+    on.add_argument('--argila')
+    on.add_argument('--catalogos', nargs='+')
+    on.add_argument('--top', type=int, default=3)
+    on.add_argument('--gravar-retrato', action='store_true', help='grava a ordem atual como a referência')
     bu = sub.add_parser('buscar', help='tabelas de um pedido, em todos os catálogos')
     bu.add_argument('pedido')
     bu.add_argument('--argila')
@@ -263,7 +271,7 @@ def main(argv=None):
     return {'receita': cmd_receita, 'catalogar': cmd_catalogar, 'validar': cmd_validar, 'prototipar': cmd_prototipar, 'aprovar': cmd_aprovar,
             'gerar': cmd_gerar, 'diff': cmd_diff, 'funcoes': cmd_funcoes, 'padroes': cmd_padroes, 'visuais': cmd_visuais, 'modelos': cmd_modelos,
             'buscar': cmd_buscar, 'relacionar': cmd_relacionar, 'provar': cmd_provar,
-            'memory-card': cmd_memory_card, 'confirmar': cmd_confirmar, 'situacao': cmd_situacao, 'novo': cmd_novo, 'esbocar': cmd_esbocar, 'status': cmd_status}[a.cmd](a) or 0
+            'memory-card': cmd_memory_card, 'confirmar': cmd_confirmar, 'situacao': cmd_situacao, 'novo': cmd_novo, 'esbocar': cmd_esbocar, 'status': cmd_status, 'onoki': cmd_onoki}[a.cmd](a) or 0
 
 
 if __name__ == '__main__':

@@ -10,6 +10,7 @@ from tecnicas.luneta import descoberta
 from tecnicas import sasori as dicionario
 from tecnicas.luneta import prova
 from tecnicas.luneta import receitas
+from tecnicas.luneta import treino
 from kibaku_nendo.util import gravar_json, gravar_texto, ler_json
 from kibaku_nendo.comandos_apoio import carregar_catalogos, lembrete, ponta_da_ligacao
 
@@ -191,6 +192,9 @@ def cmd_confirmar(a):
         opcoes = ', '.join(f'{r["de"]}->{r["para"]}' for r in pend) or 'nenhuma'
         print(f'Ligação {a.ligacao} não encontrada entre as declaradas ({opcoes}).')
         return 1
+    origem = {t['nome']: t.get('origem') for t in argila.get('tabelas', [])}
+    campo_de, campo_para = alvo['declarada']['campos'][0]
+    treino.aprender_ligacao(origem.get(de) or de, campo_de, origem.get(para) or para, campo_para, not a.remover)
     if a.remover:
         argila['relacionamentos'].remove(alvo)
         gravar_json(a.argila, argila)

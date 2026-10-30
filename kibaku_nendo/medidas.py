@@ -159,7 +159,7 @@ def _svgs(m, p):
         if tipo in ('svg_barra_meta', 'svg_pilula', 'svg_progresso') and not base.get('meta_medida'):
             p.erro(onde, f'a medida "{base["nome"]}" não tem meta: dê "meta" (número ou medida) a ela primeiro')
             continue
-        if tipo in ('svg_seta', 'svg_variacao', 'impacto'):
+        if tipo in ('svg_seta', 'svg_variacao', 'impacto', 'leitura'):
             comp = medida(m, cfg.get('comparar') or '')
             if not comp:
                 p.erro(onde, f'"comparar" ("{cfg.get("comparar")}") precisa ser a medida do valor anterior '
@@ -191,6 +191,11 @@ def _svgs(m, p):
         elif tipo == 'svg_progresso':
             md['depende'].append(base['meta_medida'])
             md['dax'] = svg_progresso(b, dax_medida(base['meta_medida']), col, op)
+        elif tipo == 'leitura':                        # a frase do Tobi: o que o número fez e quem puxou
+            from tecnicas import tobi
+            cfg['aditiva'] = tobi.aditiva(base)
+            md['formato'] = None
+            md['dax'] = tobi.dax(base['nome'], b, dax_medida(cfg['comparar']), col, base['formato'], maior, cfg['aditiva'])
         elif tipo == 'lista_top':
             n = cfg.get('n')
             if not isinstance(n, int) or n < 1:

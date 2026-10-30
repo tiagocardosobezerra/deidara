@@ -99,6 +99,17 @@ def _cartao(sim, v, w, h, cores):
             out.append(f'<text x="12" y="{y:.0f}" class="cel" style="font-weight:600">{i + 1}. {_e(_corta(r, int((w - 110) / 7)))}</text>'
                        f'<text x="{w - 12}" y="{y:.0f}" class="cel" text-anchor="end">{_e(formatar(val, base["formato"], True))}</text>')
         return ''.join(out)
+    if mdl and mdl['tipo'] == 'leitura':            # a frase do Tobi, quebrada em linhas
+        import textwrap
+        texto = sim.valor(md['nome']) or ''
+        for tam in (24, 21, 18, 16, 14):            # a maior letra em que a frase cabe no cartão
+            linhas = textwrap.wrap(texto, max(16, int((w - 24) / (tam * 0.53))))
+            if 40 + len(linhas) * tam * 1.4 <= h:
+                break
+        out = [f'<text x="12" y="20" class="sub">{_e(_corta(v["titulo"], int(w / 6.5)))}</text>']
+        for i, l in enumerate(linhas[:max(1, int((h - 34) / (tam * 1.4)))]):
+            out.append(f'<text x="12" y="{34 + tam * 1.4 * (i + 0.8):.0f}" class="cel" style="font-size:{tam}px">{_e(l)}</text>')
+        return ''.join(out)
     val = sim.valor(md['nome'])
     meta = titulo_do_cartao(sim.m, v, sim)
     topo = f'<text x="12" y="20" class="sub">{_e(meta)}</text>' if meta else ''

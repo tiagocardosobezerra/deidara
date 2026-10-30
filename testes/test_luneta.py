@@ -224,3 +224,77 @@ class TestEscala(unittest.TestCase):
         self.assertEqual(codigo, 1)
         self.assertIn('--pedido', out)
         shutil.rmtree(d, ignore_errors=True)
+
+
+class TestTreino(unittest.TestCase):
+    """O olho treinado: a Luneta aprende com quem corrige a escolha de tabelas e com o dono do dado."""
+
+    def setUp(self):
+        self.dir = tempfile.mkdtemp(prefix='ddtr')
+        os.environ['DEIDARA_TREINO'] = os.path.join(self.dir, 'treino.json')
+
+    def tearDown(self):
+        os.environ['DEIDARA_TREINO'] = '-'
+        shutil.rmtree(self.dir, ignore_errors=True)
+
+    def test_correcao_de_tabela_puxa_a_busca(self):
+        from tecnicas.luneta import descoberta, treino
+        antes = [r['tabela'] for r in descoberta.buscar(CATALOGOS, 'gente da casa')]
+        self.assertNotEqual((antes or [None])[0], 'F_FUNCIONARIO')
+        treino.aprender_tabelas(['gente', 'casa'], ['F_FUNCIONARIO'])
+        depois = descoberta.buscar(CATALOGOS, 'gente da casa')
+        self.assertEqual(depois[0]['tabela'], 'F_FUNCIONARIO')
+        self.assertIn('casa', depois[0]['termos'])
+
+    def test_ligacao_recusada_some_e_confirmada_sobe(self):
+        from tecnicas.luneta import descoberta, treino
+        tabs = [('erp', 'F_FUNCIONARIO', 'dColaborador'), ('erp', 'N_EMPRESA', 'dEmpresa'), ('metas', 'Metas', 'fMetas')]
+
+        def acha(sug):
+            return next((s for s in sug if (s['origem_de'], s['campo_filho'], s['origem_para']) ==
+                         ('Metas', 'Cód. Empresa', 'N_EMPRESA')), None)
+        antes = acha(descoberta.relacionar(CATALOGOS, tabs))
+        treino.aprender_ligacao('Metas', 'Cód. Empresa', 'N_EMPRESA', 'CODEMPRESA', True)
+        depois = acha(descoberta.relacionar(CATALOGOS, tabs))
+        self.assertEqual(depois['pontos'], antes['pontos'] + 30)
+        self.assertIn('já confirmou', ' '.join(depois['motivos']))
+        for _ in range(2):
+            treino.aprender_ligacao('Metas', 'Cód. Empresa', 'N_EMPRESA', 'CODEMPRESA', False)
+        self.assertIsNone(acha(descoberta.relacionar(CATALOGOS, tabs)))
+
+    def test_desligado_nao_grava(self):
+        from tecnicas.luneta import treino
+        os.environ['DEIDARA_TREINO'] = '-'
+        treino.aprender_tabelas(['x'], ['T'])
+        self.assertEqual(treino.ler()['termos'], {})
+
+
+class TestOnoki(unittest.TestCase):
+    """Ōnoki: o acerto da busca nos pedidos do exemplo e o retrato que pega mudança de ordem."""
+
+    def setUp(self):
+        with open(os.path.join(EXEMPLO, 'onoki.json'), encoding='utf-8') as f:
+            self.dados = json.load(f)
+
+    def test_tabela_certa_no_topo(self):
+        from tecnicas import onoki
+        r = onoki.avaliar(CATALOGOS, self.dados['casos'])
+        self.assertEqual(r['falhas'], [], onoki.texto(r))
+        self.assertEqual(r['topo'], 1.0)
+
+    def test_retrato_nao_muda_sem_querer(self):
+        from tecnicas import onoki
+        self.assertEqual(onoki.diferencas(self.dados['retrato'], onoki.retrato(CATALOGOS, self.dados['casos'])), [])
+
+    def test_comando_aponta_regressao(self):
+        d = tempfile.mkdtemp(prefix='ddon')
+        arq = os.path.join(d, 'casos.json')
+        dados = dict(self.dados)
+        dados['retrato'] = {**dados['retrato'], 'cargos': ['N_EMPRESA']}
+        with open(arq, 'w', encoding='utf-8') as f:
+            json.dump(dados, f, ensure_ascii=False)
+        cats = [os.path.join(EXEMPLO, 'catalogos', x) for x in ('erp.json', 'metas.json')]
+        codigo, out = _calado(deidara.main, ['onoki', '--casos', arq, '--catalogos', *cats])
+        self.assertEqual(codigo, 1)
+        self.assertIn('MUDOU', out)
+        shutil.rmtree(d, ignore_errors=True)

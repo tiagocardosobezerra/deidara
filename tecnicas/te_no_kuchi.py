@@ -127,7 +127,7 @@ def cadeias_do_pedido(catalogos, pedido, dentro=None):
     catálogos: [{'padrao', 'tabelas': {papel: (fonte, origem, tipo)}, 'colunas': {papel: [(coluna, nome)]},
     'medidas'}] e as notas do que não deu para achar. `dentro`: só estas (fonte, origem) (escolha à mão)."""
     from tecnicas.sasori import padroes
-    termos = descoberta._expandir(frozenset(descoberta.tokens(pedido)), descoberta._sinonimos())
+    termos = descoberta.termos_do_pedido(pedido)
     achadas, notas = [], []
     for p in padroes()['padroes']:
         if not p.get('cadeia') or not termos & {x for t in p['termos'] for x in descoberta.tokens(t)}:
@@ -201,6 +201,25 @@ def _aplicar_briefing(argila, briefing, notas):
                 notas.append(f'meta de "{nome}" ("{meta}") não achada nos catálogos: catalogue a fonte da meta')
 
 
+def _do_cartao(argila, do_cartao, notas):
+    """Indicador que o time já aprovou (Memory Card, oficial ou em uso) entra com a mesma definição e fórmula: dois
+    painéis não calculam o mesmo indicador de jeitos diferentes sem ninguém perceber."""
+    for i, md in enumerate(argila['medidas']):
+        achado = (do_cartao or {}).get(chave(md['nome']))
+        if not achado:
+            continue
+        ref, ficha = achado
+        if ficha.get('status') not in ('oficial', 'em-uso') or not ficha.get('especificacao'):
+            continue
+        novo = dict(ficha['especificacao'], nome=md['nome'])
+        if (md.get('descricao') or '').strip() and not md['descricao'].startswith(PENDENTE_DEF)                 and md['descricao'].strip() != (novo.get('descricao') or '').strip():
+            notas.append(f'"{md["nome"]}": o briefing trazia outra definição; vale a do Memory Card ({ficha["status"]}). '
+                         'Se o gestor quer outra conta, é outro indicador: dê outro nome')
+        argila['medidas'][i] = novo
+        notas.append(f'"{md["nome"]}" veio do Memory Card ({ficha["status"]}, {ref}, v{ficha.get("versao", 1)}): a mesma '
+                     'definição e fórmula dos outros painéis do time')
+
+
 def pedido_do_briefing(briefing):
     """O pedido em português montado do briefing (indicadores e cortes), quando não vem --pedido."""
     inds = [i.get('nome') for i in briefing.get('indicadores') or [] if (i.get('nome') or '').strip()]
@@ -267,9 +286,10 @@ def _sem_distorcao(argila, catalogos, notas):
         pg['visuais'] = ficam
 
 
-def esbocar(catalogos, pedido, projeto=None, tabelas=None, limite=6, briefing=None):
+def esbocar(catalogos, pedido, projeto=None, tabelas=None, limite=6, briefing=None, do_cartao=None):
     """Devolve (argila, notas). `tabelas`: [(fonte, origem)] para escolher à mão; senão, a busca escolhe.
-    `briefing`: as respostas do gestor (painel.json); sem pedido, o pedido sai dele."""
+    `briefing`: as respostas do gestor (painel.json); sem pedido, o pedido sai dele. `do_cartao`: os indicadores do
+    Memory Card ({chave do nome: (ref, ficha)}), que entram no lugar dos que o esboço escreveria."""
     notas = []
     briefing = briefing or {}
     pedido = pedido or pedido_do_briefing(briefing)
@@ -447,7 +467,7 @@ def esbocar(catalogos, pedido, projeto=None, tabelas=None, limite=6, briefing=No
     vis = []
     if datas and any(d['tabela'] == fato for d in datas):
         vis.append({'tipo': 'segmentador', 'campo': 'dCalendario[Ano]'})
-    literais = descoberta._expandir(frozenset(descoberta.tokens(pedido)), descoberta._sinonimos())
+    literais = descoberta.termos_do_pedido(pedido)
     dims = [tb for tb in tabs if tb['tipo'] == 'dimensao' and tb['nome'] in rotulos and tb['nome'] in chega]
     citadas = [d for d in dims if literais & set(descoberta.tokens(d['origem']) + descoberta.tokens(d['nome']))]
     papeis = {p for p, _ in papel_de.values()}
@@ -484,6 +504,10 @@ def esbocar(catalogos, pedido, projeto=None, tabelas=None, limite=6, briefing=No
         anos = 2018, 2026
         argila['calendario'] = {'inicio': anos[0], 'fim': anos[1], 'datas': datas}
     _aplicar_briefing(argila, briefing, notas)
+    _do_cartao(argila, do_cartao, notas)
+    _sem_distorcao(argila, catalogos, notas)
+    from tecnicas import c2                          # o dragão escolhe os visuais pela pergunta do painel
+    c2.soltar(argila, c2.intencoes(pedido, briefing.get('decisao')), notas)
     _sem_distorcao(argila, catalogos, notas)
     pendentes =[md['nome'] for md in medidas if (md.get('descricao') or '').startswith(PENDENTE_DEF)]
     if pendentes or argila['publico'] == PENDENTE_DEF or argila['descricao'].startswith(PENDENTE_DEF):

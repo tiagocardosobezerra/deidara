@@ -164,3 +164,35 @@ class TestMemoryCard(unittest.TestCase):
         sit, det = self.mc.conferir(self.cartao, cats, resolver)['recursos-humanos/turnover/quadro-e-turnover']
         self.assertEqual(sit, 'quebrado')
         self.assertTrue(any('DESCRICAOCARGO' in d for d in det))
+
+
+class TestCartaoNoEsboco(unittest.TestCase):
+    """Indicador oficial do Memory Card entra no esboço com a mesma definição e fórmula."""
+
+    def _cartao(self, status):
+        d = tempfile.mkdtemp(prefix='ddmc')
+        pasta = os.path.join(d, 'deidara', 'saves', 'indicadores', 'turnover', 'turnover')
+        os.makedirs(pasta)
+        esp = {'nome': 'Turnover', 'tipo': 'divisao', 'numerador': 'Desligamentos', 'denominador': 'Headcount',
+               'formato': 'percentual', 'polaridade': 'menor_melhor', 'descricao': 'Definição oficial do time.'}
+        with open(os.path.join(pasta, 'ficha.json'), 'w', encoding='utf-8') as f:
+            json.dump({'tipo': 'indicador', 'nome': 'Turnover', 'status': status, 'versao': 3, 'especificacao': esp}, f)
+        return d
+
+    def test_oficial_substitui_o_que_o_esboco_escreveria(self):
+        from tecnicas import memory_card, te_no_kuchi
+        d = self._cartao('oficial')
+        argila, notas = te_no_kuchi.esbocar(CATALOGOS, 'turnover por cargo', do_cartao=memory_card.indicadores(d))
+        tv = next(x for x in argila['medidas'] if x['nome'] == 'Turnover')
+        self.assertEqual(tv['descricao'], 'Definição oficial do time.')
+        self.assertEqual(tv['denominador'], 'Headcount')
+        self.assertTrue(any('veio do Memory Card (oficial' in n for n in notas), notas)
+        shutil.rmtree(d, ignore_errors=True)
+
+    def test_rascunho_nao_entra(self):
+        from tecnicas import memory_card, te_no_kuchi
+        d = self._cartao('rascunho')
+        argila, notas = te_no_kuchi.esbocar(CATALOGOS, 'turnover por cargo', do_cartao=memory_card.indicadores(d))
+        tv = next(x for x in argila['medidas'] if x['nome'] == 'Turnover')
+        self.assertNotEqual(tv.get('descricao'), 'Definição oficial do time.')
+        shutil.rmtree(d, ignore_errors=True)

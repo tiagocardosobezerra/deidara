@@ -115,6 +115,8 @@ class Simulador:
             return self.valor(md['svg'].get('base') or '', filtros)
         if tipo == 'lista_top':
             return self.lista(md, filtros)
+        if tipo == 'leitura':
+            return self.leitura(md, filtros)
         if tipo == 'escolha':                        # mostra a primeira opção, a que vem selecionada
             return self.valor(md['depende'][0], filtros) if md.get('depende') else 0
         if tipo == 'alternar':
@@ -184,6 +186,20 @@ class Simulador:
         vals = [(r, self.valor(cfg['base'], outros + [(col, r)])) for r in categorias(self.m, col)]
         vals.sort(key=lambda x: -x[1] if cfg.get('ordem', 'maior_primeiro') == 'maior_primeiro' else x[1])
         return vals[:cfg.get('n') or 5]
+
+    def leitura(self, md, filtros=()):
+        """A frase do Tobi com os números fictícios (a mesma conta da medida DAX)."""
+        from tecnicas import tobi
+        cfg = md['ranking']
+        base = medida(self.m, cfg['base'])
+        col = {'tabela': cfg['tabela'], 'nome': cfg['coluna'], 'tipo': 'coluna'}
+        outros = [(c, r) for c, r in filtros if (c['tabela'], c['nome']) != (cfg['tabela'], cfg['coluna'])]
+        itens = [(r, self.valor(cfg['base'], outros + [(col, r)]), self.valor(cfg['comparar'], outros + [(col, r)]))
+                 for r in categorias(self.m, col)]
+        from tecnicas.c1.prototipo import formatar
+        return tobi.frase(base['nome'], self.valor(cfg['base'], outros), self.valor(cfg['comparar'], outros), itens,
+                          base['formato'], base['polaridade'] != 'menor_melhor', cfg.get('aditiva'),
+                          lambda v, f: formatar(v, f, True))
 
     def _ranking(self, md, filtros):
         cfg = md['ranking']

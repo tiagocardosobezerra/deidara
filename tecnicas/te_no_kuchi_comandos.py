@@ -6,6 +6,7 @@ primeiro argila.json).
 import os
 
 from tecnicas.luneta import catalogo
+from tecnicas import memory_card
 from tecnicas import te_no_kuchi as esboco
 from tecnicas.luneta import receitas
 from kibaku_nendo.util import gravar_json, gravar_texto, ler_json
@@ -133,8 +134,14 @@ def cmd_esbocar(a):
         painel = ler_json(os.path.join(a.alvo, 'painel.json'))
         projeto = projeto or painel.get('projeto')
         briefing = painel.get('briefing') or {}
+    if tabelas and a.pedido:                       # a pessoa corrigiu a escolha: a Luneta aprende (luneta/treino.py)
+        from tecnicas.luneta import descoberta, treino
+        treino.aprender_tabelas(sorted(set(descoberta.tokens(a.pedido)) - descoberta.VAZIAS),
+                                [cats[f].tabela(t)['nome'] for f, t in tabelas if f in cats and cats[f].tabela(t)])
     try:
-        argila, notas = esboco.esbocar(cats, a.pedido, projeto, tabelas, briefing=briefing)
+        cartao = memory_card.configuracao().get('pasta')
+        do_cartao = memory_card.indicadores(cartao) if cartao and os.path.isdir(cartao) else None
+        argila, notas = esboco.esbocar(cats, a.pedido, projeto, tabelas, briefing=briefing, do_cartao=do_cartao)
     except ValueError as e:
         print(str(e))
         return 1

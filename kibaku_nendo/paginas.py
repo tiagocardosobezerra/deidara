@@ -483,7 +483,7 @@ def _visual(m, v, p, onde, filtra):
         if md and md.get('tipo') in SVG_GERADAS + RANKINGS and (md.get('svg') or md.get('ranking') or {}).get('coluna'):
             cfg = md.get('svg') or md.get('ranking')
             cols = [c for c in r['campos'] if c and c['tipo'] == 'coluna']
-            if md['tipo'] == 'lista_top':
+            if md['tipo'] in ('lista_top', 'leitura'):
                 pass
             elif (tipo not in ('tabela', 'matriz') and md['tipo'] not in DIAGNOSTICOS) or not any(
                     (c['tabela'], c['nome']) == (cfg['tabela'], cfg['coluna'])

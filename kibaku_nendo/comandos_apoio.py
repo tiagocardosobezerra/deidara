@@ -133,7 +133,7 @@ def aprovacao_valida(caminho_argila, caminhos, modelo):
 def quem_usa(a):
     if getattr(a, 'por', None):
         return a.por
-    r = memory_card._rodar(['git', 'config', 'user.name'])
+    r = memory_card.rodar(['git', 'config', 'user.name'])
     return (r.stdout.strip() if r and r.returncode == 0 else '') or 'não informado'
 
 
@@ -144,7 +144,7 @@ def cartao_ativo():
                          f'DONO/{memory_card.NOME_PADRAO}` (o cartão do time; o Deidara usa a seção '
                          f'{memory_card.SECAO}/; precisa do `gh` autenticado e do `git`). Numa sandbox sem '
                          'o `gh` (como o claude.ai), o cartão não funciona: diga isso ao usuário.')
-    memory_card._atualizar(cfg['pasta'])
+    memory_card.atualizar(cfg['pasta'])
     return cfg['pasta']
 
 

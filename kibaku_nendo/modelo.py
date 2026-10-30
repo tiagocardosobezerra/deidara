@@ -175,7 +175,7 @@ SVG_GERADAS = ('svg_barra_meta', 'svg_pilula', 'svg_seta', 'svg_posicao', 'svg_r
                'svg_estrelas', 'svg_progresso')
 
 
-RANKINGS = ('posicao', 'pareto', 'melhores_piores', 'lista_top', 'jitter', 'impacto')
+RANKINGS = ('posicao', 'pareto', 'melhores_piores', 'lista_top', 'jitter', 'impacto', 'leitura')
 
 
 DIAGNOSTICOS = ('jitter', 'impacto')        # da causa raiz: feitas para o eixo do gráfico, não para a tabela
@@ -274,13 +274,16 @@ def alcance(m, filtra, tabela_filtro, nome_medida):
 
 
 def tabelas_da_medida(m, nome, vistos=None):
-    """Tabelas que a medida lê (seguindo as medidas de que depende)."""
-    vistos = vistos or set()
+    """Tabelas que a medida lê (seguindo as medidas de que depende). `vistos` é o caminho até aqui (só para não
+    entrar em ciclo): duas dependências que levam à mesma medida contam as duas."""
+    vistos = set(vistos or ())
     if chave(nome) in vistos:
         return set()
     vistos.add(chave(nome))
     md = medida(m, nome)
     if not md:
+        return set()
+    if md.get('tipo') == 'meta':                   # meta fixa é um número: não lê tabela nenhuma
         return set()
     out = set()
     if md.get('tipo') in SVG_GERADAS + RANKINGS + EXTRAS:   # a coluna das linhas só organiza; os dados vêm das medidas

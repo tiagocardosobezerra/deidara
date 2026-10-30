@@ -17,6 +17,7 @@ from contextlib import redirect_stderr, redirect_stdout
 RAIZ = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 sys.path.insert(0, RAIZ)
 os.environ['DEIDARA_MEMORY_CARD_DIR'] = '-'
+os.environ['DEIDARA_TREINO'] = '-'
 
 import deidara  # noqa: E402
 from tecnicas.luneta import catalogo  # noqa: E402

@@ -7,7 +7,7 @@
 ![Python 3.8+](https://img.shields.io/badge/python-3.8%2B-3776AB?style=flat-square&logo=python&logoColor=white)
 ![Sem dependências](https://img.shields.io/badge/depend%C3%AAncias-nenhuma-2ea44f?style=flat-square)
 ![Power BI .pbip](https://img.shields.io/badge/Power%20BI-.pbip%20(TMDL%20%2B%20PBIR)-F2C811?style=flat-square&logo=powerbi&logoColor=black)
-![Testes](https://img.shields.io/badge/testes-146%20passando-2ea44f?style=flat-square)
+![Testes](https://img.shields.io/badge/testes-162%20passando-2ea44f?style=flat-square)
 ![MIT](https://img.shields.io/badge/licen%C3%A7a-MIT-blue?style=flat-square)
 
 <img width="100%" alt="Deidara: do pedido ao painel Power BI, com protótipo aprovado antes do projeto" src="assets/deidara-banner-animado.svg" />
@@ -172,8 +172,11 @@ deidara/
 ├── deidara.py             # O Deidara: porta de entrada que chama cada técnica (todos os comandos)
 ├── kibaku_nendo/          # A argila explosiva: o motor que lê e valida a especificação, e os comandos do fluxo
 ├── tecnicas/              # As técnicas do Deidara, uma por etapa do fluxo:
-│   ├── luneta/            #   olho-luneta: receitas, catálogo, descoberta e prova (vê a fonte sem tocar)
+│   ├── luneta/            #   olho-luneta: receitas, catálogo, descoberta, prova e o treino (aprende com as correções)
 │   ├── te_no_kuchi.py     #   bocas das mãos: o esboço do argila.json a partir do pedido
+│   ├── c2.py              #   o dragão: escolhe os visuais pela pergunta do painel
+│   ├── tobi.py            #   o parceiro falante: a frase de leitura (o que o número fez e quem puxou)
+│   ├── onoki.py           #   o mestre: mede o acerto da busca e pega regressão
 │   ├── c1/                #   figuras pequenas: o protótipo HTML e o tour guiado
 │   ├── bunshin/           #   clone de argila: números fictícios e projeto de demonstração
 │   ├── katsu.py           #   "Katsu!": o aceite e o retrato aprovado

@@ -22,7 +22,9 @@ argila explosiva (`kibaku_nendo/`, o motor). Cada etapa é uma técnica dele, em
 `tecnicas/`: **Luneta** (receitas e descoberta, vê a fonte sem tocar),
 **Te no Kuchi** (o esboço), **C1** (o protótipo), **Bunshin** (os números
 fictícios), **Katsu** (o aceite), **C3** (o projeto completo), **Arte**
-(layout) e **Sasori** (funções e padrões conferidos). Use os nomes só para se
+(layout), **Sasori** (funções e padrões conferidos), **C2** (escolhe os visuais pela
+pergunta do painel), **Tobi** (a frase de leitura), o **Treino** da Luneta (aprende
+com as correções) e **Ōnoki** (mede o acerto da busca). Use os nomes só para se
 situar no código; com o usuário, fale da etapa ("o protótipo", "o aceite").
 
 ## Regras que valem sempre
@@ -75,7 +77,12 @@ São 8 passos, os mesmos do `deidara.py` sem argumentos e do `ROTEIRO.md` da pas
    turnover`) entra com a cadeia inteira (evento, cadastro, estoque, taxa) e
    a meta da fonte ligada; o briefing preenche definição, polaridade, meta,
    descrição e público. Ligação sem prova sai "A CONFIRMAR". Troque tabelas com
-   `--tabelas fonte:TAB,...`. Para o visual: escolha o `"modelo"` de layout
+   `--tabelas fonte:TAB,...` (a busca aprende com a troca). Indicador oficial ou
+   em uso no Memory Card entra com a definição e a fórmula de lá. O esboço lê a
+   pergunta (pedido e decisão do briefing) e escolhe os visuais: "por que mudou /
+   onde agir" ganha a página com árvore de decomposição, impacto e a frase de
+   leitura; "na meta?" ganha a barra contra a meta; "quem está pior?" o ranking;
+   "como evoluiu?" a linha no tempo. Para o visual: escolha o `"modelo"` de layout
    com o usuário (`modelos`; o esboço vem com `faixa-de-kpis`), e use
    `visuais <assunto>` (meta na tabela, ranking, causa, status) e
    [design.md](referencias/design.md).

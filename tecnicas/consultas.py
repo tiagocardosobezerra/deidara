@@ -14,8 +14,8 @@ from tecnicas.c3 import docs
 from tecnicas import memory_card
 from tecnicas.c1 import prototipo
 from kibaku_nendo.especificacao import resolver
-from kibaku_nendo.util import gravar_texto
-from kibaku_nendo.comandos_apoio import (aprovacao_valida, carregar_argila, cartao_ativo, lembrete, quem_usa,
+from kibaku_nendo.util import gravar_json, gravar_texto, ler_json
+from kibaku_nendo.comandos_apoio import (aprovacao_valida, carregar_argila, carregar_catalogos, cartao_ativo, lembrete, quem_usa,
                                          mostrar_relatorio)
 
 
@@ -205,3 +205,30 @@ def cmd_memory_card(a):
         shutil.rmtree(tmp, ignore_errors=True)
     print(f'Salvo em {memory_card.SECAO}/saves/{plano["ref"]}: {resultado}')
     return 0
+
+
+def cmd_onoki(a):
+    """Ōnoki avalia a busca da Luneta contra os casos do time (e confere o retrato gravado)."""
+    from tecnicas import onoki
+    cats, _ = carregar_catalogos(a)
+    dados = ler_json(a.casos)
+    casos = dados.get('casos') or []
+    if not casos:
+        print(f'{a.casos} sem "casos": [{{"pedido": "...", "esperadas": ["TABELA"]}}]')
+        return 1
+    resultado = onoki.avaliar(cats, casos, a.top)
+    print(onoki.texto(resultado))
+    atual = onoki.retrato(cats, casos)
+    if a.gravar_retrato:
+        dados['retrato'] = atual
+        gravar_json(a.casos, dados)
+        print(f'Retrato gravado em {a.casos}: a próxima avaliação mostra o que mudar na ordem.')
+        return 0
+    mudou = onoki.diferencas(dados.get('retrato') or {}, atual) if dados.get('retrato') else []
+    for x in mudou:
+        print(f'  MUDOU  {x}')
+    if mudou:
+        print('A ordem mudou desde o retrato. Se foi de propósito (sinônimo novo, ajuste de peso), grave de novo com '
+              '--gravar-retrato.')
+    return 1 if mudou else 0
+

@@ -151,8 +151,12 @@ Medidas por linha de tabela (todas pedem `medida` e `categoria`, a coluna das li
 - Qualquer uma destas também serve de `marcador` no mapa, se a `categoria` for a coluna do `local`.
 - `posicao`: o número da posição (RANKX). `pareto`: o percentual acumulado do maior para o menor.
   `melhores_piores`: a medida só nos `n` primeiros e nos `n` últimos (a linha some no resto).
-- `lista_top`: texto com os `n` primeiros e o valor de cada um (TOPN e CONCATENATEX), para um cartão; é a única
-  destas que funciona fora da tabela.
+- `lista_top`: texto com os `n` primeiros e o valor de cada um (TOPN e CONCATENATEX), para um cartão.
+- `leitura` (o Tobi): a frase de leitura, para um cartão. Pede `medida`, `comparar` (a do ano anterior) e
+  `categoria` (a coluna de quem puxou): "Desligamentos: subiu 38 contra o ano anterior (730 → 768), piorou; Cargo D
+  explica 61% da alta." O "explica X%" só sai em medida aditiva (soma, contagem); em taxa, a frase diz onde a
+  variação foi maior. "Melhorou" e "piorou" seguem a polaridade.
+  `lista_top` e `leitura` são as únicas destas que funcionam fora da tabela.
 - `jitter` e `impacto` são as duas da causa raiz, feitas para o eixo de um gráfico (a `categoria` do visual é a
   mesma coluna). `jitter`: o X do jitter plot, entre 0 e 1, que espalha os pontos pela posição no ranking (sem
   sorteio: o desenho não muda a cada atualização); vai no `x` da `dispersao`, com o indicador no `y`, e o eixo X

@@ -24,6 +24,7 @@ from collections import Counter, defaultdict
 from functools import lru_cache
 
 from kibaku_nendo.util import sem_acento
+from tecnicas.luneta import treino
 
 PASTA_DICIONARIO = os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))), 'dicionario')
 
@@ -106,6 +107,11 @@ def _expandir_cache(conj):
     return frozenset(_expandir_sem_cache(conj, _sinonimos()))
 
 
+def termos_do_pedido(pedido):
+    """As palavras do pedido mais os sinônimos do time (e os aprendidos): o que a busca procura."""
+    return _expandir(frozenset(tokens(pedido)), _sinonimos())
+
+
 def _expandir_sem_cache(conj, sin):
     out = set(conj)
     for t in conj:
@@ -118,7 +124,9 @@ def buscar(catalogos, pedido, limite=10):
     """Ranqueia as tabelas de todos os catálogos para um pedido em português.
     Devolve [{'fonte','tabela','pontos','colunas':[...],'motivo'}]."""
     sin = _sinonimos()
-    termos = _expandir(set(tokens(pedido)), sin)
+    toks = tokens(pedido)
+    literais = set(toks) | {a + b for a, b in zip(toks, toks[1:])}     # "razão social" acha RAZAOSOCIAL
+    termos = set(_expandir(set(toks), sin)) | literais
     docs = []
     for fonte in catalogos.values():
         for t in fonte.tabelas.values():
@@ -136,13 +144,18 @@ def buscar(catalogos, pedido, limite=10):
             docs.append((fonte, t, peso, cols))
     n = max(1, len(docs))
     df = Counter(x for _, _, peso, _ in docs for x in peso)
+    palavras = set(tokens(pedido)) - VAZIAS
     out = []
     for fonte, t, peso, cols in docs:
         pontos, achados = 0.0, []
         for x in termos:
-            if x in peso:
-                pontos += min(peso[x], 6) * math.log(1 + n / df[x])
+            if x in peso:                          # a palavra dita vale mais que o sinônimo dela
+                pontos += min(peso[x], 6) * math.log(1 + n / df[x]) * (1.0 if x in literais else 0.6)
                 achados.append(x)
+        extra = treino.bonus(palavras, t['nome'])     # a pessoa já escolheu esta tabela para estas palavras
+        if extra:
+            pontos += extra
+            achados += sorted(p for p in palavras if treino.bonus([p], t['nome']))
         if not pontos:
             continue
         colunas = [c for c, cs in cols.items() if cs & termos]
@@ -260,6 +273,12 @@ def relacionar(catalogos, tabelas, ja_ligadas=(), por_par=2):
         cands = []
         for ca, cb in pares:
             pts, mot = _pontuar(fa, ta, ca, fb, tb, cb, sin)
+            visto = treino.veredito(ta['nome'], ca['coluna'], tb['nome'], cb['coluna'])
+            if visto == 'recusada':                    # o dono do dado já disse que não
+                continue
+            if visto == 'confirmada':
+                pts += 30
+                mot = mot + ['o dono do dado já confirmou esta ligação antes']
             if confianca(pts):
                 cands.append({'de': nome_a, 'para': nome_b, 'campo_filho': ca['coluna'],
                               'campo_mae': cb['coluna'], 'pontos': pts, 'confianca': confianca(pts),

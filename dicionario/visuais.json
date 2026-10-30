@@ -1456,6 +1456,42 @@
       ],
       "nativo": true,
       "inspiracao": "Power BI Design Files (Sajjad Ahmadi)"
+    },
+    {
+      "id": "frase_de_leitura",
+      "nome": "Frase de leitura (o que o número fez e quem puxou)",
+      "termos": [
+        "frase",
+        "leitura",
+        "narrativa",
+        "resumo",
+        "texto",
+        "o que mudou",
+        "quem puxou",
+        "explica"
+      ],
+      "quando": "o gestor precisa entender o número sem interpretar gráfico: quanto mudou contra o ano anterior, se melhorou e quem puxou",
+      "deidara": {
+        "gera": true,
+        "argila": {
+          "nome": "Leitura de Desligamentos",
+          "tipo": "leitura",
+          "medida": "Desligamentos",
+          "comparar": "Deslig. Ano Anterior",
+          "categoria": "dCargo[Cargo]"
+        },
+        "visual": {
+          "tipo": "cartao",
+          "medida": "Leitura de Desligamentos"
+        }
+      },
+      "power_bi": "o Deidara gera a medida de texto (DAX) e o cartão; o esboço já põe a frase na visão geral quando o painel tem calendário",
+      "cuidados": [
+        "em taxa (turnover, absenteísmo), a frase diz onde a variação foi maior, não quanto cada item explica: a variação de uma taxa não soma",
+        "a frase compara com o mesmo período do ano anterior: com o filtro em \"Tudo\", compara todos os anos com eles mesmos deslocados"
+      ],
+      "nativo": true,
+      "inspiracao": "Deidara (Tobi)"
     }
   ]
 }

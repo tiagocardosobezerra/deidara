@@ -75,7 +75,7 @@ def secao(pasta):
     return os.path.join(pasta, SECAO)
 
 
-def _rodar(cmd, cwd=None):
+def rodar(cmd, cwd=None):
     try:
         return subprocess.run(cmd, cwd=cwd, capture_output=True, text=True, encoding='utf-8')
     except FileNotFoundError:
@@ -83,7 +83,7 @@ def _rodar(cmd, cwd=None):
 
 
 def _git(pasta, *args):
-    return _rodar(['git', '-C', pasta, *args])
+    return rodar(['git', '-C', pasta, *args])
 
 
 README_RAIZ = """# Memory Card
@@ -119,11 +119,11 @@ def iniciar(repo=None, pasta=None, publico=False):
     if repo:
         if repo.split('/')[-1] != NOME_PADRAO:
             msgs.append(f'aviso: o cartão do time costuma ser {NOME_PADRAO}; usando {repo}')
-        vis = _rodar(['gh', 'repo', 'view', repo, '--json', 'visibility', '--jq', '.visibility'])
+        vis = rodar(['gh', 'repo', 'view', repo, '--json', 'visibility', '--jq', '.visibility'])
         if vis is None:
             raise ValueError('o `gh` (GitHub CLI) não está instalado: instale e rode `gh auth login`')
         if vis.returncode != 0:
-            r = _rodar(['gh', 'repo', 'create', repo, '--public' if publico else '--private',
+            r = rodar(['gh', 'repo', 'create', repo, '--public' if publico else '--private',
                         '--description', 'Memory Card do time'])
             if r.returncode != 0:
                 raise ValueError(f'não consegui criar {repo}: {r.stderr.strip()[:300]}')
@@ -139,7 +139,7 @@ def iniciar(repo=None, pasta=None, publico=False):
         else:
             if os.path.isdir(pasta) and os.listdir(pasta):
                 raise ValueError(f'{pasta} já existe e não é o cartão: use --pasta')
-            r = _rodar(['gh', 'repo', 'clone', repo, pasta])
+            r = rodar(['gh', 'repo', 'clone', repo, pasta])
             if r.returncode != 0:
                 raise ValueError(f'não consegui clonar {repo}: {r.stderr.strip()[:300]}')
             msgs.append(f'cartão clonado em {pasta}')
@@ -148,7 +148,7 @@ def iniciar(repo=None, pasta=None, publico=False):
         if not os.path.isdir(os.path.join(pasta, '.git')) and shutil.which('git'):
             _git(pasta, 'init', '-q')
         msgs.append(f'cartão local em {pasta} (sem repositório remoto: nada é enviado)')
-    _atualizar(pasta)
+    atualizar(pasta)
     os.makedirs(os.path.join(pasta, SECAO, 'saves'), exist_ok=True)
     novos = []
     if not os.path.exists(os.path.join(pasta, 'README.md')):
@@ -535,7 +535,7 @@ def _catalogo_md(pasta):
     gravar_texto(os.path.join(pasta, SECAO, 'CATALOGO.md'), '\n'.join(linhas) + '\n')
 
 
-def _atualizar(pasta):
+def atualizar(pasta):
     """Traz o que as outras pessoas (e soluções) enviaram, antes de ler ou gravar."""
     if os.path.isdir(os.path.join(pasta, '.git')):
         remoto = _git(pasta, 'remote')
@@ -546,7 +546,7 @@ def _atualizar(pasta):
 def _privado_ok(repo, publico):
     if not repo or publico:
         return True
-    vis = _rodar(['gh', 'repo', 'view', repo, '--json', 'visibility', '--jq', '.visibility'])
+    vis = rodar(['gh', 'repo', 'view', repo, '--json', 'visibility', '--jq', '.visibility'])
     return bool(vis and vis.returncode == 0 and vis.stdout.strip().upper() == 'PRIVATE')
 
 

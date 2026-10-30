@@ -1,0 +1,168 @@
+{
+  "formato": "deidara-onoki/1",
+  "sobre": "Pedidos do exemplo Aurora e a tabela certa de cada um. Rode: deidara.py onoki --casos exemplos/aurora/onoki.json --catalogos exemplos/aurora/catalogos/erp.json exemplos/aurora/catalogos/metas.json",
+  "casos": [
+    {
+      "pedido": "desligamentos",
+      "esperadas": [
+        "F_DESLIGAMENTO"
+      ]
+    },
+    {
+      "pedido": "motivo do desligamento",
+      "esperadas": [
+        "F_MOTIVO_DESLIGAMENTO"
+      ]
+    },
+    {
+      "pedido": "demissões por motivo",
+      "esperadas": [
+        "F_MOTIVO_DESLIGAMENTO"
+      ]
+    },
+    {
+      "pedido": "rotatividade",
+      "esperadas": [
+        "F_DESLIGAMENTO"
+      ]
+    },
+    {
+      "pedido": "empresas do grupo",
+      "esperadas": [
+        "N_EMPRESA"
+      ]
+    },
+    {
+      "pedido": "razão social",
+      "esperadas": [
+        "N_EMPRESA"
+      ]
+    },
+    {
+      "pedido": "cargos",
+      "esperadas": [
+        "F_CARGO"
+      ]
+    },
+    {
+      "pedido": "colaboradores ativos",
+      "esperadas": [
+        "F_FUNCIONARIO"
+      ]
+    },
+    {
+      "pedido": "headcount",
+      "esperadas": [
+        "F_FUNCIONARIO"
+      ]
+    },
+    {
+      "pedido": "quadro de pessoal",
+      "esperadas": [
+        "F_FUNCIONARIO"
+      ]
+    },
+    {
+      "pedido": "salário dos funcionários",
+      "esperadas": [
+        "F_FUNCIONARIO"
+      ]
+    },
+    {
+      "pedido": "data de admissão",
+      "esperadas": [
+        "F_FUNCIONARIO"
+      ]
+    },
+    {
+      "pedido": "meta de turnover",
+      "esperadas": [
+        "Metas"
+      ]
+    },
+    {
+      "pedido": "turnover por empresa",
+      "esperadas": [
+        "F_DESLIGAMENTO"
+      ]
+    }
+  ],
+  "retrato": {
+    "desligamentos": [
+      "F_DESLIGAMENTO",
+      "F_MOTIVO_DESLIGAMENTO",
+      "Metas"
+    ],
+    "motivo do desligamento": [
+      "F_MOTIVO_DESLIGAMENTO",
+      "F_DESLIGAMENTO",
+      "Metas",
+      "N_EMPRESA"
+    ],
+    "demissões por motivo": [
+      "F_MOTIVO_DESLIGAMENTO",
+      "F_DESLIGAMENTO",
+      "Metas",
+      "N_EMPRESA"
+    ],
+    "rotatividade": [
+      "F_DESLIGAMENTO",
+      "F_MOTIVO_DESLIGAMENTO",
+      "Metas"
+    ],
+    "empresas do grupo": [
+      "N_EMPRESA",
+      "F_FUNCIONARIO",
+      "Metas"
+    ],
+    "razão social": [
+      "N_EMPRESA",
+      "F_MOTIVO_DESLIGAMENTO",
+      "F_DESLIGAMENTO"
+    ],
+    "cargos": [
+      "F_CARGO",
+      "F_FUNCIONARIO"
+    ],
+    "colaboradores ativos": [
+      "F_FUNCIONARIO",
+      "F_DESLIGAMENTO",
+      "F_CARGO",
+      "F_MOTIVO_DESLIGAMENTO"
+    ],
+    "headcount": [
+      "F_FUNCIONARIO",
+      "F_DESLIGAMENTO",
+      "F_CARGO",
+      "F_MOTIVO_DESLIGAMENTO"
+    ],
+    "quadro de pessoal": [
+      "F_FUNCIONARIO",
+      "F_DESLIGAMENTO",
+      "F_CARGO",
+      "F_MOTIVO_DESLIGAMENTO"
+    ],
+    "salário dos funcionários": [
+      "F_FUNCIONARIO",
+      "F_DESLIGAMENTO",
+      "F_CARGO",
+      "F_MOTIVO_DESLIGAMENTO"
+    ],
+    "data de admissão": [
+      "F_FUNCIONARIO",
+      "F_DESLIGAMENTO"
+    ],
+    "meta de turnover": [
+      "Metas",
+      "F_DESLIGAMENTO",
+      "F_MOTIVO_DESLIGAMENTO"
+    ],
+    "turnover por empresa": [
+      "F_DESLIGAMENTO",
+      "N_EMPRESA",
+      "F_MOTIVO_DESLIGAMENTO",
+      "Metas",
+      "F_FUNCIONARIO"
+    ]
+  }
+}

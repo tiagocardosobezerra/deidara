@@ -20,6 +20,7 @@ __all__ = ['copy', 'io', 'json', 'os', 'shutil', 'sys', 'tempfile', 'unittest', 
 RAIZ = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 sys.path.insert(0, RAIZ)
 os.environ['DEIDARA_MEMORY_CARD_DIR'] = '-'      # o cartão de quem roda os testes não interfere
+os.environ['DEIDARA_TREINO'] = '-'               # nem o treino da Luneta desta máquina
 sys.path.insert(0, os.path.join(RAIZ, 'ferramentas'))
 
 import deidara  # noqa: E402
