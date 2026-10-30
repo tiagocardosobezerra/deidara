@@ -38,7 +38,7 @@ DICA_W, DICA_H = 320, 240                                  # página de dica (to
 GAP = 16
 SEG = ('segmentador', 'botoes', 'alternar', 'aviso')     # o aviso fica no canto de cima, como uma notificação
 KPI = ('cartao', 'medidor', 'cartoes', 'abas')
-GRAF = ('barras', 'colunas', 'linha', 'rosca', 'area', 'dispersao', 'decomposicao', 'mapa', 'skyline', 'setas', 'imagem',
+GRAF = ('barras', 'colunas', 'linha', 'controle', 'rosca', 'area', 'dispersao', 'decomposicao', 'mapa', 'skyline', 'setas', 'imagem',
         'html', 'vegalite')
 TAB = ('tabela', 'matriz')
 
@@ -560,7 +560,7 @@ def _executivo(m, paginas, i, c):
         if kpi[5:]:
             pos += _em_linha(kpi[5:], 40, y, 1840, 160, 24)
             y += 190
-    heroi = next((v for v in graf if v['tipo'] in ('linha', 'area', 'colunas')), graf[0] if graf else None)
+    heroi = next((v for v in graf if v['tipo'] in ('controle', 'linha', 'area', 'colunas')), graf[0] if graf else None)
     resto = [v for v in graf if v is not heroi] + tab
     if heroi:
         hh = max(380, (H - 40 - y) if not resto else 420)

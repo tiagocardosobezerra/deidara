@@ -157,6 +157,10 @@ Medidas por linha de tabela (todas pedem `medida` e `categoria`, a coluna das li
   explica 61% da alta." O "explica X%" só sai em medida aditiva (soma, contagem); em taxa, a frase diz onde a
   variação foi maior. "Melhorou" e "piorou" seguem a polaridade.
   `lista_top` e `leitura` são as únicas destas que funcionam fora da tabela.
+- `controle` e `fora_da_curva` (C4 Karura, a estatística): o gráfico de controle (vai no visual `controle` e gera
+  os limites, o sinal e, com meta, a `meta x faixa`) e o quanto cada item está fora do padrão (gera `Cor <nome>`
+  para pintar as barras). As agregações `mediana`, `quartil_1` e `quartil_3` dão a faixa típica; `"previsao": true`
+  ou `"anomalias": true` num visual `linha` deixa o passo no LEIA-ME. Tudo em [estatistica.md](estatistica.md).
 - `jitter` e `impacto` são as duas da causa raiz, feitas para o eixo de um gráfico (a `categoria` do visual é a
   mesma coluna). `jitter`: o X do jitter plot, entre 0 e 1, que espalha os pontos pela posição no ranking (sem
   sorteio: o desenho não muda a cada atualização); vai no `x` da `dispersao`, com o indicador no `y`, e o eixo X

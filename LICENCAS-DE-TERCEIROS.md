@@ -60,3 +60,12 @@ Os schemas em `ferramentas/schemas/` são cópias dos publicados em
 [microsoft/json-schemas](https://github.com/microsoft/json-schemas), guardadas
 para o `validar_pbip.py` e os testes rodarem sem internet. Licença MIT,
 Copyright (c) Microsoft Corporation. Ficam fora do pacote da skill.
+
+## NIST/SEMATECH e-Handbook of Statistical Methods
+
+As fórmulas e as regras do C4 Karura (`tecnicas/c4.py`, [referencias/estatistica.md](referencias/estatistica.md))
+seguem o [e-Handbook of Statistical Methods](https://www.itl.nist.gov/div898/handbook/) do NIST: gráfico de
+valores individuais (6.3.2.2), regras WECO (6.3.2), gráficos p e u (6.3.3.1 e 6.3.3.2), detecção de outliers
+com o z-score modificado (1.3.5.17), sazonalidade (6.4.4.3) e box plot (1.3.3.7). Os testes usam os exemplos
+resolvidos de lá como gabarito. Conteúdo público do governo dos Estados Unidos, que o NIST permite copiar e
+distribuir pedindo o crédito ([política do NIST](https://www.nist.gov/oism/copyrights)).

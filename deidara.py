@@ -19,6 +19,7 @@ uma técnica dele (`tecnicas/`):
     c3            gerar
     sasori        funcoes, padroes
     onoki         onoki (o acerto da busca)
+    c4            a estatística que o C2 escolhe (referencias/estatistica.md)
     arte          modelos, visuais
 
 Fluxo:

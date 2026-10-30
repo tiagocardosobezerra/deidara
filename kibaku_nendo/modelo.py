@@ -14,11 +14,12 @@ TIPOS_TABELA = {'fato', 'dimensao'}
 
 AGREGACOES = {
     'soma': 'SUM', 'media': 'AVERAGE', 'minimo': 'MIN', 'maximo': 'MAX',
+    'mediana': 'MEDIAN', 'quartil_1': 'PERCENTILE.INC', 'quartil_3': 'PERCENTILE.INC',
     'contagem': 'COUNT', 'contagem_distinta': 'DISTINCTCOUNTNOBLANK', 'contagem_linhas': 'COUNTROWS',
 }
 
 
-AGREGACOES_NUMERICAS = {'soma', 'media'}
+AGREGACOES_NUMERICAS = {'soma', 'media', 'mediana', 'quartil_1', 'quartil_3'}
 
 
 TEMPO = {'acumulado_ano', 'ano_anterior', 'variacao_ano_anterior', 'variacao_mes_anterior', 'media_mensal',
@@ -27,7 +28,7 @@ TEMPO = {'acumulado_ano', 'ano_anterior', 'variacao_ano_anterior', 'variacao_mes
 
 TIPOS_VISUAL = {
     'cartao': 'card', 'barras': 'clusteredBarChart', 'colunas': 'clusteredColumnChart',
-    'linha': 'lineChart', 'rosca': 'donutChart', 'tabela': 'tableEx', 'matriz': 'pivotTable',
+    'linha': 'lineChart', 'controle': 'lineChart', 'rosca': 'donutChart', 'tabela': 'tableEx', 'matriz': 'pivotTable',
     'segmentador': 'slicer', 'medidor': 'gauge',
     'botoes': 'advancedSlicerVisual', 'cartoes': 'cardVisual', 'decomposicao': 'decompositionTreeVisual',
     'dispersao': 'scatterChart', 'area': 'areaChart', 'mapa': 'azureMap',
@@ -181,7 +182,8 @@ RANKINGS = ('posicao', 'pareto', 'melhores_piores', 'lista_top', 'jitter', 'impa
 DIAGNOSTICOS = ('jitter', 'impacto')        # da causa raiz: feitas para o eixo do gráfico, não para a tabela
 
 
-EXTRAS = ('escolha', 'alternar', 'cor_destaque', 'aviso', 'svg_iniciais', 'svg_dispersao', 'html_kpis', 'svg_espinha')
+EXTRAS = ('escolha', 'alternar', 'cor_destaque', 'aviso', 'svg_iniciais', 'svg_dispersao', 'html_kpis', 'svg_espinha',
+          'controle', 'fora_da_curva')
 
 
 COR_APAGADA = '#C8C6C4'

@@ -59,7 +59,7 @@ def svg_visual(sim, v, pos, cores):
              'matriz': _matriz, 'rosca': _rosca, 'linha': _linha, 'barras': _barras, 'colunas': _colunas,
              'botoes': _botoes, 'cartoes': _cartoes, 'decomposicao': _decomposicao, 'dispersao': _dispersao,
              'area': _area, 'mapa': _mapa, 'abas': _abas, 'alternar': _alternar, 'skyline': _skyline,
-             'setas': _setas, 'imagem': _imagem, 'aviso': _aviso, 'html': _html, 'vegalite': _vegalite}[v['tipo']]
+             'setas': _setas, 'imagem': _imagem, 'aviso': _aviso, 'html': _html, 'vegalite': _vegalite, 'controle': _controle}[v['tipo']]
     return (f'<svg viewBox="0 0 {w} {h}" width="{w}" height="{h}" role="img" aria-label="{_e(v["titulo"])}">'
             f'{corpo(sim, v, w, h, cores)}</svg>')
 
@@ -99,9 +99,11 @@ def _cartao(sim, v, w, h, cores):
             out.append(f'<text x="12" y="{y:.0f}" class="cel" style="font-weight:600">{i + 1}. {_e(_corta(r, int((w - 110) / 7)))}</text>'
                        f'<text x="{w - 12}" y="{y:.0f}" class="cel" text-anchor="end">{_e(formatar(val, base["formato"], True))}</text>')
         return ''.join(out)
-    if mdl and mdl['tipo'] == 'leitura':            # a frase do Tobi, quebrada em linhas
+    texto_da_medida = sim.valor(md['nome']) if mdl and mdl.get('formato') is None and mdl['tipo'] in ('leitura', 'c4') \
+        else None
+    if isinstance(texto_da_medida, str):           # medida de texto (a frase do Tobi, a meta x faixa), em linhas
         import textwrap
-        texto = sim.valor(md['nome']) or ''
+        texto = texto_da_medida
         for tam in (24, 21, 18, 16, 14):            # a maior letra em que a frase cabe no cartão
             linhas = textwrap.wrap(texto, max(16, int((w - 24) / (tam * 0.53))))
             if 40 + len(linhas) * tam * 1.4 <= h:
@@ -873,7 +875,62 @@ def _colunas(sim, v, w, h, cores):
     return ''.join(out)
 
 
+def _controle(sim, v, w, h, cores):
+    """Gráfico de controle (C4 Karura): o indicador mês a mês, o centro tracejado, os limites em vermelho e os
+    pontos com sinal em destaque (vermelho fora do limite, âmbar nas sequências)."""
+    g = sim.grafico_de_controle(v['controle'])
+    fmt = v['valores'][0]['formato']
+    top, base, esq, dir_ = 40, h - 30, 44, w - 12
+    todos = g['valores'] + g['superior'] + g['inferior'] + [g['centro']]
+    lo, hi = min(todos), max(todos)
+    folga = (hi - lo) * 0.1 or 1
+    lo, hi = lo - folga, hi + folga
+    n = len(g['rotulos'])
+
+    def px(i):
+        return esq + (dir_ - esq) * (i + 0.5) / n
+
+    def py(y):
+        return base - (base - top) * (y - lo) / (hi - lo)
+
+    def linha(ys, estilo):
+        pts = ' '.join(f'{px(i):.1f},{py(y):.1f}' for i, y in enumerate(ys))
+        return f'<polyline points="{pts}" fill="none" {estilo}/>'
+
+    out = [_titulo(v, w),
+           linha(g['superior'], 'stroke="#D13438" stroke-width="1.5" stroke-dasharray="2 3"'),
+           linha(g['inferior'], 'stroke="#D13438" stroke-width="1.5" stroke-dasharray="2 3"'),
+           linha([g['centro']] * n, 'stroke="#8A8886" stroke-width="1.5" stroke-dasharray="6 4"'),
+           linha(g['valores'], f'stroke="{cores[0]}" stroke-width="2.5"')]
+    for i, (y, sinal) in enumerate(zip(g['valores'], g['sinais'])):
+        cor = '#D13438' if sinal == 1 else '#C19C00' if sinal else cores[0]
+        out.append(f'<circle cx="{px(i):.1f}" cy="{py(y):.1f}" r="{6 if sinal else 3.5}" fill="{cor}" stroke="#fff" '
+                   f'stroke-width="1.5"><title>{_e(g["rotulos"][i])}: {_e(formatar(y, fmt))}</title></circle>')
+        out.append(f'<text x="{px(i):.1f}" y="{base + 16}" class="eixo" text-anchor="middle">'
+                   f'{_e(_corta(_curto(g["rotulos"][i], int((dir_ - esq) / n / 8)), max(3, int((dir_ - esq) / n / 8))))}</text>')
+    out.append(f'<text x="{esq:.1f}" y="{py(max(g["superior"])) - 6:.1f}" class="eixo" style="fill:#D13438">'
+               f'limites da variação normal</text>'
+               f'<text x="{esq:.1f}" y="{base - 4:.1f}" class="eixo">média {_e(formatar(g["centro"], fmt, True))}'
+               f'{" · " + str(sum(1 for x in g["sinais"] if x)) + " sinal(is)" if any(g["sinais"]) else " · sem sinal"}</text>')
+    return ''.join(out)
+
+
+def _cor_fora(sim, v):
+    """{rótulo: cor} quando a cor das barras vem do fora da curva (C4 Karura); None para outra cor."""
+    cor = medida(sim.m, v.get('cor') or '') if v.get('cor') else None
+    dono = medida(sim.m, (cor or {}).get('extra', {}).get('de') or '') if cor else None
+    if not dono or dono.get('tipo') != 'fora_da_curva':
+        return None
+    limiar = dono['extra']['limiar']
+    out = {}
+    for r in categorias(sim.m, v['categoria']):
+        z = sim.valor(dono['nome'], [(v['categoria'], r)])
+        out[r] = '#D13438' if z is not None and abs(z) > limiar else sim.m['tema']['cores'][0]
+    return out
+
+
 def _barras(sim, v, w, h, cores):
+    fora = _cor_fora(sim, v)
     rot, ss = _series(sim, v)
     ordem = sorted(range(len(rot)), key=lambda i: -ss[0][1][i])    # maior primeiro, como no Power BI
     rot = [rot[i] for i in ordem]
@@ -898,6 +955,8 @@ def _barras(sim, v, w, h, cores):
             bw = abs(largura * val / (mx - lo))
             y = top + i * gh + gh * 0.15 + k * bh
             cor = cores[k % len(cores)] if not v.get('cor') or i == 0 else '#C8C6C4'   # destaque: só o escolhido aceso
+            if fora:                                  # fora da curva: vermelho só para quem passou do limiar
+                cor = fora.get(r, cor)
             if impacto:                              # verde quando ajudou o indicador, vermelho quando atrapalhou
                 cor = COR_BOA if (val >= 0) == maior else COR_RUIM
             xb = x0 if val >= 0 else x0 - bw

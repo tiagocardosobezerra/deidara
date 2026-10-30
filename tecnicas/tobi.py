@@ -29,8 +29,9 @@ def _formato_dax(formato):
     return {'inteiro': '#,0', 'percentual': '0.0%', 'moeda': '"R$" #,0', 'decimal': '#,0.00'}.get(formato, '#,0.00')
 
 
-def dax(nome, b, comp, col, formato, maior, soma):
-    """A medida de texto. `b` e `comp` são referências DAX ([Atual], [Ano Anterior]); `col`, a coluna dos itens."""
+def dax(nome, b, comp, col, formato, maior, soma, tendencia=None):
+    """A medida de texto. `b` e `comp` são referências DAX ([Atual], [Ano Anterior]); `col`, a coluna dos itens;
+    `tendencia`, as VARs do C4 que terminam em `_tendencia` (o trecho sobre os últimos 12 meses)."""
     fmt = _formato_dax(formato)
     variacao = ('FORMAT(ABS(_delta) * 100, "0.0") & " p.p."' if formato == 'percentual'
                 else f'FORMAT(ABS(_delta), "{fmt}")')
@@ -47,18 +48,18 @@ VAR _itens = FILTER(ALLSELECTED({col}), NOT ISBLANK({b}) || NOT ISBLANK({comp}))
 VAR _top = TOPN(1, _itens, IF(_delta >= 0, {b} - {comp}, {comp} - {b}), DESC)
 VAR _item = MAXX(_top, {col})
 VAR _parte = MAXX(_top, {b} - {comp})
-RETURN
+{(tendencia + chr(10)) if tendencia else ""}RETURN
     IF(
         ISBLANK(_agora) || ISBLANK(_antes),
         BLANK(),
         "{texto_nome}: " & IF(_delta >= 0, "subiu ", "caiu ") & {variacao}
             & " contra o ano anterior (" & FORMAT(_antes, "{fmt}") & " → " & FORMAT(_agora, "{fmt}") & "), "
             & IF({bom}, "melhorou", "piorou")
-            & {quem} & "."
+            & {quem} & "."{" & _tendencia" if tendencia else ""}
     )"""
 
 
-def frase(nome, agora, antes, itens, formato, maior, soma, formatar):
+def frase(nome, agora, antes, itens, formato, maior, soma, formatar, serie=None):
     """O mesmo texto, em Python, para o protótipo. `itens`: [(rótulo, agora, antes)]; `formatar(v, formato)`."""
     if agora is None or antes is None:
         return ''
@@ -74,4 +75,16 @@ def frase(nome, agora, antes, itens, formato, maior, soma, formatar):
             texto += f'; {r} explica {round((a - b) / delta * 100)}% da {"alta" if delta > 0 else "queda"}'
         elif not soma:
             texto += f'; maior variação em {r}'
-    return texto + '.'
+    texto += '.'
+    if serie and len(serie) >= 6:                  # a tendência dos últimos 12 meses (C4 Karura)
+        from tecnicas import c4
+        ultimos = serie[-12:]
+        inclinacao, r2 = c4.tendencia(ultimos)
+        if r2 is not None and r2 >= c4.R2_MINIMO:
+            passo = (f'{abs(inclinacao) * 100:.2f}'.replace('.', ',') + ' p.p.' if formato == 'percentual'
+                     else formatar(abs(inclinacao), formato))
+            texto += (f' Nos últimos {len(ultimos)} meses, a tendência é de {"alta" if inclinacao > 0 else "queda"}'
+                      f' ({passo} por mês).')
+        else:
+            texto += f' Nos últimos {len(ultimos)} meses, sem tendência clara.'
+    return texto

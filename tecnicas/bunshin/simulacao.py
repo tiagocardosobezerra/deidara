@@ -117,6 +117,10 @@ class Simulador:
             return self.lista(md, filtros)
         if tipo == 'leitura':
             return self.leitura(md, filtros)
+        if tipo in ('controle', 'c4'):
+            return self.controle(md, filtros)
+        if tipo == 'fora_da_curva':
+            return self.fora_da_curva(md, filtros)
         if tipo == 'escolha':                        # mostra a primeira opção, a que vem selecionada
             return self.valor(md['depende'][0], filtros) if md.get('depende') else 0
         if tipo == 'alternar':
@@ -197,9 +201,87 @@ class Simulador:
         itens = [(r, self.valor(cfg['base'], outros + [(col, r)]), self.valor(cfg['comparar'], outros + [(col, r)]))
                  for r in categorias(self.m, col)]
         from tecnicas.c1.prototipo import formatar
+        serie = None
+        if self.m.get('calendario'):                 # a tendência dos últimos 12 meses (C4 Karura)
+            mes = self._mes()
+            serie = [self.valor(cfg['base'], outros + [(mes, r)]) for r in categorias(self.m, mes)]
         return tobi.frase(base['nome'], self.valor(cfg['base'], outros), self.valor(cfg['comparar'], outros), itens,
                           base['formato'], base['polaridade'] != 'menor_melhor', cfg.get('aditiva'),
-                          lambda v, f: formatar(v, f, True))
+                          lambda v, f: formatar(v, f, True), serie)
+
+    def _mes(self):
+        return {'tabela': self.m['calendario']['tabela'], 'nome': 'Mês/Ano', 'tipo': 'coluna'}
+
+    def grafico_de_controle(self, nome_controle, filtros=()):
+        """A série do gráfico de controle com os números fictícios: rótulos, valores, centro, limites e sinais."""
+        from tecnicas import c4
+        cfg = medida(self.m, nome_controle)['extra']
+        mes = self._mes()
+        outros = [(c, r) for c, r in filtros if (c['tabela'], c['nome']) != (mes['tabela'], mes['nome'])]
+        rot = categorias(self.m, mes)
+        valores = [self.valor(cfg['base'], outros + [(mes, r)]) for r in rot]
+        if cfg['grafico'] == 'xmr':
+            g = c4.xmr(valores)
+            sup, inf = [g['superior']] * len(rot), [g['inferior']] * len(rot)
+        else:
+            # numerador e denominador fictícios vivem em escalas próprias: o numerador sai da taxa que o protótipo
+            # mostra, para a conta do gráfico p (ou u) bater com a linha desenhada
+            dens = [self.valor(cfg['denominador'], outros + [(mes, r)]) for r in rot]
+            if cfg['grafico'] == 'p' and sum(dens):     # o grupo de cada mês (headcount) é do tamanho do todo, não uma fatia
+                escala = self.valor(cfg['denominador'], outros) / (sum(dens) / len(dens))
+                dens = [d * escala for d in dens]
+            nums = [v * d for v, d in zip(valores, dens)]
+            g = (c4.grafico_p if cfg['grafico'] == 'p' else c4.grafico_u)(nums, dens)
+            sup, inf = g['superior'], g['inferior']
+        return {'rotulos': rot, 'valores': valores, 'centro': g['centro'], 'superior': sup, 'inferior': inf,
+                'sinais': c4.sinais(valores, g['centro'], sup, inf), 'mes': mes}
+
+    def controle(self, md, filtros=()):
+        """Centro, limites, sinal e a frase da meta x faixa (as medidas do C4 Karura)."""
+        from tecnicas import c4
+        from tecnicas.c1.prototipo import formatar
+        dono = md['nome'] if md['tipo'] == 'controle' else md['extra']['de']
+        cfg = medida(self.m, dono)['extra']
+        g = self.grafico_de_controle(dono, filtros)
+        k = next((g['rotulos'].index(r) for c, r in filtros
+                  if (c['tabela'], c['nome']) == (g['mes']['tabela'], 'Mês/Ano') and r in g['rotulos']), None)
+        parte = next((p for p, n in cfg['partes'].items() if n == md['nome']), 'centro')
+        if parte == 'centro':
+            return g['centro']
+        if parte in ('superior', 'inferior'):
+            lista = g[parte]
+            return lista[k] if k is not None else sum(lista) / len(lista)
+        if parte == 'sinal':
+            return g['sinais'][k] if k is not None else None
+        base = medida(self.m, cfg['base'])
+        meta = self.valor(base['meta_medida'], filtros)
+        sup, inf = sum(g['superior']) / len(g['superior']), sum(g['inferior']) / len(g['inferior'])
+        fmt = lambda v: formatar(v, base['formato'], True)
+        faixa = f'{fmt(inf)} a {fmt(sup)}'
+        caso = c4.meta_x_faixa(meta, sup, inf, base['polaridade'] == 'maior_melhor')
+        return {'dentro': f'A meta ({fmt(meta)}) está dentro da faixa normal ({faixa}): alguns meses vão bater e '
+                          'outros não, por acaso.',
+                'inalcancavel': f'A meta ({fmt(meta)}) está fora da faixa normal ({faixa}): sem mudar o processo, '
+                                'ela não será atingida de forma estável.',
+                'folgada': f'A meta ({fmt(meta)}) é folgada: a faixa normal ({faixa}) já fica toda do lado bom.'}[caso]
+
+    def fora_da_curva(self, md, filtros=()):
+        """O z (modificado ou do funil) do item da linha, com os números fictícios."""
+        from tecnicas import c4
+        cfg = md['extra']
+        col = {'tabela': cfg['tabela'], 'nome': cfg['coluna'], 'tipo': 'coluna'}
+        linha = next((r for c, r in filtros if (c['tabela'], c['nome']) == (cfg['tabela'], cfg['coluna'])), None)
+        if linha is None:
+            return None
+        outros = [(c, r) for c, r in filtros if (c['tabela'], c['nome']) != (cfg['tabela'], cfg['coluna'])]
+        rot = categorias(self.m, col)
+        if cfg['funil']:
+            dens = [self.valor(cfg['denominador'], outros + [(col, r)]) for r in rot]
+            taxas = [self.valor(cfg['base'], outros + [(col, r)]) for r in rot]
+            zs = c4.z_funil([t * d for t, d in zip(taxas, dens)], dens)   # o numerador sai da taxa mostrada
+        else:
+            zs = c4.z_modificado([self.valor(cfg['base'], outros + [(col, r)]) for r in rot])
+        return dict(zip(rot, zs)).get(linha)
 
     def _ranking(self, md, filtros):
         cfg = md['ranking']

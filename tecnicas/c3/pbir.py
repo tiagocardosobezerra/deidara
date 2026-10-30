@@ -216,10 +216,16 @@ def _tecnicas(m, v, vis, container, pos):
         objs['bubbleLayer'] = [{'properties': {'show': _lit(False)}}]
         objs['barChart'] = [{'properties': {'show': _lit(True), 'barHeight': _int(4), 'thickness': _int(2),
                                             'maxZoom': _int(22)}}]
+    elif v['tipo'] == 'controle':            # C4 Karura: o indicador na cor do tema, o centro cinza, os limites vermelhos
+        cores = (acento, '#605E5C', '#D13438', '#D13438')
+        objs['dataPoint'] = [{'properties': {'fill': {'solid': {'color': _lit(cor)}}},
+                              'selector': {'metadata': f'{x["tabela"]}.{x["nome"]}'}}
+                             for x, cor in zip(v['valores'], cores) if x]
     elif v['tipo'] == 'dispersao' and (medida(m, v['valores'][0]['nome']) or {}).get('tipo') == 'jitter':
         objs['categoryAxis'] = [{'properties': {'show': _lit(False)}}]   # jitter: o X só espalha os pontos
     primeira = medida(m, v['valores'][0]['nome']) if v['valores'] and v['valores'][0] else None
-    cor = v.get('cor') or (primeira or {}).get('tipo') == 'impacto' and len(v['valores']) == 1 and primeira['cor_medida']
+    cor = v.get('cor') or ((primeira or {}).get('tipo') in ('impacto', 'fora_da_curva') and len(v['valores']) == 1
+                           and primeira['cor_medida'])
     if cor:                                  # cor de cada barra pela medida (o destaque do item escolhido, o impacto)
         objs['dataPoint'] = [{'properties': {'fill': _cor_da_medida(m, cor)},
                               'selector': {'data': [{'dataViewWildcard': {'matchingOption': 1}}]}}]

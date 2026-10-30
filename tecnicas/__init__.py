@@ -17,6 +17,8 @@ Vegapunk têm o nome de uma personalidade. A ordem é a do fluxo:
     c2             o dragão que solta a bomba certa: os visuais pela pergunta
     tobi           o parceiro que não para de falar: a frase de leitura
     onoki          o mestre que avalia: o acerto da busca e o retrato dela
+    c4             C4 Karura, as bombas que ninguém vê: a estatística (controle,
+                   fora da curva, meta x faixa, tendência)
     memory_card    o cartão de memória do time (foge do tema de propósito,
                    como no Vegapunk: o nome é o da ideia)
 

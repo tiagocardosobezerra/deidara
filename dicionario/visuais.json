@@ -1492,6 +1492,189 @@
       ],
       "nativo": true,
       "inspiracao": "Deidara (Tobi)"
+    },
+    {
+      "id": "grafico_de_controle",
+      "nome": "Gráfico de controle (sinal ou ruído)",
+      "termos": [
+        "controle",
+        "sinal",
+        "ruído",
+        "variação normal",
+        "limite",
+        "cep",
+        "xmr",
+        "estável",
+        "evolução"
+      ],
+      "quando": "saber se a variação de um mês é real ou é a oscilação normal do indicador, antes de reagir",
+      "deidara": {
+        "gera": true,
+        "argila": {
+          "nome": "Controle do Turnover",
+          "tipo": "controle",
+          "medida": "Turnover"
+        },
+        "visual": {
+          "tipo": "controle",
+          "medida": "Controle do Turnover"
+        }
+      },
+      "power_bi": "o Deidara gera o centro, os limites e o sinal em DAX e o gráfico de linha; o tipo (p, u ou XmR) sai da medida",
+      "cuidados": [
+        "uns 20 meses antes de confiar nos limites",
+        "limite de controle não é meta",
+        "no protótipo os limites são fictícios"
+      ],
+      "nativo": true,
+      "inspiracao": "NIST/SEMATECH e-Handbook (C4 Karura)"
+    },
+    {
+      "id": "meta_x_faixa",
+      "nome": "Meta x faixa normal",
+      "termos": [
+        "meta",
+        "faixa",
+        "capacidade",
+        "possível",
+        "alcançável"
+      ],
+      "quando": "saber se a meta cabe no processo como ele está, ou se só muda com ação",
+      "deidara": {
+        "gera": true,
+        "visual": {
+          "tipo": "cartao",
+          "medida": "Controle do Turnover · meta x faixa"
+        }
+      },
+      "power_bi": "frase gerada junto com o gráfico de controle quando a medida tem meta",
+      "cuidados": [
+        "usa o tamanho médio do grupo para a faixa"
+      ],
+      "nativo": true,
+      "inspiracao": "NIST/SEMATECH e-Handbook (C4 Karura)"
+    },
+    {
+      "id": "fora_da_curva",
+      "nome": "Fora da curva (z-score modificado ou funil)",
+      "termos": [
+        "fora da curva",
+        "outlier",
+        "atípico",
+        "destoa",
+        "padrão",
+        "funil"
+      ],
+      "quando": "apontar o cargo, a empresa ou a loja que está fora do padrão, sem marcar o pequeno à toa",
+      "deidara": {
+        "gera": true,
+        "argila": {
+          "nome": "Fora da curva no turnover",
+          "tipo": "fora_da_curva",
+          "medida": "Turnover",
+          "categoria": "dCargo[Cargo]"
+        },
+        "visual": {
+          "tipo": "barras",
+          "categoria": "dCargo[Cargo]",
+          "valores": [
+            "Turnover"
+          ],
+          "cor": "Cor Fora da curva no turnover"
+        }
+      },
+      "power_bi": "o Deidara gera o z (modificado para valor, do funil para taxa) e a cor das barras",
+      "cuidados": [
+        "valor: acima de 3,5 é fora; taxa: acima de 3"
+      ],
+      "nativo": true,
+      "inspiracao": "NIST/SEMATECH e-Handbook (C4 Karura)"
+    },
+    {
+      "id": "sazonalidade",
+      "nome": "Sazonalidade (uma linha por ano)",
+      "termos": [
+        "sazonal",
+        "sazonalidade",
+        "todo ano",
+        "mês do ano",
+        "época"
+      ],
+      "quando": "ver se um mês é sempre alto ou baixo, comparando os anos",
+      "deidara": {
+        "gera": true,
+        "visual": {
+          "tipo": "linha",
+          "categoria": "dCalendario[Nome do Mês]",
+          "legenda": "dCalendario[Ano]",
+          "valores": [
+            "Turnover"
+          ]
+        }
+      },
+      "power_bi": "gráfico de linha com o mês no eixo e o ano na legenda",
+      "cuidados": [
+        "só com 2 anos de dado ou mais"
+      ],
+      "nativo": true,
+      "inspiracao": "NIST/SEMATECH e-Handbook (C4 Karura)"
+    },
+    {
+      "id": "faixa_tipica",
+      "nome": "Faixa típica (mediana e quartis)",
+      "termos": [
+        "mediana",
+        "quartil",
+        "faixa",
+        "típico",
+        "distribuição",
+        "salário"
+      ],
+      "quando": "mostrar o normal de salário ou tempo de casa sem o puxão de poucos valores altos",
+      "deidara": {
+        "gera": true,
+        "argila": {
+          "nome": "Remuneração mediana",
+          "agregacao": "mediana",
+          "coluna": "dColaborador[Remuneração]"
+        }
+      },
+      "power_bi": "MEDIAN e PERCENTILE.INC (25% e 75%)",
+      "cuidados": [
+        "sem conferência simples em SQL"
+      ],
+      "nativo": true,
+      "inspiracao": "NIST/SEMATECH e-Handbook (C4 Karura)"
+    },
+    {
+      "id": "previsao_anomalia",
+      "nome": "Previsão ou anomalia (do Power BI)",
+      "termos": [
+        "previsão",
+        "projeção",
+        "vai fechar",
+        "anomalia",
+        "mês estranho"
+      ],
+      "quando": "projetar o fechamento ou marcar o mês fora do esperado",
+      "deidara": {
+        "gera": false,
+        "visual": {
+          "tipo": "linha",
+          "categoria": "dCalendario[Mês/Ano]",
+          "valores": [
+            "Turnover"
+          ],
+          "previsao": true
+        }
+      },
+      "power_bi": "o Deidara monta o gráfico de linha; ligue Previsão ou Anomalias no painel Análise (o passo fica no LEIA-ME)",
+      "cuidados": [
+        "as duas não funcionam juntas",
+        "anomalia: sem legenda, uma medida, 4 pontos ou mais"
+      ],
+      "nativo": true,
+      "inspiracao": "Microsoft Learn"
     }
   ]
 }

@@ -51,7 +51,8 @@ class TestComeco(unittest.TestCase):
         self.assertTrue(all(m['descricao'].startswith('A DEFINIR') for m in a['medidas']
                             if m['nome'] not in cadeia and not m.get('meta') and m['nome'] not in
                             {x.get('meta') for x in a['medidas']}
-                            and not str(m.get('tipo', '')).startswith(('svg_', 'ano_anterior', 'leitura', 'impacto'))))
+                            and not str(m.get('tipo', '')).startswith(('svg_', 'ano_anterior', 'leitura', 'impacto', 'controle',
+                                                                        'fora_da_curva'))))
         # as que o C2 deriva de um indicador já trazem a descrição (não pedem definição de negócio)
         self.assertTrue(a['descricao'].startswith('A DEFINIR'))                   # sem briefing, o painel fica a definir
         self.assertEqual(a['modelo'], 'faixa-de-kpis')

@@ -7,7 +7,7 @@
 ![Python 3.8+](https://img.shields.io/badge/python-3.8%2B-3776AB?style=flat-square&logo=python&logoColor=white)
 ![No dependencies](https://img.shields.io/badge/dependencies-none-2ea44f?style=flat-square)
 ![Power BI .pbip](https://img.shields.io/badge/Power%20BI-.pbip%20(TMDL%20%2B%20PBIR)-F2C811?style=flat-square&logo=powerbi&logoColor=black)
-![Tests](https://img.shields.io/badge/tests-162%20passing-2ea44f?style=flat-square)
+![Tests](https://img.shields.io/badge/tests-174%20passing-2ea44f?style=flat-square)
 ![MIT](https://img.shields.io/badge/license-MIT-blue?style=flat-square)
 
 <img width="100%" alt="Deidara: from request to Power BI report, with an approved prototype before the project" src="assets/deidara-banner-en-animado.svg" />
@@ -179,6 +179,7 @@ deidara/
 │   ├── c2.py              #   the dragon: picks the visuals from the report's question
 │   ├── tobi.py            #   the chatty partner: the reading sentence (what the number did and who drove it)
 │   ├── onoki.py           #   the master: measures search accuracy and catches regressions
+│   ├── c4.py              #   C4 Karura: statistics (signal or noise, outliers, target vs normal range, trend)
 │   ├── c1/                #   small figures: the HTML prototype and the guided tour
 │   ├── bunshin/           #   clay clone: fictitious numbers and demo project
 │   ├── katsu.py           #   "Katsu!": the sign-off and the approved snapshot

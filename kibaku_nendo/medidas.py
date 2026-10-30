@@ -96,6 +96,7 @@ def resolver_medidas(argila, m, p):
     _metas(m, p)
     _svgs(m, p)
     _extras(m, p)
+    _c4(m, p)
     _ciclos(m, p)
     for md in m['medidas']:
         if md.get('tipo') not in ('cor', 'meta') and (not (md.get('descricao') or '').strip()
@@ -195,7 +196,12 @@ def _svgs(m, p):
             from tecnicas import tobi
             cfg['aditiva'] = tobi.aditiva(base)
             md['formato'] = None
-            md['dax'] = tobi.dax(base['nome'], b, dax_medida(cfg['comparar']), col, base['formato'], maior, cfg['aditiva'])
+            cal = (m.get('calendario') or {}).get('tabela')
+            if cal:                                    # com calendário, a frase diz também a tendência (C4 Karura)
+                from tecnicas import c4
+                tendencia = c4.dax_tendencia(b, dax_tabela(cal), base['formato'])
+            md['dax'] = tobi.dax(base['nome'], b, dax_medida(cfg['comparar']), col, base['formato'], maior, cfg['aditiva'],
+                                 tendencia if cal else None)
         elif tipo == 'lista_top':
             n = cfg.get('n')
             if not isinstance(n, int) or n < 1:
@@ -533,6 +539,10 @@ def _medida_agregacao(m, md, r, p, onde):
         return
     r['tabela'] = md.get('tabela') or t['nome']
     r['dax'] = f'{AGREGACOES[ag]}({dax_coluna(t["nome"], c["nome"])})'
+    if ag in ('quartil_1', 'quartil_3'):           # a faixa típica: o quartil de baixo e o de cima
+        r['dax'] = f'PERCENTILE.INC({dax_coluna(t["nome"], c["nome"])}, {0.25 if ag == "quartil_1" else 0.75})'
+    if ag in ('mediana', 'quartil_1', 'quartil_3'):
+        return                                     # sem conferência simples em SQL (é percentil por janela)
     sql = {'soma': 'SUM(CAST({} AS decimal(38,6)))', 'media': 'AVG(CAST({} AS decimal(38,6)))', 'minimo': 'MIN({})',
            'maximo': 'MAX({})', 'contagem': 'COUNT_BIG({})', 'contagem_distinta': 'COUNT_BIG(DISTINCT {})'}[ag]
     if ag in ('minimo', 'maximo') and c['familia'] not in NUMERICAS:
@@ -659,3 +669,88 @@ def _ciclos(m, p):
 
     for k in por_nome:
         visita(k, [])
+
+
+def _c4(m, p):
+    """C4 Karura (tecnicas/c4.py): o gráfico de controle (centro, limites, sinal e a meta x faixa) e o fora da
+    curva. O tipo do gráfico sai da medida: taxa em percentual vira gráfico p, outra divisão vira gráfico u, e o
+    resto, XmR."""
+    from tecnicas import c4
+    novas = []
+    for md in m['medidas']:
+        if md.get('tipo') not in ('controle', 'fora_da_curva'):
+            continue
+        cfg, onde, nome = md['extra'], f'medida {md["nome"]}', md['nome']
+        base = medida(m, cfg.get('medida') or '')
+        if not base:
+            p.erro(onde, f'"medida" ("{cfg.get("medida")}") não é uma medida do modelo')
+            continue
+        b = dax_medida(base['nome'])
+        num, den = (base.get('depende') or [None, None])[:2] if base.get('tipo') == 'divisao' else (None, None)
+        proporcao = base.get('tipo') == 'divisao' and base.get('formato') == 'percentual'
+        md['polaridade'] = base['polaridade']
+        if md['tipo'] == 'controle':
+            cal = (m.get('calendario') or {}).get('tabela')
+            if not cal:
+                p.erro(onde, 'o gráfico de controle pede "calendario" no argila.json (um ponto por mês)')
+                continue
+            tipo = cfg.get('grafico') or ('p' if proporcao else 'u' if base.get('tipo') == 'divisao' else 'xmr')
+            if tipo not in ('xmr', 'p', 'u') or (tipo != 'xmr' and not num):
+                p.erro(onde, '"grafico" deve ser xmr, p ou u (p e u pedem uma medida de divisão)')
+                continue
+            dn, dd = (dax_medida(num), dax_medida(den)) if tipo != 'xmr' else (None, None)
+            dep = [base['nome']] + ([num, den] if tipo != 'xmr' else [])
+            md.update({'dax': c4.dax_controle('centro', b, dax_tabela(cal), tipo, dn, dd), 'formato': base['formato'],
+                       'depende': list(dep)})
+            textos = {'superior': 'Limite superior do gráfico de controle de ',
+                      'inferior': 'Limite inferior do gráfico de controle de ',
+                      'sinal': 'Sinal do gráfico de controle (1 fora do limite, 2 oito do mesmo lado da média, '
+                               '3 seis na mesma direção) de '}
+            partes = {'superior': f'{nome} · limite superior', 'inferior': f'{nome} · limite inferior',
+                      'sinal': f'{nome} · sinal'}
+            for parte, nome_parte in partes.items():
+                novas.append(_derivada(md, nome_parte, c4.dax_controle(parte, b, dax_tabela(cal), tipo, dn, dd),
+                                       'inteiro' if parte == 'sinal' else base['formato'], dep,
+                                       textos[parte] + base['nome'] + '.', oculta=parte == 'sinal'))
+            if base.get('meta_medida'):
+                partes['meta'] = f'{nome} · meta x faixa'
+                novas.append(_derivada(md, partes['meta'], c4.dax_meta_x_faixa(
+                    b, dax_medida(base['meta_medida']), dax_tabela(cal), tipo, base['polaridade'] == 'maior_melhor',
+                    base['formato'], dn, dd), None, dep + [base['meta_medida']],
+                    f'Se a meta de {base["nome"]} cabe na faixa normal do processo.'))
+            cfg.update({'base': base['nome'], 'grafico': tipo, 'partes': partes, 'numerador': num,
+                        'denominador': den, 'calendario': cal})
+            p.aviso(onde, f'[Design] o gráfico de controle precisa de uns {c4.PONTOS_MINIMOS} meses para os limites '
+                          'valerem (NIST 6.3.2): com menos, leia os limites como provisórios')
+        else:
+            tc, cc = resolver_coluna(m, cfg.get('categoria'))
+            if not cc:
+                p.erro(onde, '"categoria" precisa ser a coluna dos itens (Tabela[Coluna])'
+                       + pista_coluna(m, cfg.get('categoria')))
+                continue
+            col = dax_coluna(tc['nome'], cc['nome'])
+            funil = bool(proporcao and num)
+            md.update({'dax': c4.dax_fora_da_curva(b, col, funil, dax_medida(num) if funil else None,
+                                                   dax_medida(den) if funil else None),
+                       'formato': 'decimal', 'depende': [base['nome']] + ([num, den] if funil else [])})
+            limiar = c4.LIMIAR_FUNIL if funil else c4.LIMIAR_Z_MODIFICADO
+            cor = f'Cor {nome}'
+            acento = (m['tema']['cores'] or ['#118DFF'])[0]
+            ref = dax_medida(nome)
+            novas.append(_derivada(md, cor, f'IF(ISBLANK({ref}), BLANK(), IF(ABS({ref}) > {limiar}, "{COR_RUIM}", '
+                                            f'"{acento}"))', None, [nome],
+                                   f'Vermelho para o item fora da curva em {base["nome"]}.', tipo='cor', oculta=True))
+            md['cor_medida'] = cor
+            cfg.update({'base': base['nome'], 'tabela': tc['nome'], 'coluna': cc['nome'], 'funil': funil,
+                        'limiar': limiar, 'numerador': num, 'denominador': den})
+        conferir_funcoes(md['dax'], p, onde)
+        for x in sintaxe_dax(md['dax']):
+            p.erro(onde, f'DAX gerado mal escrito ({x}): avise o time do Deidara')
+    m['medidas'].extend(novas)
+
+
+def _derivada(md, nome, dax, formato, depende, descricao, tipo='c4', oculta=False):
+    return {'nome': nome, 'tipo': tipo, 'formato': formato, 'pasta': md.get('pasta') or 'Estatística',
+            'tabela': md['tabela'], 'dax': dax, 'depende': list(depende), 'descricao': descricao, 'meta': None,
+            'polaridade': md.get('polaridade', 'maior_melhor'), 'oculta': oculta, 'meta_medida': None,
+            'cor_medida': None, 'conferencia_sql': None, 'extra': {'de': md['nome']}}

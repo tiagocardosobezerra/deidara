@@ -269,7 +269,9 @@ def _conferir_pagina(m, pagina, p, onde, filtra):
     if cal and not tem_ano:
         for v in pagina['visuais']:
             for c in [v['categoria'], v['legenda']] + v['linhas'] + v['colunas']:
-                if c and c['tabela'] == cal and c['nome'] in CALENDARIO_SEM_ANO and v['tipo'] not in SEGMENTADORES:
+                por_ano = v['legenda'] and v['legenda']['tabela'] == cal and v['legenda']['nome'] == 'Ano'
+                if (c and c['tabela'] == cal and c['nome'] in CALENDARIO_SEM_ANO and v['tipo'] not in SEGMENTADORES
+                        and not por_ano):               # sazonalidade: uma linha por ano, os meses no eixo
                     p.aviso(onde, f'"{v["titulo"]}" usa {cal}[{c["nome"]}] sem segmentador de ano na página: '
                                   f'soma todos os anos; prefira {cal}[Ano-Trimestre] ou {cal}[Mês/Ano], ou ponha um '
                                   'segmentador de Ano')
@@ -369,6 +371,18 @@ def _visual(m, v, p, onde, filtra):
             ok = False
         if alvo and tipo == 'aviso':
             r['cor_fundo'] = alvo.get('cor_fundo')
+    elif tipo == 'controle':                            # C4 Karura: o indicador, o centro e os limites, mês a mês
+        alvo = medida(m, v.get('medida') or '')
+        cfg = (alvo or {}).get('extra') or {}
+        if not alvo or alvo.get('tipo') != 'controle' or not cfg.get('partes'):
+            p.erro(onde, 'controle pede "medida": uma medida do tipo controle (ver referencias/estatistica.md)')
+            return None
+        r['categoria'] = campo_do_modelo(m, f'{cfg["calendario"]}[Mês/Ano]')
+        r['valores'] = [campo_do_modelo(m, x) for x in (cfg['base'], alvo['nome'], cfg['partes']['superior'],
+                                                          cfg['partes']['inferior'])]
+        r['controle'] = alvo['nome']
+        if not r['titulo']:
+            r['titulo'] = f'{cfg["base"]}: sinal ou ruído?'
     elif tipo == 'vegalite':
         r['categoria'] = campo(v.get('categoria'), 'coluna', 'categoria')
         r['valores'] = [campo(x, 'medida', 'valor') for x in v.get('valores') or []][:2]
@@ -473,6 +487,11 @@ def _visual(m, v, p, onde, filtra):
             ok = False
         if tipo == 'rosca' and len(r['valores']) > 1:
             p.aviso(onde, 'rosca com mais de uma medida: só a primeira aparece bem')
+    if tipo in ('linha', 'controle') and (v.get('previsao') or v.get('anomalias')):
+        o_que = 'Previsão' if v.get('previsao') else 'Anomalias'
+        p.aviso(onde, f'[Power BI] ligue {o_que} no painel Análise deste gráfico de linha (o Deidara não grava essa '
+                      'opção; a previsão e a detecção de anomalia são do Power BI e não funcionam juntas)')
+        r['nativo'] = o_que
     if not ok:
         return None
     for x in r['valores'] + r['campos']:

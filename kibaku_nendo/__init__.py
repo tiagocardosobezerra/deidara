@@ -14,4 +14,4 @@ privacidade (`privacidade.py`) e dos comandos do fluxo (`comandos.py`).
 Nenhuma técnica toca a argila crua: todas recebem o modelo que sai daqui.
 """
 
-VERSAO = '0.28.0'
+VERSAO = '0.29.0'

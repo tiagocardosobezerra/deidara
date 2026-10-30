@@ -28,8 +28,14 @@ GATILHOS = {
     'meta': ('meta', 'atingir', 'bater', 'alvo', 'objetivo', 'dentro do esperado'),
     'ranking': ('quem', 'pior', 'piores', 'melhor', 'melhores', 'ranking', 'maiores', 'menores', 'top', 'destaque'),
     'evolucao': ('evolucao', 'evoluiu', 'tendencia', 'ao longo', 'mes a mes', 'historico', 'comportamento',
-                 'no tempo'),
+                 'no tempo', 'sinal', 'ruido', 'estavel', 'normal'),
+    'fora': ('fora da curva', 'fora do padrao', 'outlier', 'destoa', 'destoam', 'quem esta fora', 'atipico'),
+    'sazonal': ('sazonal', 'sazonalidade', 'todo ano', 'mes do ano', 'epoca do ano', 'sempre nessa epoca'),
+    'previsao': ('previsao', 'projecao', 'vai fechar', 'fechar o ano', 'como vai terminar'),
+    'anomalia': ('anomalia', 'anomalias', 'mes estranho', 'fora do comum', 'pico estranho'),
+    'faixa': ('mediana', 'faixa', 'tipico', 'distribuicao', 'quartil', 'quartis'),
 }
+ADITIVAS_DE_VALOR = ('media',)
 LIMITE_DA_PAGINA = 12
 ADITIVAS = ('contagem_linhas', 'contagem', 'soma')
 
@@ -45,6 +51,56 @@ def _nova(argila, md):
     if chave(md['nome']) not in {chave(x['nome']) for x in argila['medidas']}:
         argila['medidas'].append(md)
     return md['nome']
+
+
+def _c4(argila, quer, principal, medidas, vis, cortes, cal, escolhas):
+    """As técnicas do C4 Karura (estatística) que a pergunta pede. O fora da curva pinta as barras que já existem; o
+    resto vai para a página "Sinal ou ruído", para não lotar a visão geral."""
+    if cortes and ('fora' in quer or 'ranking' in quer):
+        barras = next(v for v in vis if v['tipo'] == 'barras' and v.get('categoria') == cortes[0])
+        nome = _nova(argila, {'nome': f'Fora da curva em {principal}', 'tipo': 'fora_da_curva', 'medida': principal,
+                              'categoria': cortes[0],
+                              'descricao': f'Quantos desvios cada item está do padrão de {principal} (C4 Karura).'})
+        barras['cor'] = f'Cor {nome}'
+        escolhas.append('barras pintadas pelo fora da curva ("quem está fora do padrão?")')
+    if not cal:
+        return
+    sinal = []
+    if quer & {'evolucao', 'meta', 'causa'}:
+        controle = _nova(argila, {'nome': f'Controle de {principal}', 'tipo': 'controle', 'medida': principal,
+                                  'descricao': f'Centro do gráfico de controle de {principal} (C4 Karura).'})
+        sinal.append({'tipo': 'controle', 'medida': controle})
+        if 'meta' in quer and medidas.get(chave(principal), {}).get('meta') is not None:
+            sinal.append({'tipo': 'cartao', 'medida': f'{controle} · meta x faixa'})
+        escolhas.append('gráfico de controle ("isso é sinal ou ruído?")')
+    if 'sazonal' in quer:
+        sinal.append({'tipo': 'linha', 'categoria': f'{cal}[Nome do Mês]', 'legenda': f'{cal}[Ano]',
+                      'valores': [principal], 'titulo': f'{principal}: esse mês é sempre assim?'})
+        escolhas.append('uma linha por ano ("esse mês é sempre assim?")')
+    if quer & {'previsao', 'anomalia'}:
+        o_que = 'previsao' if 'previsao' in quer else 'anomalias'
+        sinal.append({'tipo': 'linha', 'categoria': f'{cal}[Mês/Ano]', 'valores': [principal], o_que: True,
+                      'titulo': f'{principal}: ' + ('como vai fechar?' if o_que == 'previsao' else 'teve mês estranho?')})
+        escolhas.append('linha para a ' + ('previsão' if o_que == 'previsao' else 'detecção de anomalia')
+                        + ' do Power BI (ligar no painel Análise)')
+    media_de_valor = next((x for x in argila['medidas'] if x.get('agregacao') in ADITIVAS_DE_VALOR and x.get('coluna')
+                           and chave(x['nome']) in {chave(n) for v in vis for n in [v.get('medida')] + v.get('valores', [])
+                                                    if n}), None)
+    if 'faixa' in quer and media_de_valor and cortes:
+        col, nome = media_de_valor['coluna'], media_de_valor['nome']
+        partes = [_nova(argila, {'nome': f'{nome} · {rot}', 'agregacao': ag, 'coluna': col,
+                                 'formato': media_de_valor.get('formato', 'decimal'),
+                                 'descricao': f'{desc} de {nome.lower()} (a faixa típica, sem o puxão dos extremos).'})
+                  for ag, rot, desc in (('quartil_1', 'quartil de baixo', 'O valor abaixo do qual fica um quarto'),
+                                        ('mediana', 'mediana', 'O valor do meio'),
+                                        ('quartil_3', 'quartil de cima', 'O valor abaixo do qual ficam três quartos'))]
+        sinal.append({'tipo': 'tabela', 'campos': [cortes[0]] + partes + [nome],
+                      'titulo': f'{nome}: qual é o normal?'})
+        escolhas.append('faixa típica com mediana e quartis ("qual é o normal aqui?")')
+    if sinal:
+        argila['paginas'].append({'nome': 'Sinal ou ruído', 'descricao': f'O que é variação normal em {principal} e o '
+                                  'que merece atenção.', 'visuais': [{'tipo': 'segmentador', 'campo': f'{cal}[Ano]'}]
+                                  + sinal})
 
 
 def soltar(argila, quer, notas):
@@ -87,6 +143,7 @@ def soltar(argila, quer, notas):
         else:
             vis[k] = nova
 
+    _c4(argila, quer, principal, medidas, vis, cortes, (cal.get('tabela') or 'dCalendario') if cal else None, escolhas)
     if not cal or not todos:
         if escolhas:
             notas.append('C2 escolheu pela pergunta: ' + '; '.join(escolhas))

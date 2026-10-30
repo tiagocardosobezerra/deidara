@@ -12,9 +12,10 @@ LARGURA = 108
 TEMAS = (
     ('Definições', ('definição pendente',)),
     ('Memory Card', ('OFICIAL', 'Memory Card')),
+    ('Filtros e cortes', ('segmentador', 'não filtra', 'filtra só parte', 'soma todos os anos', 'não muda com')),
     ('Ligações', ('ligação', 'DECLARADA', 'tipos diferentes nas pontas', 'FK ', 'chave da mãe', 'receita de prova',
                   'prova ')),
-    ('Filtros e cortes', ('segmentador', 'não filtra', 'filtra só parte', 'soma todos os anos')),
+    ('Power BI', ('[Power BI]',)),
     ('Privacidade', ('[Privacidade]',)),
     ('Fontes', ('servidor/banco', 'SEU_SERVIDOR')),
     ('Design', ('[Design]', '[SVG]')),
