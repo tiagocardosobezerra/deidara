@@ -18,6 +18,7 @@ LONGEST_RELATIVO = len('/.Report/definition/pages/0123456789abcdef0123/visuals/0
 
 
 def lembrete(texto):
+    sys.stdout.flush()                       # o lembrete vem depois do que já foi dito, não antes
     print(f'LEMBRETE: {texto}', file=sys.stderr)
 
 
