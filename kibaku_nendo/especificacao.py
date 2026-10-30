@@ -1317,7 +1317,37 @@ def _conferir_funcoes(dax, p, onde):
                + ' (deidara.py funcoes buscar "<o que você quer fazer>")')
 
 
+def sintaxe_dax(dax):
+    """Os erros de escrita que o Power BI recusa e que dá para ver sem o motor: aspas, colchetes e parênteses que
+    não fecham, ";" no lugar da vírgula e operador no fim. Devolve a lista de problemas."""
+    # texto e comentário saem juntos, na ordem em que aparecem ("http://..." dentro do texto não é comentário)
+    texto = re.sub(r'"(?:[^"]|"")*"|//[^\n]*|--[^\n]*|/\*.*?\*/', lambda x: '""' if x.group(0)[0] == '"' else '',
+                   dax, flags=re.S)
+    if texto.count('"') % 2:
+        return ['aspas duplas sem fechar']
+    if texto.count("'") % 2:
+        return ["aspas simples (nome de tabela) sem fechar"]
+    texto = re.sub(r"'(?:[^']|'')*'", "''", texto)
+    out, pilha = [], []
+    for ch in re.sub(r'\[(?:[^\]]|\]\])*\]', '[]', texto) if texto.count('[') == texto.count(']') else texto:
+        if ch in '([':
+            pilha.append(ch)
+        elif ch in ')]':
+            if not pilha or pilha.pop() != {')': '(', ']': '['}[ch]:
+                return [f'"{ch}" sem a abertura correspondente']
+    if pilha:
+        out.append(f'"{pilha[-1]}" aberto sem fechar ({len(pilha)} no total)')
+    if ';' in texto:
+        out.append('";" no lugar de "," entre os argumentos (o projeto é gravado em TMDL, que só aceita vírgula, '
+                   'mesmo com o Power BI em português)')
+    if re.search(r'[-+*/&,(]\s*$', texto.strip()):
+        out.append('a expressão termina num operador ou vírgula: falta o fim da conta')
+    return out
+
+
 def _conferir_refs(m, r, nomes, p, onde):
+    for problema in sintaxe_dax(r['dax']):
+        p.erro(onde, f'DAX mal escrito: {problema}')
     _conferir_funcoes(r['dax'], p, onde)
     deps = []
     for tn, n in referencias_dax(r['dax']):

@@ -1352,6 +1352,32 @@ class TestCausaRaiz(unittest.TestCase):
         shutil.rmtree(d, ignore_errors=True)
 
 
+class TestSintaxeDax(unittest.TestCase):
+    def test_pega_o_que_o_power_bi_recusaria(self):
+        from kibaku_nendo.especificacao import sintaxe_dax
+        self.assertEqual(sintaxe_dax('DIVIDE([A], [B])'), [])
+        self.assertEqual(sintaxe_dax('CALCULATE([A], \'Tab (x)\'[Col] = "a;b)")'), [])     # texto e nome não contam
+        self.assertEqual(sintaxe_dax('VAR _x = 1 -- comentário (\nRETURN _x'), [])
+        self.assertTrue(any('fechar' in x for x in sintaxe_dax('DIVIDE([A], [B]')))
+        self.assertTrue(any('";"' in x for x in sintaxe_dax('DIVIDE([A]; [B])')))
+        self.assertTrue(any('aspas' in x for x in sintaxe_dax('"abc')))
+        self.assertTrue(any('operador' in x for x in sintaxe_dax('[A] +')))
+
+    def test_todo_dax_que_o_deidara_escreve_passa(self):
+        from kibaku_nendo.especificacao import sintaxe_dax
+        for argila in (_base(), TestTecnicasCompletas()._argila(), TestCausaRaiz()._argila()):
+            m, _ = _resolver(argila)
+            for md in m['medidas']:
+                if md.get('dax') and md.get('tipo') not in ('html_kpis', 'html_tour'):
+                    self.assertEqual(sintaxe_dax(md['dax']), [], md['nome'])
+
+    def test_vira_erro_no_validar(self):
+        a = _base()
+        a['medidas'].append({'nome': 'Quebrada', 'dax': 'DIVIDE([Desligamentos]; [Headcount]', 'descricao': 'x'})
+        _, p = _resolver(a)
+        self.assertTrue(any('DAX mal escrito' in e for e in p.erros), p.erros)
+
+
 class TestNumeroDistorcido(unittest.TestCase):
     """Corte que filtra só parte da conta: o esboço não cria, e o aceite não deixa passar em bloco."""
 

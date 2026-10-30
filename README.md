@@ -7,7 +7,7 @@
 ![Python 3.8+](https://img.shields.io/badge/python-3.8%2B-3776AB?style=flat-square&logo=python&logoColor=white)
 ![Sem dependências](https://img.shields.io/badge/depend%C3%AAncias-nenhuma-2ea44f?style=flat-square)
 ![Power BI .pbip](https://img.shields.io/badge/Power%20BI-.pbip%20(TMDL%20%2B%20PBIR)-F2C811?style=flat-square&logo=powerbi&logoColor=black)
-![Testes](https://img.shields.io/badge/testes-143%20passando-2ea44f?style=flat-square)
+![Testes](https://img.shields.io/badge/testes-146%20passando-2ea44f?style=flat-square)
 ![MIT](https://img.shields.io/badge/licen%C3%A7a-MIT-blue?style=flat-square)
 
 <img width="100%" alt="Deidara: do pedido ao painel Power BI, com protótipo aprovado antes do projeto" src="assets/deidara-banner-animado.svg" />

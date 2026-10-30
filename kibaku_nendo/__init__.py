@@ -12,4 +12,4 @@ quem usa (`relato.py`).
 Nenhuma técnica toca a argila crua: todas recebem o modelo que sai daqui.
 """
 
-VERSAO = '0.21.0'
+VERSAO = '0.22.0'

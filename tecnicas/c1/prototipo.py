@@ -42,6 +42,12 @@ def _titulo(v, w):
     return f'<text x="12" y="22" class="t">{_e(_corta(v["titulo"], int(w / 7.5)))}</text>'
 
 
+def _curto(r, n):
+    """Rótulo de mês que não cabe ("jan/2025"): fica só o mês, sem reticências no meio da palavra."""
+    r = str(r)
+    return r.split('/')[0] if len(r) > n and '/' in r else r
+
+
 def _corta(s, n):
     s = str(s)
     return s if len(s) <= n else s[:max(1, n - 1)] + '…'
@@ -843,7 +849,7 @@ def _colunas(sim, v, w, h, cores):
             cor = cores[k % len(cores)] if not v.get('cor') or i == 0 else '#C8C6C4'   # destaque: só o escolhido aceso
             out.append(f'<rect x="{x:.1f}" y="{base - bh:.1f}" width="{max(1, bw - 1):.1f}" height="{bh:.1f}" fill="{cor}">'
                        f'<title>{_e(r)}: {_e(formatar(s[i], fmt))}</title></rect>')
-        out.append(f'<text x="{esq + i * gw + gw / 2:.1f}" y="{base + 16}" class="eixo" text-anchor="middle">{_e(_corta(r, max(3, int((gw - 4) / 8))))}</text>')
+        out.append(f'<text x="{esq + i * gw + gw / 2:.1f}" y="{base + 16}" class="eixo" text-anchor="middle">{_e(_corta(_curto(r, int((gw - 4) / 8)), max(3, int((gw - 4) / 8))))}</text>')
     if len(ss) == 1 and gw > max(44, 6.5 * max(len(formatar(x, ss[0][2], True)) for x in ss[0][1])):   # rótulo só se couber
         s, fmt = ss[0][1], ss[0][2]
         for i in range(len(rot)):
@@ -1074,7 +1080,9 @@ th{position:sticky;top:0;background:#F3F2F1}code,pre{font-family:Consolas,monosp
 .palco{height:auto!important;overflow:visible}.pagina{transform:none!important;width:auto!important;height:auto!important;
 background:transparent;box-shadow:none}.pagina h2{position:static;margin:0 0 10px;color:var(--texto)}
 .vis{position:relative!important;left:auto!important;top:auto!important;width:auto!important;height:auto!important;margin:0 0 10px}
-.vis svg{width:100%;height:auto}.fundo,.ir{display:none}}
+.vis svg{width:100%;height:auto}.fundo,.ir{display:none}
+.desenhada .vis:not(.segmentador):not(.botoes){background:#fff;border:1px solid #EDEBE9;border-radius:6px}
+.escura.desenhada .vis:not(.segmentador):not(.botoes){background:#141A26;border-color:#2A3346}}
 .decisao{display:flex;flex-direction:column;gap:6px;margin:6px 0 12px}.decisao label{display:flex;gap:8px;align-items:center}
 #aprovador{font:inherit;padding:6px 8px;border:1px solid var(--borda);border-radius:6px;margin-left:6px}
 .info{position:absolute;top:4px;right:4px;width:22px;height:22px;border-radius:50%;border:1px solid #C8C6C4;background:#fff;
