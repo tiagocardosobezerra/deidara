@@ -1420,7 +1420,12 @@ class TestComeco(unittest.TestCase):
         self.assertEqual(tipos['F_MOTIVO_DESLIGAMENTO'], 'dimensao')
         decl = [r for r in a['relacionamentos'] if 'declarada' in r]
         self.assertTrue(decl and all(r['declarada']['por'] == 'A CONFIRMAR' for r in decl))
-        self.assertTrue(all(m['descricao'].startswith('A DEFINIR') for m in a['medidas']))
+        cadeia = {'Desligamentos', 'Headcount', 'HC Médio', 'Turnover'}         # o padrão turnover traz a definição
+        self.assertTrue(cadeia <= {m['nome'] for m in a['medidas']})
+        self.assertTrue(all(m['descricao'].startswith('A DEFINIR') for m in a['medidas']
+                            if m['nome'] not in cadeia and not m.get('meta') and m['nome'] not in
+                            {x.get('meta') for x in a['medidas']}))
+        self.assertTrue(a['descricao'].startswith('A DEFINIR'))                   # sem briefing, o painel fica a definir
         self.assertEqual(a['modelo'], 'faixa-de-kpis')
         meta = next(m for m in a['medidas'] if 'Meta' in m['nome'])
         self.assertEqual((meta['agregacao'], meta['formato']), ('media', 'percentual'))
@@ -1453,7 +1458,7 @@ class TestComeco(unittest.TestCase):
         arq, _ = self._esboco()
         codigo, out = _calado(deidara.main, ['situacao', arq])
         self.assertEqual(codigo, 0)
-        self.assertIn('Próximo passo: deidara.py validar', out)
+        self.assertIn('Próximo passo: deidara.py prototipar', out)                 # ligação a confirmar não segura o protótipo
 
 
 class TestPrototipoParaAprovar(unittest.TestCase):

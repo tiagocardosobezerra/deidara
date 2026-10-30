@@ -91,6 +91,9 @@ JOIN sys.foreign_key_columns AS fkc ON fkc.constraint_object_id = fk.object_id
 JOIN sys.columns AS pc ON pc.object_id = fkc.parent_object_id AND pc.column_id = fkc.parent_column_id
 JOIN sys.tables AS rt ON rt.object_id = fkc.referenced_object_id
 JOIN sys.columns AS rc ON rc.object_id = fkc.referenced_object_id AND rc.column_id = fkc.referenced_column_id
+UNION ALL
+SELECT N'origem', N'(banco)', CAST(@@SERVERNAME AS sysname), CAST(DB_NAME() AS sysname), NULL, NULL, NULL, NULL, NULL,
+       @esquema, NULL, NULL, NULL, NULL
 ORDER BY secao DESC, tabela, fk, fk_ordem, coluna;
 """
 
@@ -307,7 +310,10 @@ def catalogo_de_sql(linhas, fonte):
         sec, tab = l.get('secao'), l.get('tabela')
         if not tab:
             continue
-        if sec == 'tabela':
+        if sec == 'origem':                      # onde a receita rodou: vira o servidor e o banco do argila.json
+            cat['origem'] = {k: v for k, v in (('servidor', l.get('coluna')), ('banco', l.get('tipo')),
+                                                ('esquema', l.get('descricao'))) if v}
+        elif sec == 'tabela':
             _tabela(cat, tab)['descricao'] = l.get('descricao', '')
         elif sec == 'coluna':
             oc = {'coluna': l['coluna'], 'tipo': l.get('tipo') or None, 'tamanho': _int(l.get('tamanho')),

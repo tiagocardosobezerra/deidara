@@ -23,9 +23,22 @@ coisa, feche com o usuário (em poucas perguntas, não um formulário):
 Se o indicador já existe em outro painel ou planilha, peça a definição de lá:
 número igual com definição diferente é o pior defeito de um painel.
 
-Atalho para os passos 2 e 3: `deidara.py novo <pasta>` (pasta com as receitas
-e um roteiro) e, com os catálogos prontos, `deidara.py esbocar <pasta> --pedido
-"..."` (o primeiro argila.json). A qualquer momento: `deidara.py situacao`.
+**Grave as respostas no briefing.** `deidara.py novo <pasta>` cria a pasta
+(receitas, roteiro) e o `painel.json` com o `"briefing"` vazio:
+
+```json
+{"projeto": "Turnover RH",
+ "briefing": {"decisao": "Onde agir para reduzir o turnover.", "publico": "Gestores de RH",
+              "indicadores": [{"nome": "Turnover", "definicao": "Desligamentos do mês ÷ headcount médio do mês.",
+                               "polaridade": "menor_melhor", "meta": "planilha de metas"}],
+              "cortes": ["cargo", "empresa"], "fontes": {"erp": "SQL Server do RH", "metas": "planilha no SharePoint"}}}
+```
+
+`meta` é um número (0.03) ou o nome da meta que vem de uma fonte. O `esbocar`
+lê o briefing: o pedido sai dele, e as definições, a polaridade, a meta, a
+descrição e o público entram no argila.json sem "A DEFINIR". A palavra do
+gestor manda: meta numérica no briefing ganha da meta da fonte (o esboço avisa).
+A qualquer momento: `deidara.py situacao`.
 
 ## Passo 2 — Receita e catálogo de cada fonte
 
@@ -43,7 +56,16 @@ python3 deidara.py catalogar --de metas.txt --fonte metas --m pasta_dos_m -o meu
 ```
 
 Leia os avisos do `catalogar` com o usuário (coluna sem tipo, coluna
-calculada que ficou de fora). Detalhes: [fontes.md](fontes.md).
+calculada que ficou de fora). A receita SQL devolve também o servidor, o banco
+e o esquema em que rodou: o `esbocar` já os põe em `"fontes"` (resultado de
+uma receita antiga sai com `SEU_SERVIDOR`/`SEU_BANCO`, e o esboço avisa).
+Detalhes: [fontes.md](fontes.md).
+
+Com os catálogos prontos, `deidara.py esbocar <pasta>` monta o primeiro
+argila.json. Indicador com padrão (`deidara.py padroes turnover`) entra com a
+cadeia inteira: o esboço acha nos catálogos a tabela de cada papel (o evento,
+o cadastro com a data de admissão), mesmo quando o pedido não cita a tabela, e
+liga a meta da fonte ao indicador de mesmo nome.
 
 O catálogo traz só estrutura. Pode ir para o repositório do painel? **Não**
 se a estrutura for de um sistema de terceiros com licença restrita.
@@ -82,7 +104,9 @@ python3 deidara.py prototipar meu_painel/argila.json
 
 Gera `argila.prototipo.html`: páginas na mesma posição que vão para o Power
 BI, modelo de dados com a prova de cada ligação, dicionário de indicadores e
-a aba Pendências (os avisos). Mostre ao usuário (abrir o arquivo no
+a aba Pendências (os avisos). Ligação "A CONFIRMAR" não segura o protótipo:
+ela vira pendência (o protótipo mostra o painel sem ela), o gestor já reage, e
+o `aprovar` só passa depois do `confirmar`. Mostre ao usuário (abrir o arquivo no
 navegador; em Claude Code, publicar como artifact ajuda a compartilhar com o
 time) e pergunte o que mudar. Lembre: números fictícios.
 

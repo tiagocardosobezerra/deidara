@@ -96,25 +96,166 @@ def _rotulo(t):
     return textos[0] if textos else None
 
 
-def esbocar(catalogos, pedido, projeto=None, tabelas=None, limite=6):
-    """Devolve (argila, notas). `tabelas`: [(fonte, origem)] para escolher à mão; senão, a busca escolhe."""
+REF = re.compile(r'^(\w+)\[(.+)\]$')
+
+
+def _papeis_do_padrao(p):
+    """As tabelas que a cadeia de um padrão usa ('fDesligamento', 'dColaborador') e as colunas de cada uma."""
+    papeis = {}
+    for md in p['cadeia']:
+        if md.get('tabela'):
+            papeis.setdefault(md['tabela'], [])
+        for k in ('entradas', 'saidas', 'coluna'):
+            mt = REF.match(md.get(k) or '')
+            if mt:
+                papeis.setdefault(mt.group(1), [])
+                if mt.group(2) not in papeis[mt.group(1)]:
+                    papeis[mt.group(1)].append(mt.group(2))
+    return papeis
+
+
+def _coluna_do_papel(t, nome):
+    """A coluna do catálogo que faz o papel de `nome` ('Data de Admissão' -> DATAADMISSAO), ou None."""
+    quer = set(descoberta.tokens(nome))
+    datas = 'data' in quer
+    candidatas = _datas(t) if datas else list(t['colunas'].values())
+    pontos = []
+    for c in candidatas:
+        tem = set(descoberta.tokens(c['coluna'])) | set(descoberta.tokens(c.get('descricao') or ''))
+        pontos.append((len(quer & tem), c))
+    pontos.sort(key=lambda x: -x[0])
+    if pontos and pontos[0][0] >= min(2, len(quer)) and (len(pontos) == 1 or pontos[1][0] < pontos[0][0]):
+        return pontos[0][1]
+    return candidatas[0] if datas and len(candidatas) == 1 else None
+
+
+def cadeias_do_pedido(catalogos, pedido, dentro=None):
+    """Os padrões com a cadeia inteira (dicionario/padroes.json) que o pedido cita, com cada papel já achado nos
+    catálogos: [{'padrao', 'tabelas': {papel: (fonte, origem, tipo)}, 'colunas': {papel: [(coluna, nome)]},
+    'medidas'}] e as notas do que não deu para achar. `dentro`: só estas (fonte, origem) (escolha à mão)."""
+    from .dicionario import padroes
+    termos = descoberta._expandir(frozenset(descoberta.tokens(pedido)), descoberta._sinonimos())
+    achadas, notas = [], []
+    for p in padroes()['padroes']:
+        if not p.get('cadeia') or not termos & {x for t in p['termos'] for x in descoberta.tokens(t)}:
+            continue
+        tabelas, colunas, falta = {}, {}, []
+        usadas = set()
+        for papel, cols in _papeis_do_padrao(p).items():
+            tipo = 'fato' if papel.startswith('f') else 'dimensao'
+            achado = None
+            for r in descoberta.buscar(catalogos, ' '.join(descoberta.tokens(papel)), 6):
+                k = (r['fonte'], r['tabela'])
+                t = catalogos[r['fonte']].tabela(r['tabela'])
+                if k in usadas or (dentro is not None and k not in dentro) or (tipo == 'fato' and not _datas(t)):
+                    continue
+                pares = [(_coluna_do_papel(t, c), c) for c in cols]
+                if all(c for c, _ in pares):
+                    achado = k
+                    colunas[papel] = [(c['coluna'], n) for c, n in pares]
+                    break
+            if not achado:
+                falta.append(papel)
+                continue
+            usadas.add(achado)
+            tabelas[papel] = (achado[0], achado[1], tipo)
+        if falta:
+            notas.append(f'padrão "{p["id"]}": não achei nos catálogos o papel de {", ".join(falta)} '
+                         f'(veja `deidara.py padroes {p["id"]}` e escolha as tabelas com --tabelas)')
+            continue
+        achadas.append({'padrao': p['id'], 'tabelas': tabelas, 'colunas': colunas,
+                        'medidas': [dict(md) for md in p['cadeia']]})
+    return achadas, notas
+
+
+def _aplicar_briefing(argila, briefing, notas):
+    """As respostas do gestor (painel.json, "briefing") entram no esboço: definição, polaridade e meta de cada
+    indicador, para que serve o painel e para quem."""
+    if (briefing.get('decisao') or '').strip():
+        argila['descricao'] = briefing['decisao'].strip()
+    if (briefing.get('publico') or '').strip():
+        argila['publico'] = briefing['publico'].strip()
+    por_nome = {chave(md['nome']): md for md in argila['medidas']}
+    for ind in briefing.get('indicadores') or []:
+        nome = (ind.get('nome') or '').strip()
+        if not nome:
+            continue
+        md = por_nome.get(chave(nome))
+        if not md:                                        # "turnover" no briefing, "Turnover" na cadeia; ou só parecido
+            quer = set(descoberta.tokens(nome))
+            md = next((x for x in argila['medidas'] if quer and quer <= set(descoberta.tokens(x['nome']))), None)
+        if not md:
+            notas.append(f'indicador "{nome}" do briefing ainda sem medida no esboço: `deidara.py padroes {nome}` e '
+                         'acrescente em "medidas"')
+            continue
+        if (ind.get('definicao') or '').strip():
+            md['descricao'] = ind['definicao'].strip()
+        if ind.get('polaridade') in ('maior_melhor', 'menor_melhor'):
+            md['polaridade'] = ind['polaridade']
+        meta = ind.get('meta')
+        if isinstance(meta, (int, float)) and not isinstance(meta, bool):
+            if isinstance(md.get('meta'), str):
+                notas.append(f'meta de "{md["nome"]}": o briefing diz {meta}; a da fonte ("{md["meta"]}") ficou de '
+                             'lado (troque em "meta" se a da fonte é a oficial)')
+            md['meta'] = meta
+        elif isinstance(meta, str) and meta.strip():
+            alvo = por_nome.get(chave(meta)) or next(
+                (x for x in argila['medidas'] if x['nome'].lower().startswith('meta')
+                 and set(descoberta.tokens(nome)) <= set(descoberta.tokens(x['nome']))), None)
+            if alvo:
+                md['meta'] = alvo['nome']
+            else:
+                notas.append(f'meta de "{nome}" ("{meta}") não achada nos catálogos: catalogue a fonte da meta')
+
+
+def pedido_do_briefing(briefing):
+    """O pedido em português montado do briefing (indicadores e cortes), quando não vem --pedido."""
+    inds = [i.get('nome') for i in briefing.get('indicadores') or [] if (i.get('nome') or '').strip()]
+    cortes = [c for c in briefing.get('cortes') or [] if str(c).strip()]
+    if not inds:
+        return ''
+    return ' e '.join(inds) + (' por ' + ' e '.join(cortes) if cortes else '') + \
+        (' contra a meta' if any(i.get('meta') for i in briefing.get('indicadores') or []) else '')
+
+
+def esbocar(catalogos, pedido, projeto=None, tabelas=None, limite=6, briefing=None):
+    """Devolve (argila, notas). `tabelas`: [(fonte, origem)] para escolher à mão; senão, a busca escolhe.
+    `briefing`: as respostas do gestor (painel.json); sem pedido, o pedido sai dele."""
     notas = []
+    briefing = briefing or {}
+    pedido = pedido or pedido_do_briefing(briefing)
+    if not pedido:
+        raise ValueError('diga o que o painel mostra: --pedido "..." ou os indicadores no briefing (painel.json)')
     if tabelas:
         escolhidas = [(f, catalogos[f].tabela(o)['nome']) for f, o in tabelas if catalogos[f].tabela(o)]
     else:
+        cadeias, notas_cadeia = cadeias_do_pedido(catalogos, pedido)
+        do_padrao = {(f, o) for cd in cadeias for f, o, _ in cd['tabelas'].values()}
         achados = descoberta.buscar(catalogos, pedido, limite)
         literais = set(descoberta.tokens(pedido))
-        # só as tabelas que batem com uma palavra DITA no pedido (não só por sinônimo)
-        diretas = [r for r in achados if literais & set(r['termos'])]
+        # só as tabelas que batem com uma palavra DITA no pedido (não só por sinônimo) ou que o padrão pede
+        diretas = [r for r in achados if literais & set(r['termos']) or (r['fonte'], r['tabela']) in do_padrao]
         fora = [r['tabela'] for r in achados if r not in diretas]
         achados = diretas or achados
         if fora and diretas:
             notas.append('ficaram de fora (só batiam por sinônimo): ' + ', '.join(fora) + ' — inclua com --tabelas')
         escolhidas = [(r['fonte'], r['tabela']) for r in achados]
-        notas.append('tabelas escolhidas pela busca: ' + ', '.join(t for _, t in escolhidas)
-                     + ' (confirme com o usuário; troque com --tabelas)')
+        escolhidas += [k for k in sorted(do_padrao) if k not in escolhidas]
+        notas.append('tabelas escolhidas pela busca' + (' e pelo padrão' if do_padrao else '') + ': '
+                     + ', '.join(t for _, t in escolhidas) + ' (confirme com o usuário; troque com --tabelas)')
     if not escolhidas:
         raise ValueError('nenhuma tabela encontrada para o pedido: use palavras do negócio ou --tabelas')
+    if tabelas:
+        cadeias, notas_cadeia = cadeias_do_pedido(catalogos, pedido, set(escolhidas))
+    notas += notas_cadeia
+    papel_de = {(f, o): (papel, tipo) for cd in cadeias for papel, (f, o, tipo) in cd['tabelas'].items()}
+    cols_do_papel = {}
+    for cd in cadeias:
+        for papel, (f, o, _) in cd['tabelas'].items():
+            cols_do_papel.setdefault((f, o), []).extend(cd['colunas'].get(papel, []))
+        notas.append(f'padrão "{cd["padrao"]}": a cadeia inteira entrou ({", ".join(md["nome"] for md in cd["medidas"])}), '
+                     'com ' + ', '.join(f'{o} como {p}' for p, (_, o, _) in cd['tabelas'].items())
+                     + ' (confira a fórmula com o dono do indicador)')
     # mãe de outra escolhida (com chave) é dimensão; filha (ou sem chave) com data ou valor é fato
     filhas, maes = set(), set()
     for f, o in escolhidas:
@@ -130,28 +271,36 @@ def esbocar(catalogos, pedido, projeto=None, tabelas=None, limite=6):
             tipos[(f, o)] = 'dimensao'
         else:
             tipos[(f, o)] = 'fato' if mede and ((f, o) in filhas or not t['pk']) else 'dimensao'
+    for k, (_, tipo) in papel_de.items():               # o padrão sabe o que é evento e o que é cadastro
+        tipos[k] = tipo
     if 'fato' not in tipos.values():
         candidata = max(escolhidas, key=lambda x: len(_datas(catalogos[x[0]].tabela(x[1]))))
         tipos[candidata] = 'fato'
-    nomes = {k: nome_no_modelo(k[1], tipos[k]) for k in escolhidas}
+    nomes = {k: papel_de[k][0] if k in papel_de else nome_no_modelo(k[1], tipos[k]) for k in escolhidas}
 
-    tabs = []
+    tabs, rotulos = [], {}
     for (f, o) in escolhidas:
         t = catalogos[f].tabela(o)
         cols, usados = [], set()
 
-        def add(c):
+        def add(c, nome=None):
             if c and c['coluna'] not in usados:
                 usados.add(c['coluna'])
-                nome = nome_amigavel(c)
+                nome = nome or nome_amigavel(c)
                 if chave(nome) in {chave(x.get('nome', '')) for x in cols}:
                     nome = c['coluna']
                 cols.append({'coluna': c['coluna'], 'nome': nome})
+                return nome
 
+        for coluna, nome in cols_do_papel.get((f, o), []):   # as colunas que a cadeia do padrão usa, com o nome dela
+            add(t['colunas'].get(chave(coluna)), nome)
         if tipos[(f, o)] == 'dimensao':
             for p in t['pk']:
                 add(t['colunas'].get(chave(p)))
-            add(_rotulo(t))
+            rotulo = _rotulo(t)
+            if rotulo:
+                rotulos[nomes[(f, o)]] = add(rotulo) or next(
+                    (x['nome'] for x in cols if x['coluna'] == rotulo['coluna']), None)
         else:
             for c in _datas(t)[:2] + _valores(t)[:4]:
                 add(c)
@@ -189,10 +338,11 @@ def esbocar(catalogos, pedido, projeto=None, tabelas=None, limite=6):
         if d:
             datas.append({'tabela': tb['nome'], 'coluna': d['nome']})
 
-    # medidas: contagem de cada fato e soma de cada valor
-    medidas = []
+    # medidas: a cadeia dos padrões citados primeiro; depois contagem de cada fato e soma de cada valor
+    medidas = [md for cd in cadeias for md in cd['medidas']]
+    fatos_do_padrao = {nomes[k] for k, (_, tipo) in papel_de.items() if tipo == 'fato'}
     for tb in tabs:
-        if tb['tipo'] != 'fato':
+        if tb['tipo'] != 'fato' or tb['nome'] in fatos_do_padrao:
             continue
         rotulo = re.sub(r'^f', '', tb['nome'])
         t = catalogos[tb['fonte']].tabela(tb['origem'])
@@ -212,8 +362,27 @@ def esbocar(catalogos, pedido, projeto=None, tabelas=None, limite=6):
                                 'descricao': f'{PENDENTE_DEF}: o que este número significa para o negócio',
                                 'pasta': rotulo})
 
-    # página de visão geral: o fato principal (o primeiro com data) e só os cortes que chegam nele
-    fato = next((d['tabela'] for d in datas), next((tb['nome'] for tb in tabs if tb['tipo'] == 'fato'), None))
+    vistos = set()
+    medidas = [md for md in medidas if not (chave(md['nome']) in vistos or vistos.add(chave(md['nome'])))]
+    # a meta que veio da fonte liga no indicador do padrão com o mesmo nome ("Meta de turnover" -> Turnover)
+    for cd in cadeias:
+        alvo = cd['medidas'][-1]
+        quer = set(descoberta.tokens(alvo['nome']))
+        meta = next((md for md in medidas if md['nome'].lower().startswith('meta')
+                     and quer <= set(descoberta.tokens(md['nome']))), None)
+        for md in cd['medidas']:
+            md.setdefault('pasta', alvo['nome'])
+        if meta and 'meta' not in alvo:
+            alvo['meta'] = meta['nome']
+            meta['formato'] = alvo.get('formato', meta.get('formato'))
+            if meta['descricao'].startswith(PENDENTE_DEF):
+                meta['descricao'] = (f'Meta de {alvo["nome"]} da fonte, coluna {meta["coluna"]} '
+                                     f'({"média" if meta["agregacao"] == "media" else "soma"} das linhas no filtro).')
+            notas.append(f'"{alvo["nome"]}" ligado à meta "{meta["nome"]}" (a meta precisa chegar pelos mesmos cortes)')
+
+    # página de visão geral: o fato principal (o do padrão, ou o primeiro com data) e só os cortes que chegam nele
+    fato = next((d['tabela'] for d in datas if d['tabela'] in fatos_do_padrao),
+                next((d['tabela'] for d in datas), next((tb['nome'] for tb in tabs if tb['tipo'] == 'fato'), None)))
     chega = {fato}
     mudou = True
     while mudou:
@@ -222,13 +391,25 @@ def esbocar(catalogos, pedido, projeto=None, tabelas=None, limite=6):
             if r['de'] in chega and r['para'] not in chega and 'declarada' not in r:
                 chega.add(r['para'])
                 mudou = True
-    principais = [md for md in medidas if md['tabela' if 'tabela' in md else 'coluna'].split('[')[0] == fato]
+    if cadeias:                                        # o indicador do padrão na frente, e a cadeia dele em seguida
+        principais = [cd['medidas'][-1] for cd in cadeias] + [md for cd in cadeias for md in cd['medidas'][:-1]]
+    else:
+        principais = [md for md in medidas if md['tabela' if 'tabela' in md else 'coluna'].split('[')[0] == fato]
     vis = []
     if datas and any(d['tabela'] == fato for d in datas):
         vis.append({'tipo': 'segmentador', 'campo': 'dCalendario[Ano]'})
-    dims = [tb for tb in tabs if tb['tipo'] == 'dimensao' and len(tb['colunas']) > 1 and tb['nome'] in chega]
-    for d in dims[:2]:
-        vis.append({'tipo': 'segmentador', 'campo': f'{d["nome"]}[{d["colunas"][-1]["nome"]}]'})
+    literais = descoberta._expandir(frozenset(descoberta.tokens(pedido)), descoberta._sinonimos())
+    dims = [tb for tb in tabs if tb['tipo'] == 'dimensao' and tb['nome'] in rotulos and tb['nome'] in chega]
+    citadas = [d for d in dims if literais & set(descoberta.tokens(d['origem']) + descoberta.tokens(d['nome']))]
+    papeis = {p for p, _ in papel_de.values()}
+    citadas = [d for d in citadas if d['nome'] not in papeis] or citadas    # o cadastro de pessoas não é corte
+    cortes = citadas or [d for d in dims if d['nome'] not in papeis][:2] or dims[:2]
+
+    def campo(d):
+        return f'{d["nome"]}[{rotulos[d["nome"]]}]'
+
+    for d in cortes[:2]:
+        vis.append({'tipo': 'segmentador', 'campo': campo(d)})
     for md in principais[:4]:
         vis.append({'tipo': 'cartao', 'medida': md['nome']})
     medidas_pagina = principais
@@ -236,15 +417,12 @@ def esbocar(catalogos, pedido, projeto=None, tabelas=None, limite=6):
         principal = medidas_pagina[0]['nome']
         if datas:
             vis.append({'tipo': 'colunas', 'categoria': 'dCalendario[Mês/Ano]', 'valores': [principal]})
-        literais = descoberta._expandir(frozenset(descoberta.tokens(pedido)), descoberta._sinonimos())
-        citadas = [d for d in dims if literais & set(descoberta.tokens(d['origem']) + descoberta.tokens(d['nome']))]
-        for d in (citadas or dims[:1])[:3]:                    # um visual por corte citado no pedido
-            vis.append({'tipo': 'barras', 'categoria': f'{d["nome"]}[{d["colunas"][-1]["nome"]}]',
-                        'valores': [principal]})
-        if dims:
-            vis.append({'tipo': 'tabela', 'campos': [f'{dims[0]["nome"]}[{dims[0]["colunas"][-1]["nome"]}]']
-                        + [m['nome'] for m in medidas_pagina[:3]]})
-    outras = [md for md in medidas if md not in principais]
+        for d in (cortes or dims[:1])[:3]:                     # um visual por corte citado no pedido
+            vis.append({'tipo': 'barras', 'categoria': campo(d), 'valores': [principal]})
+        if cortes:
+            vis.append({'tipo': 'tabela', 'campos': [campo(cortes[0])] + [m['nome'] for m in medidas_pagina[:3]]})
+    ligadas = {md.get('meta') for md in medidas}
+    outras = [md for md in medidas if md not in principais and md['nome'] not in ligadas]
     if outras:
         notas.append('medidas de outras tabelas fato (' + ', '.join(m['nome'] for m in outras)
                      + ') ficaram fora da página: ponha numa página própria ou ligue os cortes a elas')
@@ -256,6 +434,10 @@ def esbocar(catalogos, pedido, projeto=None, tabelas=None, limite=6):
     if datas:
         anos = 2018, 2026
         argila['calendario'] = {'inicio': anos[0], 'fim': anos[1], 'datas': datas}
-    notas.append('defina cada indicador (descrição, polaridade, meta) antes de mostrar ao gestor: '
-                 f'os "{PENDENTE_DEF}" viram aviso no validar')
+    _aplicar_briefing(argila, briefing, notas)
+    pendentes = [md['nome'] for md in medidas if (md.get('descricao') or '').startswith(PENDENTE_DEF)]
+    if pendentes or argila['publico'] == PENDENTE_DEF or argila['descricao'].startswith(PENDENTE_DEF):
+        notas.append('defina ' + (f'{", ".join(pendentes)} ' if pendentes else 'o painel ')
+                     + f'(descrição, polaridade, meta) antes de mostrar ao gestor: os "{PENDENTE_DEF}" viram aviso no '
+                     'validar; o jeito mais rápido é o briefing no painel.json')
     return argila, notas

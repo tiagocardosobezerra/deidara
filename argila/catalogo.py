@@ -46,6 +46,7 @@ class Fonte:
                                       'colunas': {chave(c['coluna']): c for c in t.get('colunas') or []}}
         self.fks = list(dados.get('fks') or [])
         self.expressoes = dict(dados.get('expressoes') or {})
+        self.origem = dict(dados.get('origem') or {})     # servidor, banco e esquema onde a receita SQL rodou
 
     def tabela(self, nome):
         return self.tabelas.get(chave(nome))

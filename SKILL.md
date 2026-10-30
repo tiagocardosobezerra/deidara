@@ -50,45 +50,50 @@ roda onde os dados estão e cola o resultado. Só estrutura volta, nunca dado.
 
 ## O fluxo
 
-1. **Entender** (poucas perguntas): para quem é, que decisão apoia, quais
-   indicadores (definição, maior ou menor é melhor, meta), por quais cortes e
-   **de onde vem cada dado**. Antes: `memory-card buscar <assunto>`.
-2. **Pasta do painel**: `novo <pasta> --projeto "<nome>"` cria `receitas/`,
-   `colado/`, `catalogos/` e um `ROTEIRO.md`. Mande a receita de cada fonte a
-   quem tem acesso (o cabeçalho de cada uma explica como rodar e copiar).
-3. **Catalogar** cada resultado colado: `catalogar --de <pasta>/colado/X.txt
-   --fonte X -o <pasta>/catalogos/X.json` (`--m <pasta>/colado/m` na receita M).
-   Leia os avisos com o usuário.
-4. **Esboçar**: `esbocar <pasta> --pedido "<o que o painel mostra>"` monta o
-   primeiro argila.json (tabelas pela busca, ligações provadas, sugeridas "A
-   CONFIRMAR", calendário, medidas "A DEFINIR", visão geral). Troque tabelas
-   com `--tabelas fonte:TAB,...`. Para cada indicador: `padroes <assunto>`
-   (`padroes turnover` traz a cadeia inteira: contagem, headcount, HC médio,
-   taxa). Preencha `descricao` de cada medida e `descricao`/`publico` do painel
-   com as palavras do usuário. Para o visual: escolha o `"modelo"` de layout
+São 8 passos, os mesmos do `deidara.py` sem argumentos e do `ROTEIRO.md` da pasta.
+
+1. **Briefing** (poucas perguntas): `novo <pasta> --projeto "<nome>"` cria a
+   pasta (`receitas/`, `colado/`, `catalogos/`, `ROTEIRO.md`) e o
+   `painel.json`. Grave nele, em `"briefing"`, as respostas com as palavras do
+   gestor: `decisao`, `publico`, `indicadores` (`nome`, `definicao`,
+   `polaridade`, `meta`: número ou "a da planilha"), `cortes` e `fontes` (de
+   onde vem cada dado). Antes: `memory-card buscar <assunto>`.
+2. **Fontes**: mande a receita de cada fonte a quem tem acesso (o cabeçalho
+   explica como rodar e copiar; a SQL devolve também servidor e banco) e
+   catalogue cada resultado: `catalogar --de <pasta>/colado/X.txt --fonte X`
+   (`--m <pasta>/colado/m` na receita M). Leia os avisos com o usuário.
+3. **Esboçar**: `esbocar <pasta>` (o pedido sai do briefing; sem briefing,
+   `--pedido "<o que o painel mostra>"`). Indicador com padrão (`padroes
+   turnover`) entra com a cadeia inteira (evento, cadastro, estoque, taxa) e
+   a meta da fonte ligada; o briefing preenche definição, polaridade, meta,
+   descrição e público. Ligação sem prova sai "A CONFIRMAR". Troque tabelas com
+   `--tabelas fonte:TAB,...`. Para o visual: escolha o `"modelo"` de layout
    com o usuário (`modelos`; o esboço vem com `faixa-de-kpis`), e use
    `visuais <assunto>` (meta na tabela, ranking, causa, status) e
    [design.md](referencias/design.md).
-5. **Validar** até zerar os erros: `validar <pasta>/argila.json`. O relatório
+4. **Validar** até zerar os erros: `validar <pasta>/argila.json`. O relatório
    traz a causa primeiro (as consequências vêm agrupadas embaixo), os avisos
    por tema e o próximo passo. Os erros dizem o que existe: medidas parecidas,
    colunas do modelo e colunas do catálogo que ainda não entraram, com o trecho
    JSON para acrescentar. Você edita o `argila.json` direto; JSON quebrado
    aparece com a linha.
-6. **Protótipo**: `prototipar` → mostre o HTML. Ele tem ⓘ em cada visual (o
-   que o número significa) e a aba **Para aprovar** (checklist dos indicadores,
-   comentários por página e "Copiar resumo do aceite").
-7. **Iterar** com o retorno; painel já aprovado antes: `diff` e mostre o que muda.
-8. **Aceite**: só com o "sim", `aprovar --por "<nome de quem aprovou>"`. Se o
+5. **Protótipo**: `prototipar` → mostre o HTML. Ligação "A CONFIRMAR" não
+   segura o protótipo: ela vai para as pendências, e o gestor reage cedo. Ele
+   tem ⓘ em cada visual (o que o número significa) e a aba **Para aprovar**
+   (checklist dos indicadores, comentários por página e "Copiar resumo do
+   aceite"). Itere com o retorno; painel já aprovado antes: `diff`.
+6. **Confirmar e aceitar**: a ligação, com o dono do dado (`confirmar`, regra
+   2); depois, só com o "sim", `aprovar --por "<nome de quem aprovou>"`. Se o
    gestor usou "Copiar resumo do aceite", salve o texto num arquivo e passe
    `--resumo <arquivo>` (o Deidara confere o código do protótipo e a decisão).
-9. **Katsu!**: `gerar <pasta>/argila.json -o C:/paineis/<nome>` (pasta curta;
+7. **Katsu!**: `gerar <pasta>/argila.json -o C:/paineis/<nome>` (pasta curta;
    sem `-o`, a saída vai para `<pasta>/saida/<projeto>`). Para testar ou
    mostrar o painel antes de a fonte estar pronta, `gerar ... --demo`: o
    mesmo projeto com linhas fictícias embutidas, que abre e calcula no Power BI
    Desktop sem banco nenhum (clique em Atualizar).
    Entregue o LEIA-ME (com papéis e "se algo der errado") e o
-   `HOMOLOGACAO.md`. Depois, ofereça o `memory-card enviar`.
+   `HOMOLOGACAO.md`.
+8. **Memory Card**: ofereça o `memory-card enviar` (regra 8).
 
 ## Como conduzir
 
@@ -137,6 +142,6 @@ roda onde os dados estão e cola o resultado. Só estrutura volta, nunca dado.
 - [referencias/metricas.md](referencias/metricas.md): onde criar cada métrica, padrões, dicionário de funções
 - [referencias/design.md](referencias/design.md): princípios de design, página, cor, tema e técnicas de visual
 - [referencias/svg.md](referencias/svg.md): medidas que desenham (SVG em DAX), regras e conferência
-- [referencias/modelos.md](referencias/modelos.md): os seis modelos de layout (fundo desenhado, navegação)
+- [referencias/modelos.md](referencias/modelos.md): os onze modelos de layout (fundo desenhado, navegação)
 - [referencias/memory-card.md](referencias/memory-card.md): o cartão do time
 - [referencias/powerbi.md](referencias/powerbi.md): o que é gerado, .pbip x .pbix, limitações

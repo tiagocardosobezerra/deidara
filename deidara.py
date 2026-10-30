@@ -54,6 +54,7 @@ import argparse
 import datetime
 import json
 import os
+import re
 import shutil
 import sys
 
@@ -254,7 +255,19 @@ ROTEIRO = """# {projeto} — roteiro
 
 Pasta criada pelo Deidara em {data}. Rode os comandos da pasta da skill.
 
-## 1. Estrutura das fontes (só estrutura, nenhum dado)
+## 1. Briefing (as respostas do gestor)
+
+Preencha `painel.json` → `"briefing"` com as palavras do gestor, antes do esboço:
+
+- `decisao`: que decisão o painel apoia; `publico`: quem abre.
+- `indicadores`: um por indicador, com `nome`, `definicao` (o que conta, o que divide, que filtro, que período),
+  `polaridade` (`maior_melhor` ou `menor_melhor`) e `meta` (número, ou o nome da meta que vem de uma fonte).
+- `cortes`: por onde abrir os números (cargo, empresa, mês...).
+- `fontes`: de onde vem cada dado (banco, modelo Power BI, planilha) — decide a receita do passo 2.
+
+O esboço usa tudo isso: sai com as definições, a polaridade e a meta, e o protótipo já tem o que o gestor pediu.
+
+## 2. Estrutura das fontes (só estrutura, nenhum dado)
 
 Mande a receita certa para quem tem acesso a cada fonte (estão em `receitas/`):
 
@@ -271,20 +284,24 @@ python deidara.py catalogar --de {pasta}/colado/erp.txt --fonte erp -o {pasta}/c
 python deidara.py catalogar --de {pasta}/colado/metas.txt --fonte metas --m {pasta}/colado/m -o {pasta}/catalogos/metas.json
 ```
 
-## 2. Primeiro esboço e protótipo
+A receita SQL devolve também o servidor e o banco em que rodou: o esboço já os põe em "fontes".
+
+## 3. Esboço, validação e protótipo
 
 ```
-python deidara.py esbocar {pasta} --pedido "<o que o painel precisa mostrar>"
+python deidara.py esbocar {pasta}
 python deidara.py validar {pasta}/argila.json
 python deidara.py prototipar {pasta}/argila.json
 ```
 
-O esboço marca o que precisa de gente: ligação "A CONFIRMAR" (confirme com o dono do dado) e
-indicador "A DEFINIR" (escreva a definição). Para cada indicador: `python deidara.py padroes <assunto>`.
+Sem briefing, diga o assunto: `esbocar {pasta} --pedido "<o que o painel precisa mostrar>"`. Indicador com padrão
+(`python deidara.py padroes <assunto>`, ex.: turnover) entra com a cadeia inteira. O esboço marca o que precisa de
+gente: ligação "A CONFIRMAR" (o protótipo já sai, com ela nas pendências) e indicador "A DEFINIR".
 
-## 3. Aprovação e entrega
+## 4. Confirmação, aprovação e entrega
 
 ```
+python deidara.py confirmar {pasta}/argila.json --ligacao "DE->PARA" --por "<quem confirmou>"
 python deidara.py aprovar {pasta}/argila.json --por "<quem aprovou>"
 python deidara.py gerar {pasta}/argila.json -o C:/paineis/<nome>
 python deidara.py memory-card enviar {pasta}/argila.json --categoria "<área>" --secao "<assunto>"
@@ -292,6 +309,13 @@ python deidara.py memory-card enviar {pasta}/argila.json --categoria "<área>" -
 
 A qualquer momento: `python deidara.py situacao {pasta}/argila.json`
 """
+
+
+BRIEFING = {                            # o que o gestor responde no passo 1 (ver ROTEIRO.md); o esbocar lê
+    'decisao': '', 'publico': '',
+    'indicadores': [{'nome': '', 'definicao': '', 'polaridade': '', 'meta': None}],
+    'cortes': [], 'fontes': {},
+}
 
 
 def cmd_novo(a):
@@ -305,7 +329,7 @@ def cmd_novo(a):
     gravar_texto(os.path.join(a.pasta, 'receitas', 'receita_dax.dax'), receitas.receita_dax())
     gravar_texto(os.path.join(a.pasta, 'receitas', 'receita_m.pq'), receitas.receita_m([]))
     projeto = a.projeto or os.path.basename(os.path.abspath(a.pasta))
-    gravar_json(os.path.join(a.pasta, 'painel.json'), {'projeto': projeto})
+    gravar_json(os.path.join(a.pasta, 'painel.json'), {'projeto': projeto, 'briefing': BRIEFING})
     gravar_texto(os.path.join(a.pasta, 'ROTEIRO.md'), ROTEIRO.format(
         projeto=projeto, pasta=a.pasta.replace(os.sep, '/'), data=_dt.datetime.now().strftime('%d/%m/%Y')))
     print(f'Pasta do painel criada: {a.pasta}')
@@ -313,7 +337,9 @@ def cmd_novo(a):
     print('  colado/     onde vão os resultados colados')
     print('  catalogos/  onde o `catalogar` grava')
     print(f'  ROTEIRO.md  o passo a passo deste painel')
-    print(f'Próximo passo: mande a receita de cada fonte (ver {os.path.normpath(os.path.join(a.pasta, "ROTEIRO.md"))}).')
+    print(f'  painel.json o briefing: as respostas do gestor (indicadores, definição, meta, cortes)')
+    print(f'Próximo passo: preencha o briefing e mande a receita de cada fonte '
+          f'(ver {os.path.normpath(os.path.join(a.pasta, "ROTEIRO.md"))}).')
     return 0
 
 
@@ -342,19 +368,25 @@ def cmd_esbocar(a):
         for x in a.tabelas.split(','):
             fonte, _, tab = x.strip().rpartition(':')
             tabelas.append((fonte or next(iter(cats)), tab))
-    projeto = a.projeto
-    if not projeto and os.path.isdir(a.alvo) and os.path.exists(os.path.join(a.alvo, 'painel.json')):
-        projeto = ler_json(os.path.join(a.alvo, 'painel.json')).get('projeto')
+    projeto, briefing = a.projeto, {}
+    if os.path.isdir(a.alvo) and os.path.exists(os.path.join(a.alvo, 'painel.json')):
+        painel = ler_json(os.path.join(a.alvo, 'painel.json'))
+        projeto = projeto or painel.get('projeto')
+        briefing = painel.get('briefing') or {}
     try:
-        argila, notas = esboco.esbocar(cats, a.pedido, projeto, tabelas)
+        argila, notas = esboco.esbocar(cats, a.pedido, projeto, tabelas, briefing=briefing)
     except ValueError as e:
         print(str(e))
         return 1
     base = os.path.dirname(os.path.abspath(saida))
+    sem_origem = []
     for nome, f in cats.items():
         cfg = {'catalogo': os.path.relpath(os.path.abspath(caminhos[nome]), base).replace(os.sep, '/')}
-        if f.tipo == 'sqlserver':
-            cfg.update({'servidor': 'SEU_SERVIDOR', 'banco': 'SEU_BANCO', 'esquema_origem': 'dbo', 'esquema_views': 'bi'})
+        if f.tipo == 'sqlserver':                  # a receita SQL nova traz onde rodou; a antiga, não
+            cfg.update({'servidor': f.origem.get('servidor') or 'SEU_SERVIDOR', 'banco': f.origem.get('banco') or 'SEU_BANCO',
+                        'esquema_origem': f.origem.get('esquema') or 'dbo', 'esquema_views': 'bi'})
+            if not f.origem.get('servidor'):
+                sem_origem.append(nome)
         argila['fontes'][nome] = cfg
     usadas = {t['fonte'] for t in argila['tabelas']}
     argila['fontes'] = {n: c for n, c in argila['fontes'].items() if n in usadas}
@@ -364,9 +396,14 @@ def cmd_esbocar(a):
           f'{len(argila["medidas"])} medida(s), 1 página')
     for n in notas:
         print(f'  · {n}')
-    if any(f.tipo == 'sqlserver' for f in cats.values()):
-        print('  · troque SEU_SERVIDOR / SEU_BANCO em "fontes" (valores iniciais dos parâmetros do Power BI)')
-    print(f'Próximo passo: `deidara.py validar {saida}` e ajuste o esboço com o usuário.')
+    if sem_origem:
+        print(f'  · troque SEU_SERVIDOR / SEU_BANCO em "fontes" ({", ".join(sem_origem)}; valores iniciais dos parâmetros '
+              'do Power BI) ou rode a receita SQL nova, que já devolve o servidor e o banco')
+    if not any((i.get('nome') or '').strip() for i in briefing.get('indicadores') or []):
+        print('  · sem briefing no painel.json: as definições ficaram "A DEFINIR" (preencha o briefing com as respostas '
+              'do gestor e rode de novo com --forcar)')
+    print(f'Próximo passo: `deidara.py validar {saida}` e ajuste o esboço com o usuário; com ligação "A CONFIRMAR", '
+          'o protótipo já sai (a ligação fica nas pendências) para o gestor reagir cedo.')
     return 0
 
 
@@ -712,8 +749,21 @@ def _resumo(m):
             'visuais': sum(len(p['visuais']) for p in m['paginas'])}
 
 
+LIGACAO_PENDENTE = 'ligação sugerida ainda não confirmada'
+
+
 def cmd_prototipar(a):
     _, _, modelo, problemas, _ = _carregar(a.argila)
+    pendentes = [e for e in problemas.erros if LIGACAO_PENDENTE in e]
+    if pendentes and len(pendentes) == len(problemas.erros):
+        # números fictícios: o gestor já pode reagir; a ligação vira pendência e o `aprovar` continua recusando
+        problemas.erros = []
+        for e in pendentes:
+            problemas.aviso('[Ligações] ' + e.split(':')[0], 'ligação A CONFIRMAR: o protótipo mostra o painel SEM ela '
+                            '(os números desta tabela não abrem pelos cortes dela); confirme com o dono do dado antes do '
+                            'aceite')
+        print(f'{len(pendentes)} ligação(ões) A CONFIRMAR: o protótipo sai com elas nas pendências; o `aprovar` só passa '
+              'depois do `confirmar`.')
     if problemas.erros:
         _relatorio(problemas, modelo, a.argila)
         print('Protótipo não gerado: corrija os erros acima.')
@@ -911,10 +961,20 @@ def cmd_situacao(a):
         print('Próximo passo: rode a receita da fonte e o `catalogar` (ver referencias/fontes.md).')
         return 1
     passo(True, f'fontes catalogadas: {", ".join(f"{n} ({c.tipo})" for n, c in cats.items())}')
+    prot = os.path.splitext(a.argila)[0] + '.prototipo.html'
+    pendentes = [e for e in problemas.erros if LIGACAO_PENDENTE in e]
+    if pendentes and len(pendentes) == len(problemas.erros):   # o protótipo já sai; o aceite espera a confirmação
+        passo(True, f'validação: só falta confirmar {len(pendentes)} ligação(ões) sugerida(s)')
+        if passo(_mais_novo(prot, a.argila, *caminhos), 'protótipo em dia com o argila.json',
+                 f'deidara.py prototipar {a.argila}'):
+            ligacoes = ', '.join(re.sub(r'^relacionamentos\[\d+\]\s*', '', e.split(':')[0]).replace(' ', '') for e in pendentes)
+            passo(False, f'ligação(ões) A CONFIRMAR: {ligacoes}',
+                  f'confira os campos com o dono do dado e rode `deidara.py confirmar {a.argila} --ligacao DE->PARA '
+                  '--por "<quem confirmou>"` (ou --remover); o aceite vem depois')
+        return _imprimir_situacao(modelo, passos)
     if not passo(not problemas.erros, f'validação: {len(problemas.erros)} erro(s), {len(problemas.avisos)} aviso(s)',
                  f'deidara.py validar {a.argila}'):
         return _imprimir_situacao(modelo, passos)
-    prot = os.path.splitext(a.argila)[0] + '.prototipo.html'
     aprov, recusa = _aprovacao_valida(a.argila, caminhos, modelo)
     if not passo(_mais_novo(prot, a.argila, *caminhos) or bool(aprov and aprov.get('sem_prototipo')),
                  'protótipo em dia com o argila.json', f'deidara.py prototipar {a.argila}'):
@@ -956,20 +1016,20 @@ Por onde começar
   python deidara.py situacao PASTA/argila.json     onde estou e qual é o próximo passo
 
 O fluxo
-  1. receita sql|dax|m        a consulta que a pessoa roda onde os dados estão (só estrutura)
-  2. catalogar                o resultado colado vira o catálogo da fonte
-  3. buscar / relacionar      quais tabelas e quais ligações (com evidência; você confirma)
-  4. esbocar                  um primeiro argila.json a partir dos catálogos
-  5. confirmar / validar      a ligação sugerida, confirmada por quem sabe; nomes, funções e filtros
-  6. prototipar               o protótipo HTML para o gestor (números fictícios)
-  7. aprovar                  o "sim" do gestor, registrado
-  8. gerar                    o projeto Power BI (.pbip), views SQL, conferência e LEIA-ME
-  9. memory-card enviar       salva no cartão do time
+  1. briefing (painel.json)   as respostas do gestor: decisão, público, indicadores (definição, meta), cortes
+  2. receita + catalogar      a pessoa roda a receita onde os dados estão; o resultado vira o catálogo
+  3. esbocar                  o primeiro argila.json: padrões do indicador + briefing + catálogos
+  4. validar                  nomes, funções e filtros, até zerar os erros
+  5. prototipar               o protótipo HTML para o gestor (números fictícios; ligação a confirmar vira pendência)
+  6. confirmar + aprovar      a ligação conferida com o dono do dado; o "sim" do gestor, registrado
+  7. gerar                    o projeto Power BI (.pbip), views SQL, conferência e LEIA-ME
+  8. memory-card enviar       salva no cartão do time
 
 Apoio
+  buscar / relacionar         quais tabelas e quais ligações (com evidência)
   padroes [assunto]           como criar cada indicador e onde
   visuais [assunto]           técnicas de visual: meta na tabela, ranking, causa, status...
-  modelos                     os seis modelos de layout ("modelo" no argila.json)
+  modelos                     os onze modelos de layout ("modelo" no argila.json)
   funcoes buscar|ver          dicionário de funções DAX e Power Query
   diff                        o que mudou desde a aprovação
 
@@ -1109,7 +1169,7 @@ def main(argv=None):
     es = sub.add_parser('esbocar', help='primeiro argila.json a partir dos catálogos e do pedido')
     es.add_argument('alvo', help='a pasta do painel (com catalogos/) ou um catálogo')
     es.add_argument('--catalogos', nargs='+', help='mais catálogos (quando o alvo é um catálogo)')
-    es.add_argument('--pedido', required=True, help='o que o painel precisa mostrar, em português')
+    es.add_argument('--pedido', help='o que o painel precisa mostrar, em português (sem ele, sai do briefing do painel.json)')
     es.add_argument('--projeto')
     es.add_argument('--tabelas', help='escolha à mão: fonte:TABELA,fonte:TABELA')
     es.add_argument('-o', '--saida')

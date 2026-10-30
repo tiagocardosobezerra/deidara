@@ -2,7 +2,7 @@
 Modelos de layout: onde cada visual fica, o fundo desenhado da página e a
 navegação entre páginas.
 
-Os seis modelos foram tirados da estrutura de dashboards do repositório
+Os onze modelos foram tirados da estrutura de dashboards do repositório
 Power BI Design Files, de Sajjad Ahmadi (licença MIT; ver
 LICENCAS-DE-TERCEIROS.md e referencias/modelos.md). A técnica é a dele: um
 fundo desenhado com os painéis, o título e a navegação, e os visuais nativos
