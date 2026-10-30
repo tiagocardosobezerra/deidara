@@ -16,7 +16,8 @@ desse total. A coerência é a do Power BI:
 
 import random
 
-from kibaku_nendo.especificacao import grafo_de_filtro as _grafo_de_filtro, tabelas_da_medida as _tabelas_da_medida, chega, medida
+from kibaku_nendo.especificacao import (grafo_de_filtro as grafo_de_filtro,
+                                        tabelas_da_medida as tabelas_da_medida, chega, medida)
 
 MESES = ['jan', 'fev', 'mar', 'abr', 'mai', 'jun', 'jul', 'ago', 'set', 'out', 'nov', 'dez']
 N_ROTULOS = 8
@@ -72,7 +73,7 @@ def categorias(m, campo):
 class Simulador:
     def __init__(self, m):
         self.m = m
-        self.filtra = _grafo_de_filtro(m)
+        self.filtra = grafo_de_filtro(m)
         self._fatias = {}
 
     # ------------------------------------------------------------- básicos
@@ -94,7 +95,7 @@ class Simulador:
         return self._fatias[k].get(rotulo, 1 / max(1, len(self._fatias[k])))
 
     def _filtros_validos(self, md, filtros):
-        alvo = _tabelas_da_medida(self.m, md['nome'])
+        alvo = tabelas_da_medida(self.m, md['nome'])
         return [(c, r) for c, r in filtros if any(chega(self.m, self.filtra, c['tabela'], a, md['nome']) for a in alvo)]
 
     # --------------------------------------------------------------- valor

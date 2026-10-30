@@ -1172,13 +1172,13 @@ def codigo_do_prototipo(m):
 
 
 def _excecoes_do_filtro(m, v, pagina):
-    from kibaku_nendo.especificacao import grafo_de_filtro as _grafo_de_filtro, tabelas_da_medida as _tabelas_da_medida, chega
+    from kibaku_nendo.especificacao import grafo_de_filtro as grafo_de_filtro, tabelas_da_medida as tabelas_da_medida, chega
     if v['tipo'] not in ('segmentador', 'botoes', 'abas', 'alternar') or not v.get('categoria'):
         return []
-    g = _grafo_de_filtro(m)
+    g = grafo_de_filtro(m)
     nomes = {x['nome'] for o in pagina['visuais'] for x in o['valores'] + o['campos'] if x and x['tipo'] == 'medida'}
     return sorted(n for n in nomes
-                  if not all(chega(m, g, v['categoria']['tabela'], a, n) for a in _tabelas_da_medida(m, n)))
+                  if not all(chega(m, g, v['categoria']['tabela'], a, n) for a in tabelas_da_medida(m, n)))
 
 
 def _botao_info(m, v, pagina=None):

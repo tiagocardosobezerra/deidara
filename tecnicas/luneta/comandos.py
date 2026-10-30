@@ -1,5 +1,6 @@
 """
-Os comandos da Luneta: receita, catalogar, buscar, relacionar, provar e confirmar (a fonte vista de longe, sem conexão).
+Os comandos da Luneta: receita, catalogar, buscar, relacionar, provar e confirmar (a fonte vista de
+longe, sem conexão).
 """
 
 import json

@@ -13,10 +13,10 @@ COR_BOA, COR_RUIM = '#107C10', '#D13438'
 COR_TRILHO, COR_MARCA = '#EDEBE9', '#252423'
 PREFIXO_SVG = 'data:image/svg+xml;charset=utf-8,'
 FORMATO_DAX = {'inteiro': '#,0', 'percentual': '0.0%', 'moeda': '"R$" #,0.00', 'decimal': '#,0.00', 'data': 'dd/mm/yyyy'}
-def _texto_dax(s):
+def texto_dax(s):
     return '"' + str(s).replace('"', '""') + '"'
 
-def _svg_iniciais(col, fundo, texto):
+def svg_iniciais(col, fundo, texto):
     return f"""-- Configuração: círculo com as duas primeiras letras do item, para o segmentador de botões
 VAR _nome = SELECTEDVALUE({col})
 VAR _espaco = SEARCH(" ", _nome, 1, 0)
@@ -32,7 +32,7 @@ RETURN
     IF(HASONEVALUE({col}), "{PREFIXO_SVG}" & _svg, BLANK())"""
 
 
-def _svg_dispersao(col, x, y, imagem, acento, nx, ny):
+def svg_dispersao(col, x, y, imagem, acento, nx, ny):
     """Um SVG só com todos os pontos (para o cartão novo): cada eixo vai do menor ao maior valor, com folga."""
     ponto = (f'"<image href=\'" & {imagem} & "\' x=\'" & FORMAT(_px - 14, "0.0", "en-US") & "\' y=\'" '
              f'& FORMAT(_py - 14, "0.0", "en-US") & "\' width=\'28\' height=\'28\'/>"' if imagem else
@@ -71,13 +71,13 @@ RETURN
     "{PREFIXO_SVG}" & _svg"""
 
 
-def _texto_svg(s):
+def texto_svg(s):
     """Texto fixo dentro do SVG: sem "#", "%", "&" nem "<" soltos."""
     return (str(s).replace('&', '&amp;').replace('<', '&lt;').replace('%', '%25').replace('#', '%23')
             .replace('"', "'"))
 
 
-def _svg_espinha(b, cortes, n, maior, nome, acento):
+def svg_espinha(b, cortes, n, maior, nome, acento):
     """Diagrama de espinha de peixe (Ishikawa): a cabeça é o indicador, cada espinha é um corte, e em cada espinha
     os N itens piores que a média do corte, do pior para o menos ruim."""
     k = len(cortes)
@@ -99,7 +99,7 @@ def _svg_espinha(b, cortes, n, maior, nome, acento):
             f'        "<tspan x=\'{xp - 6:.0f}\' dy=\'15\'>" & {nome_item} & "</tspan>",\n'
             f'        " ",\n        {b}, {sentido}\n    )')
         desenho.append(f"""        & "<line x1='{xa:.0f}' y1='160' x2='{xp:.0f}' y2='{yp}' stroke='%23A19F9D' stroke-width='2'/>"
-        & "<text x='{xp:.0f}' y='{yt}' font-family='Segoe UI' font-size='12' font-weight='700' fill='%23252423'>{_texto_svg(rotulo)}</text>"
+        & "<text x='{xp:.0f}' y='{yt}' font-family='Segoe UI' font-size='12' font-weight='700' fill='%23252423'>{texto_svg(rotulo)}</text>"
         & "<text y='{y0 - 15}' text-anchor='end' font-family='Segoe UI' font-size='11' fill='%23A4262C'>" & _itens{i + 1} & "</text>\"""")
     vars_ = '\n'.join(linhas)
     corpo = '\n'.join(desenho)
@@ -112,21 +112,21 @@ VAR _svg =
     "<svg xmlns='http://www.w3.org/2000/svg' width='100%25' height='100%25' viewBox='0 0 640 320' overflow='visible' display='block'>"
         & "<line x1='20' y1='160' x2='520' y2='160' stroke='%23605E5C' stroke-width='4'/>"
         & "<rect x='522' y='130' width='114' height='60' rx='8' fill='" & _cor & "'/>"
-        & "<text x='579' y='165' text-anchor='middle' font-family='Segoe UI' font-size='12' font-weight='700' fill='%23FFFFFF'>{_texto_svg(nome[:18])}</text>"
+        & "<text x='579' y='165' text-anchor='middle' font-family='Segoe UI' font-size='12' font-weight='700' fill='%23FFFFFF'>{texto_svg(nome[:18])}</text>"
 {corpo}
         & "</svg>"
 RETURN
     "{PREFIXO_SVG}" & _svg"""
 
 
-def _html_kpis(itens, acento):
+def html_kpis_dax(itens, acento):
     blocos = []
     for x in itens:
         fmt = FORMATO_DAX.get(x['formato'], '#,0.00')
         cor = (f'IF({dax_medida(x["nome"])} {">=" if x["polaridade"] == "maior_melhor" else "<="} '
                f'{dax_medida(x["meta_medida"])}, "{COR_BOA}", "{COR_RUIM}")' if x.get('meta_medida') else f'"{COR_MARCA}"')
         blocos.append(f'"<div class=\'kpi\'><div class=\'rotulo\'>{x["nome"]}</div>'
-                      f'<div class=\'valor\' style=\'color:" & {cor} & "\'>" & FORMAT({dax_medida(x["nome"])}, {_texto_dax(fmt)}) '
+                      f'<div class=\'valor\' style=\'color:" & {cor} & "\'>" & FORMAT({dax_medida(x["nome"])}, {texto_dax(fmt)}) '
                       f'& "</div></div>"')
     corpo = '\n        & '.join(blocos)
     return f"""-- HTML para o visual HTML Content: um bloco por indicador, a cor do valor segue a meta
@@ -141,7 +141,7 @@ RETURN
 """
 
 
-def _svg_barra_meta(b, meta, col, op):
+def svg_barra_meta(b, meta, col, op):
     return f"""-- Configuração: a imagem tem 100 x 20 e preenche a célula
 VAR _valor = {b}
 VAR _meta = {meta}
@@ -169,7 +169,7 @@ RETURN
     IF(HASONEVALUE({col}) && NOT ISBLANK(_valor), "{PREFIXO_SVG}" & _svg, BLANK())"""
 
 
-def _svg_pilula(b, meta, col, op):
+def svg_pilula(b, meta, col, op):
     return f"""-- Configuração: a largura acompanha o texto
 VAR _valor = {b}
 VAR _meta = {meta}
@@ -192,7 +192,7 @@ RETURN
     IF(HASONEVALUE({col}) && NOT ISBLANK(_valor) && NOT ISBLANK(_meta), "{PREFIXO_SVG}" & _svg, BLANK())"""
 
 
-def _svg_seta(b, antes, col, op):
+def svg_seta(b, antes, col, op):
     return f"""-- Configuração: a imagem tem 100 x 20; a seta vai do valor anterior (ponto cinza) ao atual
 VAR _atual = {b}
 VAR _antes = {antes}
@@ -223,7 +223,7 @@ RETURN
     IF(HASONEVALUE({col}) && NOT ISBLANK(_atual), "{PREFIXO_SVG}" & _svg, BLANK())"""
 
 
-def _svg_radar(eixos, col, acento):
+def svg_radar(eixos, col, acento):
     """Um polígono por linha: cada eixo é uma medida, dividida pelo maior valor dela entre as linhas visíveis."""
     import math
     n = len(eixos)
@@ -254,7 +254,7 @@ RETURN
     IF(HASONEVALUE({col}), "{PREFIXO_SVG}" & _svg, BLANK())""")
 
 
-def _svg_bolha(b, linha, coluna, acento):
+def svg_bolha(b, linha, coluna, acento):
     return f"""-- Configuração: um círculo por célula da matriz; o raio segue a raiz do valor (a área fica proporcional)
 VAR _valor = {b}
 VAR _maximo = MAXX(CROSSJOIN(ALLSELECTED({linha}), ALLSELECTED({coluna})), {b})
@@ -272,7 +272,7 @@ RETURN
     IF(HASONEVALUE({linha}) && HASONEVALUE({coluna}) && NOT ISBLANK(_valor), "{PREFIXO_SVG}" & _svg, BLANK())"""
 
 
-def _svg_variacao(b, plano, col, op):
+def svg_variacao(b, plano, col, op):
     return f"""-- Configuração: barra do desvio (real menos comparação) a partir do centro, no estilo IBCS
 VAR _desvio = {b} - {plano}
 VAR _maximo = MAXX(ALLSELECTED({col}), ABS({b} - {plano})) * 1.1
@@ -299,7 +299,7 @@ ESTRELA = '10,1 12.6,7.2 19.5,7.6 14.2,12 16,18.8 10,15 4,18.8 5.8,12 0.5,7.6 7.
 COR_ESTRELA = '#F2C811'
 
 
-def _svg_estrelas(b, col, maior, maximo):
+def svg_estrelas(b, col, maior, maximo):
     """Cinco estrelas em 110 x 20: cinzas embaixo e as amarelas cortadas na largura da nota (meia estrela aparece)."""
     if maximo:
         nota = f'DIVIDE(_valor, {repr(float(maximo)).rstrip("0").rstrip(".")}) * 5'
@@ -331,7 +331,7 @@ RETURN
     IF(HASONEVALUE({col}) && NOT ISBLANK(_valor), "{PREFIXO_SVG}" & _svg, BLANK())"""
 
 
-def _svg_progresso(b, meta, col, op):
+def svg_progresso(b, meta, col, op):
     """Cartão pequeno com o percentual da meta e a barra de progresso; feito para marcador de mapa."""
     return f"""-- Configuração: cartão de 120 x 34 com o percentual da meta e a barra (cheia ao bater a meta)
 VAR _valor = {b}
@@ -355,7 +355,7 @@ RETURN
     IF(HASONEVALUE({col}) && NOT ISBLANK(_valor) && NOT ISBLANK(_meta), "{PREFIXO_SVG}" & _svg, BLANK())"""
 
 
-def _svg_posicao(b, col, sentido, acento):
+def svg_posicao(b, col, sentido, acento):
     return f"""-- Configuração: um selo redondo com a posição; os três primeiros na cor de destaque
 VAR _posicao = RANKX(ALLSELECTED({col}), {b}, , {sentido}, Dense)
 -- Cores (o # vira %23)
@@ -372,21 +372,21 @@ RETURN
     IF(HASONEVALUE({col}) && NOT ISBLANK({b}), "{PREFIXO_SVG}" & _svg, BLANK())"""
 
 
-def _literais(dax):
+def literais_dax(dax):
     return re.findall(r'"((?:[^"]|"")*)"', re.sub(r'--[^\n]*', '', dax))
 
 
 def conferir_svg(dax, p, onde, por_linha=True):
     """As regras de medida SVG em DAX (referencias/svg.md): erro quando a imagem quebra, aviso quando falha em
     algum lugar (total, borda, exportação)."""
-    texto = ''.join(_literais(dax))
+    texto = ''.join(literais_dax(dax))
     if not re.search(r'data:image/svg\+xml(;[^,]*)?,', texto):
         p.erro(onde, '[SVG] o texto precisa começar com "data:image/svg+xml;charset=utf-8," (a vírgula final é '
                      'obrigatória)')
     if re.search(r"(fill|stroke|stop-color|color|background)\s*[=:]\s*['\"]?#[0-9A-Fa-f]{3,8}", texto):
         p.erro(onde, '[SVG] cor com "#" dentro da imagem: troque por "%23" (ex.: fill=\'%23107C10\'); sem isso a '
                      'imagem não aparece')
-    marcacao = ''.join(x for x in _literais(dax) if '<' in x or '=' in x)
+    marcacao = ''.join(x for x in literais_dax(dax) if '<' in x or '=' in x)
     if re.search(r'%(?![0-9A-Fa-f]{2})', marcacao):
         p.erro(onde, '[SVG] "%" solto dentro da imagem: escreva "%25" (ex.: width=\'100%25\')')
     if 'viewbox' not in texto.lower():

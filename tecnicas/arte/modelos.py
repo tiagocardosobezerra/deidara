@@ -200,7 +200,7 @@ def montar(m, paginas, i):
         return {'w': LARGURA_PADRAO, 'h': altura_da_pagina(pos), 'posicoes': pos, 'fundo': None, 'nav': [],
                 'escuro': False, 'sem_titulo': set()}
     c = _cores(m)
-    r = {'faixa-de-kpis': _faixa, 'coluna-de-kpis': _coluna, 'secoes-com-rolagem': _secoes,
+    r = {'faixa-de-kpis': _faixa, 'coluna-de-kpis': nova_coluna, 'secoes-com-rolagem': _secoes,
          'trilho-escuro': _trilho, 'kpis-clicaveis': _clicaveis, 'historia-longa': _historia,
          'executivo': _executivo, 'mapa-central': _mapa_central, 'causa-raiz': _causa_raiz,
          'tabela-lateral': _tabela_lateral, 'equipes': _equipes}[modelo](m, paginas, i, c)
@@ -281,7 +281,7 @@ def _faixa(m, paginas, i, c):
     return {'w': W, 'h': h, 'posicoes': pos, 'fundo': f.svg(), 'nav': nav if len(nav) > 1 else []}
 
 
-def _coluna(m, paginas, i, c):
+def nova_coluna(m, paginas, i, c):
     pg = paginas[i]
     seg, kpi, graf, tab = _separar(pg['visuais'])
     pos = _em_linha(seg[:5], 120, 22, min(5, len(seg)) * 236 - GAP, 68) if seg else []

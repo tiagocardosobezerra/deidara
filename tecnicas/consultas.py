@@ -1,5 +1,6 @@
 """
-Os comandos de consulta: funções e padrões (Sasori), técnicas de visual e modelos de layout (Arte) e o Memory Card.
+Os comandos de consulta: funções e padrões (Sasori), técnicas de visual e modelos de layout (Arte) e
+o Memory Card.
 """
 
 import json
@@ -14,7 +15,8 @@ from tecnicas import memory_card
 from tecnicas.c1 import prototipo
 from kibaku_nendo.especificacao import resolver
 from kibaku_nendo.util import gravar_texto
-from kibaku_nendo.comandos_apoio import aprovacao_valida, carregar_argila, cartao_ativo, lembrete, quem_usa, mostrar_relatorio
+from kibaku_nendo.comandos_apoio import (aprovacao_valida, carregar_argila, cartao_ativo, lembrete, quem_usa,
+                                         mostrar_relatorio)
 
 
 def cmd_funcoes(a):

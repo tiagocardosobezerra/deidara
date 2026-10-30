@@ -1,5 +1,6 @@
 """
-Os comandos do fluxo sobre a argila: validar, prototipar (C1), aprovar (Katsu), gerar (C3), diff e situacao.
+Os comandos do fluxo sobre a argila: validar, prototipar (C1), aprovar (Katsu), gerar (C3), diff e
+situacao.
 """
 
 import datetime
@@ -20,7 +21,10 @@ from tecnicas.c3 import sql
 from tecnicas.c3 import tmdl
 from kibaku_nendo.especificacao import distorcoes
 from kibaku_nendo.util import gravar_json, gravar_texto, ident, ler_json, sha256_arquivo
-from kibaku_nendo.comandos_apoio import LIGACAO_PENDENTE, LONGEST_RELATIVO, aprovacao_valida, arquivo_da_aprovacao, carregar_argila, conferir_resumo, hashes_da_aprovacao, lembrete, mais_novo, mostrar_relatorio, resumo_do_modelo
+from kibaku_nendo.comandos_apoio import (LIGACAO_PENDENTE, LONGEST_RELATIVO, aprovacao_valida,
+                                         arquivo_da_aprovacao, carregar_argila, conferir_resumo,
+                                         hashes_da_aprovacao, lembrete, mais_novo, mostrar_relatorio,
+                                         resumo_do_modelo)
 
 
 def cmd_validar(a):

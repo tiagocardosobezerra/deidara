@@ -1,5 +1,6 @@
 """
-Os comandos das Bocas das Mãos: novo (a pasta do painel com o roteiro e o briefing) e esbocar (o primeiro argila.json).
+Os comandos das Bocas das Mãos: novo (a pasta do painel com o roteiro e o briefing) e esbocar (o
+primeiro argila.json).
 """
 
 import os

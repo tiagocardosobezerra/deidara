@@ -72,9 +72,10 @@ sys.path.insert(0, RAIZ)
 
 from kibaku_nendo import VERSAO  # noqa: E402
 from kibaku_nendo.util import ErroDeUso  # noqa: E402
-from kibaku_nendo.comandos import cmd_aprovar, cmd_diff, cmd_gerar, cmd_prototipar, cmd_situacao, cmd_validar  # noqa: E402
+from kibaku_nendo.comandos import (cmd_aprovar, cmd_diff, cmd_gerar, cmd_prototipar, cmd_situacao, cmd_validar)  # noqa: E402
 from tecnicas.consultas import cmd_funcoes, cmd_memory_card, cmd_modelos, cmd_padroes, cmd_visuais  # noqa: E402
-from tecnicas.luneta.comandos import cmd_buscar, cmd_catalogar, cmd_confirmar, cmd_provar, cmd_receita, cmd_relacionar  # noqa: E402
+from tecnicas.luneta.comandos import (cmd_buscar, cmd_catalogar, cmd_confirmar, cmd_provar, cmd_receita,
+                                      cmd_relacionar)  # noqa: E402
 from tecnicas.te_no_kuchi_comandos import cmd_esbocar, cmd_novo  # noqa: E402
 
 

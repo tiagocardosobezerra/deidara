@@ -1,5 +1,6 @@
 """
-O que os comandos do Deidara têm em comum: carregar o argila.json com os catálogos, mostrar o relatório da validação, achar a aprovação e conferir se o protótipo está em dia.
+O que os comandos do Deidara têm em comum: carregar o argila.json com os catálogos, mostrar o
+relatório da validação, achar a aprovação e conferir se o protótipo está em dia.
 """
 
 import os

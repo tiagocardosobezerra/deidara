@@ -30,7 +30,7 @@ LINHAS_FATO = 900
 FRACAO_EVENTO = 0.35
 
 
-def _campo(nome):
+def campo_do_modelo(nome):
     return '#"' + nome.replace('"', '""') + '"'
 
 
@@ -164,7 +164,7 @@ def expressoes(m, semente='deidara'):
     out = {}
     for nome, rows in linhas(m, semente).items():
         t = _tab(m, nome)
-        tipo = ', '.join(f'{_campo(c["nome"])} = {M_POR_FAMILIA.get(c["familia"], "type text").replace("type ", "")}'
+        tipo = ', '.join(f'{campo_do_modelo(c["nome"])} = {M_POR_FAMILIA.get(c["familia"], "type text").replace("type ", "")}'
                          for c in t['colunas'])
         corpo = ',\n'.join('        {' + ', '.join(_literal(r.get(c['nome']), c['familia']) for c in t['colunas']) + '}'
                            for r in rows)
