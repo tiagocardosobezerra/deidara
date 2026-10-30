@@ -17,5 +17,10 @@ Vegapunk têm o nome de uma personalidade. A ordem é a do fluxo:
     memory_card    o cartão de memória do time (foge do tema de propósito,
                    como no Vegapunk: o nome é o da ideia)
 
+Os comandos de cada técnica ficam ao lado dela: luneta/comandos.py,
+te_no_kuchi_comandos.py e consultas.py (funções, padrões, visuais, modelos e
+Memory Card). Os do fluxo sobre a argila (validar, prototipar, aprovar, gerar)
+ficam no motor, em kibaku_nendo/comandos.py.
+
 Todas usam o motor em `kibaku_nendo/`. Quem coordena é o `deidara.py`.
 """

@@ -193,7 +193,7 @@ class TestProva(unittest.TestCase):
                     'fMeta[Cód. Empresa]\tdEmpresa[CODEMPRESA]\t0\t100\t100\tsim\n')
         codigo, out = _calado(deidara.main, ['provar', '--de', res, '--argila', arq])
         self.assertEqual(codigo, 0, out)
-        r = next(r for r in deidara.ler_json(arq)['relacionamentos'] if r['de'] == 'fMeta')
+        r = next(r for r in json.load(open(arq, encoding="utf-8"))['relacionamentos'] if r['de'] == 'fMeta')
         self.assertEqual(r['declarada']['prova']['pct_linhas_com_par'], 100.0)
         shutil.rmtree(d, ignore_errors=True)
 

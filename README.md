@@ -170,7 +170,7 @@ deidara/
 ├── LICENCAS-DE-TERCEIROS.md  # Licença MIT do Power BI Design Files e créditos
 ├── LICENSE                # MIT License
 ├── deidara.py             # O Deidara: porta de entrada que chama cada técnica (todos os comandos)
-├── kibaku_nendo/          # A argila explosiva: o motor que lê e valida a especificação
+├── kibaku_nendo/          # A argila explosiva: o motor que lê e valida a especificação, e os comandos do fluxo
 ├── tecnicas/              # As técnicas do Deidara, uma por etapa do fluxo:
 │   ├── luneta/            #   olho-luneta: receitas, catálogo, descoberta e prova (vê a fonte sem tocar)
 │   ├── te_no_kuchi.py     #   bocas das mãos: o esboço do argila.json a partir do pedido

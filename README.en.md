@@ -172,7 +172,7 @@ deidara/
 ├── LICENCAS-DE-TERCEIROS.md  # Power BI Design Files MIT license and credits
 ├── LICENSE                # MIT License
 ├── deidara.py             # Deidara himself: entry point that calls each technique (all commands)
-├── kibaku_nendo/          # Explosive clay: the engine that reads and validates the spec
+├── kibaku_nendo/          # Explosive clay: the engine that reads and validates the spec, and the flow commands
 ├── tecnicas/              # Deidara's techniques, one per step of the flow:
 │   ├── luneta/            #   scope eye: recipes, catalog, discovery and proof (sees the source without touching it)
 │   ├── te_no_kuchi.py     #   hand mouths: drafts argila.json from the request
