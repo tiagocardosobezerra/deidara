@@ -16,7 +16,7 @@ desse total. A coerência é a do Power BI:
 
 import random
 
-from kibaku_nendo.especificacao import _grafo_de_filtro, _tabelas_da_medida, chega, medida
+from kibaku_nendo.especificacao import grafo_de_filtro as _grafo_de_filtro, tabelas_da_medida as _tabelas_da_medida, chega, medida
 
 MESES = ['jan', 'fev', 'mar', 'abr', 'mai', 'jun', 'jul', 'ago', 'set', 'out', 'nov', 'dez']
 N_ROTULOS = 8

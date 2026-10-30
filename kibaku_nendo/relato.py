@@ -106,3 +106,16 @@ def validacao(modelo, problemas, caminho):
     else:
         linhas.append(f'✓ Tudo certo. Próximo passo: `deidara.py prototipar {caminho}`.')
     return '\n'.join(linhas)
+
+def nota_de_ajuda(m, v):
+    """O que a nota da ajuda diz sobre o visual: o título e o que cada medida significa."""
+    from kibaku_nendo.especificacao import medida, medidas_do_visual as _medidas_do_visual
+    linhas = [v.get('titulo') or (v['categoria']['nome'] if v.get('categoria') else v['tipo'])]
+    if v.get('categoria') and v['tipo'] in ('segmentador', 'botoes', 'abas', 'alternar'):
+        linhas.append(f'Escolha aqui para filtrar a página por {v["categoria"]["nome"]}.' if v['tipo'] in
+                      ('segmentador', 'botoes') else 'Troque o indicador que os visuais mostram.')
+    for x in _medidas_do_visual(v)[:2]:
+        d = (medida(m, x['nome']) or {}).get('descricao')
+        if d:
+            linhas.append(f'{x["nome"]}: {d}')
+    return linhas

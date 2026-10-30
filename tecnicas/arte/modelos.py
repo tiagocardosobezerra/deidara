@@ -14,7 +14,7 @@ O protótipo e o .pbip usam ESTA mesma montagem: o que foi aprovado é o que sai
 
 import html
 
-from tecnicas.arte.layout import ALTURA as ALTURA_PADRAO, LARGURA as LARGURA_PADRAO, altura_da_pagina, posicionar
+from tecnicas.arte.layout import LARGURA as LARGURA_PADRAO, altura_da_pagina, posicionar
 
 MODELOS = {
     'padrao': 'O layout simples de sempre (1280 x 720), sem fundo desenhado',

@@ -881,7 +881,7 @@ class TestModelos(unittest.TestCase):
                 self.assertIn('class="pagina desenhada', html_)
                 _, tabelas, colunas, medidas, erros = validar_pbip.validar_tmdl(saida)
                 self.assertEqual(erros, [])
-                self.assertEqual(validar_pbip.validar_visuais(saida, tabelas, colunas, medidas), [])
+                self.assertEqual(validar_pbip.conferir(saida), [])
 
     def test_kpis_clicaveis_e_historia(self):
         _, _, paginas, html_ = self._gerar('kpis-clicaveis')
@@ -1047,7 +1047,7 @@ class TestMigracao(unittest.TestCase):
         with open(os.path.join(saida, 'Quadro_e_Turnover.Report', 'StaticResources', 'RegisteredResources',
                                'Deidara.json'), encoding='utf-8') as f:
             self.assertEqual(json.load(f)['dataColors'][0], '#1800ED')    # a paleta
-        self.assertEqual(validar_pbip.validar_visuais(saida, *validar_pbip.validar_tmdl(saida)[1:4]), [])
+        self.assertEqual(validar_pbip.conferir(saida), [])
         with open(os.path.join(d, 'argila.prototipo.html'), encoding='utf-8') as f:
             html_ = f.read()
         for trecho in ('abrir por:', 'Fora da meta', 'Headcount →'):
@@ -1128,7 +1128,7 @@ class TestMigracao(unittest.TestCase):
         self.assertEqual(_calado(_aprovar_com_prototipo, ['aprovar', arq, '--por', 'T'])[0], 0)
         saida = os.path.join(d, 'o')
         self.assertEqual(_calado(deidara.main, ['gerar', arq, '-o', saida, '--demo'])[0], 0)
-        self.assertEqual(validar_pbip.validar_visuais(saida, *validar_pbip.validar_tmdl(saida)[1:4]), [])
+        self.assertEqual(validar_pbip.conferir(saida), [])
         grades = []
         for raiz, _, fs in os.walk(os.path.join(saida, 'Quadro_e_Turnover.Report')):
             if 'visual.json' in fs:
@@ -1238,7 +1238,7 @@ class TestTecnicasCompletas(unittest.TestCase):
         self.assertEqual(_calado(_aprovar_com_prototipo, ['aprovar', arq, '--por', 'T'])[0], 0)
         saida = os.path.join(d, 'o')
         self.assertEqual(_calado(deidara.main, ['gerar', arq, '-o', saida, '--demo'])[0], 0)
-        self.assertEqual(validar_pbip.validar_visuais(saida, *validar_pbip.validar_tmdl(saida)[1:4]), [])
+        self.assertEqual(validar_pbip.conferir(saida), [])
         rep = os.path.join(saida, 'Quadro_e_Turnover.Report', 'definition')
         sem = os.path.join(saida, 'Quadro_e_Turnover.SemanticModel', 'definition')
         with open(os.path.join(sem, 'database.tmdl'), encoding='utf-8') as f:
@@ -1334,7 +1334,7 @@ class TestCausaRaiz(unittest.TestCase):
         self.assertEqual(_calado(_aprovar_com_prototipo, ['aprovar', arq, '--por', 'T'])[0], 0)
         saida = os.path.join(d, 'o')
         self.assertEqual(_calado(deidara.main, ['gerar', arq, '-o', saida, '--demo'])[0], 0)
-        self.assertEqual(validar_pbip.validar_visuais(saida, *validar_pbip.validar_tmdl(saida)[1:4]), [])
+        self.assertEqual(validar_pbip.conferir(saida), [])
         objetos = {}
         for raiz, _, fs in os.walk(os.path.join(saida, 'Quadro_e_Turnover.Report')):
             if 'visual.json' in fs:
@@ -1352,6 +1352,38 @@ class TestCausaRaiz(unittest.TestCase):
         shutil.rmtree(d, ignore_errors=True)
 
 
+class TestNumeroDistorcido(unittest.TestCase):
+    """Corte que filtra só parte da conta: o esboço não cria, e o aceite não deixa passar em bloco."""
+
+    def test_esboco_sai_sem_corte_que_distorce(self):
+        from kibaku_nendo.especificacao import distorcoes
+        from tecnicas import te_no_kuchi
+        argila, notas = te_no_kuchi.esbocar(CATALOGOS, 'turnover e desligamentos por motivo e cargo, com meta de '
+                                                       'turnover por empresa')
+        argila['fontes'] = {'erp': {'catalogo': 'catalogos/erp.json'}, 'metas': {'catalogo': 'catalogos/metas.json'}}
+        _, p = _resolver(argila)
+        self.assertEqual(distorcoes(p.avisos), [])
+        self.assertTrue(any('fora do esboço' in n or 'em vez de' in n for n in notas), notas)
+
+    def test_aprovar_recusa_distorcao_sem_motivo(self):
+        d = tempfile.mkdtemp(prefix='ddd')
+        shutil.copytree(os.path.join(EXEMPLO, 'catalogos'), os.path.join(d, 'catalogos'))
+        a = _base()
+        a['paginas'][1]['visuais'].append({'tipo': 'barras', 'categoria': 'dMotivo[Motivo]', 'valores': ['Turnover']})
+        arq = os.path.join(d, 'argila.json')
+        with open(arq, 'w', encoding='utf-8') as f:
+            json.dump(a, f, ensure_ascii=False)
+        _calado(deidara.main, ['prototipar', arq])
+        codigo, out = _calado(deidara.main, ['aprovar', arq, '--por', 'T'])
+        self.assertEqual(codigo, 1)
+        self.assertIn('distorcidos', out)
+        codigo, _ = _calado(deidara.main, ['aprovar', arq, '--por', 'T', '--aceito-distorcao', 'o gestor quer ver assim'])
+        self.assertEqual(codigo, 0)
+        with open(os.path.join(d, 'argila.aprovacao.json'), encoding='utf-8') as f:
+            self.assertEqual(json.load(f)['distorcao_aceita']['motivo'], 'o gestor quer ver assim')
+        shutil.rmtree(d, ignore_errors=True)
+
+
 class TestEmpacotar(unittest.TestCase):
     def test_zip_da_skill_sem_zip_dentro_nem_arquivo_local(self):
         import zipfile
@@ -1363,8 +1395,17 @@ class TestEmpacotar(unittest.TestCase):
         self.assertIn('deidara/SKILL.md', nomes)
         self.assertIn('deidara/deidara.py', nomes)
         self.assertFalse([n for n in nomes if n.endswith(('.zip', '.pyc', '.aprovacao.json'))
-                          or '/assets/' in n or '/.git/' in n or '__pycache__' in n], nomes)
+                          or '/assets/' in n or '/.git/' in n or '__pycache__' in n or '/schemas/' in n], nomes)
         shutil.rmtree(d, ignore_errors=True)
+
+    def test_arquivo_fora_do_git_nao_entra(self):
+        solto = os.path.join(RAIZ, 'cliente_real_teste.json')
+        with open(solto, 'w', encoding='utf-8') as f:
+            f.write('{}')
+        try:
+            self.assertNotIn('cliente_real_teste.json', empacotar.arquivos_da_skill())
+        finally:
+            os.remove(solto)
 
 
 class TestExperiencia(unittest.TestCase):
@@ -1612,7 +1653,7 @@ class TestFluxo(unittest.TestCase):
         _, tabelas, colunas, medidas, erros = validar_pbip.validar_tmdl(saida)
         self.assertEqual(erros, [])
         self.assertEqual(len(tabelas), 7)                      # 5 do ERP + metas + calendário
-        self.assertEqual(validar_pbip.validar_visuais(saida, tabelas, colunas, medidas), [])
+        self.assertEqual(validar_pbip.conferir(saida), [])
 
     def test_diff_mostra_mudanca_de_formula(self):
         _calado(_aprovar_com_prototipo, ['aprovar', self.argila, '--por', 'Teste'])

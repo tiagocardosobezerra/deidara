@@ -89,7 +89,7 @@ from tecnicas.luneta import receitas  # noqa: E402
 from kibaku_nendo import relato  # noqa: E402
 from tecnicas.c3 import sql  # noqa: E402
 from tecnicas.c3 import tmdl  # noqa: E402
-from kibaku_nendo.especificacao import resolver  # noqa: E402
+from kibaku_nendo.especificacao import distorcoes, resolver  # noqa: E402
 from kibaku_nendo.util import ErroDeUso, gravar_json, gravar_texto, ident, ler_json, sha256_arquivo  # noqa: E402
 
 
@@ -362,8 +362,8 @@ def cmd_novo(a):
     print('  receitas/   as três receitas, prontas para mandar a quem tem acesso às fontes')
     print('  colado/     onde vão os resultados colados')
     print('  catalogos/  onde o `catalogar` grava')
-    print(f'  ROTEIRO.md  o passo a passo deste painel')
-    print(f'  painel.json o briefing: as respostas do gestor (indicadores, definição, meta, cortes)')
+    print('  ROTEIRO.md  o passo a passo deste painel')
+    print('  painel.json o briefing: as respostas do gestor (indicadores, definição, meta, cortes)')
     print(f'Próximo passo: preencha o briefing e mande a receita de cada fonte '
           f'(ver {os.path.normpath(os.path.join(a.pasta, "ROTEIRO.md"))}).')
     return 0
@@ -825,6 +825,14 @@ def cmd_aprovar(a):
                   'novo. (Só se o gestor aprovou sem protótipo, de propósito: --sem-prototipo.)')
             return 1
         print('Atenção: aprovado SEM protótipo em dia (--sem-prototipo); isso fica registrado.', file=sys.stderr)
+    graves = distorcoes(problemas.avisos)
+    if graves and not a.aceito_distorcao:
+        print(f'Não dá para aprovar: {len(graves)} número(s) sairiam distorcidos (o corte filtra só parte da conta):')
+        for x in graves:
+            print(f'  · {x}')
+        print('Corrija o argila.json (tire o corte ou troque a medida) ou, se o gestor decidiu manter sabendo disso, '
+              'aprove com --aceito-distorcao "motivo" (fica registrado).')
+        return 1
     arq = _arquivo_aprovacao(a.argila)
     anterior = ler_json(arq) if os.path.exists(arq) else None
     retrato = governanca.retrato(modelo)
@@ -840,6 +848,8 @@ def cmd_aprovar(a):
            'sem_prototipo': bool(a.sem_prototipo and not _mais_novo(prot, a.argila, *caminhos)),
            'em': datetime.datetime.now().strftime('%d/%m/%Y %H:%M'), 'observacao': a.observacao or '',
            'avisos_aceitos': problemas.avisos, 'deidara': VERSAO, **_hashes(a.argila, caminhos)}
+    if graves:
+        reg['distorcao_aceita'] = {'motivo': a.aceito_distorcao, 'avisos': graves}
     if anterior and (mudancas or not historico):
         historico = historico + [{'versao': reg['versao'], 'em': reg['em'], 'aprovado_por': a.por,
                                   'observacao': reg['observacao'], 'mudancas': mudancas}]
@@ -923,6 +933,11 @@ def cmd_gerar(a):
         print('  Abra o .pbip e clique em Atualizar: as tabelas vêm do próprio projeto, sem banco nenhum.')
     print(f'  {nome}.pbip  ·  LEIA-ME.md  ·  HOMOLOGACAO.md' + ''.join(f'  ·  sql/{f["nome"]}/' for f in sql.fontes_sql(modelo)))
     print('Agora:')
+    if a.demo:                               # sem banco: nada de DBA, só abrir, mostrar e, depois, gerar o real
+        print(f'  1. [Analista] abrir {nome}.pbip no Power BI Desktop e clicar em Atualizar (nenhuma credencial)')
+        print('  2. [Analista + gestor] conferir o painel com os números fictícios: layout, cortes e navegação')
+        print('  3. [Analista] para o painel real, gerar de novo sem --demo (aí entram as views SQL e a homologação)')
+        return 0
     passo = 1
     for f in sql.fontes_sql(modelo):
         print(f'  {passo}. [DBA] rodar sql/{f["nome"]}/01_views.sql no banco {f["banco"]}')
@@ -1137,6 +1152,8 @@ def main(argv=None):
     ap_.add_argument('--observacao')
     ap_.add_argument('--resumo', help='o resumo copiado da aba "Para aprovar" (confere versão e decisão)')
     ap_.add_argument('--sem-prototipo', action='store_true', help='o gestor aprovou sem protótipo, de propósito')
+    ap_.add_argument('--aceito-distorcao', metavar='MOTIVO',
+                     help='o gestor mantém um corte que filtra só parte da conta, sabendo disso (fica registrado)')
     g = sub.add_parser('gerar', help='gera o projeto Power BI, SQL e documentação')
     g.add_argument('argila')
     g.add_argument('-o', '--saida')

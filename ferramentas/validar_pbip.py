@@ -5,8 +5,9 @@ Microsoft (o endereço que cada arquivo traz em "$schema"), e faz uma checagem
 estrutural do TMDL (indentação, nomes citados, referências cruzadas).
 
 É a melhor prova possível sem o Power BI Desktop. Precisa do pacote
-`jsonschema` (pip install jsonschema) e de internet na primeira vez; os
-schemas ficam em cache em ~/.cache/deidara/schemas.
+`jsonschema` (ferramentas/requisitos-dev.txt). Os schemas que o Deidara gera
+vêm junto em ferramentas/schemas/ (licença MIT da Microsoft); um schema novo
+é baixado uma vez e fica em ~/.cache/deidara/schemas.
 
 Uso:
     python3 ferramentas/validar_pbip.py PASTA_DO_PROJETO
@@ -20,13 +21,19 @@ import sys
 import urllib.request
 
 CACHE = os.path.join(os.path.expanduser('~'), '.cache', 'deidara', 'schemas')
+GUARDADOS = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'schemas')
 GITHUB = 'https://raw.githubusercontent.com/microsoft/json-schemas/main/'
 PREFIXO = 'https://developer.microsoft.com/json-schemas/'
 
 
 def baixar(url):
+    nome = hashlib.sha1(url.encode()).hexdigest() + '.json'
+    guardado = os.path.join(GUARDADOS, nome)
+    if os.path.exists(guardado):                  # sem internet: o schema veio com o Deidara
+        with open(guardado, encoding='utf-8-sig') as f:
+            return json.load(f)
     os.makedirs(CACHE, exist_ok=True)
-    arq = os.path.join(CACHE, hashlib.sha1(url.encode()).hexdigest() + '.json')
+    arq = os.path.join(CACHE, nome)
     if not os.path.exists(arq):
         real = url.replace(PREFIXO, GITHUB) if url.startswith(PREFIXO) else url
         with urllib.request.urlopen(real, timeout=30) as r:
@@ -114,6 +121,16 @@ def validar_visuais(pasta, tabelas, colunas, medidas):
                 ok = prop in medidas if tipo == 'Measure' else (ent, prop) in colunas
                 if not ok or ent not in tabelas:
                     erros.append(f'{os.path.basename(raiz)}: {tipo} {ent}.{prop} não existe no modelo')
+    return erros
+
+
+def conferir(pasta):
+    """Todos os erros do projeto (schema da Microsoft, TMDL e campos dos visuais). Sem `jsonschema`, falha alto."""
+    n, erros = validar_json(pasta)
+    nt, tabelas, colunas, medidas, et = validar_tmdl(pasta)
+    erros += et + validar_visuais(pasta, tabelas, colunas, medidas)
+    if not n:
+        erros.append('nenhum JSON do projeto foi conferido contra o schema')
     return erros
 
 

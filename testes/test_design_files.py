@@ -123,7 +123,7 @@ class TestFluxoCompleto(unittest.TestCase):
         self.assertEqual(_calado(_aprovar_com_prototipo, ['aprovar', arq, '--por', 'T'])[0], 0)
         saida = os.path.join(d, 'o')
         self.assertEqual(_calado(deidara.main, ['gerar', arq, '-o', saida, '--demo'])[0], 0)
-        self.assertEqual(validar_pbip.validar_visuais(saida, *validar_pbip.validar_tmdl(saida)[1:4]), [])
+        self.assertEqual(validar_pbip.conferir(saida), [])
         rep = os.path.join(saida, 'Quadro_e_Turnover.Report', 'definition')
         mapas, paginas, html_ = [], {}, []
         for raiz, _, fs in os.walk(rep):
@@ -197,7 +197,7 @@ class TestGrupoDeCalculo(unittest.TestCase):
         self.assertEqual(_calado(_aprovar_com_prototipo, ['aprovar', arq, '--por', 'T'])[0], 0)
         saida = os.path.join(d, 'o')
         self.assertEqual(_calado(deidara.main, ['gerar', arq, '-o', saida, '--demo'])[0], 0)
-        self.assertEqual(validar_pbip.validar_visuais(saida, *validar_pbip.validar_tmdl(saida)[1:4]), [])
+        self.assertEqual(validar_pbip.conferir(saida), [])
         with open(os.path.join(saida, 'Quadro_e_Turnover.SemanticModel', 'definition', 'tables', 'Período.tmdl'),
                   encoding='utf-8') as f:
             self.assertIn('calculationGroup', f.read())
@@ -242,7 +242,7 @@ class TestDicaEDetalhe(unittest.TestCase):
         self.assertEqual(_calado(_aprovar_com_prototipo, ['aprovar', arq, '--por', 'T'])[0], 0)
         saida = os.path.join(d, 'o')
         self.assertEqual(_calado(deidara.main, ['gerar', arq, '-o', saida, '--demo'])[0], 0)
-        self.assertEqual(validar_pbip.validar_visuais(saida, *validar_pbip.validar_tmdl(saida)[1:4]), [])
+        self.assertEqual(validar_pbip.conferir(saida), [])
         rep = os.path.join(saida, 'Quadro_e_Turnover.Report', 'definition', 'pages')
         paginas, dicas, voltar = {}, [], False
         for raiz, _, fs in os.walk(rep):

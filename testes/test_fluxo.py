@@ -22,7 +22,7 @@ import deidara  # noqa: E402
 from tecnicas.luneta import catalogo  # noqa: E402
 from tecnicas import te_no_kuchi as esboco  # noqa: E402
 from tecnicas.luneta import receitas  # noqa: E402
-from kibaku_nendo.especificacao import medida, resolver  # noqa: E402
+from kibaku_nendo.especificacao import resolver  # noqa: E402
 
 EXEMPLO = os.path.join(RAIZ, 'exemplos', 'aurora')
 CATALOGOS = {n: catalogo.carregar(os.path.join(EXEMPLO, 'catalogos', f'{n}.json'), n) for n in ('erp', 'metas')}

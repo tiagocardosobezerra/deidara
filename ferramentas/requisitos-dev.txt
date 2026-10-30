@@ -1,0 +1,2 @@
+# Só para os testes e o validar_pbip.py (a skill em si não tem dependência)
+jsonschema>=4.18

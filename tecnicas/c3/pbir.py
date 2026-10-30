@@ -11,6 +11,7 @@ import copy
 import os
 
 from kibaku_nendo.especificacao import TIPOS_VISUAL, medida
+from kibaku_nendo.relato import nota_de_ajuda
 from tecnicas.arte.modelos import montar, paginas_do_relatorio
 from tecnicas.c1.prototipo import titulo_do_cartao
 from kibaku_nendo.util import curto, gravar_json
@@ -402,18 +403,6 @@ def _botao_ajuda(nome, pos, destino, icone, rotulo, z):
             'howCreated': 'InsertVisualButton'}
 
 
-def _nota_de_ajuda(m, v):
-    """O que a nota da ajuda diz sobre o visual: o título e o que cada medida significa."""
-    from kibaku_nendo.especificacao import _medidas_do_visual
-    linhas = [v.get('titulo') or (v['categoria']['nome'] if v.get('categoria') else v['tipo'])]
-    if v.get('categoria') and v['tipo'] in ('segmentador', 'botoes', 'abas', 'alternar'):
-        linhas.append(f'Escolha aqui para filtrar a página por {v["categoria"]["nome"]}.' if v['tipo'] in
-                      ('segmentador', 'botoes') else 'Troque o indicador que os visuais mostram.')
-    for x in _medidas_do_visual(v)[:2]:
-        d = (medida(m, x['nome']) or {}).get('descricao')
-        if d:
-            linhas.append(f'{x["nome"]}: {d}')
-    return linhas
 
 
 def _fundo_da_pagina(arquivo):
@@ -525,7 +514,7 @@ def gravar(m, pasta_projeto, nome):
         for k, (v, pos) in enumerate(lay['posicoes']):
             tid = curto('nota', pg['nome'], str(k))
             os.makedirs(os.path.join(adir, 'visuals', tid), exist_ok=True)
-            gravar_json(os.path.join(adir, 'visuals', tid, 'visual.json'), _texto(tid, pos, _nota_de_ajuda(m, v), k * 1000))
+            gravar_json(os.path.join(adir, 'visuals', tid, 'visual.json'), _texto(tid, pos, nota_de_ajuda(m, v), k * 1000))
         vid = curto('voltar', pg['nome'])
         os.makedirs(os.path.join(adir, 'visuals', vid), exist_ok=True)
         gravar_json(os.path.join(adir, 'visuals', vid, 'visual.json'),

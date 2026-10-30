@@ -53,3 +53,10 @@ SOFTWARE.
 Nomes, categorias, assinaturas e links do dicionário de funções DAX e Power
 Query vêm da referência oficial da Microsoft; as descrições em pt-BR são do
 Deidara e o texto da Microsoft não é copiado (ver [AVISO.md](AVISO.md)).
+
+## JSON Schemas do Power BI (Microsoft)
+
+Os schemas em `ferramentas/schemas/` são cópias dos publicados em
+[microsoft/json-schemas](https://github.com/microsoft/json-schemas), guardadas
+para o `validar_pbip.py` e os testes rodarem sem internet. Licença MIT,
+Copyright (c) Microsoft Corporation. Ficam fora do pacote da skill.

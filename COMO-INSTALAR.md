@@ -28,8 +28,9 @@ Gere o pacote a partir da pasta da skill:
 python3 ferramentas/empacotar.py
 ```
 
-Ele cria `deidara-skill.zip` ao lado da pasta, só com o que a skill usa (sem
-git, imagens do README, saídas geradas nem aprovações locais). Suba o arquivo
+Ele cria `deidara-skill.zip` ao lado da pasta, só com o que a skill usa: num
+clone git, só arquivo rastreado (pasta de cliente ou rascunho solto nunca vai
+junto), sem imagens do README, saídas geradas nem aprovações locais. Suba o arquivo
 na área de Skills das configurações do claude.ai.
 
 No claude.ai, a skill funciona até o protótipo e a geração do projeto. O
@@ -39,6 +40,7 @@ Memory Card precisa do `gh` autenticado, que só existe no Claude Code.
 
 ```bash
 python3 deidara.py status
+pip install -r ferramentas/requisitos-dev.txt    # só para os testes: o jsonschema
 python3 -m unittest discover -s testes
 ```
 
@@ -46,10 +48,10 @@ O `status` mostra a versão e a pasta da skill; os testes rodam sobre o exemplo
 fictício e não tocam em nada fora de uma pasta temporária.
 
 Para conferir um projeto gerado contra os JSON Schemas oficiais da Microsoft
-(opcional; precisa do pacote `jsonschema` e de internet na primeira vez):
+(opcional; precisa do pacote `jsonschema`; os schemas já vêm em `ferramentas/schemas/`):
 
 ```bash
-pip install jsonschema
+pip install -r ferramentas/requisitos-dev.txt
 python3 ferramentas/validar_pbip.py <pasta do projeto gerado>
 ```
 

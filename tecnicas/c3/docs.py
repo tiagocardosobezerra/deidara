@@ -135,7 +135,7 @@ def homologacao(m, nome, aprovacao):
                '## 4. Publicação', '',
                '- [ ] salvo como .pbix e publicado no workspace do time',
                '- [ ] atualização agendada configurada (e gateway, se a fonte for local ou de rede)',
-               f'- [ ] painel salvo no Memory Card (`deidara.py memory-card enviar ... --status em-uso`)']
+               '- [ ] painel salvo no Memory Card (`deidara.py memory-card enviar ... --status em-uso`)']
     return '\n'.join(linhas) + '\n'
 
 

@@ -94,6 +94,9 @@ São 8 passos, os mesmos do `deidara.py` sem argumentos e do `ROTEIRO.md` da pas
    2); depois, só com o "sim", `aprovar --por "<nome de quem aprovou>"`. Se o
    gestor usou "Copiar resumo do aceite", salve o texto num arquivo e passe
    `--resumo <arquivo>` (o Deidara confere o código do protótipo e a decisão).
+   Número distorcido (corte que filtra só parte da conta) bloqueia o aceite:
+   corrija o `argila.json`; só se o gestor decidir manter, sabendo disso,
+   `--aceito-distorcao "<motivo dele>"` (fica registrado).
 7. **Katsu!**: `gerar <pasta>/argila.json -o C:/paineis/<nome>` (pasta curta;
    sem `-o`, a saída vai para `<pasta>/saida/<projeto>`). Para testar ou
    mostrar o painel antes de a fonte estar pronta, `gerar ... --demo`: o

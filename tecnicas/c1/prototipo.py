@@ -1164,7 +1164,7 @@ def codigo_do_prototipo(m):
 
 
 def _excecoes_do_filtro(m, v, pagina):
-    from kibaku_nendo.especificacao import _grafo_de_filtro, _tabelas_da_medida, chega
+    from kibaku_nendo.especificacao import grafo_de_filtro as _grafo_de_filtro, tabelas_da_medida as _tabelas_da_medida, chega
     if v['tipo'] not in ('segmentador', 'botoes', 'abas', 'alternar') or not v.get('categoria'):
         return []
     g = _grafo_de_filtro(m)
@@ -1250,10 +1250,10 @@ def gerar_html(m, problemas, versao):
                      f'aria-label="{_e(n["rotulo"])}" style="left:{n["x"]}px;top:{n["y"]}px;width:{n["w"]}px;height:{n["h"]}px">'
                      f'</button>' for n in lay['nav'])
         if pg.get('ajuda'):
-            from tecnicas.c3.pbir import _nota_de_ajuda
+            from kibaku_nendo.relato import nota_de_ajuda
             notas = ''.join(f'<div class="nota-ajuda" style="left:{p["x"]}px;top:{p["y"]}px;width:{p["w"]}px;height:{p["h"]}px">'
                             + ''.join(f'<{"b" if k == 0 else "p"}>{_e(t)}</{"b" if k == 0 else "p"}>'
-                                      for k, t in enumerate(_nota_de_ajuda(m, v))) + '</div>' for v, p in lay['posicoes'])
+                                      for k, t in enumerate(nota_de_ajuda(m, v))) + '</div>' for v, p in lay['posicoes'])
             ir += (f'<button type="button" class="ajuda" aria-label="Como ler esta página" title="Como ler esta página" '
                    f'style="left:{lay["w"] - 64}px;top:{lay["h"] - 104}px">?</button><div class="notas" hidden>{notas}</div>')
         tour = next((medida(m, x['tour']) for x in m['paginas'] if x['nome'] == pg['nome'] and isinstance(x.get('tour'), str)),

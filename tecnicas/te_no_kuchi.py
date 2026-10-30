@@ -70,7 +70,7 @@ def nome_amigavel(coluna):
     return texto[:1].upper() + texto[1:]
 
 
-def _pessoal(t, coluna):
+def pessoal(t, coluna):
     """Coluna que identifica uma pessoa (CPF, e-mail... e o nome numa tabela de pessoas)."""
     toks = set(descoberta.tokens(coluna['coluna']))
     if toks & PESSOAIS:
@@ -93,7 +93,7 @@ def _rotulo(t):
     """A coluna que dá nome ao registro de uma dimensão (descrição, nome, razão social); nunca dado pessoal."""
     pk = {x.upper() for x in t['pk']}
     textos = [c for c in t['colunas'].values() if c.get('familia') == 'texto' and c['coluna'].upper() not in pk
-              and not _pessoal(t, c)]
+              and not pessoal(t, c)]
     for c in textos:
         if any(t.startswith(('descricao', 'nome', 'razao', 'titulo', 'apelido', 'fantasia'))
                for t in descoberta.tokens(c['coluna'])):
@@ -221,6 +221,62 @@ def pedido_do_briefing(briefing):
         return ''
     return ' e '.join(inds) + (' por ' + ' e '.join(cortes) if cortes else '') + \
         (' contra a meta' if any(i.get('meta') for i in briefing.get('indicadores') or []) else '')
+
+
+def _sem_distorcao(argila, catalogos, notas):
+    """O esboço não sai com corte que distorce o número: segmentador que filtra só parte de uma medida da página
+    sai; gráfico ou tabela troca a medida por uma da página que o corte filtra inteira, ou sai. A meta pode não
+    mudar com o corte (vira um aviso só no validar). Ligação a confirmar conta como ligada."""
+    import copy
+    from kibaku_nendo.especificacao import alcance, grafo_de_filtro, medida, resolver
+    try:
+        m, _ = resolver(copy.deepcopy(argila), catalogos)
+    except Exception:                                   # esboço que nem resolve: o validar mostra por quê
+        return
+    filtra = grafo_de_filtro(m, [(r['de'], r['para']) for r in argila['relacionamentos'] if 'declarada' in r])
+    metas = {x['meta_medida'] for x in m['medidas'] if x.get('meta_medida')}
+
+    def inteira(ref, nome):
+        if nome in metas or not medida(m, nome) or '[' not in ref:
+            return True
+        return alcance(m, filtra, ref.split('[')[0], nome) == 'total'
+
+    def medidas_de(v):
+        return ([v['medida']] if v.get('medida') else []) + list(v.get('valores') or []) + \
+               [x for x in v.get('campos') or [] if '[' not in x]
+
+    for pg in argila['paginas']:
+        da_pagina = [n for v in pg['visuais'] for n in medidas_de(v)]
+        ficam = []
+        for v in pg['visuais']:
+            if v['tipo'] == 'segmentador':
+                ruins = sorted({n for n in da_pagina if not inteira(v['campo'], n)})
+                if ruins:
+                    notas.append(f'segmentador {v["campo"]} fora do esboço: ele filtra só parte de {", ".join(ruins)} '
+                                 '(o número ficaria distorcido)')
+                    continue
+            elif v['tipo'] in ('barras', 'colunas'):
+                bons = [n for n in v['valores'] if inteira(v['categoria'], n)]
+                if not bons:
+                    troca = next((n for n in da_pagina if n not in metas and inteira(v['categoria'], n)), None)
+                    if not troca:
+                        notas.append(f'gráfico por {v["categoria"]} fora do esboço: nenhuma medida da página é filtrada '
+                                     'inteira por esse corte')
+                        continue
+                    notas.append(f'gráfico por {v["categoria"]} mostra "{troca}" em vez de "{v["valores"][0]}" '
+                                 f'({v["categoria"]} filtra só parte de "{v["valores"][0]}")')
+                    bons = [troca]
+                v['valores'] = bons
+            elif v['tipo'] == 'tabela':
+                cols = [x for x in v['campos'] if '[' in x]
+                fora = [x for x in v['campos'] if '[' not in x and not all(inteira(c, x) for c in cols)]
+                v['campos'] = [x for x in v['campos'] if x not in fora]
+                if len(v['campos']) == len(cols):
+                    continue
+                if fora:
+                    notas.append(f'tabela por {", ".join(cols)} sem {", ".join(fora)} (o corte filtra só parte delas)')
+            ficam.append(v)
+        pg['visuais'] = ficam
 
 
 def esbocar(catalogos, pedido, projeto=None, tabelas=None, limite=6, briefing=None):
@@ -440,7 +496,8 @@ def esbocar(catalogos, pedido, projeto=None, tabelas=None, limite=6, briefing=No
         anos = 2018, 2026
         argila['calendario'] = {'inicio': anos[0], 'fim': anos[1], 'datas': datas}
     _aplicar_briefing(argila, briefing, notas)
-    pendentes = [md['nome'] for md in medidas if (md.get('descricao') or '').startswith(PENDENTE_DEF)]
+    _sem_distorcao(argila, catalogos, notas)
+    pendentes =[md['nome'] for md in medidas if (md.get('descricao') or '').startswith(PENDENTE_DEF)]
     if pendentes or argila['publico'] == PENDENTE_DEF or argila['descricao'].startswith(PENDENTE_DEF):
         notas.append('defina ' + (f'{", ".join(pendentes)} ' if pendentes else 'o painel ')
                      + f'(descrição, polaridade, meta) antes de mostrar ao gestor: os "{PENDENTE_DEF}" viram aviso no '
