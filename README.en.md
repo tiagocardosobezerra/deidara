@@ -7,10 +7,10 @@
 ![Python 3.8+](https://img.shields.io/badge/python-3.8%2B-3776AB?style=flat-square&logo=python&logoColor=white)
 ![No dependencies](https://img.shields.io/badge/dependencies-none-2ea44f?style=flat-square)
 ![Power BI .pbip](https://img.shields.io/badge/Power%20BI-.pbip%20(TMDL%20%2B%20PBIR)-F2C811?style=flat-square&logo=powerbi&logoColor=black)
-![Tests](https://img.shields.io/badge/tests-117%20passing-2ea44f?style=flat-square)
+![Tests](https://img.shields.io/badge/tests-140%20passing-2ea44f?style=flat-square)
 ![MIT](https://img.shields.io/badge/license-MIT-blue?style=flat-square)
 
-<img width="100%" alt="Deidara: from request to Power BI report, with an approved prototype before the project" src="assets/deidara-banner-en.svg" />
+<img width="100%" alt="Deidara: from request to Power BI report, with an approved prototype before the project" src="assets/deidara-banner-en-animado.svg" />
 
 Deidara is a Claude Code skill for KPI and reporting teams. It turns a request ("turnover by reason and role, with a target per company") into a real Power BI report without connecting to any source and without guessing any name: someone with access to the data runs a **recipe** (a SQL, DAX or Power Query query), pastes the result, and only the **structure** comes back. The manager approves a prototype with fictional numbers before anything goes to production.
 
@@ -140,7 +140,7 @@ The card is a private team repository (`memory-card`), and Deidara uses its `dei
 
 ## How it works inside
 
-<img width="100%" alt="How Deidara works: recipe, catalog, draft, validate, prototype, approval and generate" src="assets/deidara-fluxo-en.svg" />
+<img width="100%" alt="How Deidara works: recipe, catalog, draft, validate, prototype, approval and generate" src="assets/deidara-fluxo-en-animado.svg" />
 
 | Piece | What it does |
 |---|---|

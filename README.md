@@ -7,10 +7,10 @@
 ![Python 3.8+](https://img.shields.io/badge/python-3.8%2B-3776AB?style=flat-square&logo=python&logoColor=white)
 ![Sem dependências](https://img.shields.io/badge/depend%C3%AAncias-nenhuma-2ea44f?style=flat-square)
 ![Power BI .pbip](https://img.shields.io/badge/Power%20BI-.pbip%20(TMDL%20%2B%20PBIR)-F2C811?style=flat-square&logo=powerbi&logoColor=black)
-![Testes](https://img.shields.io/badge/testes-117%20passando-2ea44f?style=flat-square)
+![Testes](https://img.shields.io/badge/testes-140%20passando-2ea44f?style=flat-square)
 ![MIT](https://img.shields.io/badge/licen%C3%A7a-MIT-blue?style=flat-square)
 
-<img width="100%" alt="Deidara: do pedido ao painel Power BI, com protótipo aprovado antes do projeto" src="assets/deidara-banner.svg" />
+<img width="100%" alt="Deidara: do pedido ao painel Power BI, com protótipo aprovado antes do projeto" src="assets/deidara-banner-animado.svg" />
 
 O Deidara é uma skill do Claude Code para times de indicadores. Ele transforma um pedido ("turnover por motivo e cargo, com meta por empresa") num painel Power BI de verdade, sem se conectar a nenhuma fonte e sem adivinhar nenhum nome: quem tem acesso aos dados roda uma **receita** (uma consulta SQL, DAX ou Power Query), cola o resultado, e só a **estrutura** volta. O gestor aprova num protótipo com números fictícios antes de qualquer linha ir para produção.
 
@@ -138,7 +138,7 @@ O cartão é um repositório privado do time (`memory-card`), e o Deidara usa a 
 
 ## Como funciona por dentro
 
-<img width="100%" alt="Como o Deidara funciona: receita, catálogo, esboço, validar, protótipo, aceite e gerar" src="assets/deidara-fluxo.svg" />
+<img width="100%" alt="Como o Deidara funciona: receita, catálogo, esboço, validar, protótipo, aceite e gerar" src="assets/deidara-fluxo-animado.svg" />
 
 | Peça | O que faz |
 |---|---|
