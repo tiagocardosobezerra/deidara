@@ -638,14 +638,14 @@ def _medidas(argila, m, p):
                             'coluna_matriz': md.get('colunas')}
             elif md.get('tipo') in EXTRAS:
                 r['tipo'], r['dax'], r['extra'] = md['tipo'], '', dict(md)
-                if md['tipo'] in ('svg_iniciais', 'svg_dispersao'):
+                if md['tipo'] in ('svg_iniciais', 'svg_dispersao', 'svg_espinha'):
                     r['imagem'], r['formato'] = True, None
                 if md['tipo'] in ('cor_destaque', 'aviso', 'html_kpis'):
                     r['formato'] = None
             elif md.get('tipo') in RANKINGS:
                 r['tipo'], r['dax'] = md['tipo'], ''
                 r['ranking'] = {'medida': md.get('medida'), 'categoria': md.get('categoria'), 'ordem': md.get('ordem'),
-                                'n': md.get('n', 5), 'formato_dado': md.get('formato')}
+                                'n': md.get('n', 5), 'formato_dado': md.get('formato'), 'comparar': md.get('comparar')}
             elif md.get('dax'):
                 r['tipo'] = 'dax'
                 r['dax'] = md['dax'].strip()
@@ -686,15 +686,18 @@ def _medidas(argila, m, p):
 COR_BOA, COR_RUIM = '#107C10', '#D13438'
 COR_TRILHO, COR_MARCA = '#EDEBE9', '#252423'
 SVG_GERADAS = ('svg_barra_meta', 'svg_pilula', 'svg_seta', 'svg_posicao', 'svg_radar', 'svg_bolha', 'svg_variacao')
-RANKINGS = ('posicao', 'pareto', 'melhores_piores', 'lista_top')
+RANKINGS = ('posicao', 'pareto', 'melhores_piores', 'lista_top', 'jitter', 'impacto')
+DIAGNOSTICOS = ('jitter', 'impacto')        # da causa raiz: feitas para o eixo do gráfico, não para a tabela
 PREFIXO_SVG = 'data:image/svg+xml;charset=utf-8,'
 
 
 def _svgs(m, p):
     """As medidas que o Deidara escreve a partir de outra medida e da coluna das linhas da tabela: as imagens SVG
     (barra contra a meta, pílula de status, seta de variação, selo de posição; referencias/svg.md) e as de
-    classificação (posição, Pareto, melhores e piores; dicionario/visuais.json). Todas param no total."""
+    classificação (posição, Pareto, melhores e piores, jitter, impacto; dicionario/visuais.json). Todas param no
+    total."""
     todas = {chave(x['nome']): x for x in m['medidas'] if x['tipo'] not in ('cor',)}
+    novas = []
     for md in m['medidas']:
         if md.get('tipo') not in SVG_GERADAS + RANKINGS:
             continue
@@ -737,7 +740,7 @@ def _svgs(m, p):
         if tipo in ('svg_barra_meta', 'svg_pilula') and not base.get('meta_medida'):
             p.erro(onde, f'a medida "{base["nome"]}" não tem meta: dê "meta" (número ou medida) a ela primeiro')
             continue
-        if tipo in ('svg_seta', 'svg_variacao'):
+        if tipo in ('svg_seta', 'svg_variacao', 'impacto'):
             comp = medida(m, cfg.get('comparar') or '')
             if not comp:
                 p.erro(onde, f'"comparar" ("{cfg.get("comparar")}") precisa ser a medida do valor anterior '
@@ -791,12 +794,31 @@ def _svgs(m, p):
             md['dax'] = (f'VAR _posicao = RANKX(ALLSELECTED({col}), {b}, , {sentido}, Dense)\n'
                          f'VAR _linhas = COUNTROWS(ALLSELECTED({col}))\n'
                          f'RETURN\n    IF(HASONEVALUE({col}) && (_posicao <= {n} || _posicao > _linhas - {n}), {b})')
+        elif tipo == 'jitter':                         # o X do jitter plot: espalha os pontos sem sorteio
+            md['formato'] = 'decimal'
+            md['dax'] = (f'VAR _posicao = RANKX(ALLSELECTED({col}), {b}, , {sentido}, Skip)\n'
+                         f'RETURN\n    IF(HASONEVALUE({col}) && NOT ISBLANK({b}), MOD(_posicao * 37, 101) / 100)')
+        elif tipo == 'impacto':                        # quanto cada item mexeu no total entre os dois períodos
+            md['formato'] = cfg.get('formato_dado') or base['formato']
+            md['depende'].append(cfg['comparar'])
+            md['dax'] = (f'VAR _antes = {dax_medida(cfg["comparar"])}\nVAR _agora = {b}\n'
+                         f'RETURN\n    IF(HASONEVALUE({col}) && NOT (ISBLANK(_agora) && ISBLANK(_antes)), _agora - _antes)')
+            cor = f'Cor {md["nome"]}'
+            novas.append({'nome': cor, 'tipo': 'cor', 'formato': None, 'pasta': md.get('pasta'), 'tabela': md['tabela'],
+                          'descricao': f'Cor do impacto de {md["nome"]}: verde quando ajudou o indicador, vermelho quando '
+                                       'atrapalhou.',
+                          'dax': (f'VAR _impacto = {dax_medida(md["nome"])}\n'
+                                  f'RETURN\n    IF(ISBLANK(_impacto), BLANK(), IF(_impacto {op} 0, "{COR_BOA}", "{COR_RUIM}"))'),
+                          'depende': [md['nome']], 'meta': None, 'polaridade': base['polaridade'], 'oculta': True,
+                          'meta_medida': None, 'cor_medida': None, 'conferencia_sql': None})
+            md['cor_medida'] = cor
         _conferir_funcoes(md['dax'], p, onde)
         if md.get('imagem'):
             conferir_svg(md['dax'], p, onde)
+    m['medidas'].extend(novas)
 
 
-EXTRAS = ('escolha', 'alternar', 'cor_destaque', 'aviso', 'svg_iniciais', 'svg_dispersao', 'html_kpis')
+EXTRAS = ('escolha', 'alternar', 'cor_destaque', 'aviso', 'svg_iniciais', 'svg_dispersao', 'html_kpis', 'svg_espinha')
 COR_APAGADA = '#C8C6C4'
 
 
@@ -979,9 +1001,24 @@ def _extras(m, p):
             md['dax'] = _html_kpis(itens, acento)
             md['depende'] = [x['nome'] for x in itens] + [x['meta_medida'] for x in itens if x.get('meta_medida')]
             cfg['medidas'] = [x['nome'] for x in itens]
+        elif tipo == 'svg_espinha':
+            base = medida(m, cfg.get('medida') or '')
+            cortes = [_resolver_coluna(m, x) for x in (cfg.get('cortes') or [])]
+            n = cfg.get('n', 3)
+            if not base or not 2 <= len(cortes) <= 6 or not all(c for _, c in cortes):
+                p.erro(onde, '"svg_espinha" pede "medida" e "cortes": de 2 a 6 colunas do modelo (uma espinha por coluna)')
+                continue
+            if not isinstance(n, int) or not 1 <= n <= 5:
+                p.erro(onde, '"n" deve ser um número inteiro de 1 a 5 (quantos itens em cada espinha)')
+                continue
+            md['dax'] = _svg_espinha(dax_medida(base['nome']), [(dax_coluna(t['nome'], c['nome']), c['nome']) for t, c in cortes],
+                                     n, base['polaridade'] == 'maior_melhor', base['nome'], acento)
+            md['depende'] = [base['nome']]
+            md['polaridade'] = base['polaridade']
+            cfg.update({'base': base['nome'], 'cortes': [[t['nome'], c['nome']] for t, c in cortes], 'n': n})
         _conferir_funcoes(md['dax'], p, onde)
-        if md.get('imagem'):
-            conferir_svg(md['dax'], p, onde, por_linha=tipo != 'svg_dispersao')    # a dispersão é o gráfico inteiro
+        if md.get('imagem'):                               # a dispersão e a espinha são o gráfico inteiro
+            conferir_svg(md['dax'], p, onde, por_linha=tipo not in ('svg_dispersao', 'svg_espinha'))
     m['medidas'].extend(novas)
 
 
@@ -1035,6 +1072,54 @@ VAR _svg =
         & "<text x='395' y='290' text-anchor='end' font-family='Segoe UI' font-size='11' fill='%23605E5C'>{nx} →</text>"
         & "<text x='44' y='20' font-family='Segoe UI' font-size='11' fill='%23605E5C'>↑ {ny}</text>"
         & _pontos
+        & "</svg>"
+RETURN
+    "{PREFIXO_SVG}" & _svg"""
+
+
+def _texto_svg(s):
+    """Texto fixo dentro do SVG: sem "#", "%", "&" nem "<" soltos."""
+    return (str(s).replace('&', '&amp;').replace('<', '&lt;').replace('%', '%25').replace('#', '%23')
+            .replace('"', "'"))
+
+
+def _svg_espinha(b, cortes, n, maior, nome, acento):
+    """Diagrama de espinha de peixe (Ishikawa): a cabeça é o indicador, cada espinha é um corte, e em cada espinha
+    os N itens piores que a média do corte, do pior para o menos ruim."""
+    k = len(cortes)
+    lados = (k + 1) // 2                           # espinhas por lado: as ímpares em cima, as pares embaixo
+    passo = 500 / lados
+    sentido, op = ('ASC', '<') if maior else ('DESC', '>')
+    linhas, desenho = [], []
+    for i, (col, rotulo) in enumerate(cortes):
+        cima = i % 2 == 0
+        xa = 10 + passo * (i // 2 + 1)             # onde a espinha encosta na linha central
+        xp = xa - 60                               # a ponta da espinha
+        yp, yt, y0 = (40, 30, 52) if cima else (280, 300, 190)
+        nome_item = f'SUBSTITUTE(SUBSTITUTE(SUBSTITUTE(SUBSTITUTE(LEFT({col}, 20), "%", "%25"), "#", "%23"), "&", "&amp;"), "<", "&lt;")'
+        linhas.append(
+            f'VAR _media{i + 1} = AVERAGEX(ALLSELECTED({col}), {b})\n'
+            f'VAR _itens{i + 1} =\n'
+            f'    CONCATENATEX(\n'
+            f'        TOPN({n}, FILTER(ALLSELECTED({col}), NOT ISBLANK({b}) && {b} {op} _media{i + 1}), {b}, {sentido}),\n'
+            f'        "<tspan x=\'{xp - 6:.0f}\' dy=\'15\'>" & {nome_item} & "</tspan>",\n'
+            f'        " ",\n        {b}, {sentido}\n    )')
+        desenho.append(f"""        & "<line x1='{xa:.0f}' y1='160' x2='{xp:.0f}' y2='{yp}' stroke='%23A19F9D' stroke-width='2'/>"
+        & "<text x='{xp:.0f}' y='{yt}' font-family='Segoe UI' font-size='12' font-weight='700' fill='%23252423'>{_texto_svg(rotulo)}</text>"
+        & "<text y='{y0 - 15}' text-anchor='end' font-family='Segoe UI' font-size='11' fill='%23A4262C'>" & _itens{i + 1} & "</text>\"""")
+    vars_ = '\n'.join(linhas)
+    corpo = '\n'.join(desenho)
+    return f"""-- Configuração: espinha de peixe em 640 x 320; em cada corte, os {n} piores que a média do corte
+{vars_}
+-- Cores (o # vira %23)
+VAR _cor = "%23{acento[1:]}" -- destaque do tema
+-- Desenho
+VAR _svg =
+    "<svg xmlns='http://www.w3.org/2000/svg' width='100%25' height='100%25' viewBox='0 0 640 320' overflow='visible' display='block'>"
+        & "<line x1='20' y1='160' x2='520' y2='160' stroke='%23605E5C' stroke-width='4'/>"
+        & "<rect x='522' y='130' width='114' height='60' rx='8' fill='" & _cor & "'/>"
+        & "<text x='579' y='165' text-anchor='middle' font-family='Segoe UI' font-size='12' font-weight='700' fill='%23FFFFFF'>{_texto_svg(nome[:18])}</text>"
+{corpo}
         & "</svg>"
 RETURN
     "{PREFIXO_SVG}" & _svg"""
@@ -1818,8 +1903,10 @@ def _visual(m, v, p, onde, filtra):
             cols = [c for c in r['campos'] if c and c['tipo'] == 'coluna']
             if md['tipo'] == 'lista_top':
                 pass
-            elif tipo not in ('tabela', 'matriz') or not any((c['tabela'], c['nome']) == (cfg['tabela'], cfg['coluna'])
-                                                            for c in cols + [x for x in r['linhas'] if x]):
+            elif (tipo not in ('tabela', 'matriz') and md['tipo'] not in DIAGNOSTICOS) or not any(
+                    (c['tabela'], c['nome']) == (cfg['tabela'], cfg['coluna'])
+                    for c in cols + [x for x in r['linhas'] if x]
+                    + ([r['categoria']] if md['tipo'] in DIAGNOSTICOS and r['categoria'] else [])):
                 p.aviso(onde, f'"{md["nome"]}" foi feita para as linhas de {cfg["tabela"]}[{cfg["coluna"]}]: '
                               'ponha essa coluna na mesma tabela, senão o valor some')
     if not r['titulo']:

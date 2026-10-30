@@ -124,6 +124,8 @@ Tipos prontos (preferidos: validação completa e consulta de conferência):
 {"nome": "Bolha do custo", "tipo": "svg_bolha", "medida": "Remuneração Total", "categoria": "dCargo[Cargo]", "colunas": "dEmpresa[Empresa]"}
 {"nome": "Desvio", "tipo": "svg_variacao", "medida": "Headcount", "comparar": "Headcount Ano Anterior", "categoria": "dEmpresa[Empresa]"}
 {"nome": "Cargos mais caros", "tipo": "lista_top", "medida": "Remuneração Total", "categoria": "dCargo[Cargo]", "n": 5}
+{"nome": "X Turnover", "tipo": "jitter", "medida": "Turnover", "categoria": "dCargo[Cargo]"}
+{"nome": "Impacto Desligamentos", "tipo": "impacto", "medida": "Desligamentos", "comparar": "Desligamentos Ano Anterior", "categoria": "dCargo[Cargo]"}
 ```
 
 Medidas por linha de tabela (todas pedem `medida` e `categoria`, a coluna das linhas, e ficam em branco no total):
@@ -142,6 +144,12 @@ Medidas por linha de tabela (todas pedem `medida` e `categoria`, a coluna das li
   `melhores_piores`: a medida só nos `n` primeiros e nos `n` últimos (a linha some no resto).
 - `lista_top`: texto com os `n` primeiros e o valor de cada um (TOPN e CONCATENATEX), para um cartão; é a única
   destas que funciona fora da tabela.
+- `jitter` e `impacto` são as duas da causa raiz, feitas para o eixo de um gráfico (a `categoria` do visual é a
+  mesma coluna). `jitter`: o X do jitter plot, entre 0 e 1, que espalha os pontos pela posição no ranking (sem
+  sorteio: o desenho não muda a cada atualização); vai no `x` da `dispersao`, com o indicador no `y`, e o eixo X
+  sai escondido. `impacto`: `medida` menos `comparar` em cada item (quem mais mexeu no total entre os dois
+  períodos); gera também `Cor <nome>` (verde quando ajudou o indicador, vermelho quando atrapalhou, pela
+  polaridade), que pinta as barras sozinha. Vai em `barras` ou `colunas`, com uma medida só.
 
 Medidas que trazem uma técnica inteira (o Deidara escreve a medida e, quando precisa, uma **tabela auxiliar**
 calculada em DAX, sem fonte nem relacionamento, que só o segmentador de botões usa):
@@ -154,6 +162,7 @@ calculada em DAX, sem fonte nem relacionamento, que só o segmentador de botões
 {"nome": "Iniciais da empresa", "tipo": "svg_iniciais", "categoria": "dEmpresa[Empresa]"}
 {"nome": "Dispersão dos cargos", "tipo": "svg_dispersao", "categoria": "dCargo[Cargo]", "x": "Headcount", "y": "Remuneração Média"}
 {"nome": "Faixa HTML", "tipo": "html_kpis", "medidas": ["Headcount", "Turnover"]}
+{"nome": "Espinha do turnover", "tipo": "svg_espinha", "medida": "Turnover", "cortes": ["dEmpresa[Empresa]", "dCargo[Cargo]"], "n": 3}
 ```
 
 - `escolha`: a medida que vale a opção escolhida (`SWITCH` sobre a tabela `<nome> (opções)`); `opcoes` é uma
@@ -173,6 +182,9 @@ calculada em DAX, sem fonte nem relacionamento, que só o segmentador de botões
   `imagem` (opcional) é a coluna ou medida com a imagem de cada ponto, em `data:image/...` (base64): link externo
   não carrega dentro do SVG. Sem `imagem`, cada ponto é um círculo com as iniciais. Vai no visual `imagem`.
 - `html_kpis`: um bloco HTML por medida, com a cor da meta; vai no visual `html`.
+- `svg_espinha`: a espinha de peixe (Ishikawa) numa imagem SVG. A cabeça é a `medida`; cada coluna de `cortes`
+  (2 a 6) vira uma espinha com os `n` itens (1 a 5, padrão 3) piores que a média do corte, do pior para o menos
+  ruim. "Pior" segue a polaridade. Vai no visual `imagem`.
 - `ordem` (opcional): `maior_primeiro` ou `menor_primeiro`; o padrão segue a polaridade da `medida`.
 
 Comuns a todas: `formato` (padrão: `inteiro` para contagem e estoque,

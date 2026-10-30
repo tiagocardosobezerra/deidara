@@ -87,6 +87,19 @@ Também gerados prontos, no mesmo molde (`medida`, `categoria` e as regras abaix
   propósito: é uma imagem por visual, não por linha. Com `imagem`, cada ponto vira a imagem do item, que precisa
   estar em `data:image/...` (base64); link externo não carrega dentro do SVG.
 
+## Espinha de peixe
+
+```json
+{"nome": "Espinha Turnover", "tipo": "svg_espinha", "medida": "Turnover", "cortes": ["dEmpresa[Empresa]", "dCargo[Cargo]", "dMotivo[Motivo]"], "n": 3}
+```
+
+- **Espinha**: o diagrama de Ishikawa numa imagem só (640 x 320), no cartão novo (visual `imagem`). A linha
+  central termina na cabeça (o indicador); as espinhas se alternam em cima e embaixo, uma por corte, cada uma com
+  os `n` itens piores que a média do corte (`AVERAGEX(ALLSELECTED(...))`), em vermelho. Como a dispersão, é uma
+  imagem por visual: não tem HASONEVALUE.
+- **Texto que vem do dado**: o nome de cada item passa por `SUBSTITUTE` para `%`, `#`, `&` e `<` antes de entrar no
+  SVG (um "P&D" ou um "100%" no cadastro quebraria a imagem) e é cortado em 20 letras.
+
 ## As regras (para quem escreve a medida à mão)
 
 Em ordem de gravidade. As marcadas com ✓ o `validar` confere.

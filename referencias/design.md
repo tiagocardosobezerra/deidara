@@ -76,6 +76,27 @@ fundo e texto; ver [argila.md](argila.md)) e vai como tema personalizado no
 - há geradores de tema e coleções da comunidade; use só tema cuja licença
   permita, e dê o crédito a quem fez.
 
+O tema faz mais do que cor. Recursos que valem conhecer, todos editando o
+JSON do tema no Power BI Desktop (o Deidara gera só cores e classes de texto):
+
+- **Cores de sentimento** (`good`, `neutral`, `bad`) e de divergência
+  (`maximum`, `center`, `minimum`): a formatação condicional usa essas cores
+  por padrão, e o time inteiro fica com o mesmo verde e o mesmo vermelho.
+- **Padrão de cada visual** (`visualStyles`): fonte, borda, rótulos e
+  segmentador iguais em todo relatório, sem formatar visual por visual.
+- **Predefinições de estilo** (style presets): variações nomeadas de um
+  visual dentro do tema (cartão de destaque, cartão discreto) que quem monta
+  o relatório escolhe numa lista.
+- **Ícones próprios** (`icons`): ícones SVG no tema para os conjuntos de
+  ícones da formatação condicional, no lugar dos ícones de fábrica.
+- **Cores do tema por nome**: na formatação condicional por valor de campo, a
+  medida pode devolver o nome de uma cor do tema em vez do código; trocar o
+  tema troca a cor sem mexer na medida. Confira na versão do Power BI Desktop
+  do time antes de depender disso.
+- **Tema da organização**: o administrador do Power BI pode publicar temas
+  para toda a organização, que aparecem na galeria de temas de todos. É o
+  caminho para o tema único do time sem copiar arquivo.
+
 ## Visuais nativos primeiro
 
 Os visuais nativos rendem muito mais do que o padrão sugere (veja `deidara.py
@@ -88,11 +109,25 @@ visuais`):
 - a **árvore de decomposição** leva do número geral até a causa;
 - o **Azure Maps** aceita marcador desenhado por medida SVG.
 
-**Visual personalizado** (HTML Content, Deneb, Gantt...) só quando o nativo
-não resolve, e com três cuidados: o administrador do Power BI precisa liberar
-o visual; prefira a versão certificada; e alguém do time precisa saber manter.
-O Deidara não gera visual personalizado: registre no LEIA-ME qual foi usado e
-por quê.
+**Causa raiz.** Para explicar uma variação, o dashboard Root Cause Analysis
+do Power BI Design Files junta quatro jeitos de olhar o mesmo número, e o
+Deidara gera os quatro com visual nativo:
+
+- a **espinha de peixe** (`svg_espinha`): numa imagem só, onde o indicador
+  está pior que a média em cada corte;
+- o **jitter plot** (`jitter`): todos os itens de um corte como pontos, para
+  achar quem está fora da curva; uma dispersão por corte, lado a lado;
+- o **ranking de impacto** (`impacto`): quem mais subiu e quem mais desceu o
+  indicador entre os dois períodos, em verde e vermelho;
+- a **árvore de decomposição**, para abrir o número corte a corte.
+
+**Visual personalizado** só quando o nativo não resolve, e com três cuidados:
+o administrador do Power BI precisa liberar o visual; prefira a versão
+certificada; e alguém do time precisa saber manter. O Deidara gera dois
+quando pedidos (HTML Content e Deneb). Os outros do catálogo (Chord, Word
+Cloud, Violin Plot, Gantt e Play Axis; `deidara.py visuais personalizado`) ele
+só descreve: monte no Power BI Desktop sobre o modelo gerado e registre no
+LEIA-ME qual foi usado e por quê.
 
 ## Antes do Power BI
 

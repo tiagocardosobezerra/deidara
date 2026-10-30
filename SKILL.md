@@ -118,9 +118,12 @@ roda onde os dados estão e cola o resultado. Só estrutura volta, nunca dado.
   nativo; medida SVG para meta, status e variação dentro da tabela
   (`svg_barra_meta` o Deidara gera; à mão, siga [svg.md](referencias/svg.md)).
   Abas, chave liga/desliga, destaque, aviso, setas, skyline e ajuda também
-  saem prontas (`deidara.py visuais`). HTML Content e Deneb (`html`,
+  saem prontas (`deidara.py visuais`). Para causa raiz: espinha de peixe
+  (`svg_espinha`), jitter plot (`jitter`) e ranking de impacto (`impacto`),
+  ao lado da árvore de decomposição. HTML Content e Deneb (`html`,
   `vegalite`) só quando a pessoa pede: o administrador precisa liberar os
-  visuais do AppSource; registre no LEIA-ME.
+  visuais do AppSource; registre no LEIA-ME. Chord, Word Cloud, Violin Plot,
+  Gantt e Play Axis o Deidara só descreve, não gera.
 - **Na entrega**, diga quem faz o quê (DBA, analista, dono do indicador), o
   que ficou pendente e que a homologação vem antes de publicar.
 

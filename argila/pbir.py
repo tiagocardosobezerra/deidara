@@ -206,8 +206,12 @@ def _tecnicas(m, v, vis, container, pos):
         objs['vega'] = [{'properties': {'provider': _lit('vegaLite'), 'renderMode': _lit('svg'),
                                         'jsonSpec': _lit(_spec_vegalite(v)), 'jsonConfig': _lit('{}'),
                                         'isNewDialogOpen': _lit(False)}}]
-    if v.get('cor'):                         # cor de cada barra pela medida (o destaque do item escolhido)
-        objs['dataPoint'] = [{'properties': {'fill': _cor_da_medida(m, v['cor'])},
+    elif v['tipo'] == 'dispersao' and (medida(m, v['valores'][0]['nome']) or {}).get('tipo') == 'jitter':
+        objs['categoryAxis'] = [{'properties': {'show': _lit(False)}}]   # jitter: o X só espalha os pontos
+    primeira = medida(m, v['valores'][0]['nome']) if v['valores'] and v['valores'][0] else None
+    cor = v.get('cor') or (primeira or {}).get('tipo') == 'impacto' and len(v['valores']) == 1 and primeira['cor_medida']
+    if cor:                                  # cor de cada barra pela medida (o destaque do item escolhido, o impacto)
+        objs['dataPoint'] = [{'properties': {'fill': _cor_da_medida(m, cor)},
                               'selector': {'data': [{'dataViewWildcard': {'matchingOption': 1}}]}}]
     if not objs:
         vis.pop('objects')

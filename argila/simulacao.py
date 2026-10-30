@@ -114,11 +114,15 @@ class Simulador:
             return self.valor(md['depende'][0], filtros) if md.get('depende') else 0
         if tipo == 'alternar':
             return self.valor(md['extra']['desligado'], filtros) if md['extra'].get('desligado') else 0
-        if tipo in ('cor_destaque', 'svg_iniciais', 'svg_dispersao', 'html_kpis'):
+        if tipo in ('cor_destaque', 'svg_iniciais', 'svg_dispersao', 'html_kpis', 'svg_espinha'):
             return 0
+        if tipo == 'impacto':
+            if not self.classificacao(md['ranking'], filtros)[0]:
+                return None
+            return self.valor(md['ranking']['base'], filtros) - self.valor(md['ranking']['comparar'], filtros)
         if tipo == 'aviso':
             return self.aviso(md, filtros)
-        if tipo in ('posicao', 'pareto', 'melhores_piores'):
+        if tipo in ('posicao', 'pareto', 'melhores_piores', 'jitter'):
             return self._ranking(md, filtros)
         if tipo == 'divisao':
             num, den = md['depende']
@@ -185,6 +189,8 @@ class Simulador:
         pos = nomes.index(rotulo) + 1 if rotulo in nomes else None
         if md['tipo'] == 'posicao':
             return pos
+        if md['tipo'] == 'jitter':                   # o mesmo espalhamento da medida DAX
+            return (pos * 37 % 101) / 100 if pos else None
         if md['tipo'] == 'melhores_piores':
             n = cfg.get('n') or 5
             return dict(vals)[rotulo] if pos and (pos <= n or pos > len(nomes) - n) else None

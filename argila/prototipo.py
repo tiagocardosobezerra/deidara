@@ -367,8 +367,40 @@ def _imagem(sim, v, w, h, cores):
                        f'<text x="{px:.1f}" y="{py + 4:.1f}" text-anchor="middle" class="eixo" style="fill:#FFFFFF;font-weight:600">'
                        f'{_e(_iniciais(r))}</text>')
         return ''.join(out)
+    if md['tipo'] == 'svg_espinha':
+        return ''.join(out) + _espinha(sim, md, w, h, cores)
     return ''.join(out) + (f'<rect x="12" y="34" width="{w - 24}" height="{h - 46}" rx="8" class="caixa"/>'
                            f'<text x="{w / 2}" y="{h / 2}" class="sub" text-anchor="middle">imagem SVG · só no Power BI</text>')
+
+
+def _espinha(sim, md, w, h, cores):
+    """Espinha de peixe: o mesmo desenho da medida DAX (640 x 320), com os piores que a média de cada corte."""
+    cfg = md['extra']
+    base = medida(sim.m, cfg['base'])
+    maior = base['polaridade'] == 'maior_melhor'
+    k = len(cfg['cortes'])
+    passo = 500 / ((k + 1) // 2)
+    esc = min((w - 24) / 640, (h - 40) / 320)
+    out = [f'<g transform="translate({(w - 640 * esc) / 2:.1f} 34) scale({esc:.3f})">'
+           f'<line x1="20" y1="160" x2="520" y2="160" stroke="#605E5C" stroke-width="4"/>'
+           f'<rect x="522" y="130" width="114" height="60" rx="8" fill="{cores[0]}"/>'
+           f'<text x="579" y="165" text-anchor="middle" class="eixo" style="font-size:16px;fill:#FFFFFF;font-weight:700">'
+           f'{_e(_corta(base["nome"], 18))}</text>']
+    for i, (tab, col) in enumerate(cfg['cortes']):
+        campo = {'tabela': tab, 'nome': col, 'tipo': 'coluna'}
+        vals = [(r, sim.valor(base['nome'], [(campo, r)])) for r in categorias(sim.m, campo)]
+        media = sum(x for _, x in vals) / max(1, len(vals))
+        piores = sorted([x for x in vals if (x[1] < media if maior else x[1] > media)], key=lambda x: x[1] if maior else -x[1])
+        cima = i % 2 == 0
+        xa = 10 + passo * (i // 2 + 1)
+        xp = xa - 60
+        yp, yt, y0 = (40, 30, 52) if cima else (280, 300, 190)
+        out.append(f'<line x1="{xa:.0f}" y1="160" x2="{xp:.0f}" y2="{yp}" stroke="#A19F9D" stroke-width="2"/>'
+                   f'<text x="{xp:.0f}" y="{yt}" class="eixo" style="font-size:18px;font-weight:700">{_e(col)}</text>')
+        for j, (r, _) in enumerate(piores[:cfg['n']]):
+            out.append(f'<text x="{xp - 6:.0f}" y="{y0 + 15 * j}" class="eixo" text-anchor="end" style="font-size:15px;fill:#A4262C">'
+                       f'{_e(_corta(r, 20))}</text>')
+    return ''.join(out) + '</g>'
 
 
 def _aviso(sim, v, w, h, cores):
@@ -508,8 +540,10 @@ def _dispersao(sim, v, w, h, cores):
                 else f'x="{px + raio + 3:.1f}"')
         out.append(f'<circle cx="{px:.1f}" cy="{py:.1f}" r="{raio:.1f}" fill="{cores[0]}" fill-opacity=".55" stroke="{cores[0]}">'
                    f'<title>{_e(r)}</title></circle><text {lado} y="{py + 4:.1f}" class="eixo">{rot_}</text>')
-    out.append(f'<text x="{(esq + dir_) / 2:.1f}" y="{h - 8}" class="eixo" text-anchor="middle">{_e(mx_["nome"])} →</text>'
-               f'<text x="14" y="{(top + base) / 2:.1f}" class="eixo" transform="rotate(-90 14 {(top + base) / 2:.1f})" '
+    jitter = (medida(sim.m, mx_['nome']) or {}).get('tipo') == 'jitter'      # o X só espalha os pontos: sem eixo
+    out.append(('' if jitter else
+                f'<text x="{(esq + dir_) / 2:.1f}" y="{h - 8}" class="eixo" text-anchor="middle">{_e(mx_["nome"])} →</text>')
+               + f'<text x="14" y="{(top + base) / 2:.1f}" class="eixo" transform="rotate(-90 14 {(top + base) / 2:.1f})" '
                f'text-anchor="middle">{_e(my_["nome"])} →</text>')
     return ''.join(out)
 
@@ -775,21 +809,35 @@ def _barras(sim, v, w, h, cores):
     top, esq = (52 if len(ss) > 1 else 36), min(150, w * 0.32)
     meta = _meta_fixa(sim, v)
     mx = _escala(ss, meta)
+    lo = min([0] + [x or 0 for _, s, _ in ss for x in s]) * 1.12  # impacto: barras para os dois lados do zero
+    largura = w - esq - 70
+    x0 = esq + largura * -lo / (mx - lo)
+    impacto = len(ss) == 1 and (medida(sim.m, v['valores'][0]['nome']) or {}).get('tipo') == 'impacto'
+    maior = impacto and (medida(sim.m, v['valores'][0]['nome']) or {}).get('polaridade') != 'menor_melhor'
     gh = (h - top - 10) / len(rot)
     bh = gh * 0.7 / len(ss)
     out = [_titulo(v, w), _legenda(ss, cores, w, 42)]
+    if lo < 0:
+        out.append(f'<line x1="{x0:.1f}" x2="{x0:.1f}" y1="{top - 4}" y2="{h - 8}" class="grade"/>')
     for i, r in enumerate(rot):
         out.append(f'<text x="{esq - 8}" y="{top + i * gh + gh / 2 + 4:.1f}" class="eixo" text-anchor="end">{_e(_corta(r, int(esq / 6.5)))}</text>')
         for k, (_, s, fmt) in enumerate(ss):
-            bw = max(0, (w - esq - 70) * s[i] / mx)
+            val = s[i] or 0
+            bw = abs(largura * val / (mx - lo))
             y = top + i * gh + gh * 0.15 + k * bh
             cor = cores[k % len(cores)] if not v.get('cor') or i == 0 else '#C8C6C4'   # destaque: só o escolhido aceso
-            out.append(f'<rect x="{esq}" y="{y:.1f}" width="{bw:.1f}" height="{max(1, bh - 1):.1f}" fill="{cor}">'
+            if impacto:                              # verde quando ajudou o indicador, vermelho quando atrapalhou
+                cor = COR_BOA if (val >= 0) == maior else COR_RUIM
+            xb = x0 if val >= 0 else x0 - bw
+            out.append(f'<rect x="{xb:.1f}" y="{y:.1f}" width="{bw:.1f}" height="{max(1, bh - 1):.1f}" fill="{cor}">'
                        f'<title>{_e(r)}: {_e(formatar(s[i], fmt))}</title></rect>')
             if len(ss) == 1:
-                out.append(f'<text x="{esq + bw + 6:.1f}" y="{y + bh / 2 + 4:.1f}" class="eixo">{_e(formatar(s[i], fmt, True))}</text>')
+                out.append(f'<text x="{x0 + bw + 6:.1f}" y="{y + bh / 2 + 4:.1f}" class="eixo">{_e(formatar(s[i], fmt, True))}</text>'
+                           if val >= 0 else
+                           f'<text x="{xb - 6:.1f}" y="{y + bh / 2 + 4:.1f}" class="eixo" text-anchor="end">'
+                           f'{_e(formatar(s[i], fmt, True))}</text>')
     if meta is not None:
-        xm = esq + (w - esq - 70) * meta / mx
+        xm = x0 + largura * meta / (mx - lo)
         out.append(_linha_meta(xm, top - 4, xm, h - 8, formatar(meta, ss[0][2], True), xm - 4, h - 12))
     return ''.join(out)
 

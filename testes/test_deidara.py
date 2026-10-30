@@ -1267,6 +1267,89 @@ class TestTecnicasCompletas(unittest.TestCase):
         shutil.rmtree(d, ignore_errors=True)
 
 
+class TestCausaRaiz(unittest.TestCase):
+    """Os três visuais do Root Cause Analysis: espinha de peixe, jitter plot e ranking de impacto."""
+
+    def _argila(self):
+        a = _base()
+        a['medidas'] += [
+            {'nome': 'Deslig. Ano Anterior', 'tipo': 'ano_anterior', 'base': 'Desligamentos', 'descricao': 'x'},
+            {'nome': 'Espinha', 'tipo': 'svg_espinha', 'medida': 'Desligamentos',
+             'cortes': ['dEmpresa[Empresa]', 'dCargo[Cargo]', 'dMotivo[Motivo]'], 'n': 3, 'descricao': 'x'},
+            {'nome': 'X Desligamentos', 'tipo': 'jitter', 'medida': 'Desligamentos', 'categoria': 'dCargo[Cargo]',
+             'descricao': 'x'},
+            {'nome': 'Impacto', 'tipo': 'impacto', 'medida': 'Desligamentos', 'comparar': 'Deslig. Ano Anterior',
+             'categoria': 'dCargo[Cargo]', 'descricao': 'x'},
+        ]
+        a['paginas'][1]['visuais'] = [
+            {'tipo': 'imagem', 'medida': 'Espinha'},
+            {'tipo': 'dispersao', 'categoria': 'dCargo[Cargo]', 'x': 'X Desligamentos', 'y': 'Desligamentos'},
+            {'tipo': 'barras', 'categoria': 'dCargo[Cargo]', 'valores': ['Impacto']},
+            {'tipo': 'tabela', 'campos': ['dCargo[Cargo]', 'Impacto']},
+        ]
+        return a
+
+    def test_medidas(self):
+        from argila import dicionario
+        from argila.especificacao import medida
+        m, p = _resolver(self._argila())
+        self.assertEqual(p.erros, [])
+        self.assertFalse([x for x in p.avisos if '[SVG]' in x or 'foi feita para as linhas' in x], p.avisos)
+        for nome, trecho in (('Espinha', 'AVERAGEX(ALLSELECTED(dMotivo[Motivo]), [Desligamentos])'),
+                             ('Espinha', '[Desligamentos] > _media1), [Desligamentos], DESC)'),    # menor_melhor: pior é maior
+                             ('X Desligamentos', 'MOD(_posicao * 37, 101) / 100'),
+                             ('Impacto', '_agora - _antes')):
+            md = medida(m, nome)
+            self.assertIn(trecho, md['dax'], nome)
+            self.assertEqual(dicionario.desconhecidas(md['dax']), [], nome)
+        self.assertTrue(medida(m, 'Espinha')['imagem'])
+        self.assertEqual(medida(m, 'Impacto')['cor_medida'], 'Cor Impacto')
+        self.assertIn('_impacto <= 0', medida(m, 'Cor Impacto')['dax'])                 # menos desligamento é bom
+        from argila.simulacao import Simulador
+        sim = Simulador(m)
+        cargo = {'tabela': 'dCargo', 'nome': 'Cargo', 'tipo': 'coluna'}
+        r = 'Cargo A'
+        self.assertAlmostEqual(sim.valor('Impacto', [(cargo, r)]),
+                               sim.valor('Desligamentos', [(cargo, r)]) - sim.valor('Deslig. Ano Anterior', [(cargo, r)]))
+        self.assertTrue(0 <= sim.valor('X Desligamentos', [(cargo, r)]) <= 1)
+        a = self._argila()
+        _md(a, 'Espinha')['cortes'] = ['dCargo[Cargo]']
+        _md(a, 'Impacto').pop('comparar')
+        _, p = _resolver(a)
+        self.assertTrue(any('de 2 a 6 colunas' in e for e in p.erros), p.erros)
+        self.assertTrue(any('"comparar"' in e for e in p.erros), p.erros)
+        a = self._argila()
+        _md(a, 'Espinha')['n'] = 9
+        _, p = _resolver(a)
+        self.assertTrue(any('de 1 a 5' in e for e in p.erros), p.erros)
+
+    def test_pbip_e_prototipo(self):
+        d = tempfile.mkdtemp(prefix='ddr')
+        shutil.copytree(os.path.join(EXEMPLO, 'catalogos'), os.path.join(d, 'catalogos'))
+        arq = os.path.join(d, 'argila.json')
+        with open(arq, 'w', encoding='utf-8') as f:
+            json.dump(self._argila(), f, ensure_ascii=False)
+        self.assertEqual(_calado(_aprovar_com_prototipo, ['aprovar', arq, '--por', 'T'])[0], 0)
+        saida = os.path.join(d, 'o')
+        self.assertEqual(_calado(deidara.main, ['gerar', arq, '-o', saida, '--demo'])[0], 0)
+        self.assertEqual(validar_pbip.validar_visuais(saida, *validar_pbip.validar_tmdl(saida)[1:4]), [])
+        objetos = {}
+        for raiz, _, fs in os.walk(os.path.join(saida, 'Quadro_e_Turnover.Report')):
+            if 'visual.json' in fs:
+                with open(os.path.join(raiz, 'visual.json'), encoding='utf-8') as f:
+                    v = json.load(f)['visual']
+                objetos.setdefault(v['visualType'], {}).update(v.get('objects') or {})
+        self.assertFalse(objetos['scatterChart']['categoryAxis'][0]['properties']['show']['expr']['Literal']['Value']
+                         == 'true')                                                 # jitter: X escondido
+        self.assertIn("'Cor Impacto'", json.dumps(objetos['clusteredBarChart']['dataPoint'], ensure_ascii=False)
+                      .replace('"Property": "Cor Impacto"', "'Cor Impacto'"))
+        with open(os.path.join(d, 'argila.prototipo.html'), encoding='utf-8') as f:
+            html_ = f.read()
+        self.assertIn('stroke-width="4"', html_)                                    # a linha central da espinha
+        self.assertIn('#D13438', html_)                                             # impacto que atrapalhou
+        shutil.rmtree(d, ignore_errors=True)
+
+
 class TestEmpacotar(unittest.TestCase):
     def test_zip_da_skill_sem_zip_dentro_nem_arquivo_local(self):
         import zipfile

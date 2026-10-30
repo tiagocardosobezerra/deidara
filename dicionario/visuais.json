@@ -970,6 +970,245 @@
       ],
       "nativo": true,
       "inspiracao": "Power BI Design Files (Sajjad Ahmadi)"
+    },
+    {
+      "id": "espinha_de_peixe",
+      "nome": "Espinha de peixe (Ishikawa) com os piores de cada corte",
+      "termos": [
+        "espinha",
+        "peixe",
+        "ishikawa",
+        "fishbone",
+        "causa",
+        "raiz",
+        "abaixo da média"
+      ],
+      "quando": "mostrar numa imagem só onde o indicador está pior que a média em cada corte (cargo, empresa, motivo), antes de abrir a árvore de decomposição",
+      "deidara": {
+        "gera": true,
+        "argila": {
+          "nome": "Espinha Turnover",
+          "tipo": "svg_espinha",
+          "medida": "Turnover",
+          "cortes": [
+            "dEmpresa[Empresa]",
+            "dCargo[Cargo]"
+          ],
+          "n": 3
+        },
+        "visual": {
+          "tipo": "imagem",
+          "medida": "Espinha Turnover"
+        }
+      },
+      "power_bi": "o Deidara gera a medida SVG (a cabeça é o indicador, uma espinha por corte, os N piores que a média do corte em vermelho, do pior para o menos ruim) e o cartão novo que mostra a imagem; \"pior\" segue a polaridade do indicador",
+      "cuidados": [
+        "de 2 a 6 cortes e até 5 itens por espinha: mais que isso não se lê",
+        "a média é a dos itens visíveis do corte (respeita os filtros da página)",
+        "é imagem: não tem clique nem dica de ferramenta; ponha a árvore de decomposição ao lado para abrir o número"
+      ],
+      "nativo": true,
+      "inspiracao": "Power BI Design Files (Sajjad Ahmadi)"
+    },
+    {
+      "id": "jitter_plot",
+      "nome": "Jitter plot: todos os itens de um corte, espalhados",
+      "termos": [
+        "jitter",
+        "pontos",
+        "distribuição",
+        "outlier",
+        "fora da curva",
+        "causa",
+        "raiz",
+        "dispersão"
+      ],
+      "quando": "ver a distribuição de um indicador entre muitos itens (cidades, cargos, lojas) e achar quem está fora da curva, sem o ruído de uma tabela longa",
+      "deidara": {
+        "gera": true,
+        "argila": {
+          "nome": "X Turnover",
+          "tipo": "jitter",
+          "medida": "Turnover",
+          "categoria": "dCargo[Cargo]"
+        },
+        "visual": {
+          "tipo": "dispersao",
+          "categoria": "dCargo[Cargo]",
+          "x": "X Turnover",
+          "y": "Turnover"
+        }
+      },
+      "power_bi": "o Deidara gera a medida do X (espalha os pontos pela posição no ranking, sem sorteio: o desenho não muda a cada atualização) e a dispersão com o eixo X escondido; o Y é o indicador",
+      "cuidados": [
+        "o X não significa nada: não deixe o eixo nem a medida X à vista em tabela",
+        "para comparar cortes lado a lado (empresa, cargo, cidade), ponha uma dispersão por corte, da mesma altura, como no dashboard de origem"
+      ],
+      "nativo": true,
+      "inspiracao": "Power BI Design Files (Sajjad Ahmadi)"
+    },
+    {
+      "id": "ranking_impacto",
+      "nome": "Ranking de impacto: quem mais mexeu no total",
+      "termos": [
+        "impacto",
+        "contribuição",
+        "variação",
+        "quem puxou",
+        "causa",
+        "raiz",
+        "ponte",
+        "ranking"
+      ],
+      "quando": "explicar uma variação entre dois períodos (ou real x plano): quais itens mais subiram e mais desceram o indicador",
+      "deidara": {
+        "gera": true,
+        "argila": {
+          "nome": "Impacto Desligamentos",
+          "tipo": "impacto",
+          "medida": "Desligamentos",
+          "comparar": "Deslig. Ano Anterior",
+          "categoria": "dCargo[Cargo]"
+        },
+        "visual": {
+          "tipo": "barras",
+          "categoria": "dCargo[Cargo]",
+          "valores": [
+            "Impacto Desligamentos"
+          ]
+        }
+      },
+      "power_bi": "o Deidara gera a medida do impacto (atual menos o anterior, por item) e a medida da cor (verde quando ajudou o indicador, vermelho quando atrapalhou, pela polaridade); as barras saem do maior para o menor e já vêm pintadas",
+      "cuidados": [
+        "só soma o total em medida aditiva (contagem, soma); em taxa, o impacto de cada item não fecha com a variação do total",
+        "na tabela, a cor também vale: o valor sai verde ou vermelho"
+      ],
+      "nativo": true,
+      "inspiracao": "Power BI Design Files (Sajjad Ahmadi)"
+    },
+    {
+      "id": "chord",
+      "nome": "Diagrama de cordas (visual personalizado)",
+      "termos": [
+        "chord",
+        "cordas",
+        "fluxo",
+        "origem e destino",
+        "transferência",
+        "personalizado"
+      ],
+      "quando": "mostrar fluxos entre os mesmos itens dos dois lados (transferência entre áreas, migração entre cargos)",
+      "deidara": {
+        "gera": false
+      },
+      "power_bi": "Chord, do AppSource: categoria de origem, categoria de destino e a medida do volume; o Deidara não gera: monte no Power BI Desktop sobre o modelo gerado",
+      "cuidados": [
+        "visual do AppSource: o administrador do Power BI precisa liberar, e quem abre baixa o visual na primeira vez",
+        "com mais de 10 itens vira um novelo: agrupe os pequenos em \"Outros\"",
+        "alternativa nativa: matriz origem x destino com bolhas (svg_bolha)"
+      ],
+      "nativo": false,
+      "inspiracao": "Power BI Design Files (Sajjad Ahmadi)"
+    },
+    {
+      "id": "nuvem_de_palavras",
+      "nome": "Nuvem de palavras (visual personalizado)",
+      "termos": [
+        "word cloud",
+        "nuvem",
+        "palavras",
+        "texto",
+        "comentário",
+        "pesquisa",
+        "personalizado"
+      ],
+      "quando": "dar uma ideia rápida dos termos que mais aparecem num texto livre (motivo de desligamento digitado, comentário de pesquisa)",
+      "deidara": {
+        "gera": false
+      },
+      "power_bi": "Word Cloud, do AppSource: a coluna de texto (ou a de palavra já separada) e, se houver, a medida da frequência",
+      "cuidados": [
+        "visual do AppSource: o administrador do Power BI precisa liberar, e quem abre baixa o visual na primeira vez",
+        "tamanho de letra não se compara bem: para decidir, use barras com as 10 palavras mais frequentes",
+        "limpe o texto antes (palavras vazias, maiúsculas, acentos) no Power Query ou na view"
+      ],
+      "nativo": false,
+      "inspiracao": "Power BI Design Files (Sajjad Ahmadi)"
+    },
+    {
+      "id": "violino",
+      "nome": "Violino: a distribuição de uma medida (visual personalizado)",
+      "termos": [
+        "violin",
+        "violino",
+        "distribuição",
+        "faixa",
+        "mediana",
+        "quartil",
+        "personalizado"
+      ],
+      "quando": "comparar a forma da distribuição entre grupos (salário por cargo, tempo de casa por empresa)",
+      "deidara": {
+        "gera": false
+      },
+      "power_bi": "Violin Plot, do AppSource: a categoria dos grupos, a coluna do item (a pessoa) e a medida",
+      "cuidados": [
+        "visual do AppSource: o administrador do Power BI precisa liberar, e quem abre baixa o visual na primeira vez",
+        "precisa de muitos itens por grupo para a curva ter sentido",
+        "alternativa nativa: jitter plot (jitter_plot), que o Deidara gera"
+      ],
+      "nativo": false,
+      "inspiracao": "Power BI Design Files (Sajjad Ahmadi)"
+    },
+    {
+      "id": "gantt",
+      "nome": "Gantt: cronograma de tarefas (visual personalizado)",
+      "termos": [
+        "gantt",
+        "cronograma",
+        "projeto",
+        "tarefa",
+        "prazo",
+        "linha do tempo",
+        "personalizado"
+      ],
+      "quando": "acompanhar tarefas ou projetos com início, fim e andamento",
+      "deidara": {
+        "gera": false
+      },
+      "power_bi": "Gantt, do AppSource (há mais de uma versão; o Power BI Design Files usa o p6 Gantt Chart): tarefa, data de início, duração ou fim e, se houver, o percentual concluído",
+      "cuidados": [
+        "visual do AppSource: o administrador do Power BI precisa liberar, e quem abre baixa o visual na primeira vez",
+        "datas vêm de colunas da fato de tarefas, não de medidas",
+        "painel de indicador raramente precisa de Gantt: confirme com o gestor antes"
+      ],
+      "nativo": false,
+      "inspiracao": "Power BI Design Files (Sajjad Ahmadi)"
+    },
+    {
+      "id": "play_axis",
+      "nome": "Eixo de reprodução: anima o painel no tempo (visual personalizado)",
+      "termos": [
+        "play axis",
+        "animação",
+        "reproduzir",
+        "tempo",
+        "filme",
+        "segmentador dinâmico",
+        "personalizado"
+      ],
+      "quando": "apresentar a evolução mês a mês numa reunião, deixando a página passar sozinha pelos períodos",
+      "deidara": {
+        "gera": false
+      },
+      "power_bi": "Play Axis (Dynamic Slicer), do AppSource: a coluna de período (mês do calendário); ele filtra a página como um segmentador que avança sozinho",
+      "cuidados": [
+        "visual do AppSource: o administrador do Power BI precisa liberar, e quem abre baixa o visual na primeira vez",
+        "é para apresentação: no dia a dia, o segmentador de mês e o gráfico de linha leem melhor",
+        "a dispersão nativa já tem eixo de reprodução próprio (campo Eixo de reprodução)"
+      ],
+      "nativo": false,
+      "inspiracao": "Power BI Design Files (Sajjad Ahmadi)"
     }
   ]
 }
