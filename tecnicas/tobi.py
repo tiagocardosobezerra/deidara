@@ -35,8 +35,8 @@ def dax(nome, b, comp, col, formato, maior, soma):
     variacao = ('FORMAT(ABS(_delta) * 100, "0.0") & " p.p."' if formato == 'percentual'
                 else f'FORMAT(ABS(_delta), "{fmt}")')
     bom = '_delta >= 0' if maior else '_delta <= 0'
-    quem = (f'IF(_delta <> 0 && NOT ISBLANK(_item), "; " & _item & " explica " & FORMAT(DIVIDE(_parte, _delta), "0%") '
-            f'& " da " & IF(_delta > 0, "alta", "queda"), "")' if soma else
+    quem = ('IF(_delta <> 0 && NOT ISBLANK(_item), "; " & _item & " explica " & FORMAT(DIVIDE(_parte, _delta), "0%") '
+            '& " da " & IF(_delta > 0, "alta", "queda"), "")' if soma else
             'IF(NOT ISBLANK(_item), "; maior variação em " & _item, "")')
     texto_nome = nome.replace('"', '""')
     return f"""-- Frase de leitura (Tobi): o que "{nome}" fez contra o período anterior e quem puxou
