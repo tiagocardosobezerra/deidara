@@ -199,7 +199,7 @@ def _fontes(argila, catalogos, p):
 
 def _privacidade(m, p):
     """Dado pessoal (CPF, e-mail, nome de pessoa...) no modelo sem nenhum uso: aviso."""
-    from tecnicas.te_no_kuchi import pessoal as _pessoal
+    from kibaku_nendo.privacidade import pessoal as _pessoal
     usados = set()
     for pg in m['paginas']:
         for v in pg['visuais']:

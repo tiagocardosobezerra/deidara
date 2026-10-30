@@ -16,6 +16,7 @@ marcado e o `validar` não deixa passar:
 import re
 
 from tecnicas.luneta import descoberta
+from kibaku_nendo.privacidade import pessoal
 from kibaku_nendo.util import chave, sem_acento
 
 PENDENTE_POR = 'A CONFIRMAR'
@@ -42,10 +43,6 @@ ACENTOS = {
     'orcamento': 'orçamento', 'responsavel': 'responsável', 'ultimo': 'último', 'media': 'média', 'contratacao':
     'contratação', 'producao': 'produção', 'avaliacao': 'avaliação', 'deligamento': 'desligamento',
 }
-PESSOAIS = {'cpf', 'rg', 'cnh', 'pis', 'email', 'telefone', 'celular', 'nascimento', 'endereco', 'logradouro', 'cep',
-            'mae', 'pai', 'sexo', 'genero', 'raca', 'religiao'}
-TABELAS_DE_PESSOA = {'funcionario', 'colaborador', 'empregado', 'pessoa', 'cliente', 'paciente', 'aluno', 'candidato',
-                     'fornecedor_pf', 'usuario', 'chapa'}
 
 
 def _acentuar(texto):
@@ -68,15 +65,6 @@ def nome_amigavel(coluna):
         base = re.sub(r'\s+(de|do|da)\s+.*$', '', desc.group(3))
     texto = _acentuar(base)
     return texto[:1].upper() + texto[1:]
-
-
-def pessoal(t, coluna):
-    """Coluna que identifica uma pessoa (CPF, e-mail... e o nome numa tabela de pessoas)."""
-    toks = set(descoberta.tokens(coluna['coluna']))
-    if toks & PESSOAIS:
-        return True
-    de_pessoa = bool(set(descoberta.tokens(t['nome'])) & TABELAS_DE_PESSOA)
-    return de_pessoa and bool(toks & {'nome', 'nm', 'apelido'})
 
 
 def _datas(t):
