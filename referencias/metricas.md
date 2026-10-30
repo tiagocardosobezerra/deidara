@@ -6,7 +6,7 @@
 |---|---|---|
 | **Medida DAX** | todo número que responde a filtro: somas, contagens, taxas, comparações no tempo | medidas do argila.json (tipos prontos ou `dax`) |
 | **Cálculo visual** | cálculo que só vale num visual: acumulado no eixo, média móvel do gráfico, % do total do próprio visual | não gerado; crie no Desktop. Se o número aparece em mais de um lugar, é medida |
-| **Grupo de cálculo** | a mesma transformação para muitas medidas (YTD, ano anterior, variação para 10 indicadores) | não gerado; com poucas medidas, os tipos de tempo resolvem |
+| **Grupo de cálculo** | a mesma transformação para muitas medidas (YTD, ano anterior, variação para 10 indicadores) | `"grupo_calculo"` no argila.json (contas de tempo: atual, acumulado no ano, ano e mês anterior, variações, 12 meses), num segmentador de botões; com poucas medidas, os tipos de tempo resolvem |
 | **Coluna no Power Query** | regra por linha: faixa, classificação, chave, limpeza, tipos; dados de planilha/SharePoint | seleção, nomes, tipos e chaves já gerados; regras próprias entram na consulta de origem |
 | **View SQL** | regra por linha e filtro de origem em banco, que outros sistemas também usam | `filtro` da tabela e colunas da view |
 | **Coluna calculada DAX** | último recurso: atributo que depende de outra tabela do modelo | não gerada de propósito |

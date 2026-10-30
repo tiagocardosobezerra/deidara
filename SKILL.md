@@ -125,10 +125,19 @@ São 8 passos, os mesmos do `deidara.py` sem argumentos e do `ROTEIRO.md` da pas
   Abas, chave liga/desliga, destaque, aviso, setas, skyline e ajuda também
   saem prontas (`deidara.py visuais`). Para causa raiz: espinha de peixe
   (`svg_espinha`), jitter plot (`jitter`) e ranking de impacto (`impacto`),
-  ao lado da árvore de decomposição. HTML Content e Deneb (`html`,
-  `vegalite`) só quando a pessoa pede: o administrador precisa liberar os
-  visuais do AppSource; registre no LEIA-ME. Chord, Word Cloud, Violin Plot,
-  Gantt e Play Axis o Deidara só descreve, não gera.
+  ao lado da árvore de decomposição. No mapa, `"marcador"` troca a bolha
+  pela imagem de uma medida SVG (`svg_estrelas`, `svg_progresso`) e
+  `"camada": "colunas"` põe colunas 3D. HTML Content e Deneb (`html`,
+  `vegalite`) e o tour guiado da página (`"tour": true`) só quando a pessoa
+  pede: o administrador precisa liberar os visuais do AppSource; registre no
+  LEIA-ME. Chord, Word Cloud, Violin Plot, Gantt e Play Axis o Deidara só
+  descreve, não gera. Tema do time ou da comunidade: `"tema": {"arquivo":
+  ...}`. Período (atual, acumulado, ano anterior) para todas as medidas:
+  `"grupo_calculo"` com um segmentador de botões. Perfil de um item a partir
+  de qualquer página: `"detalhe": "Tabela[Coluna]"`; resumo ao passar o
+  mouse: página com `"dica": true` e `"dica"` no visual. Texto livre
+  (chamados, comentários) vira tema antes do painel com
+  `ferramentas/agrupar_textos.py`, rodado onde os dados estão.
 - **Na entrega**, diga quem faz o quê (DBA, analista, dono do indicador), o
   que ficou pendente e que a homologação vem antes de publicar.
 

@@ -206,6 +206,15 @@ def _tecnicas(m, v, vis, container, pos):
         objs['vega'] = [{'properties': {'provider': _lit('vegaLite'), 'renderMode': _lit('svg'),
                                         'jsonSpec': _lit(_spec_vegalite(v)), 'jsonConfig': _lit('{}'),
                                         'isNewDialogOpen': _lit(False)}}]
+    elif v['tipo'] == 'mapa' and v.get('marcador'):   # cada ponto vira a imagem SVG da medida
+        objs['bubbleLayer'] = [{'properties': {'show': _lit(True), 'markerType': _lit('image'), 'bubbleRadius': _int(45),
+                                               'clusteringEnabled': _lit(False)}},
+                               {'properties': {'imageUrl': _medida_expr(m, v['marcador'])},
+                                'selector': {'data': [{'dataViewWildcard': {'matchingOption': 1}}]}}]
+    elif v['tipo'] == 'mapa' and v.get('camada') == 'colunas':   # colunas 3D no lugar das bolhas
+        objs['bubbleLayer'] = [{'properties': {'show': _lit(False)}}]
+        objs['barChart'] = [{'properties': {'show': _lit(True), 'barHeight': _int(4), 'thickness': _int(2),
+                                            'maxZoom': _int(22)}}]
     elif v['tipo'] == 'dispersao' and (medida(m, v['valores'][0]['nome']) or {}).get('tipo') == 'jitter':
         objs['categoryAxis'] = [{'properties': {'show': _lit(False)}}]   # jitter: o X só espalha os pontos
     primeira = medida(m, v['valores'][0]['nome']) if v['valores'] and v['valores'][0] else None
@@ -293,6 +302,8 @@ def visual(m, v, pos, nome, ordem, transparente=False):
         vis['objects'] = {'value': [{'properties': {'fontSize': _lit(max(16, min(30, round(pos['h'] / 4))))}}]}
     if transparente:                         # o fundo desenhado da página faz o painel (referencias/modelos.md)
         container['background'] = [{'properties': {'show': _lit(False)}}]
+    if v.get('dica'):                        # ao passar o mouse, a página de dica no lugar da dica padrão
+        container['visualTooltip'] = [{'properties': {'show': _lit(True), 'section': _lit(curto('pagina', v['dica']))}}]
     _tecnicas(m, v, vis, container, pos)
     est = _estilo(m, tipo)
     if est:                                  # a formatação do dashboard de origem do modelo (dicionario/estilos.json)
@@ -329,6 +340,12 @@ def _tema(m):
                                'callout': {'fontFace': 'Segoe UI Semibold', 'fontSize': 44, 'color': t['texto']},
                                'header': {'fontFace': 'Segoe UI Semibold', 'fontSize': 14, 'color': t['texto']},
                                'label': {'fontFace': 'Segoe UI', 'fontSize': 13, 'color': t['texto']}}
+    if t.get('json'):                        # tema de arquivo: vai inteiro (estilos, ícones, predefinições); o
+        base = copy.deepcopy(t['json'])      # Deidara só completa o que faltar
+        base['name'] = 'Deidara'
+        for k, valor in tema.items():
+            base.setdefault(k, valor)
+        return base
     return tema
 
 
@@ -376,7 +393,7 @@ def _botao_ajuda(nome, pos, destino, icone, rotulo, z):
             'visual': {'visualType': 'actionButton',
                        'objects': {'icon': [{'properties': {'shapeType': _lit(icone), 'lineWeight': _int(2)},
                                              'selector': {'id': 'default'}}],
-                                   'text': [{'properties': {'show': _lit(icone == 'back')}},
+                                   'text': [{'properties': {'show': _lit(icone in ('back', 'blank'))}},
                                             {'properties': {'text': _lit(rotulo)}, 'selector': {'id': 'default'}}]},
                        'visualContainerObjects': {'visualLink': [{'properties': {
                            'show': _lit(True), 'type': _lit('PageNavigation'), 'navigationSection': _lit(destino),
@@ -422,7 +439,8 @@ def gravar(m, pasta_projeto, nome):
     gravar_json(os.path.join(tema_dir, 'Deidara.json'), _tema(m))
     rel = paginas_do_relatorio(m)
     ordem = [curto('pagina', pg['nome']) for pg in rel]
-    imagens, ajudas = [], []
+    imagens, ajudas, tour_pags = [], [], []
+    tours = {pg['nome']: pg['tour'] for pg in m['paginas'] if isinstance(pg.get('tour'), str) and medida(m, pg['tour'])}
     visuais = [v for pg in m['paginas'] for v in pg['visuais']]
     for i, pg in enumerate(rel):
         pid = ordem[i]
@@ -435,6 +453,19 @@ def gravar(m, pasta_projeto, nome):
                 'height': lay['h'], 'width': lay['w']}
         if pg['oculta']:
             page['visibility'] = 'HiddenInViewMode'
+        if pg.get('dica'):                     # página de dica (tooltip): aparece ao passar o mouse no visual
+            page.update({'type': 'Tooltip', 'displayOption': 'FitToPage',
+                         'pageBinding': {'name': curto('dica', pg['nome']), 'type': 'Tooltip'}})
+        detalhe = pg.get('detalhe')
+        if detalhe:                            # detalhamento: a página abre filtrada pelo item clicado
+            campo = {'Column': {'Expression': {'SourceRef': {'Entity': detalhe['tabela']}}, 'Property': detalhe['nome']}}
+            filtro = curto('filtro_detalhe', pg['nome'])
+            page.update({'type': 'Drillthrough',
+                         'pageBinding': {'name': curto('detalhe', pg['nome']), 'type': 'Drillthrough',
+                                         'parameters': [{'name': curto('parametro_detalhe', pg['nome']),
+                                                         'boundFilter': filtro, 'fieldExpr': campo}]},
+                         'filterConfig': {'filters': [{'name': filtro, 'field': campo, 'type': 'Categorical',
+                                                       'howCreated': 'Drillthrough'}]}})
         if lay['fundo']:
             arquivo = f'fundo_{pid}.svg'
             with open(os.path.join(tema_dir, arquivo), 'w', encoding='utf-8', newline='\n') as f:
@@ -442,6 +473,13 @@ def gravar(m, pasta_projeto, nome):
             imagens.append(arquivo)
             page['objects'] = _fundo_da_pagina(arquivo)
         gravar_json(os.path.join(pdir, 'page.json'), page)
+        if detalhe:                            # o Voltar do detalhamento (volta para a página de onde veio)
+            bid = curto('voltar_detalhe', pg['nome'])
+            os.makedirs(os.path.join(pdir, 'visuals', bid), exist_ok=True)
+            corpo = _botao_ajuda(bid, {'x': lay['w'] - 184, 'y': 16, 'w': 164, 'h': 44}, '', 'back', 'Voltar', 95000)
+            corpo['visual']['visualContainerObjects']['visualLink'] = [{'properties': {
+                'show': _lit(True), 'type': _lit('Back'), 'tooltip': _lit('Voltar')}}]
+            gravar_json(os.path.join(pdir, 'visuals', bid, 'visual.json'), corpo)
         for k, n in enumerate(lay['nav']):
             bid = curto('navegacao', pg['nome'], str(k))
             os.makedirs(os.path.join(pdir, 'visuals', bid), exist_ok=True)
@@ -454,6 +492,16 @@ def gravar(m, pasta_projeto, nome):
             gravar_json(os.path.join(pdir, 'visuals', bid, 'visual.json'),
                         _botao_ajuda(bid, {'x': lay['w'] - 64, 'y': lay['h'] - 104, 'w': 44, 'h': 44}, aid, 'help',
                                      'Como ler esta página', 95000))
+        tour = None if pg['oculta'] else tours.get(pg['nome'])
+        if tour:                               # tour guiado: o botão leva à página escondida com o tour por cima
+            tid = curto('tour', pg['nome'])
+            tour_pags.append((pg, lay, tid, pid, page.get('objects'), tour))
+            bid = curto('botao_tour', pg['nome'])
+            os.makedirs(os.path.join(pdir, 'visuals', bid), exist_ok=True)
+            x = lay['w'] - (248 if pg.get('ajuda') else 184)
+            gravar_json(os.path.join(pdir, 'visuals', bid, 'visual.json'),
+                        _botao_ajuda(bid, {'x': x, 'y': lay['h'] - 104, 'w': 164, 'h': 44}, tid, 'blank', '▶ Tour guiado',
+                                     95001))
         usados = set()
         posicoes = [(dict(v, titulo='') if id(v) in lay['sem_titulo'] else v, p) for v, p in lay['posicoes']]
         for k, (v, pos) in enumerate(posicoes):
@@ -483,7 +531,36 @@ def gravar(m, pasta_projeto, nome):
         gravar_json(os.path.join(adir, 'visuals', vid, 'visual.json'),
                     _botao_ajuda(vid, {'x': lay['w'] - 184, 'y': 16, 'w': 164, 'h': 44}, pid, 'back', 'Voltar', 95000))
         ordem.append(aid)
-    terceiros = sorted({TIPOS_VISUAL[v['tipo']] for v in visuais if v['tipo'] in ('html', 'vegalite')})
+    for pg, lay, tid, pid, fundo, nome_tour in tour_pags:
+        tdir = os.path.join(defi, 'pages', tid)
+        os.makedirs(tdir, exist_ok=True)
+        page = {'$schema': f'{S}/page/2.0.0/schema.json', 'name': tid, 'displayName': f'Tour · {pg["nome"]}',
+                'displayOption': 'FitToPage', 'height': lay['h'], 'width': lay['w'], 'visibility': 'HiddenInViewMode'}
+        if fundo:
+            page['objects'] = fundo
+        gravar_json(os.path.join(tdir, 'page.json'), page)
+        for k, (v, pos) in enumerate(lay['posicoes']):  # os mesmos visuais, embaixo do tour
+            vid = curto('tour_visual', pg['nome'], str(k))
+            os.makedirs(os.path.join(tdir, 'visuals', vid), exist_ok=True)
+            gravar_json(os.path.join(tdir, 'visuals', vid, 'visual.json'),
+                        visual(m, v, pos, vid, k, transparente=bool(lay['fundo'])))
+        md = medida(m, nome_tour)
+        v_tour = {'tipo': 'html', 'titulo': '', 'id': None, 'categoria': None, 'legenda': None, 'campos': [],
+                  'linhas': [], 'colunas': [], 'meta': None,
+                  'valores': [{'tipo': 'medida', 'tabela': md['tabela'], 'nome': md['nome'], 'formato': None}]}
+        hid = curto('tour_html', pg['nome'])
+        os.makedirs(os.path.join(tdir, 'visuals', hid), exist_ok=True)
+        corpo = visual(m, v_tour, {'x': 0, 'y': 0, 'w': lay['w'], 'h': lay['h']}, hid, 90, transparente=True)
+        corpo['visual']['visualContainerObjects']['padding'] = [{'properties': {k: _lit(0) for k in
+                                                                                ('top', 'bottom', 'left', 'right')}}]
+        gravar_json(os.path.join(tdir, 'visuals', hid, 'visual.json'), corpo)
+        vid = curto('voltar_tour', pg['nome'])
+        os.makedirs(os.path.join(tdir, 'visuals', vid), exist_ok=True)
+        gravar_json(os.path.join(tdir, 'visuals', vid, 'visual.json'),
+                    _botao_ajuda(vid, {'x': lay['w'] - 184, 'y': 16, 'w': 164, 'h': 44}, pid, 'back', 'Voltar', 95000))
+        ordem.append(tid)
+    terceiros = sorted({TIPOS_VISUAL[v['tipo']] for v in visuais if v['tipo'] in ('html', 'vegalite')}
+                       | ({TIPOS_VISUAL['html']} if tour_pags else set()))
     gravar_json(os.path.join(defi, 'report.json'), {
         '$schema': f'{S}/report/1.0.0/schema.json',
         'themeCollection': {'customTheme': {'name': 'Deidara.json', 'reportVersionAtImport': '5.59',

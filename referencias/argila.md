@@ -12,11 +12,12 @@ Um arquivo JSON (UTF-8) por painel. Exemplo completo:
 | `versao` | recomendado | versão do painel (ex.: `1.0`), vai para o histórico de mudanças |
 | `descricao`, `publico`, `responsavel` | não | aparecem no protótipo e na documentação |
 | `modelo` | não | o layout das páginas: `faixa-de-kpis`, `coluna-de-kpis`, `secoes-com-rolagem`, `trilho-escuro`, `kpis-clicaveis`, `historia-longa` ou `padrao` (o sem `modelo`); ver [modelos.md](modelos.md) |
-| `tema` | não | `cores` (lista hex, a 1ª é a principal), `fundo`, `texto`; ou `{"paleta": "matrix-escuro"}` (paletas dos dashboards de origem: `contraste-executivo`, `matrix-escuro`, `azul-noturno`, `azul-carros`); o `validar` confere o contraste ([design.md](design.md)) |
+| `tema` | não | `cores` (lista hex, a 1ª é a principal), `fundo`, `texto`; ou `{"paleta": "matrix-escuro"}` (paletas dos dashboards de origem: `contraste-executivo`, `matrix-escuro`, `azul-noturno`, `azul-carros`); ou `{"arquivo": "temas/tema.json"}`, um tema JSON do Power BI (do time ou da comunidade), com o caminho a partir do `argila.json`, que vai inteiro no relatório; o `validar` confere o contraste ([design.md](design.md)) |
 | `tabelas` | sim | tabelas do modelo |
 | `relacionamentos` | não | ligações entre tabelas do modelo |
 | `calendario` | não | tabela de datas gerada |
 | `medidas` | sim | os indicadores |
+| `grupo_calculo` | não | `{"nome": "Período", "itens": ["atual", "acumulado_ano", "ano_anterior", "variacao_ano_anterior"]}`: um grupo de cálculo que aplica a conta de tempo escolhida a todas as medidas do visual (itens: `atual`, `acumulado_ano`, `ano_anterior`, `variacao_ano_anterior`, `mes_anterior`, `variacao_mes_anterior`, `movel_12m`; as variações saem em percentual). Pede `calendario`. Ponha `{"tipo": "botoes", "campo": "Período[Período]"}` na página |
 | `paginas` | sim | as páginas e os visuais |
 | `seguranca` | não | papéis de segurança por linha (RLS) |
 
@@ -126,6 +127,8 @@ Tipos prontos (preferidos: validação completa e consulta de conferência):
 {"nome": "Cargos mais caros", "tipo": "lista_top", "medida": "Remuneração Total", "categoria": "dCargo[Cargo]", "n": 5}
 {"nome": "X Turnover", "tipo": "jitter", "medida": "Turnover", "categoria": "dCargo[Cargo]"}
 {"nome": "Impacto Desligamentos", "tipo": "impacto", "medida": "Desligamentos", "comparar": "Desligamentos Ano Anterior", "categoria": "dCargo[Cargo]"}
+{"nome": "Estrelas", "tipo": "svg_estrelas", "medida": "Headcount", "categoria": "dEmpresa[Empresa]"}
+{"nome": "Progresso", "tipo": "svg_progresso", "medida": "Turnover", "categoria": "dEmpresa[Empresa]"}
 ```
 
 Medidas por linha de tabela (todas pedem `medida` e `categoria`, a coluna das linhas, e ficam em branco no total):
@@ -140,6 +143,12 @@ Medidas por linha de tabela (todas pedem `medida` e `categoria`, a coluna das li
   valor (a área fica proporcional), no mesmo eixo para a matriz toda.
 - `svg_variacao`: barra do desvio (`medida` menos `comparar`) a partir de um eixo no centro, no estilo IBCS; verde
   ou vermelha pela polaridade.
+- `svg_estrelas`: cinco estrelas, a parte amarela na largura da nota (de 0 a 5). Com `maximo` (número), a nota é
+  o valor sobre ele (ex.: `5` numa pesquisa de 1 a 5); sem ele, a melhor linha visível vale cinco, pela
+  polaridade.
+- `svg_progresso`: cartão de 120 x 34 com "87% da meta" e a barra, verde ou vermelha pela polaridade (a `medida`
+  precisa de `meta`). Feito para o `marcador` do mapa; na tabela, prefira `svg_barra_meta`.
+- Qualquer uma destas também serve de `marcador` no mapa, se a `categoria` for a coluna do `local`.
 - `posicao`: o número da posição (RANKX). `pareto`: o percentual acumulado do maior para o menor.
   `melhores_piores`: a medida só nos `n` primeiros e nos `n` últimos (a linha some no resto).
 - `lista_top`: texto com os `n` primeiros e o valor de cada um (TOPN e CONCATENATEX), para um cartão; é a única
@@ -230,7 +239,9 @@ muda com o filtro.
 - `dispersao`: um ponto por `categoria`, com `x`, `y` e, opcional, `tamanho` (medidas).
 - `area`: como `linha`, com a área preenchida.
 - `mapa`: Azure Maps com bolhas do tamanho da medida no `local` (o administrador precisa liberar o Azure Maps);
-  com `legenda`, cada bolha vira uma pizza com a composição.
+  com `legenda`, cada bolha vira uma pizza com a composição. Com `"marcador": "<medida de imagem>"` (no lugar de
+  `valores`), cada ponto vira a imagem SVG da medida (`svg_estrelas`, `svg_progresso`, `svg_pilula`...). Com
+  `"camada": "colunas"`, as bolhas dão lugar às colunas 3D, da altura da medida (incline o mapa para ver).
 
 Técnicas do Power BI Design Files que saem prontas:
 
@@ -269,6 +280,25 @@ Técnicas do Power BI Design Files que saem prontas:
 
 Página com `"ajuda": true` ganha o botão "?" no canto de baixo, que leva a uma página escondida com uma nota por
 cima de cada visual (o título e o que cada indicador significa, das definições) e o botão Voltar.
+
+Página com `"tour": true` ganha o botão "Tour guiado", que leva a uma página escondida com os mesmos visuais e,
+por cima, o tour no HTML Content (versão certificada): um passo por visual (até 8, na ordem do layout), com
+holofote, o título e as definições, e os botões Próximo, Voltar e Encerrar. É só HTML e CSS, sem script: a
+versão certificada aceita. O Deidara gera a medida `Tour · <página>` (oculta) e o protótipo roda o mesmo tour.
+A história longa fica sem tour (é uma página só, que rola).
+
+Página com `"detalhe": "dCargo[Cargo]"` é de **detalhamento** (drillthrough): fica fora da navegação, e no
+Power BI a pessoa clica com o botão direito num cargo de qualquer página e escolhe Detalhar; a página abre
+filtrada por aquele cargo, com o botão Voltar no canto. Página com `"dica": true` é **de dica** (tooltip): 320 x
+240, os visuais um embaixo do outro (até 4), fora da navegação; um visual de outra página com
+`"dica": "<nome da página de dica>"` mostra essa página ao passar o mouse, no lugar da dica padrão. No
+protótipo, as duas aparecem como abas ("Detalhe · ..." e "Dica · ...") para o gestor aprovar.
+
+```json
+{"nome": "Cargo em detalhe", "detalhe": "dCargo[Cargo]", "visuais": [...]}
+{"nome": "Resumo do cargo", "dica": true, "visuais": [{"tipo": "cartao", "medida": "Headcount"}]}
+{"tipo": "barras", "categoria": "dCargo[Cargo]", "valores": ["Headcount"], "dica": "Resumo do cargo"}
+```
 
 ```json
 {"tipo": "tabela", "campos": ["dCargo[Cargo]", "Desligamentos"]}

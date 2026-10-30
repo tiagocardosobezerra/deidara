@@ -159,10 +159,12 @@ def resolver(argila, catalogos):
     _calendario(argila, m, p)
     _relacionamentos(argila, catalogos, m, p)
     _medidas(argila, m, p)
+    _grupo_calculo(argila, m, p)
     _seguranca(argila, m, p)
     _paginas(argila, m, p)
     _privacidade(m, p)
     _design(argila, m, p)
+    _tours(m, p)
     if not m['versao']:
         p.aviso('versao', 'sem "versao" no argila.json: informe (ex.: "1.0") para o histórico de mudanças')
     for campo in ('descricao', 'publico'):
@@ -635,7 +637,7 @@ def _medidas(argila, m, p):
                 r['tipo'], r['formato'], r['imagem'], r['dax'] = md['tipo'], None, True, ''
                 r['svg'] = {'medida': md.get('medida') or (md.get('medidas') or [None])[0], 'categoria': md.get('categoria'),
                             'comparar': md.get('comparar'), 'ordem': md.get('ordem'), 'medidas': md.get('medidas'),
-                            'coluna_matriz': md.get('colunas')}
+                            'coluna_matriz': md.get('colunas'), 'maximo': md.get('maximo')}
             elif md.get('tipo') in EXTRAS:
                 r['tipo'], r['dax'], r['extra'] = md['tipo'], '', dict(md)
                 if md['tipo'] in ('svg_iniciais', 'svg_dispersao', 'svg_espinha'):
@@ -685,7 +687,8 @@ def _medidas(argila, m, p):
 
 COR_BOA, COR_RUIM = '#107C10', '#D13438'
 COR_TRILHO, COR_MARCA = '#EDEBE9', '#252423'
-SVG_GERADAS = ('svg_barra_meta', 'svg_pilula', 'svg_seta', 'svg_posicao', 'svg_radar', 'svg_bolha', 'svg_variacao')
+SVG_GERADAS = ('svg_barra_meta', 'svg_pilula', 'svg_seta', 'svg_posicao', 'svg_radar', 'svg_bolha', 'svg_variacao',
+               'svg_estrelas', 'svg_progresso')
 RANKINGS = ('posicao', 'pareto', 'melhores_piores', 'lista_top', 'jitter', 'impacto')
 DIAGNOSTICOS = ('jitter', 'impacto')        # da causa raiz: feitas para o eixo do gráfico, não para a tabela
 PREFIXO_SVG = 'data:image/svg+xml;charset=utf-8,'
@@ -737,7 +740,12 @@ def _svgs(m, p):
                 p.erro(onde, '"colunas" precisa ser a coluna das colunas da matriz' + pista_coluna(m, cfg.get('coluna_matriz')))
                 continue
             cfg['coluna_matriz'] = [tl['nome'], cl['nome']]
-        if tipo in ('svg_barra_meta', 'svg_pilula') and not base.get('meta_medida'):
+        maximo = cfg.get('maximo')
+        if tipo == 'svg_estrelas' and maximo is not None and (isinstance(maximo, bool)
+                                                              or not isinstance(maximo, (int, float)) or maximo <= 0):
+            p.erro(onde, '"maximo" deve ser um número maior que zero (a nota que vale cinco estrelas)')
+            continue
+        if tipo in ('svg_barra_meta', 'svg_pilula', 'svg_progresso') and not base.get('meta_medida'):
             p.erro(onde, f'a medida "{base["nome"]}" não tem meta: dê "meta" (número ou medida) a ela primeiro')
             continue
         if tipo in ('svg_seta', 'svg_variacao', 'impacto'):
@@ -767,6 +775,11 @@ def _svgs(m, p):
             md['dax'] = _svg_bolha(b, col, dax_coluna(*cfg['coluna_matriz']), (m['tema']['cores'] or ['#118DFF'])[0])
         elif tipo == 'svg_variacao':
             md['dax'] = _svg_variacao(b, dax_medida(cfg['comparar']), col, '>=' if maior else '<=')
+        elif tipo == 'svg_estrelas':
+            md['dax'] = _svg_estrelas(b, col, maior, maximo)
+        elif tipo == 'svg_progresso':
+            md['depende'].append(base['meta_medida'])
+            md['dax'] = _svg_progresso(b, dax_medida(base['meta_medida']), col, op)
         elif tipo == 'lista_top':
             n = cfg.get('n')
             if not isinstance(n, int) or n < 1:
@@ -1301,6 +1314,66 @@ RETURN
     IF(HASONEVALUE({col}) && NOT ISBLANK({b}), "{PREFIXO_SVG}" & _svg, BLANK())"""
 
 
+ESTRELA = '10,1 12.6,7.2 19.5,7.6 14.2,12 16,18.8 10,15 4,18.8 5.8,12 0.5,7.6 7.4,7.2'
+COR_ESTRELA = '#F2C811'
+
+
+def _svg_estrelas(b, col, maior, maximo):
+    """Cinco estrelas em 110 x 20: cinzas embaixo e as amarelas cortadas na largura da nota (meia estrela aparece)."""
+    if maximo:
+        nota = f'DIVIDE(_valor, {repr(float(maximo)).rstrip("0").rstrip(".")}) * 5'
+        regra = f'a nota é o valor sobre {maximo} (vale cinco estrelas)'
+    elif maior:
+        nota = f'DIVIDE(_valor, MAXX(ALLSELECTED({col}), {b})) * 5'
+        regra = 'o maior valor entre as linhas visíveis vale cinco estrelas'
+    else:
+        nota = f'DIVIDE(MINX(FILTER(ALLSELECTED({col}), NOT ISBLANK({b})), {b}), _valor) * 5'
+        regra = 'o menor valor entre as linhas visíveis (o melhor) vale cinco estrelas'
+    estrelas = ''.join(f"<polygon points='{ESTRELA}' transform='translate({22 * k} 0)'/>" for k in range(5))
+    return f"""-- Configuração: cinco estrelas em 110 x 20; {regra}
+VAR _valor = {b}
+VAR _nota = MIN(5, MAX(0, {nota}))
+VAR _largura = _nota * 22
+VAR _ordem = FORMAT(ROUND(_nota * 1000000, 0), "000000000000")
+-- Cores (o # vira %23)
+VAR _cor = "%23{COR_ESTRELA[1:]}" -- amarelo das estrelas
+VAR _apagada = "%23E1DFDD" -- cinza claro
+-- Desenho
+VAR _svg =
+    "<svg xmlns='http://www.w3.org/2000/svg' width='110' height='20' viewBox='-2 -2 114 24' overflow='visible' display='block'>"
+        & "<desc>" & _ordem & "</desc>"
+        & "<defs><clipPath id='nota'><rect x='0' y='0' width='" & FORMAT(_largura, "0.00", "en-US") & "' height='20'/></clipPath></defs>"
+        & "<g fill='" & _apagada & "'>{estrelas}</g>"
+        & "<g fill='" & _cor & "' clip-path='url(%23nota)'>{estrelas}</g>"
+        & "</svg>"
+RETURN
+    IF(HASONEVALUE({col}) && NOT ISBLANK(_valor), "{PREFIXO_SVG}" & _svg, BLANK())"""
+
+
+def _svg_progresso(b, meta, col, op):
+    """Cartão pequeno com o percentual da meta e a barra de progresso; feito para marcador de mapa."""
+    return f"""-- Configuração: cartão de 120 x 34 com o percentual da meta e a barra (cheia ao bater a meta)
+VAR _valor = {b}
+VAR _meta = {meta}
+VAR _percentual = DIVIDE(_valor, _meta)
+VAR _largura = MIN(1, MAX(0, _percentual)) * 108
+VAR _ordem = FORMAT(ROUND(MIN(10, MAX(0, _percentual)) * 100000000, 0), "000000000000")
+-- Cores (o # vira %23): a cor segue a polaridade do indicador
+VAR _cor = IF(_valor {op} _meta, "%23{COR_BOA[1:]}", "%23{COR_RUIM[1:]}") -- verde bateu / vermelho não bateu
+-- Desenho (o % do texto vira %25)
+VAR _svg =
+    "<svg xmlns='http://www.w3.org/2000/svg' width='120' height='34' viewBox='-1 -1 122 36' overflow='visible' display='block'>"
+        & "<desc>" & _ordem & "</desc>"
+        & "<rect x='0' y='0' width='120' height='34' rx='6' fill='%23FFFFFF' stroke='%23C8C6C4'/>"
+        & "<text x='6' y='15' font-family='Segoe UI' font-size='12' font-weight='700' fill='%23{COR_MARCA[1:]}'>"
+        & FORMAT(_percentual * 100, "0", "en-US") & "%25 da meta</text>"
+        & "<rect x='6' y='22' width='108' height='6' rx='3' fill='%23{COR_TRILHO[1:]}'/>"
+        & "<rect x='6' y='22' width='" & FORMAT(_largura, "0.00", "en-US") & "' height='6' rx='3' fill='" & _cor & "'/>"
+        & "</svg>"
+RETURN
+    IF(HASONEVALUE({col}) && NOT ISBLANK(_valor) && NOT ISBLANK(_meta), "{PREFIXO_SVG}" & _svg, BLANK())"""
+
+
 def _svg_posicao(b, col, sentido, acento):
     return f"""-- Configuração: um selo redondo com a posição; os três primeiros na cor de destaque
 VAR _posicao = RANKX(ALLSELECTED({col}), {b}, , {sentido}, Dense)
@@ -1361,7 +1434,29 @@ def _modelo(argila, m, p):
     dado = argila.get('tema') or {}
     if isinstance(dado, str):
         dado = {'paleta': dado}
-    if dado.get('paleta'):                         # as paletas dos temas do Power BI Design Files (dicionario/paletas.json)
+    if dado.get('arquivo'):                        # tema JSON do time ou da comunidade (BIBB, Zebra BI...), usado inteiro
+        import json
+        import os
+        caminho = os.path.join(argila.get('_pasta') or '.', dado['arquivo'])
+        try:
+            with open(caminho, encoding='utf-8-sig') as f:
+                tema = json.load(f)
+        except (OSError, ValueError) as e:
+            p.erro('tema', f'não consegui ler o tema "{dado["arquivo"]}" ({e.__class__.__name__}): aponte um JSON de tema '
+                           'do Power BI, com o caminho a partir do argila.json')
+            tema = None
+        if tema is not None:
+            cores = [c for c in tema.get('dataColors') or [] if isinstance(c, str) and c.startswith('#')]
+            if not cores:
+                p.erro('tema', f'"{dado["arquivo"]}" não tem "dataColors": não parece um tema do Power BI')
+            else:
+                m['tema'].update({'cores': cores, 'json': tema,
+                                  **{k: tema[c] for k, c in (('fundo', 'background'), ('texto', 'foreground'))
+                                     if isinstance(tema.get(c), str)}})
+                m['tema'].pop('arquivo', None)
+                p.aviso('tema', f'[Design] o tema "{dado["arquivo"]}" vai inteiro no relatório: confira a licença de quem '
+                                'fez e dê o crédito no LEIA-ME')
+    elif dado.get('paleta'):                       # as paletas dos temas do Power BI Design Files (dicionario/paletas.json)
         from .dicionario import paletas
         todas = paletas()['paletas']
         pal = todas.get(dado['paleta'])
@@ -1676,7 +1771,20 @@ def _paginas(argila, m, p):
         if chave(nome) in nomes:
             p.erro(onde, 'nome de página repetido')
         nomes.add(chave(nome))
-        pagina = {'nome': nome, 'descricao': pg.get('descricao', ''), 'visuais': [], 'ajuda': bool(pg.get('ajuda'))}
+        pagina = {'nome': nome, 'descricao': pg.get('descricao', ''), 'visuais': [], 'ajuda': bool(pg.get('ajuda')),
+                  'tour': bool(pg.get('tour')), 'dica': bool(pg.get('dica')), 'detalhe': None}
+        if pg.get('detalhe'):                          # página de detalhamento (drillthrough) por esta coluna
+            c = _campo(m, pg['detalhe'])
+            if not c or c['tipo'] != 'coluna':
+                p.erro(onde, f'"detalhe" ("{pg["detalhe"]}") precisa ser uma coluna (Tabela[Coluna]): a página abre '
+                             'filtrada pelo item em que a pessoa clicou' + pista_coluna(m, pg['detalhe']))
+            else:
+                pagina['detalhe'] = c
+        if pagina['dica'] and (pagina['detalhe'] or pagina['tour'] or pagina['ajuda']):
+            p.erro(onde, 'página de dica ("dica": true) não leva "detalhe", "tour" nem "ajuda": ela aparece só ao passar '
+                         'o mouse')
+        if pagina['dica'] and len(pg.get('visuais') or []) > 4:
+            p.aviso(onde, '[Design] página de dica com mais de 4 visuais não cabe em 320 x 240: deixe só o essencial')
         vis = pg.get('visuais') or []
         if not vis:
             p.erro(onde, 'página sem visuais')
@@ -1689,7 +1797,113 @@ def _paginas(argila, m, p):
                 pagina['visuais'].append(r)
         _conferir_pagina(m, pagina, p, onde, filtra)
         m['paginas'].append(pagina)
+    dicas = {pg['nome'] for pg in m['paginas'] if pg['dica']}
+    for pg in m['paginas']:                        # visual com "dica": a página de dica que aparece ao passar o mouse
+        for v in pg['visuais']:
+            if v.get('dica') and v['dica'] not in dicas:
+                p.erro(f'página {pg["nome"]}', f'"dica" ("{v["dica"]}") precisa ser o nome de uma página com "dica": true'
+                       + (f' (páginas de dica: {", ".join(sorted(dicas))})' if dicas else ''))
+        if pg['detalhe'] and (m.get('modelo') or 'padrao') == 'historia-longa':
+            p.aviso(f'página {pg["nome"]}', '[Design] a história longa junta tudo numa página: o detalhamento fica de fora')
     _conferir_snowflake(m, p)
+
+
+ITENS_DE_TEMPO = {                 # item do grupo de cálculo: (rótulo, DAX com {d} = coluna de data, é percentual)
+    'atual': ('Atual', 'SELECTEDMEASURE()', False),
+    'acumulado_ano': ('Acumulado no ano', 'CALCULATE(SELECTEDMEASURE(), DATESYTD({d}))', False),
+    'ano_anterior': ('Ano anterior', 'CALCULATE(SELECTEDMEASURE(), SAMEPERIODLASTYEAR({d}))', False),
+    'variacao_ano_anterior': ('Var. ano anterior', 'VAR _atual = SELECTEDMEASURE()\n'
+                              'VAR _anterior = CALCULATE(SELECTEDMEASURE(), SAMEPERIODLASTYEAR({d}))\n'
+                              'RETURN\n    IF(ISNUMBER(_atual), DIVIDE(_atual - _anterior, _anterior), _atual)', True),
+    'mes_anterior': ('Mês anterior', 'CALCULATE(SELECTEDMEASURE(), DATEADD({d}, -1, MONTH))', False),
+    'variacao_mes_anterior': ('Var. mês anterior', 'VAR _atual = SELECTEDMEASURE()\n'
+                              'VAR _anterior = CALCULATE(SELECTEDMEASURE(), DATEADD({d}, -1, MONTH))\n'
+                              'RETURN\n    IF(ISNUMBER(_atual), DIVIDE(_atual - _anterior, _anterior), _atual)', True),
+    'movel_12m': ('Últimos 12 meses', 'CALCULATE(SELECTEDMEASURE(), DATESINPERIOD({d}, MAX({d}), -12, MONTH))', False),
+}
+
+
+def _grupo_calculo(argila, m, p):
+    """"grupo_calculo": a mesma conta de tempo para todas as medidas, escolhida num segmentador (como o Time
+    Intelligence do Awesome Chocolates, no Power BI Design Files). Vira uma tabela de grupo de cálculo."""
+    cfg = argila.get('grupo_calculo')
+    if not cfg:
+        return
+    onde = 'grupo_calculo'
+    if not isinstance(cfg, dict):
+        p.erro(onde, 'use {"nome": "Período", "itens": ["atual", "acumulado_ano", "ano_anterior", ...]}')
+        return
+    if not m.get('calendario'):
+        p.erro(onde, 'o grupo de cálculo de tempo pede "calendario" no argila.json')
+        return
+    nome = cfg.get('nome') or 'Período'
+    itens = cfg.get('itens') or ['atual', 'acumulado_ano', 'ano_anterior', 'variacao_ano_anterior']
+    errados = [x for x in itens if x not in ITENS_DE_TEMPO]
+    if errados or not itens:
+        p.erro(onde, f'item desconhecido: {", ".join(map(str, errados))} (itens: {", ".join(ITENS_DE_TEMPO)})')
+        return
+    if tabela_do_modelo(m, nome):
+        p.erro(onde, f'já existe uma tabela chamada "{nome}"')
+        return
+    data = dax_coluna(m['calendario']['tabela'], 'Data')
+    lista = []
+    for k, x in enumerate(itens):
+        rotulo, dax, pct = ITENS_DE_TEMPO[x]
+        dax = dax.replace('{d}', data)
+        _conferir_funcoes(dax, p, onde)
+        lista.append({'chave': x, 'rotulo': rotulo, 'dax': dax, 'ordem': k,
+                      'formato': ('IF(ISNUMBER(SELECTEDMEASURE()), "0.0%", SELECTEDMEASUREFORMATSTRING())'
+                                  if pct else None)})
+    t = {'nome': nome, 'tipo': 'dimensao', 'origem': None, 'fonte': None, 'filtro': None, 'pk': [], 'auxiliar': True,
+         'descricao': cfg.get('descricao') or 'Grupo de cálculo: a conta de tempo que vale para todas as medidas.',
+         'colunas': [], 'grupo_calculo': {'itens': lista, 'precedencia': cfg.get('precedencia', 1)}}
+    col = _coluna(nome, None, 'texto')
+    col['ordenar_por'] = 'Ordem'
+    t['colunas'] = [col, _coluna('Ordem', None, 'inteiro', oculta=True)]
+    m['tabelas'].append(t)
+    p.aviso(onde, f'[Modelagem] o grupo de cálculo "{nome}" muda TODAS as medidas do visual pelo item escolhido; '
+                  'ponha o segmentador dele na página (de botões, de seleção única) e deixe as medidas de tempo '
+                  'prontas para quando só uma medida precisa da conta')
+
+
+def _tours(m, p):
+    """Página com "tour": true ganha a medida HTML do tour guiado (um passo por visual, na posição do layout) e,
+    no relatório, uma página escondida com os mesmos visuais e o tour por cima."""
+    pedidas = [pg for pg in m['paginas'] if pg.get('tour')]
+    if not pedidas:
+        return
+    from .modelos import montar, paginas_do_relatorio
+    from .pbir import _nota_de_ajuda
+    from .tour import dax_do_tour, html_do_tour, passos
+    if (m.get('modelo') or 'padrao') == 'historia-longa':
+        p.aviso('tour', '[Design] a história longa é uma página só e rola: o tour guiado fica de fora; use "ajuda"')
+        return
+    rel = paginas_do_relatorio(m)
+    fatos = [t['nome'] for t in m['tabelas'] if t['tipo'] == 'fato'] or [t['nome'] for t in m['tabelas']]
+    for pg in pedidas:
+        onde = f'página {pg["nome"]}'
+        i = next((k for k, x in enumerate(rel) if x['nome'] == pg['nome'] and not x['oculta']), None)
+        if i is None or not fatos:
+            continue
+        lay = montar(m, rel, i)
+        lista = passos(lay['posicoes'], lambda v: _nota_de_ajuda(m, v))
+        nome = f'Tour · {pg["nome"]}'
+        if medida(m, nome):
+            p.erro(onde, f'já existe uma medida chamada "{nome}"')
+            continue
+        texto = html_do_tour(lista, lay['w'], lay['h'], (m['tema']['cores'] or ['#118DFF'])[0])
+        dax = dax_do_tour(texto)
+        m['medidas'].append({'nome': nome, 'tipo': 'html_tour', 'formato': None, 'pasta': 'Tour', 'tabela': fatos[0],
+                             'descricao': f'HTML do tour guiado da página {pg["nome"]} (um passo por visual).',
+                             'dax': dax, 'depende': [], 'meta': None, 'polaridade': 'maior_melhor', 'oculta': True,
+                             'meta_medida': None, 'cor_medida': None, 'conferencia_sql': None,
+                             'extra': {'pagina': pg['nome'], 'passos': len(lista), 'html': texto}})
+        pg['tour'] = nome
+        _conferir_funcoes(dax, p, onde)
+        p.aviso(onde, '[Design] o tour usa o HTML Content (versão certificada), visual do AppSource: o administrador '
+                      'do Power BI precisa liberar, e quem abre baixa o visual na primeira vez')
+        if len(lay['posicoes']) > len(lista):
+            p.aviso(onde, f'[Design] o tour mostra os {len(lista)} primeiros visuais da página; o resto fica sem passo')
 
 
 def _medidas_do_visual(r):
@@ -1744,7 +1958,7 @@ def _visual(m, v, p, onde, filtra):
         p.erro(onde, f'tipo inválido ({", ".join(TIPOS_VISUAL)})')
         return None
     r = {'tipo': tipo, 'titulo': v.get('titulo'), 'id': v.get('id'), 'categoria': None, 'legenda': None, 'valores': [],
-         'campos': [], 'linhas': [], 'colunas': [], 'meta': None}
+         'campos': [], 'linhas': [], 'colunas': [], 'meta': None, 'dica': v.get('dica')}
     ok = True
     if tipo in VISUAIS_DE_TERCEIROS:
         p.aviso(onde, f'[Design] {"HTML Content" if tipo == "html" else "Deneb"} é um visual certificado do AppSource, não '
@@ -1837,11 +2051,35 @@ def _visual(m, v, p, onde, filtra):
     elif tipo == 'mapa':
         r['categoria'] = campo(v.get('local'), 'coluna', 'local')
         r['valores'] = [campo(x, 'medida', 'valor') for x in v.get('valores') or []][:1]
-        if not r['valores']:
-            p.erro(onde, 'mapa pede "valores" (a medida que dá o tamanho da bolha)')
+        if v.get('marcador'):                          # cada ponto vira a imagem SVG da medida (estrelas, progresso...)
+            img = medida(m, v['marcador'])
+            cfg = (img or {}).get('svg') or (img or {}).get('extra') or {}
+            if not img or not img.get('imagem'):
+                p.erro(onde, f'"marcador" ("{v["marcador"]}") precisa ser uma medida de imagem (svg_estrelas, '
+                             'svg_progresso, svg_seta...) feita para a coluna do local')
+                ok = False
+            else:
+                r['marcador'] = img['nome']
+                if r['categoria'] and cfg.get('coluna') and (cfg.get('tabela'), cfg['coluna']) != \
+                        (r['categoria']['tabela'], r['categoria']['nome']):
+                    p.aviso(onde, f'o marcador "{img["nome"]}" foi feito para {cfg["tabela"]}[{cfg["coluna"]}], não para '
+                                  f'o local do mapa: o ponto fica sem imagem')
+            if v.get('legenda'):
+                p.erro(onde, 'mapa com "marcador" não leva "legenda": a pizza e a imagem disputam o mesmo ponto')
+                ok = False
+        elif not r['valores']:
+            p.erro(onde, 'mapa pede "valores" (a medida que dá o tamanho da bolha) ou "marcador" (a medida de imagem)')
             ok = False
-        if v.get('legenda'):                           # cada ponto vira uma pizza com a composição
+        if v.get('legenda') and not v.get('marcador'):  # cada ponto vira uma pizza com a composição
             r['legenda'] = campo(v['legenda'], 'coluna', 'legenda')
+        camada = v.get('camada') or 'bolhas'           # colunas: a camada de colunas 3D do Azure Maps
+        if camada not in ('bolhas', 'colunas'):
+            p.erro(onde, '"camada" deve ser bolhas ou colunas')
+            ok = False
+        elif camada == 'colunas' and (v.get('marcador') or v.get('legenda')):
+            p.erro(onde, '"camada": "colunas" não leva "marcador" nem "legenda": a coluna é o próprio valor')
+            ok = False
+        r['camada'] = camada
         p.aviso(onde, '[Design] o mapa (Azure Maps) precisa estar liberado pelo administrador do Power BI e de uma '
                       'coluna de local confiável (cidade com UF, ou país)')
     elif tipo == 'tabela':

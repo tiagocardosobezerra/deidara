@@ -34,6 +34,7 @@ ESCURO = {'fundo': '#0F1420', 'texto': '#E6EAF2',
           'cores': ['#4CC9F0', '#F8961E', '#90BE6D', '#F94144', '#F9C74F', '#B5A3FF', '#43AA8B', '#FF8FAB']}
 W = 1920
 H = 1080
+DICA_W, DICA_H = 320, 240                                  # página de dica (tooltip)
 GAP = 16
 SEG = ('segmentador', 'botoes', 'alternar', 'aviso')     # o aviso fica no canto de cima, como uma notificação
 KPI = ('cartao', 'medidor', 'cartoes', 'abas')
@@ -54,10 +55,12 @@ def paginas_do_relatorio(m):
                  'ajuda': any(p.get('ajuda') for p in pgs)}]
     out = []
     for g, pg in enumerate(pgs):
+        escondida = bool(pg.get('dica') or pg.get('detalhe'))     # dica e detalhe não entram na navegação
         base = {'nome': pg['nome'], 'descricao': pg.get('descricao') or '', 'visuais': pg['visuais'],
-                'oculta': False, 'grupo': g, 'kpi_ativo': None, 'ajuda': pg.get('ajuda', False)}
+                'oculta': escondida, 'grupo': g, 'kpi_ativo': None, 'ajuda': pg.get('ajuda', False),
+                'dica': pg.get('dica', False), 'detalhe': pg.get('detalhe')}
         cards = [v for v in pg['visuais'] if v['tipo'] == 'cartao']
-        if modelo != 'kpis-clicaveis' or not cards:
+        if modelo != 'kpis-clicaveis' or not cards or escondida:
             out.append(base)
             continue
         for k, card in enumerate(cards):
@@ -187,6 +190,11 @@ def montar(m, paginas, i):
     """{'w','h','posicoes':[(v,pos)],'fundo': svg|None,'nav':[{x,y,w,h,alvo,rotulo}],'escuro','sem_titulo': set(ids)}"""
     modelo = m.get('modelo') or 'padrao'
     pg = paginas[i]
+    if pg.get('dica'):                               # página de dica: 320 x 240, um visual embaixo do outro
+        n = max(1, len(pg['visuais']))
+        alto = (DICA_H - 8 * (n + 1)) / n
+        pos = [(v, {'x': 8, 'y': 8 + k * (alto + 8), 'w': DICA_W - 16, 'h': alto}) for k, v in enumerate(pg['visuais'])]
+        return {'w': DICA_W, 'h': DICA_H, 'posicoes': pos, 'fundo': None, 'nav': [], 'escuro': False, 'sem_titulo': set()}
     if modelo == 'padrao':
         pos = posicionar(pg['visuais'])
         return {'w': LARGURA_PADRAO, 'h': altura_da_pagina(pos), 'posicoes': pos, 'fundo': None, 'nav': [],

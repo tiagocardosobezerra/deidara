@@ -113,7 +113,33 @@ in
 ORDENAR_POR = {'Nome do Mês': 'Mês', 'Mês/Ano': 'Ano-Mês Num', 'Ano-Trimestre': 'Ano-Trimestre Num'}
 
 
+def _grupo_calculo(t):
+    """Tabela de grupo de cálculo: um item por conta de tempo, o nome e a ordem como colunas."""
+    g = t['grupo_calculo']
+    nome, ordem = t['colunas'][0]['nome'], t['colunas'][1]['nome']
+    linhas = [_desc(t['descricao'], 0) + f'table {tmdl_nome(t["nome"])}', f'\tlineageTag: {guid("tabela", t["nome"])}', '',
+              '\tcalculationGroup', f'\t\tprecedence: {g["precedencia"]}', '']
+    for it in g['itens']:
+        dax = it['dax']
+        cab = (f'\t\tcalculationItem {tmdl_nome(it["rotulo"])} =\n{_expressao(dax, 4)}' if '\n' in dax
+               else f'\t\tcalculationItem {tmdl_nome(it["rotulo"])} = {dax}')
+        props = [f'\t\t\tordinal: {it["ordem"]}']
+        if it['formato']:
+            props += ['', f'\t\t\tformatStringDefinition = {it["formato"]}']
+        linhas.append(cab + '\n' + '\n'.join(props) + '\n')
+    linhas.append(f'\tcolumn {tmdl_nome(nome)}\n\t\tdataType: string\n\t\tlineageTag: {guid("coluna", t["nome"], nome)}\n'
+                  f'\t\tsummarizeBy: none\n\t\tsourceColumn: Name\n\t\tsortByColumn: {tmdl_nome(ordem)}\n\n'
+                  '\t\tannotation SummarizationSetBy = Automatic\n')
+    linhas.append(f'\tcolumn {tmdl_nome(ordem)}\n\t\tdataType: int64\n\t\tformatString: 0\n\t\tisHidden\n'
+                  f'\t\tlineageTag: {guid("coluna", t["nome"], ordem)}\n\t\tsummarizeBy: sum\n\t\tsourceColumn: Ordinal\n\n'
+                  '\t\tannotation SummarizationSetBy = Automatic\n')
+    linhas.append(f'\tpartition {tmdl_nome(t["nome"])} = calculationGroup\n\t\tmode: import\n')
+    return '\n'.join(linhas)
+
+
 def tabela(m, t):
+    if t.get('grupo_calculo'):
+        return _grupo_calculo(t)
     linhas = [_desc(t['descricao'], 0) + f'table {tmdl_nome(t["nome"])}',
               f'\tlineageTag: {guid("tabela", t["nome"])}', '']
     if t.get('calendario'):

@@ -100,6 +100,42 @@ Também gerados prontos, no mesmo molde (`medida`, `categoria` e as regras abaix
 - **Texto que vem do dado**: o nome de cada item passa por `SUBSTITUTE` para `%`, `#`, `&` e `<` antes de entrar no
   SVG (um "P&D" ou um "100%" no cadastro quebraria a imagem) e é cortado em 20 letras.
 
+## Estrelas, progresso e o marcador do mapa
+
+```json
+{"nome": "Estrelas", "tipo": "svg_estrelas", "medida": "Headcount", "categoria": "dEmpresa[Empresa]"}
+{"nome": "Progresso", "tipo": "svg_progresso", "medida": "Turnover", "categoria": "dEmpresa[Empresa]"}
+```
+
+e no mapa:
+
+```json
+{"tipo": "mapa", "local": "dEmpresa[Empresa]", "marcador": "Progresso"}
+```
+
+- **Estrelas**: cinco estrelas cinzas e, por cima, as amarelas recortadas (`clipPath`) na largura da nota, então
+  meia estrela aparece. O `id` do recorte vai como `url(%23nota)`: o `#` do endereço também vira `%23`. Com
+  `maximo`, a nota é o valor sobre ele; sem, a melhor linha visível vale cinco.
+- **Progresso**: um cartão branco com borda (para ler sobre o mapa), o percentual da meta escrito e a barra. O
+  `%` do texto entra como `%25`, igual ao de qualquer atributo.
+- **Marcador do mapa**: o Azure Maps troca a bolha pela imagem (`markerType` imagem, com a medida em Image URL).
+  Toda medida SVG feita para a coluna do `local` serve: estrelas, progresso, pílula, seta, selo. A imagem tem
+  tamanho fixo (`width` e `height` em pixels, não `100%`), porque no mapa não há célula para preencher.
+
+## Pedir uma medida SVG nova
+
+Quando a técnica não está no catálogo e alguém (pessoa ou IA) vai escrever a medida, peça com estes dados, e
+confira o resultado com o `validar`:
+
+1. **O que desenha e por linha de quê**: "uma barra por empresa", "a imagem inteira no cartão".
+2. **As medidas** que entram e a **coluna** das linhas (`categoria`), com o nome exato do modelo.
+3. **A escala**: comum a todas as linhas (`MAXX(ALLSELECTED(...))`) ou fixa (0 a 5, 0 a 100%).
+4. **A cor pela polaridade**: verde quando o indicador melhora, vermelho quando piora.
+5. **O tamanho**: `100%` para preencher a célula; pixels fixos para o mapa.
+6. **As regras desta página** (abaixo), em especial `#` e `%` trocados, `viewBox` com folga, `HASONEVALUE` no
+   `RETURN` e `<desc>` para ordenar.
+7. **O total**: o que a linha de total mostra (em geral, nada).
+
 ## As regras (para quem escreve a medida à mão)
 
 Em ordem de gravidade. As marcadas com ✓ o `validar` confere.

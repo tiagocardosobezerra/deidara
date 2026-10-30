@@ -95,7 +95,7 @@ def _carregar(caminho_argila):
         except ValueError as e:
             raise SystemExit(str(e))
         caminhos.append(c)
-    modelo, problemas = resolver(argila, catalogos)
+    modelo, problemas = resolver(dict(argila, _pasta=base), catalogos)   # _pasta: base do "tema": {"arquivo": ...}
     cartao = memory_card.configuracao().get('pasta')
     if cartao:
         problemas.avisos += memory_card.avisos_do_modelo(cartao, modelo)
@@ -718,6 +718,10 @@ def cmd_visuais(a):
             print(f'  argila.json (medida): {json.dumps(v["deidara"]["argila"], ensure_ascii=False)}')
         if v['deidara'].get('visual'):
             print(f'  argila.json (visual): {json.dumps(v["deidara"]["visual"], ensure_ascii=False)}')
+        if v['deidara'].get('raiz'):
+            print(f'  argila.json (raiz): {json.dumps(v["deidara"]["raiz"], ensure_ascii=False)}')
+        if v['deidara'].get('pagina'):
+            print(f'  argila.json (página): {json.dumps(v["deidara"]["pagina"], ensure_ascii=False)}')
         print(f'  No Power BI: {v["power_bi"]}')
         for x in v.get('cuidados') or []:
             print(f'  Atenção: {x}')

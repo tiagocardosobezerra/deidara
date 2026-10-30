@@ -52,7 +52,7 @@ Measured on the repository example (a fictional ERP on SQL Server and a targets 
 | Tutorial, from scratch to project, run command by command | **15 minutes** |
 | Functions in the dictionary (DAX / Power Query) | **462 / 667** |
 | Ready-made KPI patterns (rate, stock, year-to-date, full turnover...) | **17** |
-| Cataloged visual techniques (target in a table, ranking, root cause, status...) | **39**: 34 generated ready to use (2 with an AppSource visual) and 5 custom visuals described (Chord, Word Cloud, Violin Plot, Gantt, Play Axis) |
+| Cataloged visual techniques (target in a table, ranking, root cause, status...) | **46**: 41 generated ready to use (3 with an AppSource visual) and 5 custom visuals described (Chord, Word Cloud, Violin Plot, Gantt, Play Axis) |
 | Layout templates, from prototype to `.pbip` | **11** |
 | Data rows returned by the recipes | **0** |
 
@@ -128,7 +128,7 @@ Sources other than SQL Server (Excel, SharePoint, APIs...) come in through **the
 
 ### Design and visuals
 
-The principles in [`referencias/design.md`](referencias/design.md): start from the decision, one page per question, color only with meaning (and never as the only cue), contrast checked by `validar`. Native visual techniques (button slicer as a segmented control, clickable KPI cards, top and bottom in one table, Pareto, decomposition tree, fishbone, jitter plot, impact ranking, map markers) are in `deidara.py visuais`. Measures that draw inside a table follow [`referencias/svg.md`](referencias/svg.md); Deidara generates the bar-versus-target ready to use (`"tipo": "svg_barra_meta"`).
+The principles in [`referencias/design.md`](referencias/design.md): start from the decision, one page per question, color only with meaning (and never as the only cue), contrast checked by `validar`. Native visual techniques (button slicer as a segmented control, clickable KPI cards, top and bottom in one table, Pareto, decomposition tree, fishbone, jitter plot, impact ranking, star and progress map markers, 3D map columns, guided tour, period slicer via calculation group, drillthrough, tooltip page) are in `deidara.py visuais`. Measures that draw inside a table follow [`referencias/svg.md`](referencias/svg.md); Deidara generates the bar-versus-target ready to use (`"tipo": "svg_barra_meta"`).
 
 ### Layout templates
 
@@ -176,7 +176,7 @@ deidara/
 ├── dicionario/            # DAX and Power Query functions, KPI patterns, visual techniques and synonyms
 ├── referencias/           # Guides: flow, sources, discovery, argila.json, metrics, design, SVG, Memory Card, Power BI and tutorial
 ├── exemplos/aurora/       # Complete fictional example, from pasted result to generated project
-├── ferramentas/           # .pbip validator against Microsoft's schemas and skill packager
+├── ferramentas/           # .pbip validator, skill packager and free-text topic grouper
 ├── assets/                # README images
 └── testes/                # Test suite
 ```

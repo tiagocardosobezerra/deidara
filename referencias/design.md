@@ -97,6 +97,21 @@ JSON do tema no Power BI Desktop (o Deidara gera só cores e classes de texto):
   para toda a organização, que aparecem na galeria de temas de todos. É o
   caminho para o tema único do time sem copiar arquivo.
 
+**Tema de arquivo.** Com `"tema": {"arquivo": "temas/tema.json"}` no
+`argila.json`, o Deidara usa o tema JSON inteiro no relatório (cores,
+`visualStyles`, ícones, predefinições), completa só o que faltar e tira dele
+as cores do protótipo e da conferência de contraste. É o jeito de usar o tema
+do time, ou um tema da comunidade, sem copiar o arquivo para dentro do
+Deidara. Temas que o Power BI Design Files reúne, cada um com o crédito de
+quem fez (baixe da fonte, confira a licença e cite no LEIA-ME):
+
+- [BIBB](https://bibb.pro/apps/theme-generator/): gerador de temas e uma
+  coleção gratuita (padrão, divergentes vermelho-azul e rosa-verde);
+- [Kerry Kolosko](https://kerrykolosko.com/portfolio/): paletas como a da
+  The Economist, a do Tableau e uma de verde-azulados;
+- [Zebra BI](https://help.zebrabi.com/kb/power-bi/custom-themes/): tema no
+  estilo IBCS (real, plano e desvio com cores padronizadas).
+
 ## Visuais nativos primeiro
 
 Os visuais nativos rendem muito mais do que o padrão sugere (veja `deidara.py
@@ -107,7 +122,9 @@ visuais`):
 - a **tabela** recebe barras contra a meta, pílulas de status e setas de
   variação desenhadas por medida SVG;
 - a **árvore de decomposição** leva do número geral até a causa;
-- o **Azure Maps** aceita marcador desenhado por medida SVG.
+- o **Azure Maps** troca a bolha pela imagem de uma medida SVG (`"marcador"`:
+  estrelas, progresso da meta, pílula) ou por colunas 3D (`"camada":
+  "colunas"`).
 
 **Causa raiz.** Para explicar uma variação, o dashboard Root Cause Analysis
 do Power BI Design Files junta quatro jeitos de olhar o mesmo número, e o
@@ -124,7 +141,9 @@ Deidara gera os quatro com visual nativo:
 **Visual personalizado** só quando o nativo não resolve, e com três cuidados:
 o administrador do Power BI precisa liberar o visual; prefira a versão
 certificada; e alguém do time precisa saber manter. O Deidara gera dois
-quando pedidos (HTML Content e Deneb). Os outros do catálogo (Chord, Word
+quando pedidos (HTML Content e Deneb); o HTML Content também leva o tour
+guiado da página (`"tour": true`), para apresentar o painel a quem nunca
+usou. Os outros do catálogo (Chord, Word
 Cloud, Violin Plot, Gantt e Play Axis; `deidara.py visuais personalizado`) ele
 só descreve: monte no Power BI Desktop sobre o modelo gerado e registre no
 LEIA-ME qual foi usado e por quê.
@@ -135,4 +154,28 @@ O protótipo do Deidara é o esboço do layout: o gestor aprova a disposição, 
 indicadores e a navegação com números fictícios, antes de alguém abrir o
 Power BI Desktop. Quem quiser ir além no visual pode desenhar em ferramenta de
 design (Figma, por exemplo) a partir da página aprovada; a estrutura (o que
-fica em cada faixa) continua a do `argila.json`.
+fica em cada faixa) continua a do `argila.json`. O Power BI Design Files
+publica um arquivo do Figma com quadros e layouts de painel prontos para
+esse esboço ([Power BI Dashboard Frames](https://github.com/Dashboard-Design/Power-BI-Design-Files/releases/latest)).
+
+## Texto livre vira tema
+
+Chamado, comentário de pesquisa e motivo digitado não cabem num gráfico
+como estão. Antes do painel, agrupe os textos em temas com
+`ferramentas/agrupar_textos.py`, que roda onde os dados estão (como as
+receitas): ele devolve o CSV com `Tema`, `Palavras do tema` e, se houver uma
+coluna de resposta, `Similaridade` (de 0 a 1, quanto a resposta trata o que
+foi pedido). `Tema` vira dimensão, e o painel mostra volume e tempo por tema
+em barras; similaridade baixa vira fila de revisão. Nuvem de palavras é o
+último recurso.
+
+```
+python3 ferramentas/agrupar_textos.py chamados.csv --texto Descricao --resposta Resposta -k 8
+```
+
+## Para praticar
+
+A pasta Practice do Power BI Design Files reúne bases públicas para treinar
+(AdventureWorks, Financial Sample, Superstore, Contoso) e estudos de caso. É
+um bom lugar para testar o Deidara de ponta a ponta antes de usar com dados
+do time: rode a receita CSV ou Excel sobre a base, catalogue e esboce.

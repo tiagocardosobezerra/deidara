@@ -238,6 +238,42 @@ def _barra_meta(sim, escala, filtros, x, y, w):
             f'stroke-width="2" stroke-dasharray="3 2"/>')
 
 
+def _nota_estrelas(sim, md, filtros):
+    """A mesma nota de 0 a 5 que a medida svg_estrelas calcula."""
+    cfg = md['svg']
+    v = sim.valor(cfg['base'], filtros)
+    if cfg.get('maximo'):
+        return max(0, min(5, v / cfg['maximo'] * 5))
+    col, outros = _linha_e_resto(cfg, filtros)
+    vals = [sim.valor(cfg['base'], outros + [(col, r)]) for r in categorias(sim.m, col)] if col else [v]
+    if md['polaridade'] == 'maior_melhor':
+        return max(0, min(5, v / (max(vals) or 1) * 5))
+    return max(0, min(5, (min(vals) / v * 5) if v else 0))
+
+
+def _estrelas(sim, md, filtros, x, y, w):
+    nota = _nota_estrelas(sim, md, filtros)
+    out = []
+    for k in range(5):
+        cheia = max(0, min(1, nota - k))
+        out.append(f'<text x="{x + 15 * k:.1f}" y="{y + 13:.1f}" style="font-size:15px;fill:#E1DFDD">★</text>')
+        if cheia:                                    # meia estrela: a amarela cortada na largura da nota
+            corte = '' if cheia >= 1 else f';clip-path:inset(0 {100 - cheia * 100:.0f}% 0 0)'
+            out.append(f'<text x="{x + 15 * k:.1f}" y="{y + 13:.1f}" style="font-size:15px;fill:#F2C811{corte}">★</text>')
+    return ''.join(out)
+
+
+def _progresso(sim, md, filtros, x, y, w):
+    cfg = md['svg']
+    v, meta = sim.valor(cfg['base'], filtros), sim.valor(cfg['meta'], filtros)
+    pct = v / meta if meta else 0
+    ok = v >= meta if md['polaridade'] == 'maior_melhor' else v <= meta
+    bw = max(0, min(1, pct)) * (w - 50)
+    return (f'<text x="{x:.1f}" y="{y + 12:.1f}" class="sub" style="font-weight:700">{numero_br(pct * 100, 0)}%</text>'
+            f'<rect x="{x + 44:.1f}" y="{y + 5:.1f}" width="{w - 50:.1f}" height="6" rx="3" fill="#EDEBE9"/>'
+            f'<rect x="{x + 44:.1f}" y="{y + 5:.1f}" width="{bw:.1f}" height="6" rx="3" fill="{"#107C10" if ok else "#D13438"}"/>')
+
+
 def _botoes(sim, v, w, h, cores):
     """Segmentador de botões: as opções lado a lado, a primeira marcada (com ícone ou imagem, se pedidos)."""
     com_imagem = bool(v.get('imagem'))
@@ -572,18 +608,36 @@ def _area(sim, v, w, h, cores):
 
 def _mapa(sim, v, w, h, cores):
     """Mapa ilustrativo: uma bolha por local, do tamanho do valor (o Power BI desenha o mapa de verdade)."""
-    cat, md = v['categoria'], v['valores'][0]
+    cat = v['categoria']
     rot = categorias(sim.m, cat)
-    vals = [sim.valor(md['nome'], [(cat, r)]) for r in rot]
-    mx = max(vals + [1e-9])
     out = [_titulo(v, w), f'<rect x="12" y="34" width="{w - 24}" height="{h - 46}" rx="10" class="caixa" style="fill:#EEF3F8;stroke:#D0DAE6"/>',
            f'<text x="{w - 20}" y="{h - 20}" class="sub" text-anchor="end">mapa ilustrativo</text>']
     import random as _r
     g = _r.Random(cat['nome'])
+    if v.get('marcador'):                            # cada local vira a imagem da medida (estrelas, progresso...)
+        img = medida(sim.m, v['marcador'])
+        desenho = {'svg_estrelas': _estrelas, 'svg_progresso': _progresso, 'svg_pilula': _pilula, 'svg_seta': _seta,
+                   'svg_posicao': _selo, 'svg_variacao': _variacao}.get(img['tipo'])
+        for r in rot:
+            cx, cy = g.uniform(40, w - 150), g.uniform(64, h - 40)
+            out.append(f'<rect x="{cx - 4:.1f}" y="{cy - 4:.1f}" width="104" height="24" rx="6" fill="#FFFFFF" stroke="#C8C6C4"/>'
+                       + (desenho(sim, img, [(cat, r)], cx, cy, 96) if desenho else
+                          f'<text x="{cx:.1f}" y="{cy + 12:.1f}" class="sub">SVG</text>')
+                       + f'<text x="{cx + 50:.1f}" y="{cy - 8:.1f}" class="eixo" text-anchor="middle">{_e(_corta(r, 14))}</text>')
+        return ''.join(out)
+    md = v['valores'][0]
+    vals = [sim.valor(md['nome'], [(cat, r)]) for r in rot]
+    mx = max(vals + [1e-9])
     leg = categorias(sim.m, v['legenda'])[:5] if v.get('legenda') else []
     for r, val in zip(rot, vals):
         cx, cy = g.uniform(40, w - 60), g.uniform(60, h - 40)
         raio = 6 + 22 * (val / mx)
+        if v.get('camada') == 'colunas':             # coluna 3D: a altura é o valor
+            alto = 8 + 60 * (val / mx)
+            out.append(f'<rect x="{cx - 4:.1f}" y="{cy - alto:.1f}" width="8" height="{alto:.1f}" fill="{cores[0]}"/>'
+                       f'<path d="M{cx - 4:.1f},{cy - alto:.1f} l4,-3 l4,3 Z" fill="{cores[0]}" fill-opacity=".6"/>')
+            out.append(f'<text x="{cx:.1f}" y="{cy + 14:.1f}" class="eixo" text-anchor="middle">{_e(_corta(r, 14))}</text>')
+            continue
         if leg:                                      # cada local vira uma pizza com a composição da legenda
             partes = [sim.valor(md['nome'], [(cat, r), (v['legenda'], l)]) for l in leg]
             tot, a = sum(partes) or 1, -math.pi / 2
@@ -646,7 +700,8 @@ def _tabela(sim, v, w, h, cores):
             md_img = medida(sim.m, c['nome']) if c['tipo'] == 'medida' else None
             if md_img and md_img.get('imagem'):
                 desenho = {'svg_pilula': _pilula, 'svg_seta': _seta, 'svg_posicao': _selo,
-                           'svg_variacao': _variacao}.get(md_img['tipo'])
+                           'svg_variacao': _variacao, 'svg_estrelas': _estrelas,
+                           'svg_progresso': _progresso}.get(md_img['tipo'])
                 if md_img['tipo'] == 'svg_radar':
                     out.append(_radar(sim, md_img, linhas[i], 12 + k * cw + 4, topo + 2, cw - 10, rh - 4))
                 elif desenho:
@@ -994,6 +1049,9 @@ main{padding:16px 20px 40px}section{display:none}section.ativa{display:block}
 .ajuda{position:absolute;width:44px;height:44px;border-radius:50%;border:2px solid var(--destaque);background:#fff;
 color:var(--destaque);font:700 20px Segoe UI,sans-serif;cursor:pointer;z-index:6}
 .notas{position:absolute;inset:0;z-index:5;background:rgba(255,255,255,.35)}
+.abre-tour,.fecha-tour{position:absolute;width:164px;height:44px;border-radius:22px;border:2px solid var(--destaque);
+background:#fff;color:var(--destaque);font:700 14px Segoe UI,sans-serif;cursor:pointer;z-index:6}
+.tour-proto{position:absolute;left:0;top:0;z-index:7}.fecha-tour{top:16px;z-index:1000}
 .nota-ajuda{position:absolute;box-sizing:border-box;padding:10px 12px;background:rgba(255,255,255,.96);
 border:2px solid var(--destaque);border-radius:8px;font:13px Segoe UI,sans-serif;color:#252423;overflow:auto}
 .nota-ajuda b{display:block;margin-bottom:4px}.nota-ajuda p{margin:0 0 4px}
@@ -1045,6 +1103,9 @@ try{history.replaceState(null,'','#'+id)}catch(e){}}
 botoes.forEach(b=>b.addEventListener('click',()=>abrir(b.dataset.alvo)));
 document.querySelectorAll('.ir').forEach(b=>b.addEventListener('click',()=>{abrir(b.dataset.ir);scrollTo(0,0);}));
 document.querySelectorAll('.ajuda').forEach(b=>b.addEventListener('click',()=>{const n=b.nextElementSibling;n.hidden=!n.hidden;}));
+document.querySelectorAll('.abre-tour').forEach(b=>b.addEventListener('click',()=>{const t=b.nextElementSibling;t.hidden=false;
+t.querySelectorAll('details').forEach(d=>d.open=d.classList.contains('tg-raiz'));}));
+document.querySelectorAll('.fecha-tour').forEach(b=>b.addEventListener('click',()=>{b.parentElement.hidden=true;}));
 function escalar(){if(innerWidth<=700){document.querySelectorAll('.pagina').forEach(pg=>pg.style.transform='');return;}
 document.querySelectorAll('section.ativa .palco').forEach(p=>{const pg=p.firstElementChild;
 const k=Math.min(1,p.clientWidth/pg.offsetWidth);pg.style.transform='scale('+k+')';p.style.height=(pg.offsetHeight*k)+'px';});}
@@ -1175,8 +1236,9 @@ def gerar_html(m, problemas, versao):
     aba_do_grupo = {}
     for i, pg in enumerate(rel):
         sid = ids[i]
-        if not pg['oculta']:
-            abas.append((sid, pg['nome']))
+        if not pg['oculta'] or pg.get('dica') or pg.get('detalhe'):   # dica e detalhe também se aprovam
+            abas.append((sid, f'Dica · {pg["nome"]}' if pg.get('dica') else
+                         f'Detalhe · {pg["nome"]}' if pg.get('detalhe') else pg['nome']))
             aba_do_grupo[pg['grupo']] = sid
         lay = montar(m, rel, i)
         vis = []
@@ -1194,9 +1256,24 @@ def gerar_html(m, problemas, versao):
                                       for k, t in enumerate(_nota_de_ajuda(m, v))) + '</div>' for v, p in lay['posicoes'])
             ir += (f'<button type="button" class="ajuda" aria-label="Como ler esta página" title="Como ler esta página" '
                    f'style="left:{lay["w"] - 64}px;top:{lay["h"] - 104}px">?</button><div class="notas" hidden>{notas}</div>')
+        tour = next((medida(m, x['tour']) for x in m['paginas'] if x['nome'] == pg['nome'] and isinstance(x.get('tour'), str)),
+                    None) if not pg['oculta'] else None
+        if tour:                                     # o mesmo HTML do Power BI, por cima da página
+            x_tour = lay['w'] - (248 if pg.get('ajuda') else 184)
+            ir += (f'<button type="button" class="abre-tour" style="left:{x_tour}px;top:{lay["h"] - 104}px">▶ Tour guiado</button>'
+                   f'<div class="tour-proto" hidden>{tour["extra"]["html"]}'
+                   f'<button type="button" class="fecha-tour" style="left:{lay["w"] - 184}px">Voltar</button></div>')
         classes = 'pagina' + (' desenhada' if lay['fundo'] else '') + (' escura' if lay['escuro'] else '')
         fundo = f'<div class="fundo" aria-hidden="true">{lay["fundo"]}</div>' if lay['fundo'] else f'<h2>{_e(pg["nome"])}</h2>'
         desc = f'<p class="nota">{_e(pg["descricao"])}</p>' if pg['descricao'] and not lay['fundo'] else ''
+        if pg.get('detalhe'):
+            c = pg['detalhe']
+            desc += (f'<p class="nota">Página de detalhamento: no Power BI, clique com o botão direito num ponto de '
+                     f'{_e(c["tabela"])}[{_e(c["nome"])}] em outra página e escolha Detalhar; ela abre filtrada pelo item.</p>')
+        if pg.get('dica'):
+            de = [v.get('titulo') or v['tipo'] for x in m['paginas'] for v in x['visuais'] if v.get('dica') == pg['nome']]
+            desc += (f'<p class="nota">Página de dica (320 x 240): aparece ao passar o mouse em '
+                     f'{_e(", ".join(de) or "nenhum visual ainda")}.</p>')
         secoes.append(f'<section id="{sid}" data-aba="{aba_do_grupo.get(pg["grupo"], sid)}"><div class="palco">'
                       f'<div class="{classes}" style="width:{lay["w"]}px;height:{lay["h"]}px">'
                       f'{fundo}{"".join(vis)}{ir}</div></div>{desc}</section>')

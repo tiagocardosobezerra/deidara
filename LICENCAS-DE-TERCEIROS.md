@@ -12,7 +12,17 @@ temas que ele montou. As imagens de fundo, os dados e os visuais
 personalizados daqueles dashboards não vêm no Deidara. As práticas de design
 e de SVG em DAX ([referencias/design.md](referencias/design.md),
 [referencias/svg.md](referencias/svg.md), `dicionario/visuais.json`) foram
-escritas para o Deidara a partir do mesmo repositório.
+escritas para o Deidara a partir do mesmo repositório. O tour guiado
+(`argila/tour.py`) e o agrupador de textos (`ferramentas/agrupar_textos.py`)
+seguem as ideias do Interactive Dashboard Tour e do Clustering & Similarity
+Score dele, com código escrito para o Deidara.
+
+Os temas JSON de terceiros que o repositório reúne (BIBB, Kerry Kolosko,
+Zebra BI) não vêm no Deidara: são de outros autores. O Deidara aponta onde
+baixá-los e os usa pelo `"tema": {"arquivo": ...}`; quem usa confere a
+licença e dá o crédito. Os estudos de caso da pasta Practice (DataCamp) e as
+bases de prática também ficam de fora; [referencias/design.md](referencias/design.md)
+indica a pasta.
 
 ```
 MIT License

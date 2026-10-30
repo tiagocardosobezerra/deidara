@@ -76,8 +76,10 @@ dela vão para `expressions.tmdl`. A homologação é contra a própria fonte.
 ## Limitações conhecidas (versão atual)
 
 - Modo de importação (Import) apenas; DirectQuery fica para depois.
-- Sem RLS (segurança por linha), sem parâmetros de campo e sem drill-through:
-  configure no Desktop depois de gerar, e não regenere por cima.
+- Sem parâmetros de campo: configure no Desktop depois de gerar, e não
+  regenere por cima. Segurança por linha (`seguranca`), detalhamento
+  (`"detalhe"`), páginas de dica (`"dica"`) e grupo de cálculo de tempo
+  (`"grupo_calculo"`) saem prontos ([argila.md](argila.md)).
 - Status de meta é por cor (verde/vermelho); ícones e faixas de tolerância ficam para depois.
-- Visuais nativos apenas (cartão, medidor, barras, colunas, linha, rosca,
-  tabela, matriz, segmentador).
+- Visuais nativos, mais HTML Content e Deneb quando pedidos (`deidara.py
+  visuais`); os outros visuais do AppSource o Deidara só descreve.

@@ -309,14 +309,19 @@
         "gera": true,
         "visual": {
           "tipo": "mapa",
-          "local": "dLoja[Cidade]",
-          "valores": [
-            "Vendas"
-          ]
+          "local": "dEmpresa[Empresa]",
+          "marcador": "Progresso Turnover"
+        },
+        "argila": {
+          "nome": "Progresso Turnover",
+          "tipo": "svg_progresso",
+          "medida": "Turnover",
+          "categoria": "dEmpresa[Empresa]"
         }
       },
-      "power_bi": "o Deidara gera o Azure Maps com bolhas do tamanho da medida; marcador desenhado por SVG continua manual",
+      "power_bi": "o Deidara gera o Azure Maps com o \"marcador\": cada ponto vira a imagem da medida SVG (progresso da meta, estrelas, pílula, seta, selo), no lugar da bolha; sem \"marcador\", a bolha tem o tamanho da medida",
       "cuidados": [
+        "a medida do marcador precisa ser feita para a coluna do local do mapa (a mesma \"categoria\")",
         "o mapa precisa de localização confiável (cidade e UF, ou latitude e longitude)",
         "confirme se o Azure Maps está liberado no tenant"
       ],
@@ -1130,7 +1135,8 @@
       "cuidados": [
         "visual do AppSource: o administrador do Power BI precisa liberar, e quem abre baixa o visual na primeira vez",
         "tamanho de letra não se compara bem: para decidir, use barras com as 10 palavras mais frequentes",
-        "limpe o texto antes (palavras vazias, maiúsculas, acentos) no Power Query ou na view"
+        "limpe o texto antes (palavras vazias, maiúsculas, acentos) no Power Query ou na view",
+        "para decidir, prefira agrupar os textos em temas com ferramentas/agrupar_textos.py (roda onde os dados estão) e mostrar os temas em barras"
       ],
       "nativo": false,
       "inspiracao": "Power BI Design Files (Sajjad Ahmadi)"
@@ -1208,6 +1214,247 @@
         "a dispersão nativa já tem eixo de reprodução próprio (campo Eixo de reprodução)"
       ],
       "nativo": false,
+      "inspiracao": "Power BI Design Files (Sajjad Ahmadi)"
+    },
+    {
+      "id": "estrelas",
+      "nome": "Estrelas de avaliação (0 a 5), na tabela ou no mapa",
+      "termos": [
+        "estrelas",
+        "avaliação",
+        "nota",
+        "rating",
+        "satisfação",
+        "mapa",
+        "marcador"
+      ],
+      "quando": "mostrar uma nota (satisfação, avaliação, desempenho relativo) de um jeito que se lê num relance",
+      "deidara": {
+        "gera": true,
+        "argila": {
+          "nome": "Estrelas Headcount",
+          "tipo": "svg_estrelas",
+          "medida": "Headcount",
+          "categoria": "dEmpresa[Empresa]"
+        },
+        "visual": {
+          "tipo": "tabela",
+          "campos": [
+            "dEmpresa[Empresa]",
+            "Headcount",
+            "Estrelas Headcount"
+          ]
+        }
+      },
+      "power_bi": "o Deidara gera a medida SVG (cinco estrelas, a parte amarela na largura da nota, meia estrela aparece); com \"maximo\" a nota é o valor sobre esse número (ex.: 5 de uma pesquisa), sem ele o melhor entre as linhas visíveis vale cinco; serve na tabela e como \"marcador\" do mapa",
+      "cuidados": [
+        "estrela sem número engana: deixe o valor na coluna ao lado",
+        "sem \"maximo\", a nota é relativa: a melhor linha sempre tem cinco estrelas"
+      ],
+      "nativo": true,
+      "inspiracao": "Power BI Design Files (Sajjad Ahmadi)"
+    },
+    {
+      "id": "progresso_da_meta",
+      "nome": "Progresso da meta em cartão pequeno (bom para o mapa)",
+      "termos": [
+        "progresso",
+        "meta",
+        "percentual",
+        "atingimento",
+        "mapa",
+        "marcador",
+        "barra"
+      ],
+      "quando": "mostrar quanto da meta cada local ou item já atingiu, com o percentual escrito",
+      "deidara": {
+        "gera": true,
+        "argila": {
+          "nome": "Progresso Turnover",
+          "tipo": "svg_progresso",
+          "medida": "Turnover",
+          "categoria": "dEmpresa[Empresa]"
+        },
+        "visual": {
+          "tipo": "mapa",
+          "local": "dEmpresa[Empresa]",
+          "marcador": "Progresso Turnover"
+        }
+      },
+      "power_bi": "o Deidara gera a medida SVG (cartão de 120 x 34 com \"87% da meta\" e a barra, verde ou vermelha pela polaridade); a medida precisa de \"meta\"",
+      "cuidados": [
+        "na tabela, a barra contra a meta (svg_barra_meta) lê melhor; o progresso é feito para o mapa",
+        "em indicador menor_melhor, passar de 100% é ruim: a cor diz, o texto não"
+      ],
+      "nativo": true,
+      "inspiracao": "Power BI Design Files (Sajjad Ahmadi)"
+    },
+    {
+      "id": "mapa_colunas_3d",
+      "nome": "Colunas 3D no mapa",
+      "termos": [
+        "mapa",
+        "colunas",
+        "3d",
+        "barras",
+        "território",
+        "geografia",
+        "azure maps"
+      ],
+      "quando": "comparar volume entre muitos locais próximos, onde bolhas se sobrepõem",
+      "deidara": {
+        "gera": true,
+        "visual": {
+          "tipo": "mapa",
+          "local": "dEmpresa[Empresa]",
+          "valores": [
+            "Headcount"
+          ],
+          "camada": "colunas"
+        }
+      },
+      "power_bi": "o Deidara gera o Azure Maps com a camada de colunas 3D ligada e as bolhas desligadas; a altura da coluna é a medida",
+      "cuidados": [
+        "incline o mapa (Ctrl e arrastar) para as colunas aparecerem em 3D",
+        "coluna 3D esconde coluna atrás dela: para leitura exata, ponha a tabela ao lado"
+      ],
+      "nativo": true,
+      "inspiracao": "Power BI Design Files (Sajjad Ahmadi)"
+    },
+    {
+      "id": "tour_guiado",
+      "nome": "Tour guiado pela página (HTML Content)",
+      "termos": [
+        "tour",
+        "guia",
+        "passo a passo",
+        "onboarding",
+        "treinamento",
+        "explicar",
+        "ajuda",
+        "html"
+      ],
+      "quando": "apresentar um painel novo para quem nunca usou: um passo por visual, com holofote e explicação",
+      "deidara": {
+        "gera": true,
+        "pagina": {
+          "nome": "Visão Geral",
+          "tour": true
+        }
+      },
+      "power_bi": "página com \"tour\": true ganha o botão \"Tour guiado\", que leva a uma página escondida com os mesmos visuais e o tour por cima (HTML Content certificado, só HTML e CSS: Próximo, Voltar, Encerrar); o texto de cada passo sai do título e das definições dos indicadores; no protótipo, o mesmo tour roda",
+      "cuidados": [
+        "visual certificado do AppSource: o administrador do Power BI precisa liberar, e quem abre baixa o visual na primeira vez",
+        "até 8 passos, na ordem do layout; mudou o layout, gere de novo",
+        "para explicar sem visual de terceiros, use a tela de ajuda (\"ajuda\": true)"
+      ],
+      "nativo": false,
+      "inspiracao": "Power BI Design Files (Sajjad Ahmadi)"
+    },
+    {
+      "id": "periodo_para_todas",
+      "nome": "Segmentador de período que vale para todas as medidas (grupo de cálculo)",
+      "termos": [
+        "período",
+        "acumulado",
+        "ano anterior",
+        "ytd",
+        "grupo de cálculo",
+        "calculation group",
+        "inteligência de tempo",
+        "segmentador"
+      ],
+      "quando": "o gestor troca entre atual, acumulado no ano, ano anterior e variação, e todos os cartões, gráficos e tabelas seguem juntos",
+      "deidara": {
+        "gera": true,
+        "raiz": {
+          "grupo_calculo": {
+            "nome": "Período",
+            "itens": [
+              "atual",
+              "acumulado_ano",
+              "ano_anterior",
+              "variacao_ano_anterior"
+            ]
+          }
+        },
+        "visual": {
+          "tipo": "botoes",
+          "campo": "Período[Período]"
+        }
+      },
+      "power_bi": "o Deidara gera a tabela de grupo de cálculo (um item por conta de tempo, na ordem pedida; as variações em percentual por formato dinâmico) e o segmentador de botões sobre ela; é a técnica do dashboard de desempenho Awesome Chocolates",
+      "cuidados": [
+        "muda TODAS as medidas do visual: um visual com medida de tempo pronta (acumulado_ano) e o grupo ligado faz a conta duas vezes",
+        "pede o \"calendario\" do argila.json e o segmentador de seleção única",
+        "medida de texto ou imagem passa sem mudar nas variações (o item confere se o valor é número)"
+      ],
+      "nativo": true,
+      "inspiracao": "Power BI Design Files (Sajjad Ahmadi)"
+    },
+    {
+      "id": "detalhamento",
+      "nome": "Página de detalhamento (drillthrough)",
+      "termos": [
+        "detalhar",
+        "detalhamento",
+        "drillthrough",
+        "drill-through",
+        "drill through",
+        "perfil",
+        "abrir o item",
+        "vendedor",
+        "pessoa"
+      ],
+      "quando": "abrir o perfil de um item (vendedor, cargo, loja) a partir de qualquer página, já filtrado por ele",
+      "deidara": {
+        "gera": true,
+        "pagina": {
+          "nome": "Cargo em detalhe",
+          "detalhe": "dCargo[Cargo]"
+        }
+      },
+      "power_bi": "o Deidara gera a página de detalhamento (escondida da navegação) ligada à coluna, com o filtro de detalhamento e o botão Voltar; a pessoa clica com o botão direito no item e escolhe Detalhar",
+      "cuidados": [
+        "quem usa precisa saber do botão direito: diga na tela de ajuda ou no tour",
+        "a coluna precisa chegar nas medidas da página (o validar confere os cortes)"
+      ],
+      "nativo": true,
+      "inspiracao": "Power BI Design Files (Sajjad Ahmadi)"
+    },
+    {
+      "id": "pagina_de_dica",
+      "nome": "Página de dica ao passar o mouse (tooltip)",
+      "termos": [
+        "dica",
+        "tooltip",
+        "passar o mouse",
+        "hover",
+        "resumo",
+        "detalhe rápido"
+      ],
+      "quando": "mostrar mais contexto de um ponto (o resumo do vendedor, do cargo) sem sair da página",
+      "deidara": {
+        "gera": true,
+        "pagina": {
+          "nome": "Resumo do cargo",
+          "dica": true
+        },
+        "visual": {
+          "tipo": "barras",
+          "categoria": "dCargo[Cargo]",
+          "valores": [
+            "Headcount"
+          ],
+          "dica": "Resumo do cargo"
+        }
+      },
+      "power_bi": "o Deidara gera a página de dica (320 x 240, escondida, os visuais um embaixo do outro) e liga cada visual com \"dica\" a ela",
+      "cuidados": [
+        "até 4 visuais: a dica some quando o mouse sai, não cabe leitura longa",
+        "no celular não há \"passar o mouse\": não esconda na dica o que é essencial"
+      ],
+      "nativo": true,
       "inspiracao": "Power BI Design Files (Sajjad Ahmadi)"
     }
   ]

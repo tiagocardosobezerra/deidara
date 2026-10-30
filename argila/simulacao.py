@@ -45,6 +45,9 @@ def categorias(m, campo):
                 return [cfg['rotulo']]
             if md['tipo'] == 'cor_destaque':
                 return categorias(m, {'tabela': cfg['origem'][0], 'nome': cfg['origem'][1], 'tipo': 'coluna'})
+    for t in m['tabelas']:                           # grupo de cálculo: os itens, na ordem
+        if t['nome'] == campo['tabela'] and t.get('grupo_calculo') and campo['nome'] == t['colunas'][0]['nome']:
+            return [it['rotulo'] for it in t['grupo_calculo']['itens']]
     nome, ano = campo['nome'], _ano(m)
     if m.get('calendario') and campo['tabela'] == m['calendario']['tabela']:
         return {
@@ -106,7 +109,8 @@ class Simulador:
             return float(md['dax'])
         if tipo == 'cor':
             return 0
-        if tipo in ('svg_barra_meta', 'svg_pilula', 'svg_seta', 'svg_posicao', 'svg_radar', 'svg_bolha', 'svg_variacao'):
+        if tipo in ('svg_barra_meta', 'svg_pilula', 'svg_seta', 'svg_posicao', 'svg_radar', 'svg_bolha', 'svg_variacao',
+                    'svg_estrelas', 'svg_progresso'):
             return self.valor(md['svg'].get('base') or '', filtros)
         if tipo == 'lista_top':
             return self.lista(md, filtros)
@@ -114,7 +118,7 @@ class Simulador:
             return self.valor(md['depende'][0], filtros) if md.get('depende') else 0
         if tipo == 'alternar':
             return self.valor(md['extra']['desligado'], filtros) if md['extra'].get('desligado') else 0
-        if tipo in ('cor_destaque', 'svg_iniciais', 'svg_dispersao', 'html_kpis', 'svg_espinha'):
+        if tipo in ('cor_destaque', 'svg_iniciais', 'svg_dispersao', 'html_kpis', 'svg_espinha', 'html_tour'):
             return 0
         if tipo == 'impacto':
             if not self.classificacao(md['ranking'], filtros)[0]:

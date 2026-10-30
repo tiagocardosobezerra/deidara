@@ -50,7 +50,7 @@ Medidos no exemplo do repositório (um ERP fictício em SQL Server e uma planilh
 | Tutorial, do zero ao projeto, rodado comando a comando | **15 minutos** |
 | Funções no dicionário (DAX / Power Query) | **462 / 667** |
 | Padrões de indicador prontos (taxa, estoque, acumulado, turnover completo...) | **17** |
-| Técnicas de visual catalogadas (meta na tabela, ranking, causa, status...) | **39**: 34 geradas prontas (2 com visual do AppSource) e 5 visuais personalizados descritos (Chord, Word Cloud, Violin Plot, Gantt, Play Axis) |
+| Técnicas de visual catalogadas (meta na tabela, ranking, causa, status...) | **46**: 41 geradas prontas (3 com visual do AppSource) e 5 visuais personalizados descritos (Chord, Word Cloud, Violin Plot, Gantt, Play Axis) |
 | Modelos de layout, do protótipo ao `.pbip` | **11** |
 | Linhas de dado que as receitas devolvem | **0** |
 
@@ -126,7 +126,7 @@ O `.pbix` é binário e fechado: o modelo vai num formato interno que só o Powe
 
 ### Design e visuais
 
-Os princípios de [`referencias/design.md`](referencias/design.md): comece pela decisão, uma página por pergunta, cor só com significado (e nunca como única pista), contraste conferido pelo `validar`. As técnicas com visuais nativos (segmentador de botões como controle segmentado, cartões clicáveis, melhores e piores na mesma tabela, Pareto, árvore de decomposição, espinha de peixe, jitter plot, ranking de impacto, marcadores no mapa) estão em `deidara.py visuais`. Medidas que desenham dentro da tabela seguem [`referencias/svg.md`](referencias/svg.md); a barra contra a meta o Deidara gera pronta (`"tipo": "svg_barra_meta"`).
+Os princípios de [`referencias/design.md`](referencias/design.md): comece pela decisão, uma página por pergunta, cor só com significado (e nunca como única pista), contraste conferido pelo `validar`. As técnicas com visuais nativos (segmentador de botões como controle segmentado, cartões clicáveis, melhores e piores na mesma tabela, Pareto, árvore de decomposição, espinha de peixe, jitter plot, ranking de impacto, estrelas e progresso como marcador do mapa, colunas 3D no mapa, tour guiado, segmentador de período por grupo de cálculo, detalhamento, página de dica) estão em `deidara.py visuais`. Medidas que desenham dentro da tabela seguem [`referencias/svg.md`](referencias/svg.md); a barra contra a meta o Deidara gera pronta (`"tipo": "svg_barra_meta"`).
 
 ### Modelos de layout
 
@@ -174,7 +174,7 @@ deidara/
 ├── dicionario/            # Funções DAX e Power Query, padrões de indicador, técnicas de visual e sinônimos
 ├── referencias/           # Guias: fluxo, fontes, descoberta, argila.json, métricas, design, SVG, Memory Card, Power BI e tutorial
 ├── exemplos/aurora/       # Exemplo fictício completo, do resultado colado ao projeto gerado
-├── ferramentas/           # Validador do .pbip contra os schemas da Microsoft e empacotador da skill
+├── ferramentas/           # Validador do .pbip, empacotador da skill e agrupador de textos livres em temas
 ├── assets/                # Imagens do README
 └── testes/                # Suíte de testes
 ```
