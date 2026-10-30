@@ -9,7 +9,7 @@ catálogo real ou rascunho deixado na pasta nunca vai junto. Fora do git (uma
 cópia instalada), percorre a pasta com as mesmas exclusões.
 
 Uso:
-    python3 ferramentas/empacotar.py [-o deidara-skill.zip]
+    python3 ferramentas/empacotar.py [-o deidara-skill.zip]   (padrão: deidara-skill-<versão>.zip)
 """
 
 import argparse
@@ -55,7 +55,9 @@ def empacotar(destino):
 
 def main(argv=None):
     ap = argparse.ArgumentParser(description='empacota a skill para o claude.ai')
-    ap.add_argument('-o', '--saida', default=os.path.join(os.path.dirname(RAIZ), 'deidara-skill.zip'))
+    sys.path.insert(0, RAIZ)
+    from kibaku_nendo import VERSAO
+    ap.add_argument('-o', '--saida', default=os.path.join(os.path.dirname(RAIZ), f'deidara-skill-{VERSAO}.zip'))
     a = ap.parse_args(argv)
     n = empacotar(a.saida)
     print(f'{n} arquivos, {os.path.getsize(a.saida) // 1024} KB: {a.saida}')

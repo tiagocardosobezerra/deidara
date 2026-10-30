@@ -278,16 +278,22 @@ def _conferir_pagina(m, pagina, p, onde, filtra):
 def _conferir_snowflake(m, p):
     """Dimensão que chega no fato passando por outra dimensão mostra o valor ATUAL do cadastro."""
     por_nome = {t['nome']: t for t in m['tabelas']}
+    filtra = grafo_de_filtro(m)
+    juntas = {}                                    # dimensão do meio -> (as que passam por ela, os fatos)
     for r in m['relacionamentos']:
         de = por_nome.get(r['de'])
         if de and de['tipo'] == 'dimensao' and r['ativo']:
             fatos = sorted(t['nome'] for t in m['tabelas'] if t['tipo'] == 'fato'
-                           and alcanca(grafo_de_filtro(m), de['nome'], t['nome']))
+                           and alcanca(filtra, de['nome'], t['nome']))
             if fatos:
-                p.aviso(f'relacionamentos {r["de"]} -> {r["para"]}',
-                        f'{r["para"]} chega em {", ".join(fatos)} através de {r["de"]}: o corte por {r["para"]} mostra o '
-                        f'valor ATUAL do cadastro de {r["de"]}, não o da data do evento. Se a fato tiver o código '
-                        'histórico, ligue direto nela; senão, registre isso na definição do indicador')
+                passam, alvo = juntas.setdefault(r['de'], ([], set()))
+                passam.append(r['para'])
+                alvo.update(fatos)
+    for meio, (passam, fatos) in juntas.items():   # um aviso por dimensão do meio, não um por ligação
+        p.aviso(f'relacionamentos via {meio}',
+                f'{" e ".join(passam)} chega{"m" if len(passam) > 1 else ""} em {", ".join(sorted(fatos))} através de '
+                f'{meio}: o corte mostra o valor ATUAL do cadastro de {meio}, não o da data do evento. Se a fato tiver '
+                'o código histórico, ligue direto nela; senão, registre isso na definição do indicador')
 
 
 def _visual(m, v, p, onde, filtra):

@@ -54,10 +54,11 @@ def para_gestor(aviso):
     r = _re.search(r'(\w+)\[(.+?)\] filtra só parte de "(.+?)"', aviso)
     if r:
         return f'Num visual por {r.group(2)}, só parte da conta de "{r.group(3)}" muda por linha.'
-    r = _re.search(r'(\w+) chega em (.+?) através de (\w+)', aviso)
+    r = _re.search(r'^(.+?) chegam? em (.+?) através de (\w+)', aviso.split(': ', 1)[-1])
     if r:
-        return (f'O corte por {_amigavel(r.group(1))} mostra o cadastro de hoje, não o da data do evento '
-                f'(o {_amigavel(r.group(1))} atual da pessoa, não o que ela tinha na época). Serve assim?')
+        cortes = ' e '.join(_amigavel(x) for x in r.group(1).split(' e '))
+        return (f'O corte por {cortes} mostra o cadastro de hoje, não o da data do evento '
+                f'(o valor atual da pessoa, não o que ela tinha na época). Serve assim?')
     r = _re.search(r'(\w+) -> (\w+): ligação DECLARADA por (.+?), sem prova', aviso)
     if r:
         return (f'{_amigavel(r.group(1))} e {_amigavel(r.group(2))} vêm de fontes diferentes; a ligação foi confirmada '
