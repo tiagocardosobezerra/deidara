@@ -66,11 +66,12 @@ class TestMemoryCard(unittest.TestCase):
             subprocess.run(['git', '-C', outro, *args], capture_output=True)
         with open(os.path.join(outro, 'pendente.txt'), 'w', encoding='utf-8') as f:
             f.write('trabalho em andamento de outra solução')
-        self.mc.iniciar(None, outro)
-        os.environ['DEIDARA_MEMORY_CARD_DIR'] = outro
+        # identidade do git só para o teste (o CI não tem user.name global; sem ela o commit do iniciar falhava)
         os.environ['GIT_AUTHOR_NAME'] = os.environ['GIT_COMMITTER_NAME'] = 't'
         os.environ['GIT_AUTHOR_EMAIL'] = os.environ['GIT_COMMITTER_EMAIL'] = 't@t'
         try:
+            self.mc.iniciar(None, outro)
+            os.environ['DEIDARA_MEMORY_CARD_DIR'] = outro
             codigo, _ = self._aprovado_e_enviado()
         finally:
             for k in ('GIT_AUTHOR_NAME', 'GIT_COMMITTER_NAME', 'GIT_AUTHOR_EMAIL', 'GIT_COMMITTER_EMAIL'):

@@ -64,6 +64,7 @@ class TestContasDoC4(unittest.TestCase):
         self.assertGreater(z[-1], c4.LIMIAR_Z_MODIFICADO)
         self.assertTrue(all(abs(x) < c4.LIMIAR_Z_MODIFICADO for x in z[:-1]))
 
+    @unittest.skipIf(sys.version_info < (3, 10), 'statistics.linear_regression é do Python 3.10')
     def test_tendencia_bate_com_a_regressao_do_python(self):
         from tecnicas import c4
         y = [5.0, 4.9, 4.9, 4.7, 4.8, 4.6, 4.5, 4.6, 4.4, 4.3, 4.3, 4.1]

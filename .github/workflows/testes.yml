@@ -12,6 +12,9 @@ jobs:
       matrix:
         os: [ubuntu-latest, windows-latest]
         python: ["3.8", "3.12"]
+        exclude:                     # o runner Ubuntu atual não tem mais Python 3.8; o 3.8 roda no Windows
+          - os: ubuntu-latest
+            python: "3.8"
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
