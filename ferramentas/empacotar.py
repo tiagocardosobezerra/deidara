@@ -13,6 +13,7 @@ Uso:
 """
 
 import argparse
+import json
 import os
 import subprocess
 import sys
@@ -25,6 +26,9 @@ ARQUIVOS_FORA = {'.gitignore', '.gitattributes', 'README.en.md', 'ruff.toml'}
 # funções DAX, os modelos Deneb prontos e o calendário
 TERCEIROS_FORA = {'deneb-showcase', 'powerbi-svg', 'dataviz-vega', 'deneb-vega-showcase'}
 TERCEIROS_MAX = 1_000_000                          # mapa com o mundo inteiro dentro (2,7 MB cada) fica de fora
+MAX_ARQUIVOS = 200                                 # o claude.ai recusa zip com mais arquivos que isso
+# em terceiros/, só a licença, a origem e o catálogo vão soltos; o resto vai junto em terceiros/pacote.json
+TERCEIROS_SOLTOS = {'LICENSE', 'ORIGEM.md', 'catalogo.json'}
 
 
 def fica_de_fora(nome):
@@ -74,14 +78,27 @@ def empacotar(destino, exigir_git=True):
         raise SystemExit('Código da skill fora do git (o pacote sairia incompleto): '
                          + ', '.join(faltam[:8]) + (f' e mais {len(faltam) - 8}' if len(faltam) > 8 else '')
                          + '. Faça `git add` (e o commit) antes de empacotar.')
-    n = 0
+    soltos, juntos = [], {}
+    for rel in arquivos_da_skill():
+        if os.path.abspath(os.path.join(RAIZ, rel)) == os.path.abspath(destino):
+            continue
+        if rel == 'terceiros/pacote.json':              # empacotando de uma cópia já instalada
+            with open(os.path.join(RAIZ, rel), encoding='utf-8') as f:
+                juntos.update(json.load(f))
+        elif rel.startswith('terceiros/') and rel.split('/')[-1] not in TERCEIROS_SOLTOS:
+            with open(os.path.join(RAIZ, rel), encoding='utf-8-sig') as f:
+                juntos[rel] = f.read()
+        else:
+            soltos.append(rel)
+    n = len(soltos) + bool(juntos)
+    if n > MAX_ARQUIVOS:
+        raise SystemExit(f'O pacote teria {n} arquivos e o claude.ai aceita no máximo {MAX_ARQUIVOS}: '
+                         'tire pastas do pacote (PASTAS_FORA) ou junte arquivos.')
     with zipfile.ZipFile(destino, 'w', zipfile.ZIP_DEFLATED) as z:
-        for rel in arquivos_da_skill():
-            caminho = os.path.join(RAIZ, rel)
-            if os.path.abspath(caminho) == os.path.abspath(destino):
-                continue
-            z.write(caminho, 'deidara/' + rel)
-            n += 1
+        for rel in soltos:
+            z.write(os.path.join(RAIZ, rel), 'deidara/' + rel)
+        if juntos:
+            z.writestr('deidara/terceiros/pacote.json', json.dumps(juntos, ensure_ascii=False))
     return n
 
 

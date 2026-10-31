@@ -212,6 +212,7 @@ if __name__ == '__main__':
 class TestEmpacotar(unittest.TestCase):
     def test_zip_da_skill_sem_zip_dentro_nem_arquivo_local(self):
         import zipfile
+        import subprocess
         d = tempfile.mkdtemp(prefix='ddz')
         destino = os.path.join(d, 'deidara-skill.zip')
         with redirect_stdout(io.StringIO()):
@@ -221,8 +222,16 @@ class TestEmpacotar(unittest.TestCase):
         self.assertIn('deidara/deidara.py', nomes)
         self.assertFalse([n for n in nomes if n.endswith(('.zip', '.pyc', '.aprovacao.json'))
                           or '/assets/' in n or '/.git/' in n or '__pycache__' in n or '/schemas/' in n], nomes)
+        self.assertLessEqual(len(nomes), empacotar.MAX_ARQUIVOS)          # o claude.ai recusa mais que 200
+        # a galeria instalada pelo zip lê terceiros/pacote.json (os arquivos soltos não vão)
+        zipfile.ZipFile(destino).extractall(d)
+        r = subprocess.run([sys.executable, os.path.join(d, 'deidara', 'deidara.py'), 'galeria', 'cascata'],
+                           capture_output=True, text=True, encoding='utf-8')
+        self.assertEqual(r.returncode, 0, r.stderr)
+        self.assertIn('WaterfallSVG', r.stdout)
         shutil.rmtree(d, ignore_errors=True)
 
+    @unittest.skipUnless(os.path.isdir(os.path.join(RAIZ, '.git')), 'só num clone git (o pacote instalado não tem git)')
     def test_arquivo_fora_do_git_nao_entra(self):
         solto = os.path.join(RAIZ, 'cliente_real_teste.json')
         with open(solto, 'w', encoding='utf-8') as f:

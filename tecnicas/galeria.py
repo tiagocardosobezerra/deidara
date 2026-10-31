@@ -16,6 +16,31 @@ from kibaku_nendo.util import chave, sem_acento
 
 RAIZ = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 _CACHE = {}
+# no pacote do claude.ai (máximo de 200 arquivos), os dados de terceiros/ vão juntos neste arquivo: {caminho: texto}
+PACOTE = os.path.join('terceiros', 'pacote.json')
+
+
+def _pacote():
+    if 'pacote' not in _CACHE:
+        arq = os.path.join(RAIZ, PACOTE)
+        _CACHE['pacote'] = {}
+        if os.path.exists(arq):
+            with open(arq, encoding='utf-8') as f:
+                _CACHE['pacote'] = json.load(f)
+    return _CACHE['pacote']
+
+
+def _existe(rel):
+    return os.path.exists(os.path.join(RAIZ, rel)) or rel.replace(os.sep, '/') in _pacote()
+
+
+def _texto(rel):
+    """O arquivo de terceiros/ (solto, no repositório; ou dentro do pacote.json, no pacote da skill)."""
+    arq = os.path.join(RAIZ, rel)
+    if os.path.exists(arq):
+        with open(arq, encoding='utf-8-sig') as f:
+            return f.read()
+    return _pacote()[rel.replace(os.sep, '/')]
 
 
 def catalogo():
@@ -25,7 +50,7 @@ def catalogo():
             _CACHE['cat'] = []
         else:
             with open(arq, encoding='utf-8') as f:     # só o que está instalado (o pacote leva menos que o repositório)
-                _CACHE['cat'] = [x for x in json.load(f)['itens'] if os.path.exists(os.path.join(RAIZ, x['caminho']))]
+                _CACHE['cat'] = [x for x in json.load(f)['itens'] if _existe(x['caminho'])]
     return _CACHE['cat']
 
 
@@ -57,8 +82,7 @@ def spec_deneb(ident, nomes_por_campo):
     """(spec em texto, provider, config em texto) do modelo, com cada marcador "__i__" trocado pelo nome do campo
     do painel. `nomes_por_campo`: {nome do campo no modelo (ex.: "Period"): nome no painel (ex.: "Mês/Ano")}."""
     x = item(ident)
-    with open(os.path.join(RAIZ, x['caminho']), encoding='utf-8-sig') as f:
-        spec = json.load(f)
+    spec = json.loads(_texto(x['caminho']))
     um = spec.get('usermeta') or {}
     troca = {c['key']: nomes_por_campo[c['name']] for c in um.get('dataset') or [] if c['name'] in nomes_por_campo}
     config = spec.pop('config', {}) or {}
@@ -86,8 +110,7 @@ def previa_deneb(ident):
     x = item(ident)
     if not x or not x.get('previa'):
         return None
-    with open(os.path.join(RAIZ, x['caminho']), encoding='utf-8-sig') as f:
-        return ((json.load(f).get('usermeta') or {}).get('information') or {}).get('previewImageBase64PNG')
+    return ((json.loads(_texto(x['caminho'])).get('usermeta') or {}).get('information') or {}).get('previewImageBase64PNG')
 
 
 # ==================================================================== feriados
@@ -102,11 +125,10 @@ EXTRAS_BR = [{'MonthNumber': 11, 'DayNumber': 20, 'WeekDayNumber': 0, 'OffsetWee
 
 def feriados(pais):
     """As regras de feriado nacional de um país (código ISO de 2 letras), do modelo do Bravo (SQLBI, MIT)."""
-    arq = os.path.join(RAIZ, 'terceiros', 'bravo-calendario', 'HolidaysDefinition.json')
-    if not os.path.exists(arq):
+    rel = 'terceiros/bravo-calendario/HolidaysDefinition.json'
+    if not _existe(rel):
         return []
-    with open(arq, encoding='utf-8-sig') as f:
-        regras = [dict(h) for h in json.load(f)['Holidays'] if h.get('IsoCountry') == (pais or '').upper()]
+    regras = [dict(h) for h in json.loads(_texto(rel))['Holidays'] if h.get('IsoCountry') == (pais or '').upper()]
     if (pais or '').upper() == 'BR':
         for h in regras:
             h['HolidayName'] = NOMES_BR.get(h['HolidayName'], h['HolidayName'])
@@ -120,8 +142,7 @@ def funcoes_tmdl(pacotes):
     textos, nomes = [], {}
     for p in pacotes:
         x = item(p)
-        with open(os.path.join(RAIZ, x['caminho']), encoding='utf-8-sig') as f:
-            texto = f.read().replace('\r\n', '\n').strip('\n')
+        texto = _texto(x['caminho']).replace('\r\n', '\n').strip('\n')
         textos.append(f'/// ---- {x["id"]} {x.get("versao") or ""} ({x["autor"]}), daxlib.org, licença MIT ----\n' + texto)
         for fn in x.get('funcoes', []):
             nomes[fn['nome']] = x['id']

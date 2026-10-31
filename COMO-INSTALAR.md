@@ -33,7 +33,9 @@ instalada), só com o que a skill usa: num
 clone git, só arquivo rastreado (pasta de cliente ou rascunho solto nunca vai
 junto), sem imagens do README, saídas geradas nem aprovações locais. Se houver
 código novo da skill ainda fora do git, ele recusa e lista os arquivos (o pacote
-sairia incompleto): faça `git add` antes. Suba o arquivo
+sairia incompleto): faça `git add` antes. O claude.ai aceita no máximo 200
+arquivos no zip, então os dados da galeria (`terceiros/`) vão juntos em
+`terceiros/pacote.json`; a licença e a origem de cada fonte continuam soltas. Suba o arquivo
 na área de Skills das configurações do claude.ai.
 
 No claude.ai, a skill funciona até o protótipo e a geração do projeto. O
