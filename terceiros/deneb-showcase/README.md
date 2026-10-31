@@ -1,0 +1,312 @@
+# Deneb Showcase
+
+This is a collection of advanced dataviz examples using [Vega](https://vega.github.io/vega/), [Vega-Lite](https://vega.github.io/vega-lite/), [Deneb](https://deneb-viz.github.io/) and [Power BI](https://powerbi.microsoft.com/en-us/). All the work is original and where this has been inspired by the work of others, I have pointed this out.
+
+If you'd like help with customising these charts, feel free to reach out to me on [LinkedIn](https://www.linkedin.com/in/davbacci/) for paid consultancy services.
+
+![](https://github.com/PBI-David/Deneb-Showcase/blob/main/Portfolio.jpg)
+
+# Demo Reel
+
+You can watch a short demo reel by clicking the image below.
+
+[<img src="Show%20Reel%20Cover.jpg"  width="500">](https://youtube.com/shorts/QK8kcjbetF8)
+
+## Bank Failure Bubble Chart
+
+I thought it would be interesting to plot the recent bank failures (as reported and managed by FDIC) against those from 2008.
+
+[Online editor (absolute)](https://evyb.short.gy/jYyw96)
+
+[Online editor (inflation adjusted)](https://evyb.short.gy/izhJta)
+
+![](https://github.com/PBI-David/Deneb-Showcase/blob/main/Bank%20Failure%20Bubble%20Chart/thumbnail1.png)
+
+## Calendar Heatmap
+
+A template for a multi-year calendar using Vega-Lite.
+
+Inspired by the [amazing Mike Bostock.](https://observablehq.com/@d3/calendar)
+
+[Online Editor](https://evyb.short.gy/ufzyFa)
+
+![](https://github.com/PBI-David/Deneb-Showcase/blob/main/Calendar%20Heatmap/Thumbnail.jpg)
+
+## Convex Hull
+
+An implementation of the Graham Scan algorithm for a convex hull using only transforms and signals in Vega.
+
+[Online Editor](https://evyb.short.gy/fYcVMX)
+
+![](https://github.com/PBI-David/Deneb-Showcase/blob/main/Convex%20Hull/Convex%20Hull.gif)
+
+## Coronation Arc Chart
+
+A dataviz made in Vega and PowerBI for the coronation of Charles III.
+
+[Online Editor](https://evyb.short.gy/PnUbwr)
+
+![](https://github.com/PBI-David/Deneb-Showcase/blob/main/Coronation%20Arc%20Chart/Thumbnail.png)
+
+## Covid Map (Animated)
+
+An animated map using Vega showing the spread of Covid-19 across the UK using data from https://coronavirus.data.gov.uk/.
+
+Topojson can be a bit tricky to get working in the certified Deneb visual (no loading from external sources) but the .pbix below shows this can be done by embedding the topojson inline.
+
+[Online Editor](https://evyb.short.gy/dUirCZ) (click to start)
+
+![](https://github.com/PBI-David/Deneb-Showcase/blob/main/Covid%20Map/Thumbnail.jpg)
+
+## Deneb Bubble Text (Animated)
+
+A fun animation showing transition between different words using Vega. Text co-ordinates were genenerated using P5.
+
+[Online Editor](https://evyb.short.gy/NPMFss) (click to start)
+
+Inspired by the amazing Daniel Shiffman at [The Coding Train.](https://thecodingtrain.com/)
+
+![](https://github.com/PBI-David/Deneb-Showcase/blob/main/Deneb%20Bubble%20Text/Animation%20Optimised.gif)
+
+## Fireworks (Animated)
+
+An experiment using Vega to create a firework simulation.
+
+[Online Editor](https://evyb.short.gy/tfWoTS) (click to start)
+
+Inspired by the amazing Daniel Shiffman at [The Coding Train.](https://thecodingtrain.com/)
+
+![](https://github.com/PBI-David/Deneb-Showcase/blob/main/Fireworks/Thumbnail.jpg)
+
+## Force Direct Graph (Dynamic)
+
+A force direct graph which supports pan, zoom, node drag, dynamic labels, network highlighting and arrows showing the transfer direction.
+
+[Online Editor](https://evyb.short.gy/gwspyM)
+
+![](https://github.com/PBI-David/Deneb-Showcase/blob/main/Force%20Directed%20Graph/Thumb.jpg)
+
+## Gantt Chart (Dynamic)
+
+A Gantt chart implemented in Vega. Supports pan and zoom as well as day, month and year periods. [Instructions](https://github.com/PBI-David/Deneb-Showcase/tree/main/Gantt%20Chart) for use in Power BI.
+
+If you have a requirement for more advanced features like task baselines, more levels in the task hierarchy or hourly granularity and would like to pay for consultancy services, please reach out to me on [LinkedIn](https://www.linkedin.com/in/davbacci/) with a message in your connection request.
+
+[Online Editor](https://evyb.short.gy/v3eJZd)
+
+![](https://github.com/PBI-David/Deneb-Showcase/blob/main/Gantt%20Chart/Gantt%202.1%20Thumbnail.jpg?raw=true)
+
+## Gauge Chart
+
+A gauge chart implemented in Vega.
+
+[Online Editor](https://evyb.short.gy/qy0spp)
+
+<img src="https://github.com/PBI-David/Deneb-Showcase/blob/main/Gauge%20Chart/Thumbnail.png" width="1000">
+
+## Infographic Bar Chart
+
+An infographic style bar chart implemented in Vega using data driven SVG paths.
+
+[Online Editor](https://evyb.short.gy/YbV4uG)
+
+![](https://github.com/PBI-David/Deneb-Showcase/blob/main/Infographic%20Bar%20Chart/Thumbnail.png)
+
+## Infographic Column Chart
+
+An infographic style column chart implemented in Vega using data driven SVG paths.
+
+[Online Editor](https://evyb.short.gy/AildYy)
+
+![](https://github.com/PBI-David/Deneb-Showcase/blob/main/Infographic%20Column%20Chart/Thumbnail.png)
+
+## Mario Bubble Art
+
+Bubble art created in Deneb using Vega and a force transform. [Instructions to create your own here.](https://github.com/PBI-David/Deneb-Showcase/tree/main/Mario%20Bubble%20Art)
+
+Inspired by the amazing [Flerlage Twins](https://www.flerlagetwins.com/)
+
+[Online Editor](https://evyb.short.gy/7EFuMU)
+
+![](https://github.com/PBI-David/Deneb-Showcase/blob/main/Mario%20Bubble%20Art/thumbnail.jpg)
+
+## Mekko Chart
+
+A Mekko bar chart showing global miltitary spending in 2022 implemented in Vega using data from [SIPRI](https://www.sipri.org/databases/milex).
+
+Mekko charts come in two main flavours:
+
+1. A Mekko bar chart with the y-axis acting like a normal stacked bar chart but with a normalised x-axis (percentage based) so you can see the proportion taken by each major segment.
+2. A Marimekko chart where both the x-axis and y-axis are normalised (percentage based).
+
+[Online Editor](https://evyb.short.gy/oOKkBA)
+
+![](<https://github.com/PBI-David/Deneb-Showcase/blob/main/Mekko%20Chart/Thumbnail%20(Mekko%20Bar).png>)
+
+## Organisation Tree Chart
+
+A hierarchical tree chart implemented in Vega that supports colour coding of branches, expandable nodes, profile photos, zooming and panning.
+
+Images courtesy of [Pexels](https://www.pexels.com) and [Unsplash](https://unsplash.com). Base64 image processing code kindly borrowed from [Chris Webb](https://blog.crossjoin.co.uk/2019/05/19/storing-large-images-in-power-bi-datasets).
+
+[Online Editor](https://evyb.short.gy/kZIlsn)
+
+![](https://github.com/PBI-David/Deneb-Showcase/blob/main/Organisation%20Tree%20Chart/Thumbnail%20Photos.jpg)
+
+## Pancake Spider Chart
+
+A faceted spider chart which was my winning submission to a competition using a BBC Good Food pancake recipe dataset and built with Deneb, Vega and PowerBI. In Vega, each axis can have its own scale which is essential for comparing different dimensions.
+
+[Online Editor](https://evyb.short.gy/eeSgku)
+
+![](https://github.com/PBI-David/Deneb-Showcase/blob/main/Pancake%20Spider%20Chart/Thumbnail.jpg)
+
+## Parallel Coordinates Chart
+
+An interactive parallel coordinates chart built with Deneb, Vega and PowerBI. You can move the axes by grabbing the titles, click and drag axis domains to create brushes which filter the data and drag the brushes to move them. Double clicking resets the brushes. Parallel coordinates are extremely useful for comparing multiple dimensions and identifying relationships between them.
+
+[Online Editor](https://evyb.short.gy/T7TIwh)
+
+
+![](https://github.com/PBI-David/Deneb-Showcase/blob/main/Parallel%20Coordinates%20Chart/Thumbnail.gif)
+
+## Parliament Chart
+
+A parliament chart created using Vega.
+
+[Online Editor](https://evyb.short.gy/xL3WSm)
+
+Inspired by the amazing [Flerlage Twins](https://www.flerlagetwins.com/)
+
+![](https://github.com/PBI-David/Deneb-Showcase/blob/main/Parliament%20Chart/Thumbnail.jpg)
+
+## Particle Simulation Background
+
+A simple particle simulation which can be used for a landing page background. Advanced version supports mouse repel and particle drag. Created using Vega.
+
+[Online Editor](https://evyb.short.gy/TFWfbe)
+
+Inspired by the amazing [Frank's Laboratory](https://www.youtube.com/@Frankslaboratory)
+
+![](https://github.com/PBI-David/Deneb-Showcase/blob/main/Particle%20Simulation%20Background/Thumbnail.jpg)
+
+## Population Bar Chart Race (Animated)
+
+A bar chart race showing world population by country from 1950 to 2023. Created using Vega.
+
+[Online Editor](https://evyb.short.gy/ApnAXy)
+
+https://github.com/user-attachments/assets/92705c7f-eb0f-4eea-8016-2a678c4f8ef3
+
+## President Age Range Chart
+
+An original range chart of presidential ages created in Vega.
+
+[Online Editor](https://evyb.short.gy/EeraL0)
+
+![](https://github.com/PBI-David/Deneb-Showcase/blob/main/President%20Age%20Range%20Chart/Thumbnail.png)
+
+## Project Timeline
+
+A project timeline created using Deneb, Vega and Power BI.
+
+[Online Link](https://evyb.short.gy/aSjmZd)
+
+<img src="https://github.com/PBI-David/Deneb-Showcase/blob/main/Project%20Timeline/Thumbnail.png" width="400">
+
+## S&P Beeswarm Chart (Animated)
+
+An animated beeswarm chart of the S&P performance from 07/07/21 - 06/07/22 made using Vega. The result can be quite hypnotic! Data was sourced from Yahoo Finance and scraped using Power Automate Desktop.
+
+[Online Editor](https://evyb.short.gy/gYVfvv)
+
+[Inspired by Chartfleau.](https://old.reddit.com/r/dataisbeautiful/comments/vp04dv/oc_the_worst_first_half_for_the_stock_market_in/)
+
+![](https://github.com/PBI-David/Deneb-Showcase/blob/main/S%26P%20Beeswarm%20Chart/Thumbnail.jpg)
+
+## Sankey Chart
+
+Sankey charts (allvuial charts) are great for visualising a business process or simplifying a complex data flow like Microsoft’s FY23 Q2 income statement.
+
+It is very configurable and I’ve tried to account for as many edge cases I can think of.
+
+[Online Editor](https://evyb.short.gy/UZK76q)
+
+Inspired by:
+
+https://www.sankeyart.com/sankeys/public/142/
+
+![](https://github.com/PBI-David/Deneb-Showcase/blob/main/Sankey%20Chart/Thumbnail.jpg)
+
+## Starfield (Animated)
+
+A fun experiment using Vega to create a starfield simulation.
+
+[Online Editor](https://evyb.short.gy/rYNo0T) (click to start)
+
+Inspired by the amazing Daniel Shiffman at [The Coding Train.](https://thecodingtrain.com/)
+
+![](https://github.com/PBI-David/Deneb-Showcase/blob/146a7cd2a53879de76e120f8af5576f1c858a283/Starfield/Thumbnail.gif)
+
+## Tennis Grand Slams
+
+A competition entry using a tennis grand slam dataset made using Deneb, Vega and Power BI.
+
+[Online Link](https://app.powerbi.com/view?r=eyJrIjoiNzEwZGUzMzktMWE0Ni00YTBjLWJiYzYtNmVkYTk5OWY2MzM3IiwidCI6Ijk4ZmNmZGZkLWNjNWYtNDI1ZC1hMTUwLTEzZDM5NWIxYThmMyJ9)
+
+![](https://github.com/PBI-David/Deneb-Showcase/blob/main/Tennis%20Grand%20Slams/Thumbnail.jpg)
+
+## TopN Donut Chart (Dynamic)
+
+You’ve probably read that pie charts should be avoided at all costs in your reports but is this advice based on any actual evidence? Leland Wilkinson (author of the Grammar of Graphics which serves as the foundation for every modern data viz library) wrote the following:
+
+> I've heard a few opinions here about pie charts that are unsupportable. Statisticians (and designers like Tufte) rant about pie charts and their negativism creeps into blogs that users take for gospel. These rants are not based on solid psychological research and they are made by people who have no training in psychology. Allow me a story.
+
+You can read his full thoughts here:
+https://github.com/vega/vega-lite/pull/5676#issuecomment-565731079
+
+The conclusion is that pie charts should be your _preferred choice_ for proportion of whole data but only when there are 7 or fewer categories.
+
+Here is a Vega donut chart with TopN & Others functionality including an algorithm for non overlapping labels.
+
+[Online Editor](https://evyb.short.gy/tMuO2M)
+
+<img src="https://github.com/PBI-David/Deneb-Showcase/blob/main/TopN%20Donut%20Chart/Thumbnail.png" width="400">
+
+## Unit Charts
+
+Unit charts can be an engaging and eye catching tool to have in an analyst’s toolbox. Here's two created using Vega and Vega-Lite
+
+[Online Editor 1](https://evyb.short.gy/CAQxNL)
+
+[Online Editor 2](https://evyb.short.gy/MBjm84)
+
+![](https://github.com/PBI-David/Deneb-Showcase/blob/main/Unit%20Charts/Thumbnail.png)
+
+## Variance Chart
+
+A useful variance chart created using Vega-Lite showing actuals, forecasts (or budgets), absolute variance and percentage variance.
+
+[Online Editor](https://evyb.short.gy/2kHR66)
+
+![](https://github.com/PBI-David/Deneb-Showcase/blob/main/Variance%20Chart/Thumbnail.jpg)
+
+## Voronoi Scatter Plot
+
+A Vega Voronoi scatter plot using the undocumented DAX clustering function KMeansClustering(). You can pass -1 as a parameter to have it automatically determine the optimal number of clusters, or provide a specific integer if you want to define the number of clusters yourself.
+
+In the example below, you can see how the clusters generated by DAX compare to the actual penguin species (ground truth).
+
+Inspired by Observable Plot: https://observablehq.com/@observablehq/plot-voronoi-scatterplot
+
+![](https://github.com/PBI-David/Deneb-Showcase/blob/main/Voronoi%20Scatter%20Plot/Thumbnail.png)
+
+## Waffle Charts
+
+Waffle charts break a lot of dataviz best practices but sometimes, you just need a striking visual to make the numbers stand out and pop in a report. They can also be ideal for infographics.
+
+As well as the faceted percentage example below, I have also included versions for faceted absolute, stacked absolute and stacked percentage as each have their place.
+
+[Online Editor](https://evyb.short.gy/yy1lZm)
+
+![](https://github.com/PBI-David/Deneb-Showcase/blob/main/Waffle%20Charts/Thumbnail.jpg)

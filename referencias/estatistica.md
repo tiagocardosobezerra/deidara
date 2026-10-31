@@ -19,7 +19,7 @@ conferem a conta contra os exemplos resolvidos do NIST.
 | Técnica | Pergunta do gestor | No argila.json | Fonte |
 |---|---|---|---|
 | Gráfico de controle | Essa variação é real ou ruído? | medida `controle` + visual `controle` | NIST 6.3.2.2, 6.3.3.1, 6.3.3.2 |
-| Sinais de leitura | Quando eu me preocupo? | vem junto: `<nome> · sinal` | NIST 6.3.2 (regras WECO) |
+| Sinais de leitura | Quando eu me preocupo? | vem junto: `<nome> · sinal` | NIST 6.3.2 (WECO) e Nelson (1984) |
 | Meta x faixa normal | A meta é possível do jeito que estamos? | vem junto quando a medida tem meta: `<nome> · meta x faixa` | NIST 6.3.2 |
 | Fora da curva | Quem está fora do padrão? | medida `fora_da_curva` | NIST 1.3.5.17 e 6.3.3.2 |
 | Tendência | Está melhorando ou piorando de fato? | entra sozinha na frase do Tobi (`leitura`) quando há calendário | Microsoft Learn, LINESTX |
@@ -50,19 +50,39 @@ normal?" levam a técnica certa para a página "Sinal ou ruído".
 Um ponto por mês (a coluna `Ano-Mês Num` do calendário), sobre os meses do filtro.
 O tipo sai da medida, sem precisar escolher:
 
-- **Taxa em percentual** (turnover, absenteísmo): **gráfico p**. Centro p̄ = soma
-  do numerador ÷ soma do denominador; limites p̄ ± 3·√(p̄(1−p̄)/n), com o n de cada
-  mês. Mês com grupo menor tem limite mais largo, porque a taxa dele oscila mais.
-- **Outra divisão** (acidentes por mil horas): **gráfico u**, ū ± 3·√(ū/n).
+- **Taxa em percentual** (turnover, absenteísmo): **gráfico p' de Laney**. Centro
+  p̄ = soma do numerador ÷ soma do denominador; limites p̄ ± 3·σz·√(p̄(1−p̄)/n), com o
+  n de cada mês. Mês com grupo menor tem limite mais largo, porque a taxa dele
+  oscila mais.
+- **Outra divisão** (acidentes por mil horas): **gráfico u' de Laney**,
+  ū ± 3·σz·√(ū/n).
+
+**Por que Laney.** Com grupo grande (HC de milhares), a taxa de um mês para o
+outro varia mais do que a binomial supõe (as pessoas não saem uma independente da
+outra: há sazonalidade, demissão em lote, mudança de política). O gráfico p comum
+então estreita demais e marca quase todo mês como fora: alarme falso. O Laney
+(Quality Engineering 14(4), 2002) mede essa variação a mais: σz é a amplitude móvel
+média dos z de cada mês ÷ 1,128. Com σz acima de 1, os limites alargam por ele;
+com σz até 1 (sem variação a mais), fica o gráfico p de sempre (o fator nunca
+estreita). Os testes conferem nos dois casos: grupo grande com variação a mais e
+binomial de verdade.
 - **Valor** (contagem, soma, média): **XmR**, centro ± 3·MR̄/1,128, em que MR̄ é a
   média das diferenças entre um mês e o anterior (3 ÷ 1,128 = 2,66).
 
 Force outro com `"grafico": "xmr" | "p" | "u"`. Precisa de `"calendario"`.
 
-**Sinais.** Só três regras, para não gerar alarme falso: (1) ponto fora do limite;
-(2) 8 meses seguidos do mesmo lado da média; (3) 6 meses seguidos subindo ou
-descendo. Com todas as regras das WECO, o NIST mostra que o alarme falso sobe de 1
-a cada 371 pontos para 1 a cada 92.
+**Período de referência.** Sem ele, os limites saem dos meses do filtro e mudam
+quando o filtro muda. Com `"referencia": {"de": "2023-01", "ate": "2024-12"}` na
+medida `controle`, os limites saem só desse trecho e ficam parados: os meses
+depois são lidos contra o processo como ele era (o jeito de ver se uma ação
+mudou o indicador). Com menos de 20 meses, o validar avisa que os limites são
+provisórios.
+
+**Sinais.** Só três regras, para não gerar alarme falso: (1) ponto fora do limite
+e (2) 8 meses seguidos do mesmo lado da média, das regras da Western Electric
+(WECO, NIST 6.3.2); (3) 6 meses seguidos subindo ou descendo, das regras de Nelson.
+Cada regra a mais aumenta o alarme falso: só a primeira dá 1 a cada ~370 pontos
+sem mudança nenhuma; as quatro regras WECO juntas, 1 a cada ~92.
 
 **Cuidados.** O NIST pede uns 20 pontos antes de confiar nos limites; o validar
 avisa. Limite de controle não é meta: ele diz como o indicador costuma variar, e a
@@ -97,7 +117,10 @@ barras do indicador.
 Com calendário, a frase do Tobi ganha o trecho dos últimos 12 meses: a reta de
 mínimos quadrados (`LINESTX`) dá a inclinação por mês e o r². Só com r² de 0,5 para
 cima a frase afirma "tendência de alta" ou "de queda"; abaixo disso diz "sem
-tendência clara". Com menos de 6 meses, fica quieta.
+tendência clara". Com menos de 6 meses, fica quieta. A janela de 12 meses cobre um
+ciclo inteiro do ano, o que tira a maior parte da sazonalidade da reta; série
+muito sazonal (turnover de varejo no fim do ano) pede a linha por ano antes de
+falar em tendência.
 
 ## Sazonalidade e faixa típica
 

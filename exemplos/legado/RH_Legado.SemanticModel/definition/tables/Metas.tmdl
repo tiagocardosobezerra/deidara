@@ -1,0 +1,24 @@
+table Metas
+	lineageTag: ecbc32c3-a125-5330-8759-24d81e2a86f6
+
+	column CodEmpresa
+		dataType: int64
+		isHidden
+		lineageTag: db8f8cf1-519d-5ca1-8a0b-21ac9470c799
+		summarizeBy: none
+		sourceColumn: CodEmpresa
+
+	column MetaTurnover
+		dataType: double
+		lineageTag: fb88cc04-dc02-541d-af5d-f2dc8e18b445
+		summarizeBy: none
+		sourceColumn: MetaTurnover
+
+	partition Metas = m
+		mode: import
+		source =
+				let
+				    Fonte = Sql.Database("SRV-RH", "RH"),
+				    Dados = Value.NativeQuery(Fonte, "SELECT * FROM dbo.METAS")
+				in
+				    Dados

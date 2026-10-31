@@ -39,6 +39,34 @@ demonstração no modelo `faixa-de-kpis`: o projeto abre, atualiza, calcula as
 medidas (inclusive estoque na data, meta e as medidas SVG), mostra o fundo
 desenhado e reconhece os botões como navegação de página.
 
+- O DAX escrito à mão no `argila.json` passa pelas regras de texto do Best
+  Practice Analyzer da Microsoft (`/` no lugar de DIVIDE, IFERROR, EARLIER,
+  FILTER na tabela inteira, COUNTROWS(DISTINCT())): viram aviso no `validar`.
+- `validar_pbip.py PASTA --mais-recente` confere também contra a versão mais
+  nova de cada schema publicada pela Microsoft (pede internet). Diferença ali é
+  aviso: o projeto abre com a versão gravada e o Desktop converte ao salvar.
+
+### Conferências extras (opcionais, na máquina com Power BI)
+
+O Deidara roda sem dependência; estas ferramentas da comunidade e da Microsoft
+vão além do que dá para ver no texto. Nenhuma é obrigatória.
+
+- **Best Practice Analyzer completo** (Tabular Editor 2, gratuito, Windows):
+  `TabularEditor.exe "<projeto>.SemanticModel\definition" -A
+  "https://raw.githubusercontent.com/microsoft/Analysis-Services/master/BestPracticeRules/BPARules.json"`.
+  Lê o TMDL e aplica as regras oficiais de desempenho, DAX, nomes e
+  formatação; violação de gravidade 3 ou mais faz o comando falhar (bom para
+  pipeline). Confira a sintaxe na documentação da sua versão.
+- **Regras do relatório** (PBI Inspector V2 / Fab Inspector): testa as
+  páginas e os visuais do PBIR (ex.: todo visual com título, nenhum visual
+  fora da página) com um arquivo de regras; roda no computador ou no
+  pipeline.
+- **Power BI Modeling MCP** (Microsoft, `github.com/microsoft/powerbi-modeling-mcp`,
+  versão prévia): servidor MCP local que abre o modelo no Power BI Desktop ou
+  na pasta TMDL e deixa o agente consultar e rodar DAX nele. Com ele, a
+  homologação pode rodar as consultas de conferência no modelo carregado em
+  vez de copiar número de cartão.
+
 O que **não** dá para provar sem o Desktop: que a versão do Power BI da
 máquina do usuário aceita o formato PBIR (versões anteriores a 2024 pedem a
 opção em versão prévia) e que as views rodam no banco real. Por isso o
@@ -80,6 +108,6 @@ dela vão para `expressions.tmdl`. A homologação é contra a própria fonte.
   regenere por cima. Segurança por linha (`seguranca`), detalhamento
   (`"detalhe"`), páginas de dica (`"dica"`) e grupo de cálculo de tempo
   (`"grupo_calculo"`) saem prontos ([argila.md](argila.md)).
-- Status de meta é por cor (verde/vermelho); ícones e faixas de tolerância ficam para depois.
+- Status de meta é por cor: verde e vermelho, e amarelo para "perto da meta" com `"tolerancia"` na medida.
 - Visuais nativos, mais HTML Content e Deneb quando pedidos (`deidara.py
   visuais`); os outros visuais do AppSource o Deidara só descreve.

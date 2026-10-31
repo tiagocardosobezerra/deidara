@@ -88,12 +88,23 @@ def funcoes_usadas(dax):
     return [n for n in _CHAMADA.findall(texto) if n.upper() not in ('VAR', 'RETURN')]
 
 
+_EXTRAS = set()                  # funções DAX do usuário (daxlib) que o argila.json trouxe: valem nesta validação
+
+
+def registrar_extras(nomes):
+    """As funções definidas pelo usuário que o modelo traz ("funcoes_dax"): passam a ser conhecidas."""
+    _EXTRAS.clear()
+    _EXTRAS.update(n.upper() for n in nomes)
+
+
 def desconhecidas(dax, linguagem='dax'):
     """[(função, [parecidas])] chamadas no DAX que não estão no dicionário."""
     todas = funcoes(linguagem)
     upper = {k.upper(): k for k in todas}
     out = []
     for n in funcoes_usadas(dax):
+        if n.upper() in _EXTRAS and linguagem == 'dax':
+            continue
         if n.upper() not in upper and n not in [x for x, _ in out]:
             out.append((n, difflib.get_close_matches(n.upper(), list(upper), n=3, cutoff=0.7)))
     return out

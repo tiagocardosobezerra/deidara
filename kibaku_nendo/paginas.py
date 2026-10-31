@@ -185,6 +185,13 @@ def resolver_grupo_calculo(argila, m, p):
     for k, x in enumerate(itens):
         rotulo, dax, pct = ITENS_DE_TEMPO[x]
         dax = dax.replace('{d}', data)
+        if x in ('ano_anterior', 'variacao_ano_anterior', 'mes_anterior', 'variacao_mes_anterior'):
+            from kibaku_nendo.medidas import corte_sem_medida             # o anterior para no mesmo dia do atual
+            ate = f'KEEPFILTERS({data} <= {corte_sem_medida(m)})'
+            for f in ('SAMEPERIODLASTYEAR(' + data + ')', 'DATEADD(' + data + ', -1, MONTH)'):
+                dax = dax.replace(f, f'CALCULATETABLE({f}, {ate})')
+        if x == 'acumulado_ano' and m['calendario'].get('fim_ano'):       # ano fiscal
+            dax = dax.replace('DATESYTD(' + data + ')', f'DATESYTD({data}, "{m["calendario"]["fim_ano"]}")')
         conferir_funcoes(dax, p, onde)
         lista.append({'chave': x, 'rotulo': rotulo, 'dax': dax, 'ordem': k,
                       'formato': ('IF(ISNUMBER(SELECTEDMEASURE()), "0.0%", SELECTEDMEASUREFORMATSTRING())'
@@ -241,6 +248,17 @@ def resolver_tours(m, p):
             p.aviso(onde, f'[Design] o tour mostra os {len(lista)} primeiros visuais da página; o resto fica sem passo')
 
 
+def _tabelas_da_meta(m, nome):
+    """De onde vem o alvo: a meta proporcional ao período olha a meta de base, e a ponderada a tabela da coluna
+    da meta (o peso só mistura; o que importa é se a meta em si muda com o corte)."""
+    md = medida(m, nome)
+    if md and md.get('tipo') == 'meta_periodo':
+        return _tabelas_da_meta(m, md['base'])
+    if md and md.get('tabela_da_meta'):
+        return {md['tabela_da_meta']}
+    return tabelas_da_medida(m, nome)
+
+
 def _conferir_pagina(m, pagina, p, onde, filtra):
     auxiliares = {t['nome'] for t in m['tabelas'] if t.get('auxiliar')}
     segs = [v['categoria'] for v in pagina['visuais'] if v['tipo'] in SEGMENTADORES and v['categoria']
@@ -250,10 +268,15 @@ def _conferir_pagina(m, pagina, p, onde, filtra):
     paradas = {}                                   # meta que não muda com o segmentador: um aviso só por meta
     for s in segs:
         for nome in sorted(medidas):
-            alvo = tabelas_da_medida(m, nome)
-            faltam = sorted(a for a in alvo if not chega(m, filtra, s['tabela'], a, nome))
+            if nome in metas:                      # a meta em si muda com o corte? (o peso e o período não contam)
+                alvo = _tabelas_da_meta(m, nome)
+                faltam = sorted(a for a in alvo if not alcanca(filtra, s['tabela'], a))
+            else:
+                alvo = tabelas_da_medida(m, nome)
+                faltam = sorted(a for a in alvo if not chega(m, filtra, s['tabela'], a, nome))
             if faltam and nome in metas and len(faltam) == len(alvo):
-                paradas.setdefault(nome, []).append(f'{s["tabela"]}[{s["nome"]}]')
+                base = (medida(m, nome) or {}).get('base') if (medida(m, nome) or {}).get('tipo') == 'meta_periodo' else None
+                paradas.setdefault(base or nome, []).append(f'{s["tabela"]}[{s["nome"]}]')
             elif faltam:
                 parte = 'a medida inteira' if len(faltam) == len(alvo) else 'parte da medida (' + ', '.join(faltam) + ')'
                 efeito = ('o número fica parado' if len(faltam) == len(alvo) else
@@ -383,6 +406,42 @@ def _visual(m, v, p, onde, filtra):
         r['controle'] = alvo['nome']
         if not r['titulo']:
             r['titulo'] = f'{cfg["base"]}: sinal ou ruído?'
+    elif tipo == 'vegalite' and v.get('modelo'):        # modelo Deneb da galeria (terceiros/, MIT)
+        from tecnicas import galeria
+        it = galeria.item(v['modelo'])
+        if not it or it['tipo'] != 'deneb':
+            import difflib
+            parecidos = difflib.get_close_matches(str(v['modelo']), [x['id'] for x in galeria.catalogo()
+                                                                     if x['tipo'] == 'deneb'], n=3, cutoff=0.6)
+            p.erro(onde, f'modelo "{v["modelo"]}" não está na galeria' + (f'; parecidos: {", ".join(parecidos)}'
+                                                                          if parecidos else '')
+                   + ' (`deidara.py galeria <assunto> --tipo deneb`)')
+            return None
+        if not it['campos']:
+            p.erro(onde, f'o modelo "{it["id"]}" é um exemplo sem campos marcados: copie a especificação para "spec" '
+                         'e troque os campos à mão')
+            return None
+        mapa = v.get('campos') or {}
+        faltam = [c['name'] for c in it['campos'] if c['name'] not in mapa]
+        if faltam:
+            p.erro(onde, f'o modelo "{it["id"]}" pede os campos {", ".join(faltam)} em "campos" '
+                         f'(`deidara.py galeria --ver {it["id"]}`)')
+            return None
+        cs = [campo(mapa[c['name']], None, f'campo {c["name"]}') for c in it['campos']]
+        if not all(cs):
+            return None
+        r['campos_deneb'] = cs
+        r['valores'] = [c for c in cs if c['tipo'] == 'medida'] or cs[:1]
+        r['categoria'] = next((c for c in cs if c['tipo'] == 'coluna'), None)
+        r['spec'], r['provider'], r['config'] = galeria.spec_deneb(
+            it['id'], {c['name']: x['nome'] for c, x in zip(it['campos'], cs)})
+        r['modelo'] = it['id']
+        estranhos = [x['nome'] for x in cs if re.search(r'[.\[\]]', x['nome'])]
+        if estranhos:
+            p.aviso(onde, f'[Design] Deneb lê "." e colchete no nome do campo como caminho ({", ".join(estranhos)}): '
+                          'renomeie o campo ou confira o gráfico no Power BI')
+        if not r['titulo']:
+            r['titulo'] = it['nome']
     elif tipo == 'vegalite':
         r['categoria'] = campo(v.get('categoria'), 'coluna', 'categoria')
         r['valores'] = [campo(x, 'medida', 'valor') for x in v.get('valores') or []][:2]
@@ -487,6 +546,10 @@ def _visual(m, v, p, onde, filtra):
             ok = False
         if tipo == 'rosca' and len(r['valores']) > 1:
             p.aviso(onde, 'rosca com mais de uma medida: só a primeira aparece bem')
+        if tipo == 'rosca' and r.get('categoria') and not v.get('poucos_itens'):
+            p.aviso(onde, f'[Design] rosca por {r["categoria"]["nome"]}: o olho só compara bem até 5 fatias; com mais '
+                          'itens, barras ordenadas leem melhor (se a coluna tem até 5 itens, marque "poucos_itens": '
+                          'true no visual)')
     if tipo in ('linha', 'controle') and (v.get('previsao') or v.get('anomalias')):
         o_que = 'Previsão' if v.get('previsao') else 'Anomalias'
         p.aviso(onde, f'[Power BI] ligue {o_que} no painel Análise deste gráfico de linha (o Deidara não grava essa '

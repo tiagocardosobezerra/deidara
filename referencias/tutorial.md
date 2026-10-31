@@ -32,11 +32,18 @@ python deidara.py esbocar C:/paineis/turnover --pedido "desligamentos por motivo
 python deidara.py validar C:/paineis/turnover/argila.json
 ```
 
-O esboço traz 6 tabelas e o calendário (`fDesligamento`, `dMotivoDesligamento`,
-`dCargo`, `dFuncionario`, `dEmpresa`, `fMetas`) e duas medidas: `Qtd
-Desligamento` e `Meta de turnover`. O `validar` aponta **1 erro**: a ligação da
-planilha com a empresa foi *sugerida*. Num caso real, confira os campos com o
-dono do dado; aqui, confirme:
+O esboço reconhece o padrão de turnover e já traz a cadeia inteira, na ordem:
+`Desligamentos`, `Headcount` (ativos no fim do período), `HC Médio`,
+`Turnover` (desligamentos ÷ HC médio) e a `Meta de turnover`, pesada pelo HC
+médio de cada empresa (a média simples daria à empresa pequena o peso da
+grande). Vêm junto o calendário, as tabelas (`fDesligamento`,
+`dMotivoDesligamento`, `dCargo`, `dColaborador`, `dEmpresa`, `fMetas`) e os
+visuais que o C2 escolheu pela pergunta. Para ver a cadeia explicada:
+`python deidara.py padroes turnover`.
+
+O `validar` aponta **1 erro**: a ligação da planilha com a empresa foi
+*sugerida*. Num caso real, confira os campos com o dono do dado; aqui,
+confirme:
 
 ```
 python deidara.py confirmar C:/paineis/turnover/argila.json --ligacao "fMetas->dEmpresa" --por "Ana (RH)"
@@ -47,38 +54,21 @@ dono disser que não é essa a ligação, use `--remover`. Para provar com núme
 o próprio `confirmar` imprime a `receita prova`; o resultado volta com
 `provar --de resultado.txt --argila ...`, que grava a prova na ligação.
 
-## 4. O turnover de verdade (4 min)
+## 4. As definições (3 min)
 
-```
-python deidara.py padroes turnover
-```
-
-O padrão mostra a cadeia inteira, na ordem. Com os nomes deste modelo, acrescente
-em `"medidas"` do `argila.json`:
+Sobram só avisos: decisões para levar ao usuário, como o "valor ATUAL" do
+cargo, o dono do indicador e o servidor de exemplo em `"fontes"`. Dois deles
+travam o aceite: a `descricao` (para que serve o painel) e o `publico` (para
+quem é). Troque os "A DEFINIR" no `argila.json`, por exemplo:
 
 ```json
-{"nome": "Headcount", "tipo": "estoque_na_data", "tabela": "dFuncionario",
- "entradas": "dFuncionario[Data de admissão]", "saidas": "fDesligamento[Data de desligamento]",
- "descricao": "Ativos no último dia do período."},
-{"nome": "HC Médio", "tipo": "media_mensal", "base": "Headcount",
- "descricao": "Média do headcount de fim de mês no período."},
-{"nome": "Turnover", "tipo": "divisao", "numerador": "Qtd Desligamento", "denominador": "HC Médio",
- "formato": "percentual", "polaridade": "menor_melhor", "meta": "Meta de turnover",
- "descricao": "Desligamentos do período divididos pelo headcount médio."}
+"descricao": "Onde o turnover passou da meta e por quê.",
+"publico": "Diretoria de RH",
 ```
 
-E um cartão na página: `{"tipo": "cartao", "medida": "Turnover"}`. Valide. O
-erro que aparece é de propósito: a data de admissão ainda não está no modelo, e
-o `validar` diz exatamente o que acrescentar em `dFuncionario`:
-
-```
-{"coluna": "DATAADMISSAO", "nome": "Data de admissão"}
-```
-
-Depois, troque os "A DEFINIR" que sobraram: a `descricao` das duas medidas do
-esboço e a `descricao` e o `publico` do painel. Errou uma vírgula no JSON? O
-`validar` mostra a linha. Sobram só avisos (decisões para levar ao usuário),
-como o "valor ATUAL" do cargo e o servidor de exemplo em `"fontes"`.
+Num caso real, o jeito mais rápido é o briefing no `painel.json` (as respostas
+do gestor) e `esbocar ... --forcar`: as definições já entram no esboço. Errou
+uma vírgula no JSON? O `validar` mostra a linha.
 
 ## 5. O protótipo (2 min)
 

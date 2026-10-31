@@ -135,12 +135,13 @@ def buscar(catalogos, pedido, limite=10):
                 peso[x] += 3
             for x in tokens(t['descricao']):
                 peso[x] += 2
-            cols = {}
+            cols, nas_colunas = {}, Counter()
             for c in t['colunas'].values():
                 cs = set(tokens(c['coluna'])) | set(tokens(c.get('descricao', '')))
                 cols[c['coluna']] = cs
-                for x in cs:
-                    peso[x] += 1
+                nas_colunas.update(cs)
+            for x, k in nas_colunas.items():       # dez colunas MOTIVO1..MOTIVO10 não valem um nome de tabela
+                peso[x] += min(k, 2)
             docs.append((fonte, t, peso, cols))
     n = max(1, len(docs))
     df = Counter(x for _, _, peso, _ in docs for x in peso)

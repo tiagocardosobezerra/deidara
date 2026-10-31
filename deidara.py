@@ -21,6 +21,8 @@ uma técnica dele (`tecnicas/`):
     onoki         onoki (o acerto da busca)
     c4            a estatística que o C2 escolhe (referencias/estatistica.md)
     arte          modelos, visuais
+    c0            estudar, propor, importar (engenharia reversa de um painel que já existe)
+    galeria       galeria (modelos Deneb, funções DAX e calendários de terceiros, MIT)
 
 Fluxo:
     receita     a consulta (SQL, DAX ou Power Query) que a pessoa roda onde os
@@ -58,6 +60,8 @@ Uso:
     python3 deidara.py funcoes   buscar "acumulado" | ver SAMEPERIODLASTYEAR [--linguagem dax|m]
     python3 deidara.py padroes   [turnover | taxa | estoque | ...]
     python3 deidara.py visuais   [meta | ranking | causa | status | ...]
+    python3 deidara.py c0        estudar|propor|importar ALVO [--medida NOME] [-o ARQ|PASTA] [--manter-antigas]
+    python3 deidara.py galeria   [cascata | minigráfico | ibcs | ...] [--tipo deneb|funcoes_dax|calendario|svg] [--ver ID]
     python3 deidara.py status
 
 O argila.json lista as fontes em "fontes" ({"erp": {"catalogo": "catalogos/erp.json"}}),
@@ -75,10 +79,12 @@ sys.path.insert(0, RAIZ)
 from kibaku_nendo import VERSAO  # noqa: E402
 from kibaku_nendo.util import ErroDeUso  # noqa: E402
 from kibaku_nendo.comandos import (cmd_aprovar, cmd_diff, cmd_gerar, cmd_prototipar, cmd_situacao, cmd_validar)  # noqa: E402
-from tecnicas.consultas import cmd_onoki, cmd_funcoes, cmd_memory_card, cmd_modelos, cmd_padroes, cmd_visuais  # noqa: E402
+from tecnicas.consultas import (cmd_galeria, cmd_onoki, cmd_funcoes, cmd_memory_card, cmd_modelos, cmd_padroes,  # noqa: E402
+                                cmd_visuais)
 from tecnicas.luneta.comandos import (cmd_buscar, cmd_catalogar, cmd_confirmar, cmd_provar, cmd_receita,
                                       cmd_relacionar)  # noqa: E402
 from tecnicas.te_no_kuchi_comandos import cmd_esbocar, cmd_novo  # noqa: E402
+from tecnicas.c0.comandos import cmd_c0  # noqa: E402
 
 
 GUIA = """Deidara — do dado ao painel Power BI: protótipo primeiro, projeto completo depois do "sim".
@@ -101,6 +107,8 @@ Apoio
   buscar / relacionar         quais tabelas e quais ligações (com evidência)
   padroes [assunto]           como criar cada indicador e onde
   visuais [assunto]           técnicas de visual: meta na tabela, ranking, causa, status...
+  galeria [assunto]           modelos Deneb, funções DAX, calendários e SVG da comunidade (MIT)
+  c0 estudar|propor|importar  engenharia reversa: estuda, avalia e refaz o indicador que já existe
   modelos                     os onze modelos de layout ("modelo" no argila.json)
   funcoes buscar|ver          dicionário de funções DAX e Power Query
   diff                        o que mudou desde a aprovação
@@ -239,6 +247,22 @@ def main(argv=None):
     pa = sub.add_parser('padroes', help='padrões de indicador e onde criar cada coisa')
     pa.add_argument('termo', nargs='?')
     sub.add_parser('modelos', help='os modelos de layout (faixa de KPIs, coluna de KPIs, história longa...)')
+    c0 = sub.add_parser('c0', help='engenharia reversa: estuda, avalia e refaz um indicador ou painel que já existe')
+    c0.add_argument('acao', choices=['estudar', 'propor', 'importar'])
+    c0.add_argument('alvo', help='pasta do .pbip, resultado da receita DAX, arquivo .dax ou o próprio DAX entre aspas')
+    c0.add_argument('--medida', action='append', help='só esta medida (repita para várias)')
+    c0.add_argument('-o', '--saida', help='estudar/propor: grava o relatório em Markdown; importar: a pasta do painel')
+    c0.add_argument('--json', action='store_true', help='o estudo em JSON (para outra ferramenta ler)')
+    c0.add_argument('--fonte', default='legado', help='importar: nome da fonte do modelo antigo')
+    c0.add_argument('--projeto', help='importar: nome do projeto')
+    c0.add_argument('--manter-antigas', action='store_true', dest='manter_antigas',
+                    help='importar: guarda as fórmulas antigas como "<nome> (antes)" para a homologação comparar')
+    c0.add_argument('--forcar', action='store_true')
+    gl = sub.add_parser('galeria', help='modelos Deneb, funções DAX, calendários e SVG da comunidade (MIT, em terceiros/)')
+    gl.add_argument('termo', nargs='?', default='')
+    gl.add_argument('--tipo', choices=['deneb', 'funcoes_dax', 'calendario', 'svg'])
+    gl.add_argument('--ver', help='id do item: o que ele pede e como usar no argila.json')
+    gl.add_argument('--limite', type=int, default=25)
     vs = sub.add_parser('visuais', help='técnicas de visual (meta, ranking, causa, status...) e como fazer')
     vs.add_argument('termo', nargs='?')
     df = sub.add_parser('diff', help='o que mudou desde a aprovação')
@@ -270,7 +294,7 @@ def main(argv=None):
         if a.acao == 'marcar' and (not a.ref or not a.status):
             ap.error('memory-card marcar pede REF e --status')
     return {'receita': cmd_receita, 'catalogar': cmd_catalogar, 'validar': cmd_validar, 'prototipar': cmd_prototipar, 'aprovar': cmd_aprovar,
-            'gerar': cmd_gerar, 'diff': cmd_diff, 'funcoes': cmd_funcoes, 'padroes': cmd_padroes, 'visuais': cmd_visuais, 'modelos': cmd_modelos,
+            'gerar': cmd_gerar, 'diff': cmd_diff, 'funcoes': cmd_funcoes, 'padroes': cmd_padroes, 'visuais': cmd_visuais, 'galeria': cmd_galeria, 'c0': cmd_c0, 'modelos': cmd_modelos,
             'buscar': cmd_buscar, 'relacionar': cmd_relacionar, 'provar': cmd_provar,
             'memory-card': cmd_memory_card, 'confirmar': cmd_confirmar, 'situacao': cmd_situacao, 'novo': cmd_novo, 'esbocar': cmd_esbocar, 'status': cmd_status, 'onoki': cmd_onoki}[a.cmd](a) or 0
 

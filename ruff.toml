@@ -1,0 +1,11 @@
+# Lint do Deidara: erro de verdade (nome indefinido, import que sobrou, sintaxe que não roda no Python 3.8),
+# sem regra de estilo. O CI roda `ruff check .` com este arquivo.
+target-version = "py38"
+line-length = 120
+
+[lint]
+select = ["E9", "F"]
+ignore = ["F403", "F405"]          # os testes importam o apoio com *, de propósito
+
+[lint.per-file-ignores]
+"kibaku_nendo/especificacao.py" = ["F401"]   # reexporta a API pública do motor

@@ -10,7 +10,8 @@ import textwrap
 LARGURA = 108
 
 TEMAS = (
-    ('Definições', ('definição pendente',)),
+    ('Definições', ('definição pendente', 'quem responde por')),
+    ('Metas', ('média simples das linhas', 'é anual ou mensal?')),
     ('Memory Card', ('OFICIAL', 'Memory Card')),
     ('Filtros e cortes', ('segmentador', 'não filtra', 'filtra só parte', 'soma todos os anos', 'não muda com')),
     ('Ligações', ('ligação', 'DECLARADA', 'tipos diferentes nas pontas', 'FK ', 'chave da mãe', 'receita de prova',
@@ -19,7 +20,7 @@ TEMAS = (
     ('Privacidade', ('[Privacidade]',)),
     ('Fontes', ('servidor/banco', 'SEU_SERVIDOR')),
     ('Design', ('[Design]', '[SVG]')),
-    ('Modelagem', ('valor ATUAL', 'estoque', 'sem tipo', 'calendário')),
+    ('Modelagem', ('valor ATUAL', 'estoque', 'sem tipo', 'calendário', 'feriados')),
 )
 
 
@@ -75,7 +76,7 @@ def para_gestor(aviso):
 
 def resumo(modelo):
     n = [(len(modelo['tabelas']), 'tabela', 'tabelas'), (len(modelo['relacionamentos']), 'relação', 'relações'),
-         (len([x for x in modelo['medidas'] if x.get('tipo') not in ('cor', 'meta')]), 'medida', 'medidas'),
+         (len([x for x in modelo['medidas'] if x.get('tipo') not in ('cor', 'meta', 'corte')]), 'medida', 'medidas'),
          (len(modelo['paginas']), 'página', 'páginas'),
          (sum(len(p['visuais']) for p in modelo['paginas']), 'visual', 'visuais')]
     return f'{modelo["projeto"] or "(sem nome)"} · ' + ' · '.join(f'{v} {um if v == 1 else muitos}' for v, um, muitos in n)

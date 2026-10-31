@@ -66,7 +66,7 @@ Colunas de ligação que você não listou entram sozinhas, ocultas.
 ## calendario
 
 ```json
-{"nome": "dCalendario", "inicio": 2020, "fim": 2026,
+{"nome": "dCalendario", "inicio": 2020,
  "datas": [{"tabela": "fDesligamento", "coluna": "Data do Desligamento"},
            {"tabela": "fDesligamento", "coluna": "Data de Aviso", "ativo": false}]}
 ```
@@ -74,6 +74,47 @@ Colunas de ligação que você não listou entram sozinhas, ocultas.
 Gera a tabela (Power Query) com `Data`, `Ano`, `Mês`, `Nome do Mês`,
 `Trimestre`, `Ano-Mês`, `Mês/Ano` (ordenada certo) e marca como tabela de
 datas. As colunas de `datas` viram `date` na view (sem hora).
+
+- `inicio`: o ano do registro mais antigo que o painel precisa (padrão: 5 anos
+  atrás). Data antes dele some dos cortes; o `03_qualidade.sql` conta quantas.
+- `fim`: deixe de fora (ou `"atual"`): o calendário vai até 31/12 do ano
+  corrente a cada atualização. Um ano fixo vira aviso quando fica para trás.
+- `mes_inicio_fiscal`: ano fiscal que não começa em janeiro (ex.: `4` = abril a
+  março). Acrescenta `Ano Fiscal` (o nome é o ano em que ele termina) e
+  `Mês Fiscal`, e o acumulado no ano (medida e grupo de cálculo) fecha no fim
+  do ano fiscal.
+- `feriados`: o país (código de 2 letras, ex.: `"BR"`). Acrescenta `Feriado` (o nome) e `Dia Útil`
+  (segunda a sexta, fora de feriado), calculados no Power Query para cada ano do calendário: data fixa, Páscoa
+  e "n-ésimo dia da semana do mês", pelas regras do modelo de feriados do Bravo (SQLBI). No Brasil entram os
+  nacionais, com a Consciência Negra; estaduais, municipais e pontos facultativos vão em `feriados_extras`:
+  `[{"mes": 1, "dia": 25, "nome": "Aniversário de São Paulo"}]`. Dias úteis do período:
+  `CALCULATE(COUNTROWS(dCalendario), dCalendario[Dia Útil])`.
+- `corte`: até que dia as contas de tempo vão. `"dados"` (padrão) cria a
+  medida oculta `Data de Corte`, o último dia com registro (nunca depois de
+  hoje): os meses depois dele ficam em branco, o estoque para nele e o ano
+  anterior é comparado **até o mesmo dia** (jan-out contra jan-out, não contra
+  o ano inteiro). `"hoje"` usa a data de hoje (só para fonte atualizada todo
+  dia).
+
+## funcoes_dax
+
+```json
+"funcoes_dax": ["DaxLib.SVG", "PowerofBI.IBCS"]
+```
+
+Pacotes de funções DAX da comunidade (daxlib, em `terceiros/daxlib`, licença MIT): minigráfico, cascata,
+IBCS, boxplot, mapa de calor, barras de progresso, estatística, curva ABC... (`deidara.py galeria --tipo
+funcoes_dax`; `--ver <pacote>` lista as funções). As funções entram no modelo (`functions.tmdl`) e podem ser
+chamadas no `dax` de qualquer medida; a medida que chama uma função de imagem já sai como imagem (URL da
+imagem na tabela, na matriz e no cartão):
+
+```json
+{"nome": "Tendência do Turnover", "dax": "DaxLib.SVG.Viz.Line(dCalendario[Ano-Mês], [Turnover])", "descricao": "…"}
+```
+
+O modelo sai no nível de compatibilidade 1702, que o Power BI Desktop aceita desde junho de 2026; versões
+anteriores, Azure Analysis Services e SQL Server Analysis Services não abrem. O protótipo mostra o lugar da
+imagem; o desenho sai no Power BI.
 
 ## medidas
 
@@ -92,6 +133,28 @@ Tipos prontos (preferidos: validação completa e consulta de conferência):
   `ano_anterior`, `variacao_ano_anterior`, `variacao_mes_anterior`,
   `media_mensal` (média dos valores de fim de mês no período) e `movel_12m`
   (estas pedem `calendario` e `base`; nenhuma mostra valor em mês futuro).
+- `no_estoque` (numa `agregacao` da tabela de cadastro): `"no_estoque":
+  "Headcount"` soma (média, mínimo, máximo, contagem) só de quem está
+  dentro do estoque no último dia do período, com as mesmas pontas dele.
+  Sem isso, a remuneração do cadastro soma ativos e desligados (o `validar`
+  avisa). A conferência SQL sai mês a mês, como a do headcount.
+- Ficha do indicador (vai para o dicionário): `dono` (a área ou pessoa que
+  explica o número e decide a ação; indicador com meta sem dono vira aviso),
+  `periodicidade` (`"mensal"`, `"semanal"`...) e `tolerancia` (fração da meta
+  que ainda conta como "perto": `0.1` pinta de amarelo até 10% do lado ruim,
+  em vez de vermelho).
+- `media_ponderada`: média de uma coluna pesada por uma medida, item a item
+  de `por`. É a meta do total que conversa com uma taxa: o turnover do grupo
+  pesa cada empresa pelo tamanho dela, e a meta precisa pesar igual (a média
+  simples dá à empresa de 10 pessoas o peso da de 5.000; o `validar` avisa).
+  `{"nome": "Meta de Turnover", "tipo": "media_ponderada", "coluna":
+  "fMeta[Meta Turnover]", "peso": "HC Médio", "por": "dEmpresa[Cód. Empresa]"}`.
+- `base_meta` (na medida que tem `meta`): `"ano"`, `"mes"` ou `"periodo"`.
+  Taxa sobre estoque (desligamentos ÷ HC, faltas ÷ dias) cresce com o
+  período: a de um mês é perto de 1/12 da anual. Com `"ano"` ou `"mes"`, o
+  Deidara cria `<meta> no Período` (a meta vezes os meses do filtro, até o
+  último dado, ÷ 12 na anual) e a cor e o rótulo comparam com ela. Sem
+  `base_meta` numa taxa sobre estoque, o `validar` pergunta.
 - `estoque_na_data`: quantos estão "dentro" no último dia do período
   (headcount ativo, contratos vigentes). `entradas` = coluna de data de
   entrada; a saída é `fim` (coluna de data na mesma tabela, em branco =
@@ -281,6 +344,12 @@ Técnicas do Power BI Design Files que saem prontas:
   percentual; são as barras de erro do gráfico de barras nativo, com as barras invisíveis.
 - `skyline`: colunas empilhadas com um respiro entre os blocos; `legenda` é obrigatória.
 - `imagem`: uma medida de imagem ocupando o cartão novo inteiro (`svg_dispersao`, `svg_radar`...).
+- `vegalite` com `"modelo"`: um dos modelos Deneb da galeria (`deidara.py galeria <assunto> --tipo deneb`),
+  com `"campos"` dizendo qual campo do painel ocupa cada lugar do modelo:
+  `{"tipo": "vegalite", "modelo": "deneb-vega-templates/ranking/slope", "campos": {"Category": "dMotivo[Motivo]",
+  "Value 1": "Desligamentos Ano Anterior", "Value 2": "Desligamentos"}}`. `galeria --ver <id>` diz os campos de
+  cada um. Há cascata, bullet, slope, bump (ranking no tempo), histograma, boxplot, violino, treemap, waffle,
+  sankey, marimekko, pirâmide etária e mapas. O protótipo mostra a prévia que o autor gravou no modelo.
 - `html` e `vegalite`: visuais certificados do AppSource (HTML Content e Deneb), não nativos. O `validar` avisa:
   o administrador precisa liberar visuais do AppSource, e quem abre baixa o visual na primeira vez. O
   `vegalite` sai com um pirulito (linha e ponto) da primeira medida; `spec` troca pela sua especificação

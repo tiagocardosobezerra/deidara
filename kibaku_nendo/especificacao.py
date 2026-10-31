@@ -13,11 +13,13 @@ Regras que valem aqui:
 Formato completo do argila.json: referencias/argila.md.
 """
 
+import calendar
+import datetime
 
 from tecnicas.luneta import prova
 
 from kibaku_nendo.util import (FORMATOS, SQL_POR_FAMILIA, chave, sql_tipo)
-from kibaku_nendo.medidas import resolver_medidas
+from kibaku_nendo.medidas import garantir_corte, resolver_medidas
 from kibaku_nendo.paginas import (conferir_design, resolver_grupo_calculo, resolver_layout, resolver_paginas,
                                   resolver_tours)
 # a API pública do motor continua saindo daqui (quem já importa de kibaku_nendo.especificacao)
@@ -27,7 +29,7 @@ from kibaku_nendo.desenhos import (COR_BOA, COR_ESTRELA, COR_MARCA, COR_RUIM, CO
                                    svg_pilula, svg_posicao, svg_progresso, svg_radar, svg_seta, svg_variacao,
                                    texto_dax, texto_svg)  # noqa: F401
 from kibaku_nendo.modelo import (AGREGACOES, AGREGACOES_NUMERICAS, CALENDARIO_OCULTAS, CALENDARIO_SEM_ANO,
-                                 COLUNAS_CALENDARIO, COR_APAGADA, DIAGNOSTICOS, EXTRAS,
+                                 COLUNAS_CALENDARIO, COLUNAS_FISCAIS, COR_APAGADA, DIAGNOSTICOS, EXTRAS,
                                  LIMITE_VISUAIS_POR_PAGINA, Problemas, RANKINGS, SEGMENTADORES, SVG_GERADAS,
                                  TEMPO, TIPOS_TABELA, TIPOS_VISUAL, VISUAIS_DE_TERCEIROS, alcanca, alcance,
                                  campo_do_modelo, chave_coluna, chave_tabela, chega, coluna_do_modelo,
@@ -57,12 +59,16 @@ def resolver(argila, catalogos):
     }
     if not m['projeto']:
         p.erro('projeto', 'informe o nome do projeto')
+    _sem_controle(argila, p)
     resolver_layout(argila, m, p)
+    _funcoes_dax(argila, m, p)
     _tabelas(argila, catalogos, m, p)
     _calendario(argila, m, p)
     _relacionamentos(argila, catalogos, m, p)
     resolver_medidas(argila, m, p)
     resolver_grupo_calculo(argila, m, p)
+    if m['calendario']:
+        garantir_corte(m, p)
     _seguranca(argila, m, p)
     resolver_paginas(argila, m, p)
     _privacidade(m, p)
@@ -81,6 +87,60 @@ def resolver(argila, catalogos):
             p.aviso(f'fonte {f["nome"]}', 'servidor/banco ainda de exemplo (SEU_SERVIDOR/SEU_BANCO): informe em "fontes" '
                                          '(são os valores iniciais dos parâmetros do Power BI e aparecem no LEIA-ME)')
     return m, p
+
+
+def _funcoes_dax(argila, m, p):
+    """"funcoes_dax": ["DaxLib.SVG", "PowerofBI.IBCS"]: pacotes de funções DAX do daxlib (terceiros/daxlib, MIT) que
+    entram no modelo (functions.tmdl) e podem ser chamados no "dax" das medidas."""
+    from tecnicas import galeria, sasori
+    pedidos = argila.get('funcoes_dax') or []
+    m['funcoes_dax'] = None
+    sasori.registrar_extras(())
+    if not pedidos:
+        return
+    if not isinstance(pedidos, list):
+        p.erro('funcoes_dax', 'informe uma lista de pacotes (ex.: ["DaxLib.SVG"]); `deidara.py galeria --tipo funcoes_dax`')
+        return
+    ok = []
+    for pid in pedidos:
+        x = galeria.item(pid)
+        if not x or x['tipo'] != 'funcoes_dax':
+            import difflib
+            ids = [i['id'] for i in galeria.catalogo() if i['tipo'] == 'funcoes_dax']
+            parecidos = difflib.get_close_matches(str(pid), ids, n=3, cutoff=0.6)
+            p.erro('funcoes_dax', f'"{pid}" não é um pacote de funções da galeria'
+                   + (f'; parecidos: {", ".join(parecidos)}' if parecidos else '') + ' (`deidara.py galeria --tipo funcoes_dax`)')
+            continue
+        ok.append(x['id'])
+    if not ok:
+        return
+    tmdl, nomes = galeria.funcoes_tmdl(ok)
+    imagem = {n for n, pac in nomes.items() if galeria.item(pac).get('imagem')}
+    m['funcoes_dax'] = {'pacotes': ok, 'tmdl': tmdl, 'nomes': nomes, 'imagem': imagem}
+    sasori.registrar_extras(nomes)
+    p.aviso('funcoes_dax', '[Power BI] funções DAX definidas pelo usuário (' + ', '.join(ok) + '): o modelo sai no '
+                           'nível de compatibilidade 1702, que o Power BI Desktop aceita desde junho de 2026 (versões '
+                           'anteriores não abrem); Azure Analysis Services e SQL Server Analysis Services não aceitam')
+
+
+NOMES_DE_UMA_LINHA = {'projeto', 'nome', 'tabela', 'coluna', 'medida', 'servidor', 'banco', 'esquema_origem',
+                      'esquema_views', 'pasta', 'arquivo', 'url', 'catalogo'}
+
+
+def _sem_controle(x, p, onde=''):
+    """Nome, servidor ou banco com quebra de linha (ou outro caractere de controle) quebra o TMDL, o M e o SQL
+    gerados no meio da linha: recusa antes de gerar."""
+    if isinstance(x, dict):
+        for k, v in x.items():
+            aqui = f'{onde}.{k}' if onde else str(k)
+            if k in NOMES_DE_UMA_LINHA and isinstance(v, str) and any(ord(c) < 32 for c in v):
+                p.erro(aqui, f'{v!r} tem quebra de linha ou caractere de controle: nome, servidor e banco ficam '
+                             'numa linha só (o projeto gerado quebraria)')
+            elif isinstance(v, (dict, list)):
+                _sem_controle(v, p, aqui)
+    elif isinstance(x, list):
+        for i, v in enumerate(x):
+            _sem_controle(v, p, f'{onde}[{i}]')
 
 
 def _fontes(argila, catalogos, p):
@@ -228,25 +288,74 @@ def _tabelas(argila, catalogos, m, p):
         m['tabelas'].append(tab)
 
 
+def fim_do_ano(mes_fiscal):
+    """O último dia do ano (fiscal) no formato do 3º argumento de TOTALYTD/DATESYTD; None = 31/12."""
+    if mes_fiscal == 1:
+        return None
+    mes = mes_fiscal - 1
+    return f'{mes:02d}-{calendar.monthrange(2001, mes)[1]:02d}'
+
+
 def _calendario(argila, m, p):
     cal = argila.get('calendario')
     if not cal:
         m['calendario'] = None
         return
     nome = cal.get('nome', 'dCalendario')
-    inicio, fim = int(cal.get('inicio', 2018)), int(cal.get('fim', 2030))
+    ano_atual = datetime.date.today().year
+    # sem "fim" (ou "fim": "atual"), o calendário vai até 31/12 do ano corrente a cada atualização:
+    # um ano fixo vira bomba-relógio (as datas do ano seguinte somem dos cortes e das medidas de tempo)
+    dinamico = cal.get('fim') in (None, 'atual')
+    try:
+        inicio = int(cal.get('inicio', ano_atual - 5))
+        fim = ano_atual if dinamico else int(cal['fim'])
+    except (TypeError, ValueError):
+        p.erro('calendario', '"inicio" e "fim" são anos (ex.: 2020) e "fim" pode ser "atual"')
+        inicio, fim = ano_atual - 5, ano_atual
     if fim < inicio:
         p.erro('calendario', 'fim antes do início')
+    elif not dinamico and fim < ano_atual:
+        p.aviso('calendario', f'o calendário termina em 31/12/{fim}: as datas de {fim + 1} em diante somem dos cortes '
+                              'e das medidas de tempo; tire o "fim" (ou use "fim": "atual") para ele acompanhar o ano')
+    mes_fiscal = cal.get('mes_inicio_fiscal', 1)
+    if not isinstance(mes_fiscal, int) or isinstance(mes_fiscal, bool) or not 1 <= mes_fiscal <= 12:
+        p.erro('calendario', '"mes_inicio_fiscal" é o mês em que o ano fiscal começa (1 a 12)')
+        mes_fiscal = 1
+    regras = []
+    if cal.get('feriados'):                        # feriados nacionais (modelo do Bravo, SQLBI) e o dia útil
+        from tecnicas import galeria
+        regras = galeria.feriados(cal['feriados'])
+        if not regras:
+            p.erro('calendario', f'sem feriados para "{cal["feriados"]}": use o código do país com 2 letras (ex.: '
+                                 '"BR"); a lista vem de terceiros/bravo-calendario/HolidaysDefinition.json')
+        elif str(cal['feriados']).upper() == 'BR':
+            p.aviso('calendario', 'feriados nacionais do Brasil (Bravo, com a Consciência Negra da Lei 14.759/2023); '
+                                  'estaduais, municipais e pontos facultativos (Carnaval, Corpus Christi) ficam de fora: '
+                                  'acrescente em "feriados_extras" se a empresa folga neles')
+        for i, x in enumerate(cal.get('feriados_extras') or []):
+            try:
+                mes, dia = int(x['mes']), int(x['dia'])
+                regras.append({'MonthNumber': mes, 'DayNumber': dia, 'WeekDayNumber': 0, 'OffsetWeek': 0,
+                               'OffsetDays': 0, 'HolidayName': str(x.get('nome') or 'Feriado')})
+            except (KeyError, TypeError, ValueError):
+                p.erro('calendario', f'feriados_extras[{i}]: use {{"mes": 1, "dia": 25, "nome": "Aniversário da cidade"}}')
     tab = {'nome': nome, 'tipo': 'dimensao', 'origem': None, 'descricao': 'Calendário gerado pelo Deidara',
-           'filtro': None, 'colunas': [], 'calendario': True, 'pk': [], 'inicio': inicio, 'fim': fim}
-    for n, fam, fmt in COLUNAS_CALENDARIO:
+           'filtro': None, 'colunas': [], 'calendario': True, 'pk': [], 'inicio': inicio, 'fim': fim,
+           'fim_dinamico': dinamico, 'mes_fiscal': mes_fiscal, 'feriados': regras}
+    for n, fam, fmt in COLUNAS_CALENDARIO + (COLUNAS_FISCAIS if mes_fiscal != 1 else []) + (
+            [('Feriado', 'texto', None), ('Dia Útil', 'logico', None)] if regras else []):
         c = nova_coluna(n, None, fam, formato=fmt)
         c['oculta'] = n in CALENDARIO_OCULTAS
         tab['colunas'].append(c)
     if tabela_do_modelo(m, nome):
         p.erro('calendario', f'já existe tabela chamada {nome}')
     m['tabelas'].append(tab)
-    m['calendario'] = {'tabela': nome, 'datas': []}
+    corte = cal.get('corte', 'dados')
+    if corte not in ('dados', 'hoje'):
+        p.erro('calendario', '"corte" é "dados" (o último dia com registro, o padrão) ou "hoje"')
+        corte = 'dados'
+    m['calendario'] = {'tabela': nome, 'datas': [], 'mes_fiscal': mes_fiscal, 'fim_ano': fim_do_ano(mes_fiscal),
+                       'corte': corte}
     ativas = {}
     for i, d in enumerate(cal.get('datas') or []):
         onde = f'calendario.datas[{i}]'
@@ -329,6 +438,7 @@ def _declarada(catalogos, m, de, para, r, p, onde):
         p.erro(onde, '"declarada" pede "campos" ([["CAMPO_DA_FILHA", "CAMPO_DA_MAE"]]) e "por" (quem confirmou)')
         return
     if d['por'].strip().upper() == 'A CONFIRMAR':
+        m.setdefault('ligacoes_pendentes', []).append((de['nome'], para['nome']))   # quem depende dela não erra junto
         p.erro(onde, f'ligação sugerida ainda não confirmada: confira os campos com o dono do dado e rode '
                      f'`deidara.py confirmar <argila> --ligacao {de["nome"]}->{para["nome"]} --por "<quem confirmou>"` '
                      '(ou --remover)')

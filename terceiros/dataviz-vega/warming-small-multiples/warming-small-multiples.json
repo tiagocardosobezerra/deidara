@@ -1,0 +1,210 @@
+{
+  "$schema": "https://vega.github.io/schema/vega/v5.json",
+  "description": "Annual Surface Temperature Change (Animated Scatter Plot)",
+  "usermeta": {
+    "Copyright": "Andrzej Leszkiewicz",
+    "License": "MIT Expat License (https://en.wikipedia.org/wiki/MIT_License)",
+    "Permission": "Permission is hereby granted, free of charge, to any person obtaining a copy of this software and associated documentation files (the “Software”), to deal in the Software without restriction, including without limitation the rights to use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies of the Software, and to permit persons to whom the Software is furnished to do so, subject to the following conditions: The above copyright notice and this permission notice shall be included in all copies or substantial portions of the Software.",
+    "Github": "https://github.com/avatorl/Deneb-Vega/"
+  },
+  "width": 150,
+  "height": 110,
+  "padding": 5,
+  "autosize": "pad",
+  "background": "white",
+  "config": {
+    "axis": {
+      "titleColor": "#666666",
+      "titleFontWeight": "lighter",
+      "titleFontSize": 8,
+      "domain": false,
+      "ticks": true,
+      "tickSize": 3
+    }
+  },
+  "signals": [
+    {"name": "titleColor", "value": "#555555"},
+    {"name": "gridColumns", "value": 5}
+  ],
+  "data": [
+    {
+      "name": "data-all-years",
+      "url": "https://raw.githubusercontent.com/avatorl/Deneb-Vega/main/warming-heatmap/temperature-change-country.csv",
+      "format": {"type": "csv", "parse": "auto", "delimiter": ","}
+    },
+    {
+      "name": "data-global",
+      "url": "https://raw.githubusercontent.com/avatorl/Deneb-Vega/main/warming-stripe/global-temp.csv",
+      "format": {"type": "csv", "parse": "auto", "delimiter": ","},
+      "transform": [{"type": "filter", "expr": "datum.year>=1961"}]
+    }
+  ],
+  "scales": [
+    {
+      "name": "scaleX",
+      "type": "linear",
+      "domain": {"data": "data-all-years", "field": "latitude"},
+      "range": "width"
+    },
+    {
+      "name": "scaleY",
+      "type": "linear",
+      "domain": {"data": "data-all-years", "field": "temp"},
+      "range": "height"
+    },
+    {
+      "name": "colorHawkins",
+      "type": "linear",
+      "range": {
+        "scheme": [
+          "#67000D",
+          "#A50F15",
+          "#CB181D",
+          "#EF3B2C",
+          "#FB6A4A",
+          "#FC9272",
+          "#FCBBA1",
+          "#FEE0D2",
+          "#FFFFFF",
+          "#DEEBF7",
+          "#C6DBEF",
+          "#9ECAE1",
+          "#6BAED6",
+          "#4292C6",
+          "#2171B5",
+          "#08519C",
+          "#08306B"
+        ]
+      },
+      "domain": {"data": "data-all-years", "field": "temp"},
+      "reverse": true,
+      "domainMid": 0
+    }
+  ],
+  "legends": [],
+  "axes": [
+    {
+      "scale": "scaleX",
+      "orient": "bottom",
+      "title": "Latitude",
+      "offset": -18,
+      "labelBaseline": "top",
+      "encode": {
+        "labels": {
+          "update": {
+            "text": {
+              "signal": "datum.value==0?'0':datum.value==70?'N':datum.value==-40?'S':abs(datum.value)"
+            },
+            "fill": {
+              "signal": "datum.value==70?'red':datum.value==-40?'black':'gray'"
+            }
+          }
+        }
+      }
+    },
+    {
+      "scale": "scaleY",
+      "orient": "left",
+      "title": "Temp. change, °C",
+      "offset": 10,
+      "labelOffset": 5,
+      "tickCount": 5,
+      "labelBaseline": "bottom",
+      "encode": {
+        "ticks": {
+          "update": {
+            "strokeWidth": {"signal": "datum.value<=3&&datum.value>=-1?1:0"}
+          }
+        },
+        "labels": {
+          "update": {
+            "text": {
+              "signal": "datum.value<=3&&datum.value>=-1?(datum.value>0?'+':'')+datum.value:''"
+            },
+            "fill": {
+              "signal": "datum.value==0?'gray':datum.value<0?'#08306B':'#67000D'"
+            }
+          }
+        }
+      }
+    }
+  ],
+  "title": {
+    "anchor": "start",
+    "font": {"value": "Tahoma"},
+    "fontSize": {"value": 18},
+    "fontWeight": "bold",
+    "encode": {
+      "title": {
+        "update": {
+          "text": {
+            "signal": "'Annual Surface Temperature Change, 1961-2021 (compared to 1951-1980 average)'"
+          },
+          "fill": {"signal": "titleColor"}
+        }
+      }
+    }
+  },
+  "marks": [
+    {
+      "type": "group",
+      "layout": {
+        "align": "all",
+        "bounds": "full",
+        "columns": {"signal": "gridColumns"},
+        "padding": 10
+      },
+      "marks": [
+        {
+          "type": "group",
+          "from": {
+            "facet": {
+              "name": "series",
+              "data": "data-all-years",
+              "groupby": "year"
+            }
+          },
+          "title": {
+            "text": {"signal": "data('series')[0]['year']"},
+            "color": {
+              "scale": "colorHawkins",
+              "signal": "data('data-global')[data('series')[0]['year']-1961]['temp']"
+            },
+            "fontSize": 30,
+            "dy": 25,
+            "encode": {
+              "title": {
+                "update": {
+                  "stroke": {"value": "#CCCCCC"},
+                  "strokeWidth": {"value": "0.8"}
+                }
+              }
+            }
+          },
+          "marks": [
+            {
+              "name": "points",
+              "type": "symbol",
+              "from": {"data": "series"},
+              "encode": {
+                "enter": {
+                  "zindex": {"value": 1},
+                  "tooltip": {"signal": "datum.country+', '+datum.year"},
+                  "x": {"scale": "scaleX", "field": "latitude"},
+                  "y": {"scale": "scaleY", "field": "temp"},
+                  "stroke": {"signal": "'#000000'"},
+                  "fill": {"scale": "colorHawkins", "field": "temp"},
+                  "strokeOpacity": {"signal": "1"},
+                  "strokeWidth": {"signal": "0.1"},
+                  "fillOpacity": {"signal": "1"},
+                  "size": {"signal": "isNumber(datum.temp)?10:0"}
+                },
+                "update": {}
+              }
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

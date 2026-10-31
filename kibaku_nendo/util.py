@@ -6,6 +6,7 @@ Tudo determinístico: o mesmo argila.json gera sempre os mesmos arquivos
 que o diff entre duas gerações mostre só o que mudou de verdade.
 """
 
+import functools
 import hashlib
 import json
 import os
@@ -91,10 +92,12 @@ def tipo_tmdl(familia):
     return _TIPO_TMDL.get(familia, 'string')
 
 
+@functools.lru_cache(maxsize=65536)          # chamada centenas de milhares de vezes por geração
 def sem_acento(texto):
     return ''.join(c for c in unicodedata.normalize('NFKD', texto) if not unicodedata.combining(c))
 
 
+@functools.lru_cache(maxsize=65536)
 def chave(texto):
     """Comparação de nomes sem caixa e sem acento."""
     return sem_acento(texto or '').strip().lower()

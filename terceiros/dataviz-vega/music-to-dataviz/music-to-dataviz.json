@@ -1,0 +1,410 @@
+{
+  "$schema": "https://vega.github.io/schema/vega/v5.json",
+  "description": "Visualization of music. Piano Quintet No. 2 in C Minor Op. 115 - Gabriel Fauré. Author of the original design idea: Nicholas Rougeux. Vega implementation: Andrzej Leszkiewicz. Each bubble represents a note. Click on an instrument name to highlight its notes.",
+  "usermeta": {
+    "Copyright": "Andrzej Leszkiewicz",
+    "License": "MIT Expat License (https://en.wikipedia.org/wiki/MIT_License)",
+    "Permission": "Permission is hereby granted, free of charge, to any person obtaining a copy of this software and associated documentation files (the “Software”), to deal in the Software without restriction, including without limitation the rights to use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies of the Software, and to permit persons to whom the Software is furnished to do so, subject to the following conditions: The above copyright notice and this permission notice shall be included in all copies or substantial portions of the Software.",
+    "Github": "https://github.com/avatorl/Deneb-Vega/",
+    "Original Idea Author": "Nicholas Rougeux",
+    "Original Idea URL": "https://www.c82.net/offthestaff/"
+  },
+  "padding": 20,
+  "width": 700,
+  "autosize": "pad",
+  "background": "black",
+  "config": {},
+  "data": [
+    {
+      "name": "dataset-csv",
+      "url": "https://raw.githubusercontent.com/avatorl/Deneb-Vega/main/music-to-dataviz/music-to-dataviz.csv",
+      "format": {"type": "csv", "parse": "auto", "delimiter": ","}
+    },
+    {
+      "name": "dataset",
+      "source": "dataset-csv",
+      "transform": [
+        {"type": "filter", "expr": "datum.duration!=null"},
+        {
+          "type": "collect",
+          "sort": {"field": ["angle"], "order": ["ascending"]}
+        }
+      ]
+    },
+    {
+      "name": "dataset-for-legend",
+      "source": "dataset-csv",
+      "transform": [
+        {"type": "filter", "expr": "datum.duration!=null"},
+        {
+          "type": "collect",
+          "sort": {"field": ["duration"], "order": ["ascending"]}
+        }
+      ]
+    },
+    {
+      "name": "selected",
+      "on": [
+        {"trigger": "clear", "remove": true},
+        {"trigger": "!shift", "remove": true},
+        {"trigger": "!shift && clicked", "insert": "clicked"},
+        {"trigger": "shift && clicked", "toggle": "clicked"}
+      ]
+    }
+  ],
+  "signals": [
+    {"name": "radius", "update": "400"},
+    {
+      "name": "clear",
+      "value": true,
+      "on": [
+        {"events": "mouseup[!event.item]", "update": "true", "force": true}
+      ]
+    },
+    {
+      "name": "shift",
+      "value": false,
+      "on": [
+        {
+          "events": "@legendSymbol:click, @legendLabel:click",
+          "update": "event.shiftKey",
+          "force": true
+        }
+      ]
+    },
+    {
+      "name": "clicked",
+      "value": null,
+      "on": [
+        {
+          "events": "@legendSymbol:click, @legendLabel:click",
+          "update": "{value: datum.value}",
+          "force": true
+        }
+      ]
+    },
+    {
+      "name": "brush",
+      "value": 0,
+      "on": [
+        {"events": {"signal": "clear"}, "update": "clear ? [0, 0] : brush"},
+        {"events": "@xaxis:mousedown", "update": "[x(), x()]"},
+        {
+          "events": "[@xaxis:mousedown, window:mouseup] > window:mousemove!",
+          "update": "[brush[0], clamp(x(), 0, width)]"
+        },
+        {
+          "events": {"signal": "delta"},
+          "update": "clampRange([anchor[0] + delta, anchor[1] + delta], 0, width)"
+        }
+      ]
+    },
+    {
+      "name": "anchor",
+      "value": null,
+      "on": [{"events": "@brush:mousedown", "update": "slice(brush)"}]
+    },
+    {
+      "name": "xdown",
+      "value": 0,
+      "on": [{"events": "@brush:mousedown", "update": "x()"}]
+    },
+    {
+      "name": "delta",
+      "value": 0,
+      "on": [
+        {
+          "events": "[@brush:mousedown, window:mouseup] > window:mousemove!",
+          "update": "x() - xdown"
+        }
+      ]
+    },
+    {
+      "name": "domain",
+      "on": [
+        {
+          "events": {"signal": "brush"},
+          "update": "span(brush) ? invert('x', brush) : null"
+        }
+      ]
+    },
+    {
+      "name": "svgCircleArrow",
+      "value": "M5293.822348066335,4877.302862986191 c1036.7589328904626,-70.39999973115265 2001.031964177618,-439.79999832046775 2802.5876810772647,-1079.099995879074 C8817.659788665307,3225.402869294556 9380.202518812139,2420.0028723702617 9676.061295619,1534.5028757518571 C9854.41872155577,1002.802877782342 9924.999737778078,564.9028794546186 9924.999737778078,-17.69711832051678 c0,-582.4999977755172 -70.5810162223079,-1018.4999961104966 -248.9384421590774,-1554.099994065118 c-578.1828416960932,-1722.1999934231687 -2055.8726117253486,-2973.2999886454 -3878.547149966197,-3284.0999874585 c-94.04118354619999,-15.59999994042587 -309.69426010043895,-39.099999850682785 -480.13137313726196,-50.799999806002184 c-1191.65619150334,-80.19999969372786 -2398.852237430626,299.09999885778063 -3374.855352379727,1065.3999959313924 c-231.29318810350037,179.79999931336997 -660.4939415803469,625.4999976113065 -844.6662807854317,871.8999966703407 c-231.29318810350037,310.7999988131 -333.15442742433106,474.9999981860441 -489.9565714182083,791.6999969766129 c-270.4937241019697,549.2999979023032 -431.20589598316224,1112.2999957522882 -488.05168603720847,1720.2999934304246 c-47.020591773099994,500.39999808904514 -17.645254055576974,613.799997655987 160.71217188119255,615.7999976483493 c49.02573427941556,0 90.13115565888465,-15.59999994042587 125.42166377003856,-46.89999982089572 c52.9357621667309,-44.999999828151545 54.94090467304647,-52.799999798364475 68.57587371599233,-310.7999988131 c15.740368674577176,-314.6999987982065 27.470452336523234,-406.59999844725377 78.40107199693858,-678.2999974096709 c137.15174743198466,-717.3999972603538 454.6660633070543,-1397.6999946623869 921.1624674013703,-1974.3999924600537 c1352.268106259217,-1671.3999936171665 3662.994330537274,-2173.799991698574 5581.715194830637,-1211.9999953715483 c450.756035419739,224.7999991415215 787.8204907313853,471.09999820093765 1168.0957670541322,850.3999967524461 c407.6454715339544,404.5999984548915 648.763857918401,742.7999971633548 893.6920150648473,1251.099995222231 C10015.130893436963,-99.79711800698882 9525.174322018755,2130.702873475056 7922.06288821946,3463.9028683837587 c-631.118603862824,525.8999979916643 -1418.9390945942096,877.6999966481914 -2255.7853196050105,1006.6999961555591 c-313.60428798775433,48.89999981325801 -978.0082574554167,48.89999981325801 -1303.342629105117,1.9999999923622909 c-976.0031149491011,-146.59999944015593 -1863.7799596203174,-590.3999977453483 -2557.659523930819,-1284.2999950954452 l-186.17748171140016,-185.6999992908387 l795.7408036313319,-9.799999962575226 c866.221562728324,-9.799999962575226 840.7562528981163,-7.799999970212936 879.9567888965856,-125.09999952226129 c23.560424449207886,-76.19999970900328 5.915170393630917,-140.7999994623053 -58.75067543504605,-197.3999992461581 c-41.10542137946908,-37.099999858320494 -74.49104410962323,-39.099999850682785 -1026.9337346095165,-44.999999828151545 c-905.4220987267933,-3.8999999851064673 -987.7331986110473,-1.9999999923622909 -1050.4941590587243,29.29999988810756 c-37.29565061746951,19.599999925150453 -78.40107199693858,56.69999978347095 -92.13629816520022,84.09999967883432 c-19.65039656189254,37.099999858320494 -25.465309830207673,283.3999989177366 -25.465309830207673,1022.399996095603 c0,1084.8999958569248 -1.9048853809997865,1065.3999959313924 127.42680627635414,1108.3999957671817 c54.840647547730704,17.59999993278816 84.31624239056949,17.59999993278816 129.33169165735393,0 c117.60160799540787,-48.89999981325801 115.59646548909231,-41.099999843045076 115.59646548909231,-815.1999968868698 c0,-390.99999850682786 5.915170393630917,-709.5999972901408 15.640111549261405,-709.5999972901408 c7.820055774630703,0 80.40621450325415,66.49999974604617 160.71217188119255,148.59999943251822 c699.6944775788163,705.6999973050343 1736.453410469279,1211.9999953715483 2767.297172966111,1344.8999948640226 C4590.217842600202,4869.502863015977 5099.824810580303,4891.002862933871 5293.822348066335,4877.302862986191 z"
+    },
+    {
+      "name": "svgRadialArrows",
+      "value": "M8716,4963.5l-1004.6-38.3l-7.2-189l-7.2-189l222.5,14.3c122,9.6,471.2,21.5,772.6,31.1l550.2,14.4L7615.6,2978.1l-1626.6-1629l126.8-124.4l124.4-126.8l1628.9,1626.6l1629,1626.6l-14.4-526.2c-7.2-289.4-21.5-636.3-31.1-772.6l-14.3-246.4l188.9,7.2l189,7.2l26.3,777.4c16.8,428.2,33.5,920.9,43.1,1095.5l14.3,315.8l-90.9-4.8C9761.3,5004.1,9268.5,4985,8716,4963.5z M2118.9-2518.7L494.7-4140.5l14.4,550.2c9.6,303.8,21.5,650.6,31.1,772.6l14.3,222.5l-189-7.2l-189-7.2l-40.7-1088.4c-21.5-598-35.9-1090.7-35.9-1090.7c2.4-2.4,495.1,14.3,1093.1,35.9l1088.4,38.3l7.2,189l7.2,189l-246.4-14.3c-136.3-9.6-483.2-23.9-772.6-31.1l-526.2-14.4l1626.6,1629l1626.6,1628.9l-119.6,119.6c-64.6,64.6-124.4,119.6-131.6,119.6S3011.1-1628.9,2118.9-2518.7z"
+    }
+  ],
+  "scales": [
+    {
+      "name": "color",
+      "type": "ordinal",
+      "domain": {"data": "dataset", "field": "part"},
+      "range": ["green", "yellow", "orange", "red", "blue"]
+    },
+    {
+      "name": "size",
+      "type": "ordinal",
+      "domain": {"data": "dataset", "field": "duration"},
+      "range": [0, 100]
+    },
+    {
+      "name": "scale-size-for-legend",
+      "type": "ordinal",
+      "domain": {"data": "dataset-for-legend", "field": "duration"},
+      "range": [0, 100]
+    }
+  ],
+  "title": {
+    "text": "Piano Quintet No. 2 in C Minor Op. 115 - Gabriel Fauré",
+    "color": "#CCCCCC",
+    "anchor": "start",
+    "fontSize": 24,
+    "subtitle": {
+      "signal": "length(data('dataset'))+' musical notes, playing time 30-35 minutes'"
+    },
+    "subtitlePadding": 5,
+    "subtitleColor": "#CCCCCC",
+    "subtitleFontSize": 20,
+    "offset": 10
+  },
+  "axes": [],
+  "legends": [
+    {
+      "type": "symbol",
+      "orient": "right",
+      "stroke": "color",
+      "fill": "color",
+      "title": "Instrument",
+      "titleFontSize": 22,
+      "titleColor": "#CCCCCC",
+      "labelFontSize": 20,
+      "labelColor": "#CCCCCC",
+      "offset": 5,
+      "padding": 5,
+      "encode": {
+        "symbols": {
+          "name": "legendSymbol",
+          "interactive": true,
+          "enter": {
+            "strokeWidth": {"value": 1},
+            "strokeOpacity": {"value": 0.8},
+            "size": {"value": 100},
+            "cursor": {"value": "pointer"}
+          },
+          "update": {
+            "fillOpacity": {"value": 0.4},
+            "strokeWidth": {"value": 2},
+            "opacity": [
+              {
+                "test": "!length(data('selected')) || indata('selected', 'value', datum.value)",
+                "value": 0.7
+              },
+              {"value": 0.15}
+            ],
+            "size": {"value": 100}
+          }
+        },
+        "labels": {
+          "name": "legendLabel",
+          "interactive": true,
+          "enter": {"cursor": {"value": "pointer"}},
+          "update": {
+            "opacity": [
+              {
+                "test": "!length(data('selected')) || indata('selected', 'value', datum.value)",
+                "value": 1
+              },
+              {"value": 0.25}
+            ]
+          }
+        }
+      }
+    },
+    {
+      "type": "symbol",
+      "orient": "right",
+      "size": "scale-size-for-legend",
+      "title": "Note Duration",
+      "titleFontSize": 22,
+      "titleColor": "#CCCCCC",
+      "labelFontSize": 20,
+      "labelColor": "#CCCCCC",
+      "offset": 5,
+      "padding": 5,
+      "encode": {
+        "symbols": {
+          "update": {
+            "stroke": {"value": "#CCCCCC"},
+            "strokeWidth": {"value": 1},
+            "strokeOpacity": {"value": 0.8},
+            "size": {"signal": "pow(datum.value,0.999)*5"},
+            "fillOpacity": {"value": 0.4}
+          }
+        },
+        "labels": {"enter": {"dx": {"value": 5}, "opacity": {"value": 1}}}
+      }
+    }
+  ],
+  "marks": [
+    {
+      "name": "marks",
+      "type": "symbol",
+      "from": {"data": "dataset"},
+      "encode": {
+        "enter": {
+          "x": {"signal": "-100+radius + radius*datum['dx']"},
+          "y": {"signal": "radius + radius*datum['dy']"},
+          "size": {"signal": "pow(datum['duration'],0.999)*5"},
+          "shape": {"value": "circle"},
+          "strokeWidth": {"value": 0.5},
+          "tooltip": {
+            "signal": "datum.part+' '+datum.stepname+datum.octave+' alter '+datum.alter+' duration '+datum.duration"
+          }
+        },
+        "update": {
+          "stroke": [
+            {
+              "test": "(!length(data('selected')) || indata('selected', 'value', datum.part))",
+              "scale": "color",
+              "field": "part"
+            },
+            {"value": "#CCCCCC"}
+          ],
+          "fill": [
+            {
+              "test": "(!length(data('selected')) || indata('selected', 'value', datum.part))",
+              "scale": "color",
+              "field": "part"
+            },
+            {"value": "#CCCCCC"}
+          ],
+          "strokeOpacity": [
+            {
+              "test": "(!length(data('selected')) || indata('selected', 'value', datum.part))",
+              "signal": "0.5"
+            },
+            {"signal": "0.25"}
+          ],
+          "fillOpacity": [
+            {
+              "test": "(!length(data('selected')) || indata('selected', 'value', datum.part))",
+              "signal": "0.2"
+            },
+            {"signal": "0.05"}
+          ]
+        }
+      }
+    },
+    {
+      "type": "symbol",
+      "encode": {
+        "enter": {
+          "fill": {"value": "#CCCCCC"},
+          "stroke": {"value": "#CCCCCC"},
+          "baseline": {"value": "middle"},
+          "x": {"signal": "-100-5+2"},
+          "y": {"signal": "radius*2-150-7"},
+          "angle": {"signal": "110"},
+          "size": {"signal": "0.00025"},
+          "shape": {"signal": "svgCircleArrow"},
+          "opacity": {"value": 1},
+          "strokeWidth": {"signal": "0"},
+          "strokeOpacity": {"signal": "1"}
+        }
+      }
+    },
+    {
+      "type": "symbol",
+      "encode": {
+        "enter": {
+          "fill": {"value": "yellow"},
+          "stroke": {"value": "yellow"},
+          "baseline": {"value": "middle"},
+          "x": {"signal": "-150+5"},
+          "y": {"signal": "radius*2-150"},
+          "angle": {"signal": "45"},
+          "size": {"signal": "0.0003"},
+          "shape": {"signal": "svgRadialArrows"},
+          "opacity": {"value": 1},
+          "strokeWidth": {"signal": "0"},
+          "fillOpacity": {"signal": "0.8"},
+          "strokeOpacity": {"signal": "1"}
+        }
+      }
+    },
+    {
+      "type": "symbol",
+      "encode": {
+        "enter": {
+          "fill": {"value": "yellow"},
+          "stroke": {"value": "yellow"},
+          "baseline": {"value": "middle"},
+          "x": {"signal": "-150+5+60"},
+          "y": {"signal": "radius*2-150"},
+          "angle": {"signal": "90+45"},
+          "size": {"signal": "0.0003"},
+          "shape": {"signal": "svgRadialArrows"},
+          "opacity": {"value": 1},
+          "strokeWidth": {"signal": "0"},
+          "fillOpacity": {"signal": "0.8"},
+          "strokeOpacity": {"signal": "1"}
+        }
+      }
+    },
+    {
+      "type": "text",
+      "encode": {
+        "enter": {
+          "fill": {"value": "yellow"},
+          "stroke": {"value": "yellow"},
+          "baseline": {"value": "middle"},
+          "x": {"signal": "-150+5+10+60-10+5+3"},
+          "y": {"signal": "radius*2-150+30+25+5"},
+          "fontSize": {"value": 18},
+          "text": {"signal": "'Pitch'"},
+          "opacity": {"value": 1},
+          "strokeWidth": {"signal": "0"},
+          "fillOpacity": {"signal": "0.8"},
+          "strokeOpacity": {"signal": "1"}
+        }
+      }
+    },
+    {
+      "type": "text",
+      "encode": {
+        "enter": {
+          "fill": {"value": "#CCCCCC"},
+          "baseline": {"value": "middle"},
+          "x": {"signal": "-150+5+10+60-10+5"},
+          "y": {"signal": "radius*2-150+30-25"},
+          "fontSize": {"value": 18},
+          "text": {"signal": "'Time'"},
+          "opacity": {"value": 1},
+          "strokeWidth": {"signal": "0"},
+          "strokeOpacity": {"signal": "1"}
+        }
+      }
+    },
+    {
+      "type": "text",
+      "encode": {
+        "enter": {
+          "fill": {"value": "#CCCCCC"},
+          "baseline": {"value": "middle"},
+          "x": {"signal": "-170"},
+          "y": {"signal": "radius*2"},
+          "fontSize": {"value": 16},
+          "text": {
+            "signal": "'Reproduction of the music data visualization initially designed by Nicholas Rougeux'"
+          },
+          "opacity": {"value": 1},
+          "strokeWidth": {"signal": "0"},
+          "strokeOpacity": {"signal": "1"}
+        }
+      }
+    }
+  ]
+}

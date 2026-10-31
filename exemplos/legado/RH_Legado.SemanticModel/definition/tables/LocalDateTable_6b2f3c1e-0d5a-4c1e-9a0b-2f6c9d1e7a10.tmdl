@@ -1,0 +1,8 @@
+table LocalDateTable_6b2f3c1e-0d5a-4c1e-9a0b-2f6c9d1e7a10
+	isHidden
+	showAsVariationsOnly
+
+	column Date
+		dataType: dateTime
+		isHidden
+		sourceColumn: [Date]

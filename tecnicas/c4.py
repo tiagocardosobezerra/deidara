@@ -18,9 +18,17 @@ os exemplos resolvidos do NIST/SEMATECH e-Handbook of Statistical Methods
   centro ± 3·MR̄/1,128;
 - gráfico p (proporção, como o turnover), NIST 6.3.3.2: p̄ ± 3·√(p̄(1−p̄)/n);
 - gráfico u (contagem por exposição), NIST 6.3.3.1: ū ± 3·√(ū/n);
-- três regras de sinal das WECO, NIST 6.3.2: ponto fora do limite, 8 seguidos
-  do mesmo lado do centro, 6 seguidos subindo ou descendo (com todas as regras
-  o alarme falso sobe de 1 a cada 371 pontos para 1 a cada 92);
+- gráfico p' e u' de Laney (Laney, 2002, Quality Engineering 14(4)): com grupo
+  grande (HC de milhares), a variação real entre meses passa da binomial e o
+  gráfico p comum marca quase todo mês como fora; o Laney mede essa variação a
+  mais (a amplitude móvel dos z de cada mês ÷ 1,128) e alarga os limites por
+  ela. Só alarga (fator mínimo 1): sem variação a mais, é o gráfico p;
+- três regras de sinal: duas das WECO (NIST 6.3.2: ponto fora do limite, 8
+  seguidos do mesmo lado do centro) e uma de Nelson (6 seguidos subindo ou
+  descendo). Cada regra a mais aumenta o alarme falso: só a primeira dá 1 a
+  cada ~370 pontos; as quatro WECO juntas, 1 a cada ~92;
+- período de referência: os limites saem de um trecho escolhido (antes de uma
+  mudança, por exemplo) e ficam parados; os meses depois são lidos contra eles;
 - fora da curva: z-score modificado 0,6745·(x − mediana)/MAD > 3,5, NIST
   1.3.5.17 (o z-score comum engana em grupo pequeno); em taxa, o gráfico p por
   unidade (o "funil": a empresa pequena tem limite mais largo);
@@ -49,17 +57,31 @@ def xmr(valores):
     return {'centro': centro, 'mr': mr, 'sigma': sigma, 'superior': centro + 3 * sigma, 'inferior': centro - 3 * sigma}
 
 
-def grafico_p(numeradores, denominadores):
-    """Centro p̄ e limites de cada ponto (o n de cada ponto abre ou fecha o limite)."""
+def fator_laney(numeradores, denominadores, tipo='p'):
+    """σz de Laney: a amplitude móvel média dos z de cada ponto ÷ 1,128 (1 = sem variação além da binomial)."""
+    c = sum(numeradores) / sum(denominadores)
+    zs = []
+    for a, n in zip(numeradores, denominadores):
+        dp = math.sqrt(max(0.0, c * (1 - c) if tipo == 'p' else c) / n) if n else 0
+        zs.append((a / n - c) / dp if dp else 0.0)
+    amplitudes = [abs(b - a) for a, b in zip(zs, zs[1:])]
+    return (sum(amplitudes) / len(amplitudes)) / D2 if amplitudes else 1.0
+
+
+def grafico_p(numeradores, denominadores, laney=False):
+    """Centro p̄ e limites de cada ponto (o n de cada ponto abre ou fecha o limite). `laney`: o p' de Laney, que
+    alarga os limites pela variação a mais entre os pontos (nunca estreita)."""
     p = sum(numeradores) / sum(denominadores)
-    lim = [3 * math.sqrt(max(0.0, p * (1 - p)) / n) if n else 0.0 for n in denominadores]
-    return {'centro': p, 'superior': [p + x for x in lim], 'inferior': [max(0.0, p - x) for x in lim]}
+    f = max(1.0, fator_laney(numeradores, denominadores, 'p')) if laney else 1.0
+    lim = [3 * f * math.sqrt(max(0.0, p * (1 - p)) / n) if n else 0.0 for n in denominadores]
+    return {'centro': p, 'superior': [p + x for x in lim], 'inferior': [max(0.0, p - x) for x in lim], 'laney': f}
 
 
-def grafico_u(numeradores, exposicoes):
+def grafico_u(numeradores, exposicoes, laney=False):
     u = sum(numeradores) / sum(exposicoes)
-    lim = [3 * math.sqrt(u / n) if n else 0.0 for n in exposicoes]
-    return {'centro': u, 'superior': [u + x for x in lim], 'inferior': [max(0.0, u - x) for x in lim]}
+    f = max(1.0, fator_laney(numeradores, exposicoes, 'u')) if laney else 1.0
+    lim = [3 * f * math.sqrt(u / n) if n else 0.0 for n in exposicoes]
+    return {'centro': u, 'superior': [u + x for x in lim], 'inferior': [max(0.0, u - x) for x in lim], 'laney': f}
 
 
 def sinais(valores, centro, superior, inferior):
@@ -128,32 +150,52 @@ def _pontos(cal, b, num=None, den=None):
     return (f'CALCULATETABLE(ADDCOLUMNS(VALUES({cal}[Ano-Mês Num]), "@v", {b}{extra}), ALLSELECTED({cal}))')
 
 
-def _anterior(cal):
-    """A coluna "@ant": o valor do ponto anterior na série (para a amplitude móvel e a direção)."""
+def _anterior(cal, com_den=False):
+    """As colunas "@ant" (e "@dant"): o valor (e o denominador) do ponto anterior na série, para a amplitude
+    móvel, a direção e o fator de Laney."""
     k = f'{cal}[Ano-Mês Num]'
-    return (f'ADDCOLUMNS(_pontos, "@ant", VAR _k = {k} RETURN '
-            f'MAXX(FILTER(_pontos, {k} = MAXX(FILTER(_pontos, {k} < _k), {k})), [@v]))')
+    prev = f'FILTER(_pontos, {k} = MAXX(FILTER(_pontos, {k} < _k), {k}))'
+    extra = f', "@dant", VAR _k = {k} RETURN MAXX({prev}, [@den])' if com_den else ''
+    return f'ADDCOLUMNS(_pontos, "@ant", VAR _k = {k} RETURN MAXX({prev}, [@v]){extra})'
+
+
+def _referencia(cal, ref):
+    """VARs _base e _serie_base: os pontos de onde saem os limites (todos, ou só o período de referência)."""
+    if not ref:
+        return 'VAR _base = _pontos\nVAR _serie_base = _serie\n'
+    k = f'{cal}[Ano-Mês Num]'
+    filtro = f'{k} >= {ref[0]} && {k} <= {ref[1]}'
+    return f'VAR _base = FILTER(_pontos, {filtro})\nVAR _serie_base = FILTER(_serie, {filtro})\n'
 
 
 def _limites(tipo, num, den, n_pontual=True):
-    """VARs _centro e _sigma de cada tipo de gráfico (na série _pontos e _serie)."""
+    """VARs _centro e _sigma de cada tipo de gráfico (sobre _base e _serie_base). p e u são o p' e o u' de Laney:
+    o fator multiplica o sigma só quando passa de 1."""
     if tipo == 'xmr':
-        return ('VAR _centro = AVERAGEX(_pontos, [@v])\n'
-                'VAR _mr = AVERAGEX(FILTER(_serie, NOT ISBLANK([@ant])), ABS([@v] - [@ant]))\n'
+        return ('VAR _centro = AVERAGEX(_base, [@v])\n'
+                'VAR _mr = AVERAGEX(FILTER(_serie_base, NOT ISBLANK([@ant])), ABS([@v] - [@ant]))\n'
                 f'VAR _sigma = DIVIDE(_mr, {D2})')
-    n = den if n_pontual else 'AVERAGEX(_pontos, [@den])'
-    centro = 'DIVIDE(SUMX(_pontos, [@num]), SUMX(_pontos, [@den]))'
-    disp = ('SQRT(MAX(0, DIVIDE(_centro * (1 - _centro), _n)))' if tipo == 'p' else
-            'SQRT(MAX(0, DIVIDE(_centro, _n)))')   # taxa acima de 100% num mês não derruba a medida
-    return f'VAR _centro = {centro}\nVAR _n = {n}\nVAR _sigma = {disp}'
+    n = den if n_pontual else 'AVERAGEX(_base, [@den])'
+    centro = 'DIVIDE(SUMX(_base, [@num]), SUMX(_base, [@den]))'
+    var = '_centro * (1 - _centro)' if tipo == 'p' else '_centro'   # taxa acima de 100% num mês não derruba a medida
+
+    def z(v, d):
+        return f'DIVIDE({v} - _centro, SQRT(MAX(0, DIVIDE({var}, {d}))))'
+    return (f'VAR _centro = {centro}\nVAR _n = {n}\n'
+            f'VAR _zs = ADDCOLUMNS(FILTER(_serie_base, NOT ISBLANK([@ant])), "@z", {z("[@v]", "[@den]")}, '
+            f'"@zant", {z("[@ant]", "[@dant]")})\n'
+            f'VAR _laney = MAX(1, DIVIDE(AVERAGEX(_zs, ABS([@z] - [@zant])), {D2}))\n'
+            f'VAR _sigma = _laney * SQRT(MAX(0, DIVIDE({var}, _n)))')
 
 
-def dax_controle(parte, b, cal, tipo, num=None, den=None):
-    """`parte`: centro, superior, inferior ou sinal. `tipo`: xmr, p ou u (p e u pedem numerador e denominador)."""
-    cab = (f'-- C4 Karura · gráfico de controle ({ {"xmr": "XmR", "p": "p", "u": "u"}[tipo] }), {parte}: NIST 6.3\n'
+def dax_controle(parte, b, cal, tipo, num=None, den=None, ref=None):
+    """`parte`: centro, superior, inferior ou sinal. `tipo`: xmr, p ou u (p e u pedem numerador e denominador).
+    `ref`: (AAAAMM, AAAAMM), o período de referência de onde saem os limites."""
+    nome = {'xmr': 'XmR', 'p': "p' de Laney", 'u': "u' de Laney"}[tipo]
+    cab = (f'-- C4 Karura · gráfico de controle ({nome}), {parte}: NIST 6.3\n'
            f'VAR _pontos = {_pontos(cal, b, num, den)}\n'
-           f'VAR _serie = {_anterior(cal)}\n'
-           + _limites(tipo, num, den) + '\n')
+           f'VAR _serie = {_anterior(cal, tipo != "xmr")}\n'
+           + _referencia(cal, ref) + _limites(tipo, num, den) + '\n')
     piso = 'MAX(0, _centro - 3 * _sigma)' if tipo in ('p', 'u') else '_centro - 3 * _sigma'
     if parte == 'centro':
         return cab + 'RETURN\n    _centro'
@@ -177,14 +219,14 @@ RETURN
     )"""
 
 
-def dax_meta_x_faixa(b, meta, cal, tipo, maior, formato, num=None, den=None):
+def dax_meta_x_faixa(b, meta, cal, tipo, maior, formato, num=None, den=None, ref=None):
     """Texto: a meta cabe na faixa normal do processo?"""
     fmt = {'inteiro': '#,0', 'percentual': '0.0%', 'moeda': '"R$" #,0', 'decimal': '#,0.00'}.get(formato, '#,0.00')
     inalcancavel = '_meta > _sup' if maior else '_meta < _inf'
     return (f'-- C4 Karura · meta x faixa normal: a meta cabe no processo como ele está?\n'
             f'VAR _pontos = {_pontos(cal, b, num, den)}\n'
-            f'VAR _serie = {_anterior(cal)}\n'
-            + _limites(tipo, num, den, n_pontual=False) + '\n'
+            f'VAR _serie = {_anterior(cal, tipo != "xmr")}\n'
+            + _referencia(cal, ref) + _limites(tipo, num, den, n_pontual=False) + '\n'
             + f"""VAR _sup = _centro + 3 * _sigma
 VAR _inf = {'MAX(0, _centro - 3 * _sigma)' if tipo in ('p', 'u') else '_centro - 3 * _sigma'}
 VAR _meta = {meta}

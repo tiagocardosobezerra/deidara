@@ -57,7 +57,8 @@ class TestComeco(unittest.TestCase):
         self.assertTrue(a['descricao'].startswith('A DEFINIR'))                   # sem briefing, o painel fica a definir
         self.assertEqual(a['modelo'], 'faixa-de-kpis')
         meta = next(m for m in a['medidas'] if 'Meta' in m['nome'])
-        self.assertEqual((meta['agregacao'], meta['formato']), ('media', 'percentual'))
+        self.assertEqual((meta['tipo'], meta['formato']), ('media_ponderada', 'percentual'))   # taxa: pesa pelo HC
+        self.assertEqual((meta['peso'], meta['por']), ('HC Médio', 'dEmpresa[Código]'))
         self.assertTrue(meta['nome'].startswith('Meta de '), meta['nome'])
 
     def test_esboco_valida_e_so_bloqueia_o_que_precisa_de_gente(self):
@@ -180,9 +181,9 @@ class TestFluxo(unittest.TestCase):
         self.assertIn('[DBA] rodar sql/erp/01_views.sql', out)
         with open(os.path.join(saida, 'HOMOLOGACAO.md'), encoding='utf-8') as f:
             hom = f.read()
-        self.assertIn('| [ ] | HC Médio | apoia Turnover |', hom)
+        self.assertIn('| [ ] | HC Médio | apoia Turnover, Meta de Turnover |', hom)
         self.assertIn('| [ ] | Turnover | Turnover › Turnover | pelos componentes: Desligamentos, HC Médio |', hom)
-        self.assertIn('| [ ] | Meta de Turnover | cor/meta de Turnover | na própria fonte (metas: Metas) |', hom)
+        self.assertIn('| [ ] | Meta de Turnover | apoia Meta de Turnover no Período | na própria fonte (metas: Metas), item a item', hom)
         with open(os.path.join(saida, 'LEIA-ME.md'), encoding='utf-8') as f:
             leia = f.read()
         self.assertIn('Se algo der errado', leia)
@@ -214,7 +215,7 @@ class TestEmpacotar(unittest.TestCase):
         d = tempfile.mkdtemp(prefix='ddz')
         destino = os.path.join(d, 'deidara-skill.zip')
         with redirect_stdout(io.StringIO()):
-            empacotar.main(['-o', destino])
+            empacotar.main(['-o', destino, '--sem-conferir-git'])
         nomes = zipfile.ZipFile(destino).namelist()
         self.assertIn('deidara/SKILL.md', nomes)
         self.assertIn('deidara/deidara.py', nomes)
@@ -228,5 +229,6 @@ class TestEmpacotar(unittest.TestCase):
             f.write('{}')
         try:
             self.assertNotIn('cliente_real_teste.json', empacotar.arquivos_da_skill())
+            self.assertNotIn('cliente_real_teste.json', empacotar.codigo_fora_do_git())   # não é código da skill
         finally:
             os.remove(solto)

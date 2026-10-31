@@ -69,3 +69,32 @@ valores individuais (6.3.2.2), regras WECO (6.3.2), gráficos p e u (6.3.3.1 e 6
 com o z-score modificado (1.3.5.17), sazonalidade (6.4.4.3) e box plot (1.3.3.7). Os testes usam os exemplos
 resolvidos de lá como gabarito. Conteúdo público do governo dos Estados Unidos, que o NIST permite copiar e
 distribuir pedindo o crédito ([política do NIST](https://www.nist.gov/oism/copyrights)).
+
+## Galeria da comunidade (`terceiros/`)
+
+Conteúdo aberto trazido para o Deidara por `ferramentas/atualizar_terceiros.py`. Todas as fontes têm licença
+MIT, a mesma do Deidara. Cada pasta guarda a `LICENSE` original, sem alteração, e um `ORIGEM.md` com o
+repositório, o commit e a data da cópia. Só entraram arquivos de texto (modelos, funções, documentação);
+.pbix, imagens e vídeos ficaram nos repositórios de origem. O índice é o `terceiros/catalogo.json`
+(`deidara.py galeria`).
+
+| Pasta | Origem | Copyright |
+|---|---|---|
+| `terceiros/daxlib` | [daxlib/daxlib](https://github.com/daxlib/daxlib): funções DAX (SVG, IBCS, cascata, estatística, calendário) | (c) 2025 SQLBI e os autores de cada pacote (no `manifest.daxlib`) |
+| `terceiros/deneb-vega-templates` | [avatorl/Deneb-Vega-Templates](https://github.com/avatorl/Deneb-Vega-Templates) | (c) 2024 Andrzej Leszkiewicz |
+| `terceiros/dataviz-vega` | [avatorl/DataViz-Vega](https://github.com/avatorl/DataViz-Vega) | (c) 2024 Andrzej Leszkiewicz |
+| `terceiros/deneb-showcase` | [PBI-David/Deneb-Showcase](https://github.com/PBI-David/Deneb-Showcase) | (c) 2023 Davide Bacci |
+| `terceiros/deneb-vega-showcase` | [Flynnxx1/Deneb-Vega-Showcase](https://github.com/Flynnxx1/Deneb-Vega-Showcase) | (c) 2024 Ying Fu (Flynnxx1) |
+| `terceiros/powerbi-deneb` | [CSalcedoDataBI/PowerBI-Deneb](https://github.com/CSalcedoDataBI/PowerBI-Deneb) | (c) 2026 Cristobal Salcedo |
+| `terceiros/bravo-calendario` | [sql-bi/Bravo](https://github.com/sql-bi/Bravo), pasta `src/Assets/ManageDates/Templates` | (c) SQLBI Corporation |
+| `terceiros/powerbi-svg` | [jurgenfolz/PowerBI-SVG](https://github.com/jurgenfolz/PowerBI-SVG) | (c) 2024 Klaus Jürgen Folz |
+| `terceiros/deneb-metadados` | [deneb-viz/deneb](https://github.com/deneb-viz/deneb), pasta `packages/template-usermeta` | (c) Daniel Marsh-Patrick |
+
+O que o Deidara gera a partir delas leva o crédito junto: o `functions.tmdl` do projeto traz o pacote, a
+versão e os autores de cada bloco de funções; o visual Deneb mantém o `usermeta` do autor; o calendário cita o
+modelo de feriados do Bravo. Nos feriados do Brasil, o Deidara traduziu os nomes e acrescentou a Consciência
+Negra (Lei 14.759/2023), que o modelo do Bravo ainda não tinha.
+
+Ficaram de fora, por licença: `avatorl/PowerBI-IBCS`, `avatorl/PowerBI-SVG` e `PowerBI-tips/Deneb-Templates`
+(sem licença: todos os direitos com o autor) e `data-goblin/power-bi-agentic-development` (GPL-3.0, que
+obrigaria o Deidara a mudar de licença). Servem só de referência.

@@ -1,0 +1,190 @@
+{
+  "$schema": "https://vega.github.io/schema/vega/v5.json",
+  "description": "A basic line chart example.",
+  "usermeta": {
+    "Copyright": "Andrzej Leszkiewicz",
+    "License": "MIT Expat License (https://en.wikipedia.org/wiki/MIT_License)",
+    "Permission": "Permission is hereby granted, free of charge, to any person obtaining a copy of this software and associated documentation files (the “Software”), to deal in the Software without restriction, including without limitation the rights to use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies of the Software, and to permit persons to whom the Software is furnished to do so, subject to the following conditions: The above copyright notice and this permission notice shall be included in all copies or substantial portions of the Software.",
+    "Github": "https://github.com/avatorl/Deneb-Vega/"
+  },
+  "width": 200,
+  "height": 120,
+  "padding": 5,
+  "signals": [
+    {"name": "colorTitle", "value": "#333333"},
+    {"name": "colorLine", "value": "gray"},
+    {"name": "colorEndPoint", "value": "#5e6cd5"},
+    {"name": "colorWeekend", "value": "red"},
+    {
+      "name": "title",
+      "init": "'Number of Bicycles by bicycle counter location, daily (last 30 days)'"
+    },
+    {"name": "gridColumns", "value": 3}
+  ],
+  "data": [
+    {
+      "name": "dataset-csv",
+      "url": "https://raw.githubusercontent.com/avatorl/Deneb-Vega/main/small-multiple-line-chart/data-bike-line-chart.csv",
+      "format": {"type": "csv", "parse": "auto", "delimiter": ","}
+    },
+    {"name": "dataset", "source": "dataset-csv"},
+    {
+      "name": "dataset-last",
+      "source": "dataset",
+      "transform": [{"type": "filter", "expr": "datum.last_count != null"}]
+    }
+  ],
+  "scales": [
+    {
+      "name": "x",
+      "type": "point",
+      "range": "width",
+      "domain": {"data": "dataset", "field": "date"}
+    },
+    {
+      "name": "y",
+      "type": "linear",
+      "range": "height",
+      "nice": true,
+      "zero": false,
+      "domain": {"data": "dataset", "field": "count"}
+    },
+    {
+      "name": "color",
+      "type": "ordinal",
+      "range": "category",
+      "domain": {"data": "dataset", "field": "location"}
+    }
+  ],
+  "title": {
+    "text": {"signal": "title"},
+    "anchor": "start",
+    "font": "Tahoma",
+    "fontSize": 18,
+    "fontWeight": "lighter"
+  },
+  "marks": [
+    {
+      "type": "group",
+      "layout": {
+        "align": "all",
+        "bounds": "full",
+        "columns": {"signal": "gridColumns"},
+        "padding": 20
+      },
+      "marks": [
+        {
+          "type": "group",
+          "from": {
+            "facet": {
+              "name": "series",
+              "data": "dataset",
+              "groupby": "location"
+            }
+          },
+          "marks": [
+            {
+              "type": "line",
+              "from": {"data": "series"},
+              "encode": {
+                "enter": {
+                  "x": {"scale": "x", "field": "date"},
+                  "y": {"scale": "y", "field": "count"},
+                  "stroke": {"signal": "colorLine"},
+                  "strokeWidth": {"value": 2}
+                },
+                "update": {"strokeOpacity": {"value": 1}}
+              }
+            },
+            {
+              "type": "rect",
+              "from": {"data": "series"},
+              "encode": {
+                "enter": {
+                  "x": {"scale": "x", "field": "date"},
+                  "y": {"value": 5},
+                  "y2": {"signal": "height"},
+                  "strokeWidth": {
+                    "signal": "(day(datum.date)==6 || day(datum.date)==0) ? 2 : 0"
+                  },
+                  "stroke": {"signal": "colorWeekend"}
+                },
+                "update": {"strokeOpacity": {"value": 0.05}}
+              }
+            },
+            {
+              "type": "group",
+              "from": {
+                "facet": {
+                  "name": "series2",
+                  "data": "dataset-last",
+                  "groupby": "location"
+                }
+              },
+              "marks": [
+                {
+                  "type": "symbol",
+                  "from": {"data": "series"},
+                  "encode": {
+                    "enter": {
+                      "x": {"scale": "x", "field": "date"},
+                      "y": {"scale": "y", "field": "last_count"},
+                      "fill": {"signal": "colorEndPoint"},
+                      "stroke": {"signal": "colorLine"},
+                      "strokeWidth": {"value": 0.5}
+                    },
+                    "update": {
+                      "size": {"signal": "datum.last_count==null?0:40"}
+                    }
+                  }
+                },
+                {
+                  "type": "text",
+                  "from": {"data": "series"},
+                  "encode": {
+                    "enter": {
+                      "text": {"field": "last_count"},
+                      "fontSize": {"value": 20},
+                      "x": {"scale": "x", "field": "date"},
+                      "y": {"scale": "y", "field": "last_count"},
+                      "fill": {"signal": "colorEndPoint"},
+                      "stroke": {"signal": "colorLine"},
+                      "strokeWidth": {"value": 0},
+                      "dx": {"value": -10},
+                      "dy": {"value": -10}
+                    },
+                    "update": {
+                      "size": {"signal": "datum.count == datum.last_count?40:0"}
+                    }
+                  }
+                },
+                {
+                  "type": "text",
+                  "from": {"data": "series"},
+                  "encode": {
+                    "enter": {
+                      "text": {"field": "location"},
+                      "font": {"value": "Tahoma"},
+                      "fontWeight": {"value": "lighter"},
+                      "fill": {"signal": "colorTitle"},
+                      "stroke": {"signal": "colorLine"},
+                      "strokeWidth": {"value": 0},
+                      "x": {"value": 0},
+                      "y": {"value": 0}
+                    },
+                    "update": {
+                      "fontSize": {
+                        "signal": "datum.count == datum.last_count?14:0"
+                      }
+                    }
+                  }
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "config": {"autosize": "pad"}
+}

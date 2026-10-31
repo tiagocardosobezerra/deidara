@@ -184,7 +184,10 @@ def indicadores(pasta):
 
 def _texto_do_save(pasta, ref):
     arq = os.path.join(pasta, SECAO, 'saves', ref, 'README.md')
-    return open(arq, encoding='utf-8').read() if os.path.exists(arq) else ''
+    if not os.path.exists(arq):
+        return ''
+    with open(arq, encoding='utf-8') as f:
+        return f.read()
 
 
 def buscar(pasta, termos, limite=10):
@@ -235,7 +238,7 @@ def desligar():
 def _medidas_reais(modelo):
     """Indicadores de verdade: sem as medidas técnicas e sem as que só servem de meta a outro indicador."""
     metas = {chave(md['meta_medida']) for md in modelo['medidas'] if md.get('meta_medida')}
-    return [md for md in modelo['medidas'] if md['tipo'] not in ('cor', 'meta') and chave(md['nome']) not in metas]
+    return [md for md in modelo['medidas'] if md['tipo'] not in ('cor', 'meta', 'corte') and chave(md['nome']) not in metas]
 
 
 def avisos_do_modelo(pasta, modelo):
@@ -493,7 +496,9 @@ def _ligar_de_volta(pasta, ref, outro, titulo):
 
 
 def marcar(pasta, ref, status, por, motivo=None):
-    arq = os.path.join(pasta, SECAO, 'saves', *ref.split('/'), 'ficha.json')
+    if not re.fullmatch(r'[a-z0-9-]+(/[a-z0-9-]+)+', ref or ''):
+        raise ValueError(f'"{ref}" não é uma referência do cartão (categoria/secao/artigo; veja `memory-card catalogo`)')
+    arq =os.path.join(pasta, SECAO, 'saves', *ref.split('/'), 'ficha.json')
     if not os.path.exists(arq):
         raise ValueError(f'{ref} não existe no cartão (veja `memory-card catalogo`)')
     f = ler_json(arq)

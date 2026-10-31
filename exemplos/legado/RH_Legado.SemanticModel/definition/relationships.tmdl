@@ -1,0 +1,16 @@
+relationship a3dc83cb-b10b-5fff-a04f-a40dbaf6e86d
+	fromColumn: Desligamentos.Matricula
+	toColumn: Funcionarios.Matricula
+
+relationship 38dbffc6-4f93-53ab-b2e0-c3ee1c05b3cf
+	fromColumn: Funcionarios.CodEmpresa
+	toColumn: Empresas.CodEmpresa
+
+relationship 1d4190e8-3858-558d-baf9-e4fd9e31712f
+	crossFilteringBehavior: bothDirections
+	fromColumn: Metas.CodEmpresa
+	toColumn: Empresas.CodEmpresa
+
+relationship 705e6f5b-9f96-5fea-b9b4-edf29060de5d
+	fromColumn: Desligamentos.DataDesligamento
+	toColumn: Calendario.Date

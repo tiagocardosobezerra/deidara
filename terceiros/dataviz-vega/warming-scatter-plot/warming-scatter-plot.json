@@ -1,0 +1,236 @@
+{
+  "$schema": "https://vega.github.io/schema/vega/v5.json",
+  "description": "Warming Scatter Plot (Animated)",
+  "usermeta": {
+    "Copyright": "Andrzej Leszkiewicz",
+    "License": "MIT Expat License (https://en.wikipedia.org/wiki/MIT_License)",
+    "Permission": "Permission is hereby granted, free of charge, to any person obtaining a copy of this software and associated documentation files (the “Software”), to deal in the Software without restriction, including without limitation the rights to use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies of the Software, and to permit persons to whom the Software is furnished to do so, subject to the following conditions: The above copyright notice and this permission notice shall be included in all copies or substantial portions of the Software.",
+    "Github": "https://github.com/avatorl/Deneb-Vega/"
+  },
+  "width": 650,
+  "height": 400,
+  "padding": {"left": 5, "bottom": 5, "top": 5, "right": 25},
+  "autosize": "pad",
+  "config": {
+    "axis": {
+      "domain": true,
+      "domainColor": "#AAAAAA",
+      "tickColor": "#AAAAAA",
+      "titleColor": "#666666",
+      "titleFont": "Tahoma",
+      "titleFontSize": 14,
+      "titleFontWeight": "lighter",
+      "labelFontSize": 12,
+      "labelColor": "#AAAAAA"
+    }
+  },
+  "signals": [
+    {"name": "titleColor", "value": "#555555"},
+    {"name": "subtitleStrokeColor", "value": "#AAAAAA"},
+    {
+      "name": "year",
+      "init": "19610",
+      "on": [
+        {
+          "events": {"type": "timer", "throttle": 700},
+          "update": "(year>=19610&&year<=19619)?year+1:year<20210?year+10:year<=20218?year+1:19610"
+        }
+      ]
+    }
+  ],
+  "data": [
+    {
+      "name": "data-all-years",
+      "url": "https://raw.githubusercontent.com/avatorl/Deneb-Vega/main/warming-heatmap/temperature-change-country.csv",
+      "format": {"type": "csv", "parse": "auto", "delimiter": ","}
+    },
+    {
+      "name": "data-before-year",
+      "source": "data-all-years",
+      "transform": [{"type": "filter", "expr": "datum.year<floor(year/10)"}]
+    },
+    {
+      "name": "data-selected-year",
+      "source": "data-all-years",
+      "transform": [{"type": "filter", "expr": "datum.year==floor(year/10)"}]
+    },
+    {
+      "name": "data-global",
+      "url": "https://raw.githubusercontent.com/avatorl/Deneb-Vega/main/warming-stripe/global-temp.csv",
+      "format": {"type": "csv", "parse": "auto", "delimiter": ","}
+    },
+    {
+      "name": "data-global-selected-year",
+      "source": "data-global",
+      "transform": [{"type": "filter", "expr": "datum.year==floor(year/10)"}]
+    }
+  ],
+  "scales": [
+    {
+      "name": "scaleX",
+      "type": "linear",
+      "domain": {"data": "data-all-years", "field": "latitude"},
+      "range": "width"
+    },
+    {
+      "name": "scaleY",
+      "type": "linear",
+      "domain": {"data": "data-all-years", "field": "temp"},
+      "range": "height"
+    },
+    {
+      "name": "colorHawkins",
+      "type": "linear",
+      "range": {
+        "scheme": [
+          "#67000D",
+          "#A50F15",
+          "#CB181D",
+          "#EF3B2C",
+          "#FB6A4A",
+          "#FC9272",
+          "#FCBBA1",
+          "#FEE0D2",
+          "#FFFFFF",
+          "#DEEBF7",
+          "#C6DBEF",
+          "#9ECAE1",
+          "#6BAED6",
+          "#4292C6",
+          "#2171B5",
+          "#08519C",
+          "#08306B"
+        ]
+      },
+      "domain": {"data": "data-all-years", "field": "temp"},
+      "reverse": true,
+      "domainMid": 0
+    }
+  ],
+  "legends": [],
+  "axes": [
+    {
+      "orient": "left",
+      "scale": "scaleY",
+      "title": "Temperature Change, °C",
+      "offset": 10,
+      "encode": {
+        "labels": {
+          "update": {"text": {"signal": "(datum.value>0?'+':'')+datum.label"}}
+        }
+      }
+    },
+    {
+      "orient": "bottom",
+      "scale": "scaleX",
+      "grid": true,
+      "gridColor": "#DDDDDD",
+      "title": "Latitude (by country centroid)",
+      "encode": {
+        "labels": {
+          "update": {
+            "text": {
+              "signal": "abs(datum.value)+(datum.value>0?'°N':datum.value<0?'°S':'°')"
+            }
+          }
+        },
+        "grid": {
+          "enter": {
+            "strokeColor": {"value": "red"},
+            "strokeWidth": {"signal": "datum.value==0?1:0"}
+          }
+        }
+      }
+    }
+  ],
+  "title": {
+    "anchor": "start",
+    "font": {"value": "Tahoma"},
+    "fontSize": {"value": 18},
+    "fontWeight": "bold",
+    "subtitle": "-",
+    "subtitleFontSize": 36,
+    "subtitleFontWeight": "bold",
+    "encode": {
+      "title": {
+        "update": {
+          "text": {
+            "signal": "'Annual Surface Temperature Change (compared to 1951-1980 average)'"
+          },
+          "fill": {"signal": "titleColor"}
+        }
+      },
+      "subtitle": {
+        "update": {
+          "text": {
+            "signal": "floor(year/10)+': '+(data('data-global-selected-year')[0]['temp']>0?'+':'')+format(data('data-global-selected-year')[0]['temp'],'.2')+'°C'"
+          },
+          "strokeWidth": {"signal": "0.5"},
+          "stroke": {"signal": "subtitleStrokeColor"},
+          "fill": {
+            "scale": "colorHawkins",
+            "signal": "data('data-global-selected-year')[0]['temp']"
+          }
+        }
+      }
+    }
+  },
+  "marks": [
+    {
+      "name": "pointsGray",
+      "type": "symbol",
+      "from": {"data": "data-before-year"},
+      "encode": {
+        "update": {
+          "zindex": {"value": 0},
+          "x": {"scale": "scaleX", "field": "latitude"},
+          "y": {"scale": "scaleY", "field": "temp"},
+          "fill": {"value": "#EEEEEE"},
+          "strokeOpacity": {"signal": "0"},
+          "size": {"signal": "isNumber(datum.temp)?25:0"},
+          "fillOpacity": {"signal": "pow((61+(datum.year-year/10))/60,1/2.5)"},
+          "tooltip": {"signal": "datum.country+', '+datum.year"}
+        }
+      }
+    },
+    {
+      "name": "pointsColor",
+      "type": "symbol",
+      "from": {"data": "data-selected-year"},
+      "encode": {
+        "enter": {
+          "zindex": {"value": 1},
+          "tooltip": {"signal": "datum.country+', '+datum.year"},
+          "x": {"scale": "scaleX", "field": "latitude"},
+          "y": {"scale": "scaleY", "field": "temp"},
+          "stroke": {"value": "#999999"},
+          "fill": {"scale": "colorHawkins", "field": "temp"},
+          "strokeOpacity": {"signal": "1"},
+          "strokeWidth": {"signal": "0.3"},
+          "fillOpacity": {"signal": "1"},
+          "size": {"signal": "isNumber(datum.temp)?30:0"}
+        },
+        "update": {}
+      }
+    },
+    {
+      "type": "text",
+      "from": {"data": "pointsColor"},
+      "encode": {
+        "enter": {
+          "text": {"field": "datum.country"},
+          "fill": {"value": "#888888"},
+          "fontSize": {"signal": "year==20210||year==19610?8:0"}
+        }
+      },
+      "transform": [
+        {
+          "type": "label",
+          "anchor": ["top", "bottom", "right", "left"],
+          "offset": [1],
+          "size": {"signal": "[width + 60, height]"}
+        }
+      ]
+    }
+  ]
+}

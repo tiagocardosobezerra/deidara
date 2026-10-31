@@ -10,6 +10,7 @@ import re
 from kibaku_nendo.util import dax_medida
 
 COR_BOA, COR_RUIM = '#107C10', '#D13438'
+COR_ATENCAO = '#986F0B'          # amarelo escuro: perto da meta (contraste 4,5:1 no branco)
 COR_TRILHO, COR_MARCA = '#EDEBE9', '#252423'
 PREFIXO_SVG = 'data:image/svg+xml;charset=utf-8,'
 FORMATO_DAX = {'inteiro': '#,0', 'percentual': '0.0%', 'moeda': '"R$" #,0.00', 'decimal': '#,0.00', 'data': 'dd/mm/yyyy'}

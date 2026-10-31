@@ -75,24 +75,73 @@ class Simulador:
         self.m = m
         self.filtra = grafo_de_filtro(m)
         self._fatias = {}
+        self._total_fixo = {}                        # base cujo total sai da taxa (HC = desligamentos ÷ turnover)
+        self._coerentes = set()                      # taxas que fecham com o numerador e o denominador mostrados
+        # meta -> indicador dela: a meta fictícia acompanha o indicador (perto dele), senão todo item fica fora da meta
+        self._meta_de = {x['meta_medida']: x['nome'] for x in m['medidas'] if x.get('meta_medida')}
+        self._escalas()
 
     # ------------------------------------------------------------- básicos
+    def _raiz(self, nome, vistos=()):
+        """A medida de base de um denominador (HC Médio -> Headcount), se ela é aditiva."""
+        md = medida(self.m, nome)
+        if not md or nome in vistos:
+            return None
+        if md['tipo'] in ('media_mensal', 'movel_12m'):
+            return self._raiz(md['depende'][0], tuple(vistos) + (nome,))
+        return md['nome'] if self.aditiva(md) else None
+
+    def _escalas(self):
+        """O denominador de cada taxa nasce do numerador e de uma taxa plausível: 768 desligamentos com turnover de
+        14,8% pedem um HC perto de 5.190, e não um número sorteado à parte (o gestor faz a conta de cabeça)."""
+        for md in self.m['medidas']:
+            if md['tipo'] != 'divisao' or not (md['formato'] == 'percentual' or isinstance(md.get('meta'), (int, float))):
+                continue
+            num, den = md['depende']
+            raiz = self._raiz(den)
+            if not raiz or raiz in self._total_fixo or raiz == self._raiz(num):
+                continue
+            alvo, tn = self._taxa_alvo(md), self.valor(num)
+            if alvo and tn:
+                self._total_fixo[raiz] = tn / alvo
+                self._coerentes.add(md['nome'])
+
+    def _taxa_alvo(self, md):
+        r = _rng('total', md['nome'])
+        if isinstance(md.get('meta'), (int, float)) and md['meta'] > 0:
+            return md['meta'] * r.uniform(0.85, 1.12)
+        return r.uniform(0.04, 0.30)
+
     def total(self, md):
+        if md['nome'] in self._total_fixo:
+            return self._total_fixo[md['nome']]
+        dono = medida(self.m, self._meta_de.get(md['nome'], ''))
+        if dono and self.aditiva(md) and self.aditiva(dono):       # meta de valor: perto do realizado
+            return self.total(dono) * _rng('meta', md['nome']).uniform(0.92, 1.1)
         r = _rng('total', md['nome'])
         if isinstance(md.get('meta'), (int, float)) and md['meta'] > 0 and not self.aditiva(md):
             return md['meta'] * r.uniform(0.85, 1.12)     # média ou taxa com meta fixa: fica perto dela, como na vida real
         return {'percentual': r.uniform(0.04, 0.30), 'moeda': r.uniform(2e5, 6e6), 'inteiro': r.uniform(300, 6000),
                 'decimal': r.uniform(50, 900)}.get(md['formato'], r.uniform(50, 900))
 
-    def fatia(self, campo, rotulo):
-        """Participação do rótulo no total (as fatias de uma coluna somam 1)."""
-        k = (campo['tabela'], campo['nome'])
+    def fatia(self, campo, rotulo, nome=None):
+        """Participação do rótulo no total (as fatias de uma coluna somam 1). Cada medida mistura um pouco o peso
+        da coluna (`nome`): sem isso, desligamentos e headcount teriam a mesma fatia em todo cargo e o turnover
+        sairia igual em todas as linhas."""
+        k = (campo['tabela'], campo['nome'], nome)
         if k not in self._fatias:
             rot = categorias(self.m, campo)
-            pesos = [_rng('peso', *k, x).uniform(0.4, 1.6) for x in rot]
+            pesos = [_rng('peso', *k[:2], x).uniform(0.4, 1.6) * (_rng('mistura', nome, *k[:2], x).uniform(0.75, 1.3)
+                                                                   if nome else 1) for x in rot]
             s = sum(pesos)
             self._fatias[k] = {x: p / s for x, p in zip(rot, pesos)}
         return self._fatias[k].get(rotulo, 1 / max(1, len(self._fatias[k])))
+
+    def _do_calendario(self, campo):
+        return bool(self.m.get('calendario')) and campo['tabela'] == self.m['calendario']['tabela']
+
+    def _estoque(self, md):
+        return md['tipo'] == 'estoque_na_data' or bool(md.get('no_estoque'))
 
     def _filtros_validos(self, md, filtros):
         alvo = tabelas_da_medida(self.m, md['nome'])
@@ -108,8 +157,12 @@ class Simulador:
         tipo = md['tipo']
         if tipo == 'meta':
             return float(md['dax'])
-        if tipo == 'cor':
+        if tipo in ('cor', 'corte'):
             return 0
+        if tipo == 'meta_periodo':                   # linha de um mês: a meta anual vira 1/12 dela
+            um_mes = any(self._do_calendario(c) and c['nome'] in COLUNAS_DE_MES for c, _ in filtros)
+            fator = (1 / 12 if um_mes else 1) if md.get('base_meta') == 'ano' else (1 if um_mes else 12)
+            return self.valor(md['base'], filtros) * fator
         if tipo in ('svg_barra_meta', 'svg_pilula', 'svg_seta', 'svg_posicao', 'svg_radar', 'svg_bolha', 'svg_variacao',
                     'svg_estrelas', 'svg_progresso'):
             return self.valor(md['svg'].get('base') or '', filtros)
@@ -139,7 +192,8 @@ class Simulador:
             num, den = md['depende']
             d = self.valor(den, filtros)
             r = self.valor(num, filtros) / d if d else 0
-            if md['formato'] == 'percentual' or isinstance(md.get('meta'), (int, float)):
+            if md['nome'] not in self._coerentes and (md['formato'] == 'percentual'
+                                                      or isinstance(md.get('meta'), (int, float))):
                 # numerador e denominador fictícios vivem em escalas independentes: mantém a
                 # variação entre as linhas, mas traz o nível para uma taxa plausível
                 d0 = self.valor(den)
@@ -149,12 +203,36 @@ class Simulador:
         if tipo in ('acumulado_ano', 'ano_anterior', 'variacao_ano_anterior', 'variacao_mes_anterior',
                     'media_mensal', 'movel_12m'):
             return self._tempo(md, filtros)
-        aditiva = tipo == 'estoque_na_data' or tipo == 'agregacao' and md['dax'].split('(')[0] in ('SUM', 'COUNT', 'COUNTROWS', 'DISTINCTCOUNTNOBLANK') \
+        aditiva = self.aditiva(md) or tipo == 'agregacao' and md['dax'].split('(')[0] == 'DISTINCTCOUNTNOBLANK' \
             and md['formato'] != 'percentual'
+        cfg = md.get('no_estoque')
+        if cfg and medida(self.m, cfg['estoque']):
+            # valor por pessoa plausível (remuneração mensal em R$) que varia de linha para linha
+            base = 1
+            if cfg['agregacao'] in ('soma', 'contagem'):   # o estoque da linha, sem arredondar (as linhas somam o total)
+                base = self.valor(cfg['estoque'])
+                for campo, rotulo in self._filtros_validos(medida(self.m, cfg['estoque']), filtros):
+                    base *= (_rng('mes', cfg['estoque'], rotulo).uniform(0.97, 1.03) if self._do_calendario(campo)
+                             else self.fatia(campo, rotulo, cfg['estoque']))
+            por = (_rng('por', md['nome']).uniform(2500, 9000) if md['formato'] == 'moeda'
+                   else _rng('por', md['nome']).uniform(1, 50))
+            for campo, rotulo in filtros:
+                if not self._do_calendario(campo):    # varia por linha e ainda soma o total (pesa pelo estoque)
+                    w = lambda x: _rng('var', md['nome'], campo['nome'], x).uniform(0.7, 1.4)  # noqa: E731
+                    k = ('por', md['nome'], campo['tabela'], campo['nome'])
+                    if k not in self._fatias:
+                        self._fatias[k] = sum(self.fatia(campo, x, cfg['estoque']) * w(x)
+                                              for x in categorias(self.m, campo))
+                    por *= w(rotulo) / self._fatias[k] if self._fatias[k] else 1
+            return base * por if cfg['agregacao'] != 'contagem' else base
         v = self.total(md)
         for campo, rotulo in filtros:
-            if aditiva:
-                v *= self.fatia(campo, rotulo)
+            if aditiva and self._estoque(md) and self._do_calendario(campo):
+                v *= _rng('mes', md['nome'], rotulo).uniform(0.97, 1.03)   # estoque não se divide entre os meses
+            elif aditiva:
+                dono = self._meta_de.get(md['nome'])     # a meta de cada linha anda junto com o realizado dela
+                v *= (self.fatia(campo, rotulo, dono) * _rng('ruido', md['nome'], rotulo).uniform(0.9, 1.1)
+                      if dono and self.aditiva(medida(self.m, dono) or {}) else self.fatia(campo, rotulo, md['nome']))
             else:
                 v *= _rng('var', md['nome'], campo['nome'], rotulo).uniform(0.75, 1.25)
         return round(v) if md['formato'] == 'inteiro' and aditiva else v
@@ -231,7 +309,7 @@ class Simulador:
                 escala = self.valor(cfg['denominador'], outros) / (sum(dens) / len(dens))
                 dens = [d * escala for d in dens]
             nums = [v * d for v, d in zip(valores, dens)]
-            g = (c4.grafico_p if cfg['grafico'] == 'p' else c4.grafico_u)(nums, dens)
+            g = (c4.grafico_p if cfg['grafico'] == 'p' else c4.grafico_u)(nums, dens, laney=True)
             sup, inf = g['superior'], g['inferior']
         return {'rotulos': rot, 'valores': valores, 'centro': g['centro'], 'superior': sup, 'inferior': inf,
                 'sinais': c4.sinais(valores, g['centro'], sup, inf), 'mes': mes}
@@ -254,7 +332,9 @@ class Simulador:
         if parte == 'sinal':
             return g['sinais'][k] if k is not None else None
         base = medida(self.m, cfg['base'])
-        meta = self.valor(base['meta_medida'], filtros)
+        um_mes = list(filtros) + [(g['mes'], g['rotulos'][-1])] if not any(
+            self._do_calendario(c) and c['nome'] in COLUNAS_DE_MES for c, _ in filtros) else list(filtros)
+        meta = self.valor(base['meta_medida'], um_mes)          # a faixa é de um mês: a meta também
         sup, inf = sum(g['superior']) / len(g['superior']), sum(g['inferior']) / len(g['inferior'])
         fmt = lambda v: formatar(v, base['formato'], True)
         faixa = f'{fmt(inf)} a {fmt(sup)}'
@@ -331,8 +411,24 @@ class Simulador:
             return False
         if md['tipo'] == 'estoque_na_data':
             return True
+        if (md.get('no_estoque') or {}).get('agregacao') in ('soma', 'contagem'):
+            return md['formato'] != 'percentual'
         return md['tipo'] == 'agregacao' and md['dax'].split('(')[0] in ('SUM', 'COUNT', 'COUNTROWS') \
             and md['formato'] != 'percentual'
+
+    def faixa(self, nome, filtros=()):
+        """'boa', 'atencao' (perto da meta, dentro da tolerância), 'ruim' ou None sem meta."""
+        md = medida(self.m, nome)
+        st = self.status(nome, filtros)
+        if st is None or st:
+            return None if st is None else 'boa'
+        tol = md.get('tolerancia')
+        if tol:
+            v, meta = self.valor(nome, filtros), self.valor(md['meta_medida'], filtros)
+            perto = v >= meta - abs(meta) * tol if md['polaridade'] == 'maior_melhor' else v <= meta + abs(meta) * tol
+            if perto:
+                return 'atencao'
+        return 'ruim'
 
     def status(self, nome, filtros=()):
         """True = bateu a meta, False = não bateu, None = sem meta."""

@@ -1,0 +1,61 @@
+/// Cadastro de funcionários (ativos e desligados).
+table Funcionarios
+	lineageTag: 2a4c6667-b793-5107-9fa8-5c94ff1c595d
+
+	column Matricula
+		dataType: int64
+		isHidden
+		lineageTag: 1d6b1e36-fa51-59f4-aab4-d8f594c72a3b
+		summarizeBy: none
+		sourceColumn: Matricula
+
+	column Nome
+		dataType: string
+		lineageTag: 66f9ce9c-0af0-59a8-bba9-db604e8778b8
+		summarizeBy: none
+		sourceColumn: Nome
+
+	column CPF
+		dataType: string
+		lineageTag: 3564d6ff-16f1-5417-9e52-90c9e0e8896c
+		summarizeBy: none
+		sourceColumn: CPF
+
+	column DataAdmissao
+		dataType: dateTime
+		lineageTag: 84bf7023-6e80-5559-a4a7-21922c4b235c
+		summarizeBy: none
+		sourceColumn: DataAdmissao
+
+	column Salario
+		dataType: decimal
+		lineageTag: 6569c1d4-ca63-5838-a1a7-d86f656eddf4
+		summarizeBy: none
+		sourceColumn: Salario
+
+	column CodEmpresa
+		dataType: int64
+		isHidden
+		lineageTag: db8f8cf1-519d-5ca1-8a0b-21ac9470c799
+		summarizeBy: none
+		sourceColumn: CodEmpresa
+
+	column Cargo
+		dataType: string
+		lineageTag: 15ec6673-1322-54bc-9c49-cc2f129a971d
+		summarizeBy: none
+		sourceColumn: Cargo
+
+	column 'Desligamentos do Funcionario' = CALCULATE(COUNTROWS(Desligamentos))
+		dataType: int64
+		lineageTag: 6e9f1cbd-db24-5e0e-a0ac-909fc9b1ec03
+		summarizeBy: none
+
+	partition Funcionarios = m
+		mode: import
+		source =
+				let
+				    Fonte = Sql.Database("SRV-RH", "RH"),
+				    Dados = Value.NativeQuery(Fonte, "SELECT * FROM dbo.FUNCIONARIOS")
+				in
+				    Dados

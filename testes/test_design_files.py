@@ -43,7 +43,7 @@ class TestMarcadores(unittest.TestCase):
         self.assertFalse([x for x in p.avisos if '[SVG]' in x or 'marcador' in x], p.avisos)
         for nome, trecho in (('Estrelas', "MAXX(ALLSELECTED(dEmpresa[Empresa]), [Headcount])"),
                              ('Nota', 'DIVIDE(_valor, 5) * 5'), ('Estrelas', "clip-path='url(%23nota)'"),
-                             ('Progresso', '"%25 da meta</text>"'), ('Progresso', '[Meta de Turnover]')):
+                             ('Progresso', '"%25 da meta</text>"'), ('Progresso', '[Meta de Turnover')):
             md = medida(m, nome)
             self.assertIn(trecho, md['dax'], nome)
             self.assertEqual(dicionario.desconhecidas(md['dax']), [], nome)

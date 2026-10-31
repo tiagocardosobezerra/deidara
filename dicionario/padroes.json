@@ -75,7 +75,8 @@
      "denominador": "HC Médio",
      "formato": "percentual",
      "polaridade": "menor_melhor",
-     "descricao": "Desligamentos do período divididos pelo headcount médio do período."
+     "descricao": "Desligamentos do período divididos pelo headcount médio do período.",
+     "base_meta": "ano"
     }
    ],
    "onde": "cole as quatro em \"medidas\" do argila.json (troque os nomes de tabela/coluna pelos do seu modelo) e rode validar",
@@ -88,7 +89,9 @@
    "armadilhas": [
     "precisa de calendário (\"calendario\" no argila.json): o HC médio é a média dos fins de mês",
     "a data de admissão costuma estar no cadastro (dimensão de pessoas): se o validar não a achar, ele diz como trazê-la do catálogo",
-    "existem outras fórmulas (desligamentos ÷ HC inicial; (admissões+desligamentos)/2 ÷ HC médio): registre na descrição qual foi combinada com o RH"
+    "existem outras fórmulas (desligamentos ÷ HC inicial; (admissões+desligamentos)/2 ÷ HC médio): registre na descrição qual foi combinada com o RH",
+    "meta anual contra o turnover de um mês: diga \"base_meta\" (\"ano\" ou \"mes\") e o Deidara compara com a meta proporcional aos meses do filtro",
+    "meta por empresa (planilha) no total do grupo: use \"tipo\": \"media_ponderada\" com \"peso\": \"HC Médio\"; a média simples pesa igual a empresa pequena e a grande"
    ]
   },
   {
@@ -258,6 +261,9 @@
    "funcoes": [
     "AVERAGEX",
     "VALUES"
+   ],
+   "armadilhas": [
+    "meses sem dado (antes do início ou depois do último dado) ficam fora da média: o HC médio não cai por isso"
    ]
   },
   {
@@ -328,7 +334,10 @@
    "funcoes": [
     "DATESINPERIOD"
    ],
-   "alternativa": "cálculo visual MOVINGAVERAGE para média móvel só no gráfico"
+   "alternativa": "cálculo visual MOVINGAVERAGE para média móvel só no gráfico",
+   "armadilhas": [
+    "no mês corrente incompleto, a janela de 12 meses inclui um mês parcial: o Deidara para no último dado (Data de Corte)"
+   ]
   },
   {
    "id": "ultimo_valor",
@@ -373,7 +382,10 @@
     "TOPN",
     "RANK"
    ],
-   "alternativa": "filtro Top N do próprio visual, se for só para exibir"
+   "alternativa": "filtro Top N do próprio visual, se for só para exibir",
+   "armadilhas": [
+    "empate: RANKX dá a mesma posição e pula a seguinte (1, 1, 3); para desempate, some uma segunda medida pequena"
+   ]
   },
   {
    "id": "prazo",
@@ -452,7 +464,521 @@
     "ISBLANK"
    ],
    "armadilhas": [
-    "meta por período ou por área vem de planilha: use uma fonte Power Query e \"meta\": \"<medida da meta>\""
+    "meta por período ou por área vem de planilha: use uma fonte Power Query e \"meta\": \"<medida da meta>\"",
+    "taxa sobre estoque (turnover, absenteísmo) com meta anual: \"base_meta\": \"ano\""
+   ]
+  },
+  {
+   "id": "absenteismo",
+   "nome": "Absenteísmo (horas ou dias perdidos ÷ previstos)",
+   "termos": [
+    "absenteísmo",
+    "absenteismo",
+    "faltas",
+    "ausência",
+    "afastamento"
+   ],
+   "cadeia": [
+    {
+     "nome": "Horas Ausentes",
+     "agregacao": "soma",
+     "coluna": "fAusencia[Horas]",
+     "descricao": "Horas de ausência no período (faltas, atrasos e afastamentos que entram na conta do RH)."
+    },
+    {
+     "nome": "Horas Previstas",
+     "agregacao": "soma",
+     "coluna": "fJornada[Horas Previstas]",
+     "descricao": "Horas de trabalho previstas na escala do período."
+    },
+    {
+     "nome": "Absenteísmo",
+     "tipo": "divisao",
+     "numerador": "Horas Ausentes",
+     "denominador": "Horas Previstas",
+     "formato": "percentual",
+     "polaridade": "menor_melhor",
+     "base_meta": "periodo",
+     "descricao": "Horas ausentes ÷ horas previstas no período."
+    }
+   ],
+   "dax": "DIVIDE([Horas Ausentes], [Horas Previstas])",
+   "funcoes": [
+    "DIVIDE",
+    "SUM"
+   ],
+   "armadilhas": [
+    "combine com o RH o que entra no numerador (férias e licença-maternidade costumam ficar de fora)",
+    "o denominador é a jornada prevista, não o headcount × 220: escala, feriado e meio período mudam",
+    "é uma taxa sobre o próprio período: a meta vale para qualquer período (\"base_meta\": \"periodo\")"
+   ]
+  },
+  {
+   "id": "sla",
+   "nome": "% no prazo (SLA)",
+   "termos": [
+    "sla",
+    "no prazo",
+    "prazo",
+    "pontualidade",
+    "dentro do prazo",
+    "atendimento"
+   ],
+   "cadeia": [
+    {
+     "nome": "Chamados Fechados",
+     "agregacao": "contagem_linhas",
+     "tabela": "fChamado",
+     "descricao": "Chamados fechados no período (pela data de fechamento)."
+    },
+    {
+     "nome": "Chamados no Prazo",
+     "dax": "CALCULATE([Chamados Fechados], fChamado[No Prazo] = 1)",
+     "descricao": "Chamados fechados dentro do prazo combinado."
+    },
+    {
+     "nome": "% no Prazo",
+     "tipo": "divisao",
+     "numerador": "Chamados no Prazo",
+     "denominador": "Chamados Fechados",
+     "formato": "percentual",
+     "polaridade": "maior_melhor",
+     "base_meta": "periodo",
+     "descricao": "Chamados fechados no prazo ÷ chamados fechados."
+    }
+   ],
+   "dax": "DIVIDE([Chamados no Prazo], [Chamados Fechados])",
+   "funcoes": [
+    "CALCULATE",
+    "DIVIDE",
+    "COUNTROWS"
+   ],
+   "alternativa": "a coluna \"No Prazo\" (1/0) calculada na view: fechamento <= abertura + prazo, com o calendário útil",
+   "armadilhas": [
+    "os abertos ainda não entram (nem no numerador nem no denominador): mostre o backlog vencido ao lado",
+    "prazo em dias úteis pede calendário de feriados; decida com o dono do processo",
+    "a data do calendário é a do FECHAMENTO; pela abertura, o mês recente parece melhor do que é"
+   ]
+  },
+  {
+   "id": "otif",
+   "nome": "OTIF (entregue no prazo e completo)",
+   "termos": [
+    "otif",
+    "on time in full",
+    "entrega",
+    "nível de serviço",
+    "pedido perfeito"
+   ],
+   "cadeia": [
+    {
+     "nome": "Pedidos Entregues",
+     "agregacao": "contagem_linhas",
+     "tabela": "fPedido",
+     "descricao": "Pedidos com entrega no período."
+    },
+    {
+     "nome": "Pedidos OTIF",
+     "dax": "CALCULATE([Pedidos Entregues], fPedido[No Prazo] = 1, fPedido[Completo] = 1)",
+     "descricao": "Pedidos entregues no prazo E com a quantidade completa."
+    },
+    {
+     "nome": "OTIF",
+     "tipo": "divisao",
+     "numerador": "Pedidos OTIF",
+     "denominador": "Pedidos Entregues",
+     "formato": "percentual",
+     "polaridade": "maior_melhor",
+     "base_meta": "periodo",
+     "descricao": "Pedidos no prazo e completos ÷ pedidos entregues."
+    }
+   ],
+   "dax": "DIVIDE([Pedidos OTIF], [Pedidos Entregues])",
+   "funcoes": [
+    "CALCULATE",
+    "DIVIDE"
+   ],
+   "armadilhas": [
+    "\"no prazo\" é contra a data PROMETIDA ao cliente, não a pedida; registre qual",
+    "pedido com várias linhas: completo é TODAS as linhas completas (marque na view, por pedido)",
+    "mostre OT e IF separados ao lado: o gestor precisa saber qual dos dois puxa o OTIF para baixo"
+   ]
+  },
+  {
+   "id": "nps",
+   "nome": "NPS (promotores − detratores)",
+   "termos": [
+    "nps",
+    "net promoter",
+    "satisfação",
+    "recomendação",
+    "promotores"
+   ],
+   "cadeia": [
+    {
+     "nome": "Respostas",
+     "agregacao": "contagem_linhas",
+     "tabela": "fPesquisa",
+     "descricao": "Respostas da pesquisa no período."
+    },
+    {
+     "nome": "Promotores",
+     "dax": "CALCULATE([Respostas], fPesquisa[Nota] >= 9)",
+     "descricao": "Respostas com nota 9 ou 10."
+    },
+    {
+     "nome": "Detratores",
+     "dax": "CALCULATE([Respostas], fPesquisa[Nota] <= 6)",
+     "descricao": "Respostas com nota de 0 a 6."
+    },
+    {
+     "nome": "NPS",
+     "dax": "DIVIDE([Promotores] - [Detratores], [Respostas]) * 100",
+     "formato": "decimal",
+     "polaridade": "maior_melhor",
+     "descricao": "% de promotores − % de detratores (de −100 a 100)."
+    }
+   ],
+   "dax": "DIVIDE([Promotores] - [Detratores], [Respostas]) * 100",
+   "funcoes": [
+    "CALCULATE",
+    "DIVIDE"
+   ],
+   "armadilhas": [
+    "NPS não é média de nota: é diferença de percentuais; não some nem tire média de NPS de áreas",
+    "com poucas respostas o NPS pula muito: mostre o número de respostas ao lado (menos de 30, cuidado)",
+    "escala vai de −100 a 100: formato decimal, não percentual"
+   ]
+  },
+  {
+   "id": "churn",
+   "nome": "Churn / retenção de clientes",
+   "termos": [
+    "churn",
+    "cancelamento",
+    "retenção",
+    "evasão",
+    "perda de clientes"
+   ],
+   "cadeia": [
+    {
+     "nome": "Clientes Ativos",
+     "tipo": "estoque_na_data",
+     "entradas": "dCliente[Data de Início]",
+     "fim": "dCliente[Data de Cancelamento]",
+     "tabela": "dCliente",
+     "descricao": "Clientes com contrato ativo no último dia do período."
+    },
+    {
+     "nome": "Clientes Ativos Médio",
+     "tipo": "media_mensal",
+     "base": "Clientes Ativos",
+     "descricao": "Média dos clientes ativos de fim de mês no período."
+    },
+    {
+     "nome": "Cancelamentos",
+     "agregacao": "contagem_linhas",
+     "tabela": "fCancelamento",
+     "descricao": "Contratos cancelados no período (pela data de cancelamento)."
+    },
+    {
+     "nome": "Churn",
+     "tipo": "divisao",
+     "numerador": "Cancelamentos",
+     "denominador": "Clientes Ativos Médio",
+     "formato": "percentual",
+     "polaridade": "menor_melhor",
+     "base_meta": "mes",
+     "descricao": "Cancelamentos do período ÷ clientes ativos médios do período."
+    }
+   ],
+   "dax": "DIVIDE([Cancelamentos], [Clientes Ativos Médio])",
+   "funcoes": [
+    "DIVIDE",
+    "AVERAGEX"
+   ],
+   "armadilhas": [
+    "é uma taxa sobre estoque, igual ao turnover: diga se a meta é mensal ou anual (\"base_meta\")",
+    "retenção = 1 − churn só no mesmo período; retenção por safra (coorte) é outra conta e pede a data de início no eixo",
+    "cliente que volta: decida se é reativação (não conta como novo) e registre na definição"
+   ]
+  },
+  {
+   "id": "orcado_realizado",
+   "nome": "Orçado x realizado (meta mensal da planilha)",
+   "termos": [
+    "orçado",
+    "orçamento",
+    "budget",
+    "realizado",
+    "previsto",
+    "plano"
+   ],
+   "cadeia": [
+    {
+     "nome": "Realizado",
+     "agregacao": "soma",
+     "coluna": "fLancamento[Valor]",
+     "formato": "moeda",
+     "descricao": "Valor realizado no período."
+    },
+    {
+     "nome": "Orçado",
+     "agregacao": "soma",
+     "coluna": "fOrcamento[Valor]",
+     "formato": "moeda",
+     "descricao": "Valor orçado para o período (planilha do orçamento, uma linha por mês e centro de custo)."
+    },
+    {
+     "nome": "Desvio",
+     "dax": "[Realizado] - [Orçado]",
+     "formato": "moeda",
+     "descricao": "Realizado − orçado."
+    },
+    {
+     "nome": "% do Orçado",
+     "tipo": "divisao",
+     "numerador": "Realizado",
+     "denominador": "Orçado",
+     "formato": "percentual",
+     "descricao": "Realizado ÷ orçado."
+    }
+   ],
+   "dax": "DIVIDE([Realizado], [Orçado])",
+   "funcoes": [
+    "SUM",
+    "DIVIDE"
+   ],
+   "armadilhas": [
+    "a planilha do orçado precisa de uma DATA (o 1º dia do mês) ligada ao calendário e dos mesmos códigos dos cortes; senão o orçado não muda com o filtro",
+    "orçado de despesa: menor é melhor; de receita: maior é melhor (polaridade por indicador)",
+    "mês corrente: compare o realizado até hoje com o orçado proporcional (ou com o orçado até o último dado), não com o mês cheio"
+   ]
+  },
+  {
+   "id": "previsao_fechamento",
+   "nome": "Como vai fechar (ritmo do período)",
+   "termos": [
+    "fechamento",
+    "projeção",
+    "forecast",
+    "ritmo",
+    "run rate",
+    "vai fechar"
+   ],
+   "argila": {
+    "nome": "Projeção do Mês",
+    "dax": "VAR _corte = [Data de Corte]\nVAR _inicio = MIN(dCalendario[Data])\nVAR _fim = MAX(dCalendario[Data])\nVAR _dias = DATEDIFF(_inicio, _fim, DAY) + 1\nVAR _passados = DATEDIFF(_inicio, MIN(_corte, _fim), DAY) + 1\nRETURN\n    IF(_corte < _inicio, BLANK(), DIVIDE([Realizado], _passados) * _dias)",
+    "formato": "moeda",
+    "descricao": "Realizado até o último dado, no mesmo ritmo até o fim do período."
+   },
+   "dax": "DIVIDE([Realizado], _passados) * _dias",
+   "funcoes": [
+    "DATEDIFF",
+    "DIVIDE",
+    "MIN",
+    "MAX"
+   ],
+   "alternativa": "a previsão do próprio Power BI no gráfico de linha (painel Análise), que considera a sazonalidade",
+   "armadilhas": [
+    "ritmo linear: mês com pico no fim (folha, fechamento) projeta errado; para isso use o ritmo do mesmo mês do ano anterior",
+    "usa a medida Data de Corte, que o Deidara cria com o calendário"
+   ]
+  },
+  {
+   "id": "media_ponderada",
+   "nome": "Média ponderada (meta, preço, nota por peso)",
+   "termos": [
+    "ponderada",
+    "média ponderada",
+    "peso",
+    "meta do grupo"
+   ],
+   "argila": {
+    "nome": "Meta de Turnover",
+    "tipo": "media_ponderada",
+    "coluna": "fMeta[Meta Turnover]",
+    "peso": "HC Médio",
+    "por": "dEmpresa[Cód. Empresa]",
+    "formato": "percentual"
+   },
+   "funcoes": [
+    "ADDCOLUMNS",
+    "VALUES",
+    "SUMX",
+    "DIVIDE"
+   ],
+   "armadilhas": [
+    "a média simples dá o mesmo peso ao item pequeno e ao grande: no total, ela não conversa com a taxa do grupo",
+    "\"por\" é a coluna em que a meta muda (a empresa); ela precisa filtrar a tabela da meta"
+   ]
+  },
+  {
+   "id": "tempo_de_casa",
+   "nome": "Tempo de casa (anos de empresa dos ativos)",
+   "termos": [
+    "tempo de casa",
+    "antiguidade",
+    "tenure",
+    "anos de empresa"
+   ],
+   "argila": {
+    "nome": "Tempo de Casa Médio (anos)",
+    "dax": "VAR _fim = MIN(MAX(dCalendario[Data]), [Data de Corte])\nRETURN\n    AVERAGEX(\n        FILTER(dColaborador, dColaborador[Data de Admissão] <= _fim && (ISBLANK(dColaborador[Data de Desligamento]) || dColaborador[Data de Desligamento] > _fim)),\n        DATEDIFF(dColaborador[Data de Admissão], _fim, DAY) / 365.25\n    )",
+    "formato": "decimal",
+    "descricao": "Média dos anos de empresa de quem está ativo no último dia do período."
+   },
+   "funcoes": [
+    "AVERAGEX",
+    "FILTER",
+    "DATEDIFF",
+    "ISBLANK"
+   ],
+   "alternativa": "faixa de tempo de casa (0-1, 1-3, 3-5, 5+) como coluna da view, para usar no eixo",
+   "armadilhas": [
+    "só os ativos na data: desligado não tem tempo de casa \"hoje\"",
+    "a média esconde a forma: mostre também a distribuição por faixa (muita gente nova é risco de turnover)"
+   ]
+  },
+  {
+   "id": "cagr",
+   "nome": "Crescimento composto (CAGR)",
+   "termos": [
+    "cagr",
+    "crescimento anual",
+    "crescimento composto",
+    "taxa de crescimento"
+   ],
+   "argila": {
+    "nome": "CAGR",
+    "dax": "VAR _anos = VALUES(dCalendario[Ano])\nVAR _primeiro = MINX(_anos, dCalendario[Ano])\nVAR _ultimo = MAXX(_anos, dCalendario[Ano])\nVAR _ini = CALCULATE([Realizado], dCalendario[Ano] = _primeiro)\nVAR _fim = CALCULATE([Realizado], dCalendario[Ano] = _ultimo)\nRETURN\n    IF(_ultimo > _primeiro && _ini > 0, POWER(DIVIDE(_fim, _ini), DIVIDE(1, _ultimo - _primeiro)) - 1)",
+    "formato": "percentual",
+    "descricao": "Crescimento médio por ano entre o primeiro e o último ano do filtro."
+   },
+   "funcoes": [
+    "POWER",
+    "DIVIDE",
+    "MINX",
+    "MAXX",
+    "VALUES",
+    "CALCULATE"
+   ],
+   "armadilhas": [
+    "ano incompleto no fim distorce: compare anos fechados (ou até o mesmo dia, com a Data de Corte)",
+    "valor inicial zero ou negativo não tem CAGR"
+   ]
+  },
+  {
+   "id": "ticket_medio",
+   "nome": "Ticket médio (valor por transação)",
+   "termos": [
+    "ticket médio",
+    "ticket",
+    "valor médio por pedido",
+    "gasto médio"
+   ],
+   "cadeia": [
+    {
+     "nome": "Receita",
+     "agregacao": "soma",
+     "coluna": "fVenda[Valor]",
+     "formato": "moeda",
+     "descricao": "Receita das vendas do período."
+    },
+    {
+     "nome": "Pedidos",
+     "agregacao": "contagem_distinta",
+     "coluna": "fVenda[Nº Pedido]",
+     "descricao": "Pedidos distintos do período (a fato tem uma linha por item)."
+    },
+    {
+     "nome": "Ticket Médio",
+     "tipo": "divisao",
+     "numerador": "Receita",
+     "denominador": "Pedidos",
+     "formato": "moeda",
+     "descricao": "Receita ÷ pedidos distintos."
+    }
+   ],
+   "dax": "DIVIDE([Receita], [Pedidos])",
+   "funcoes": [
+    "SUM",
+    "DISTINCTCOUNTNOBLANK",
+    "DIVIDE"
+   ],
+   "armadilhas": [
+    "fato por item: conte pedidos DISTINTOS, senão o ticket vira valor por item",
+    "devolução e cancelamento: decida se saem da receita e do número de pedidos (os dois, juntos)"
+   ]
+  },
+  {
+   "id": "margem",
+   "nome": "Margem (%)",
+   "termos": [
+    "margem",
+    "margem bruta",
+    "margem de contribuição",
+    "lucratividade"
+   ],
+   "cadeia": [
+    {
+     "nome": "Receita Líquida",
+     "agregacao": "soma",
+     "coluna": "fVenda[Receita Líquida]",
+     "formato": "moeda",
+     "descricao": "Receita sem impostos e devoluções."
+    },
+    {
+     "nome": "Custo",
+     "agregacao": "soma",
+     "coluna": "fVenda[Custo]",
+     "formato": "moeda",
+     "descricao": "Custo das mercadorias vendidas."
+    },
+    {
+     "nome": "Margem %",
+     "dax": "DIVIDE([Receita Líquida] - [Custo], [Receita Líquida])",
+     "formato": "percentual",
+     "polaridade": "maior_melhor",
+     "descricao": "(Receita líquida − custo) ÷ receita líquida."
+    }
+   ],
+   "dax": "DIVIDE([Receita Líquida] - [Custo], [Receita Líquida])",
+   "funcoes": [
+    "SUM",
+    "DIVIDE"
+   ],
+   "armadilhas": [
+    "margem nunca se soma nem se tira média entre produtos: o total é recalculado",
+    "margem sobre o custo (markup) é outra conta: deixe escrito qual é"
+   ]
+  },
+  {
+   "id": "dias_uteis",
+   "nome": "Dias úteis e prazo em dias úteis",
+   "termos": [
+    "dias úteis",
+    "dia útil",
+    "feriado",
+    "prazo útil",
+    "sla útil"
+   ],
+   "argila": {
+    "nome": "Dias Úteis",
+    "dax": "CALCULATE(COUNTROWS(dCalendario), dCalendario[Dia Útil])",
+    "formato": "inteiro",
+    "descricao": "Dias úteis (segunda a sexta, fora de feriado) no período."
+   },
+   "dax": "CALCULATE(COUNTROWS(dCalendario), dCalendario[Dia Útil])",
+   "funcoes": [
+    "CALCULATE",
+    "COUNTROWS"
+   ],
+   "alternativa": "prazo de cada chamado em dias úteis como coluna na view (com a tabela de feriados), para conferir em SQL",
+   "armadilhas": [
+    "pede \"feriados\": \"BR\" no calendario (colunas Feriado e Dia Útil)",
+    "feriado estadual e municipal: acrescente em \"feriados_extras\" (a empresa de SP folga no 25/01)",
+    "absenteísmo e SLA em dias úteis mudam a meta: combine com o dono se a meta é em dias corridos ou úteis"
    ]
   }
  ]

@@ -1,0 +1,83 @@
+{
+  "$schema": "https://vega.github.io/schema/vega/v5.json",
+  "description": "",
+  "usermeta": {
+    "Copyright": "Andrzej Leszkiewicz",
+    "License": "MIT Expat License (https://en.wikipedia.org/wiki/MIT_License)",
+    "Permission": "Permission is hereby granted, free of charge, to any person obtaining a copy of this software and associated documentation files (the “Software”), to deal in the Software without restriction, including without limitation the rights to use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies of the Software, and to permit persons to whom the Software is furnished to do so, subject to the following conditions: The above copyright notice and this permission notice shall be included in all copies or substantial portions of the Software.",
+    "Github": "https://github.com/avatorl/Deneb-Vega/"
+  },
+  "width": 600,
+  "height": 1000,
+  "autosize": "pad",
+  "background": "white",
+  "signals": [
+    {"name": "radius", "update": "width/2"},
+    {"name": "gridColumns", "value": "4"}
+  ],
+  "data": [
+    {
+      "name": "dataset-csv",
+      "url": "https://dl.dropboxusercontent.com/s/izhekp17jfd7jab/data-population-2000-2020.csv",
+      "format": {"type": "csv", "parse": "auto", "delimiter": ","}
+    },
+    {"name": "dataset", "source": "dataset-csv"}
+  ],
+  "scales": [
+    {
+      "name": "scaleX",
+      "type": "linear",
+      "domain": {"data": "dataset", "fields": ["2000", "2020"]},
+      "range": [0, {"signal": "width"}]
+    },
+    {
+      "name": "scaleY",
+      "type": "band",
+      "domain": {"data": "dataset", "field": "country"},
+      "range": [0, {"signal": "height"}]
+    }
+  ],
+  "axes": [
+    {"scale": "scaleX", "orient": "bottom"},
+    {"scale": "scaleY", "orient": "left"}
+  ],
+  "marks": [
+    {
+      "type": "rule",
+      "from": {"data": "dataset"},
+      "encode": {
+        "update": {
+          "x": {"scale": "scaleX", "field": "2000"},
+          "x2": {"scale": "scaleX", "field": "2020"},
+          "y": {"scale": "scaleY", "field": "country"}
+        }
+      }
+    },
+    {
+      "name": "circle-1",
+      "type": "symbol",
+      "from": {"data": "dataset"},
+      "shape": "circle",
+      "encode": {
+        "update": {
+          "x": {"scale": "scaleX", "field": "2000"},
+          "y": {"scale": "scaleY", "field": "country"},
+          "fill": {"signal": "'red'"}
+        }
+      }
+    },
+    {
+      "name": "circle-2",
+      "type": "symbol",
+      "from": {"data": "dataset"},
+      "shape": "circle",
+      "encode": {
+        "update": {
+          "x": {"scale": "scaleX", "field": "2020"},
+          "y": {"scale": "scaleY", "field": "country"},
+          "fill": {"signal": "'blue'"}
+        }
+      }
+    }
+  ]
+}

@@ -27,6 +27,11 @@ armadilhas. Os padrões cobrem: total aditivo, distintos, taxa, participação
 no total, medida com recorte, estoque na data, média do período, acumulado no
 ano, ano anterior e variação, móvel 12 meses, último valor (semiaditivo),
 ranking, prazo médio, faixa, segunda data (relação inativa) e meta com status.
+Indicadores prontos: turnover, absenteísmo, % no prazo (SLA), OTIF, NPS, churn,
+orçado x realizado, como vai fechar (ritmo), média ponderada, tempo de casa,
+CAGR, ticket médio e margem. Cada um diz a polaridade, se a meta é do período
+(`base_meta`) e as armadilhas que mudam o número (o que entra no numerador, que
+data vai no calendário, o que não se soma).
 Fonte: `dicionario/padroes.json` (o time pode acrescentar os seus).
 
 ## Dicionário de funções

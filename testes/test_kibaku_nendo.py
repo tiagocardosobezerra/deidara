@@ -19,6 +19,29 @@ class TestValidacao(unittest.TestCase):
         self.assertEqual(p.erros, [])
         self.assertEqual(len(m['paginas']), 2)
 
+    def test_quebra_de_linha_no_servidor_e_erro(self):
+        # revisão D5 (segurança): "srv\nx" virava uma linha solta no expressions.tmdl
+        a = _base()
+        a['fontes']['erp']['servidor'] = 'srv"; x\ny'
+        _, p = _resolver(a)
+        self.assertTrue(any('fontes.erp.servidor' in e for e in p.erros), p.erros)
+
+    def test_nome_com_aspas_e_colchete_gera_projeto_valido(self):
+        a = _base()
+        velho, novo = 'Headcount', 'Head\'count ] "x" -- /*'
+        texto = json.dumps(a, ensure_ascii=False).replace(f'"{velho}"', json.dumps(novo, ensure_ascii=False))
+        texto = texto.replace(f'[{velho}]', '[' + novo.replace(']', ']]').replace('"', '\\"') + ']')
+        _, p = _resolver(json.loads(texto))
+        self.assertEqual(p.erros, [])
+        with tempfile.TemporaryDirectory() as d:
+            shutil.copytree(os.path.join(EXEMPLO, 'catalogos'), os.path.join(d, 'catalogos'))
+            arg = os.path.join(d, 'argila.json')
+            with open(arg, 'w', encoding='utf-8') as f:
+                f.write(texto)
+            self.assertEqual(_calado(_aprovar_com_prototipo, ['aprovar', arg, '--por', 'Teste'])[0], 0)
+            self.assertEqual(_calado(deidara.main, ['gerar', arg, '-o', os.path.join(d, 'pbi')])[0], 0)
+            self.assertEqual(validar_pbip.conferir(os.path.join(d, 'pbi')), [])
+
     def test_tabela_inventada_e_erro(self):
         a = _base()
         a['tabelas'][1]['origem'] = 'F_CARGOS'
@@ -121,7 +144,7 @@ class TestValidacao(unittest.TestCase):
     def test_medida_de_tempo_nao_mostra_futuro(self):
         m, _ = _resolver(_base())
         md = next(x for x in m['medidas'] if x['nome'] == 'Desligamentos Acum. Ano')
-        self.assertTrue(md['dax'].startswith('IF(\n    MIN(dCalendario[Data]) > TODAY(),'), md['dax'])
+        self.assertTrue(md['dax'].startswith('IF(\n    MIN(dCalendario[Data]) > [Data de Corte],'), md['dax'])
         self.assertEqual(md['formato'], 'inteiro')
 
     def test_trimestre_sem_ano_gera_aviso(self):
@@ -205,6 +228,7 @@ class TestMetas(unittest.TestCase):
     def setUp(self):
         a = _base()
         _md(a, 'Turnover')['meta'] = 0.05                     # meta numérica (o exemplo usa a da planilha)
+        _md(a, 'Turnover')['base_meta'] = 'periodo'           # vale para qualquer período: o rótulo mostra o número
         self.m, self.p = _resolver(a)
 
     def test_meta_numerica_vira_medidas(self):

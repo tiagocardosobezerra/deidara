@@ -1,6 +1,6 @@
 ---
 name: deidara
-description: "Arquiteto de painéis Power BI para o time de indicadores. Descobre a estrutura das fontes por receitas que a pessoa roda onde os dados estão (SQL Server, modelo Power BI existente, Excel, SharePoint, CSV, API), sugere tabelas e ligações com evidência, esboça a especificação (modelo, medidas DAX, metas, páginas) sem adivinhar nome nem função, gera um PROTÓTIPO HTML com números fictícios para o gestor aprovar e, só depois do aceite, o projeto Power BI completo (.pbip TMDL/PBIR, que vira .pbix no Desktop), views SQL, homologação e dicionário de indicadores. Segue princípios de design (layout, cor, contraste, técnicas de visual nativo e medidas SVG em DAX). Guarda painéis e indicadores oficiais no Memory Card do time. Use para criar, prototipar ou especificar dashboard, painel, relatório Power BI, KPI, indicador, métrica, medida DAX, modelo dimensional, fonte Excel/SharePoint para Power BI ou .pbix/.pbip."
+description: "Arquiteto de painéis Power BI para o time de indicadores. Descobre a estrutura das fontes por receitas que a pessoa roda onde os dados estão (SQL Server, modelo Power BI, Excel, SharePoint, CSV, API), sugere tabelas e ligações com evidência, esboça a especificação (modelo, medidas DAX, metas, páginas) sem adivinhar nome nem função, gera um PROTÓTIPO HTML com números fictícios para o gestor aprovar e, só depois do aceite, o projeto Power BI completo (.pbip TMDL/PBIR), views SQL, homologação e dicionário de indicadores. Estuda um indicador ou painel que já existe (engenharia reversa: nota, efeito de cada problema no número, versão corrigida). Guarda painéis e indicadores oficiais no Memory Card do time. Use para criar, prototipar, revisar ou melhorar dashboard, painel, relatório Power BI, KPI, indicador, métrica, medida DAX, modelo dimensional, fonte Excel/SharePoint para Power BI ou .pbix/.pbip."
 ---
 
 # Deidara
@@ -24,8 +24,9 @@ argila explosiva (`kibaku_nendo/`, o motor). Cada etapa é uma técnica dele, em
 fictícios), **Katsu** (o aceite), **C3** (o projeto completo), **Arte**
 (layout), **Sasori** (funções e padrões conferidos), **C2** (escolhe os visuais pela
 pergunta do painel), **Tobi** (a frase de leitura), o **Treino** da Luneta (aprende
-com as correções) **Ōnoki** (mede o acerto da busca) e **C4 Karura** (a estatística: sinal ou ruído, fora
-da curva, meta x faixa, tendência; ver referencias/estatistica.md). Use os nomes só para se
+com as correções), **Ōnoki** (mede o acerto da busca) e **C4 Karura** (a estatística: sinal ou ruído, fora
+da curva, meta x faixa, tendência; ver referencias/estatistica.md), **C0** (a engenharia
+reversa de um painel que já existe) e a **Galeria** (modelos e funções MIT da comunidade). Use os nomes só para se
 situar no código; com o usuário, fale da etapa ("o protótipo", "o aceite").
 
 ## Regras que valem sempre
@@ -58,6 +59,18 @@ situar no código; com o usuário, fale da etapa ("o protótipo", "o aceite").
    `--confirmar` só com o "sim"; mudança pede `--motivo`). Sem `gh`
    autenticado (ex.: claude.ai), diga isso em vez de prometer o envio.
 9. **Saída em pt-BR** (`dd/MM/aaaa`, `1.234.567,89`). Leia e siga os `LEMBRETE:`.
+
+## Já existe um indicador ou painel? Comece pelo C0
+
+Quando a pessoa traz algo pronto (uma medida colada, a pasta do .pbip ou o resultado
+da receita DAX de um .pbix), estude antes de propor ([c0.md](referencias/c0.md)):
+`c0 estudar <alvo>` dá a nota e cada problema com o efeito no número; `c0 propor`
+dá a versão Deidara e as melhorias; `c0 importar <alvo> -o <pasta> --manter-antigas`
+refaz o painel e segue o fluxo abaixo a partir do passo 4. Leve ao dono do
+indicador, em linguagem de negócio, tudo que "muda o número" antes de trocar
+(a seção "Em uma página" do `c0_relatorio.md` já vem escrita para ele). O .pbix
+não abre direto: peça o .pbip (Salvar como) ou o resultado da `receita dax`.
+A nota mede a construção da fórmula, não se o indicador é o certo para a decisão.
 
 ## O fluxo
 
@@ -130,6 +143,10 @@ São 8 passos, os mesmos do `deidara.py` sem argumentos e do `ROTEIRO.md` da pas
   gestor, publique o HTML como página (artifact) ou envie o arquivo. Os
   comentários da aba Para aprovar ficam só no navegador de quem escreveu: o que
   volta para você é o resumo copiado.
+- **O protótipo é o que o Power BI entrega.** Mostre o do `prototipar`; um
+  conceito feito à mão (recurso que o Power BI nativo não tem) vai marcado como
+  conceito, dizendo o que não chega ao projeto. Leve o tema e o modelo de layout
+  do aprovado para o `argila.json` e avise qualquer perda de visual antes do `gerar`.
 - **Mostre o layout cedo**: pergunte para que o painel vai ser usado e
   sugira o modelo (visão geral: `faixa-de-kpis`; várias páginas em ordem:
   `coluna-de-kpis`; conferência linha a linha: `secoes-com-rolagem`;
@@ -139,31 +156,44 @@ São 8 passos, os mesmos do `deidara.py` sem argumentos e do `ROTEIRO.md` da pas
   `tabela-lateral`; equipes e pessoas: `equipes`). Trocar é uma linha. Para
   ranking, Pareto, melhores e piores, status, setas e selos na tabela, use as
   medidas geradas (`visuais ranking`, [argila.md](referencias/argila.md)).
+- **Ao fechar cada indicador**, confirme com o dono as quatro coisas que mudam
+  o número sem ninguém ver ([argila.md](referencias/argila.md)):
+  - a meta é anual ou mensal? Taxa sobre estoque (turnover, churn) cresce com
+    o período: `"base_meta": "ano"` compara com a meta proporcional aos meses;
+  - meta por área no total do grupo: `"tipo": "media_ponderada"` pelo tamanho
+    (a média simples pesa igual a área de 10 e a de 5.000);
+  - soma de valor do cadastro (remuneração) é só dos ativos? `"no_estoque"`;
+  - quem responde pelo número (`"dono"`), a periodicidade e a faixa de
+    "perto da meta" (`"tolerancia"`, que pinta de amarelo).
+  O calendário acompanha o ano sozinho e as contas de tempo param no último
+  dia com dado: o ano anterior é comparado até o mesmo dia. Indicador fora de
+  RH (absenteísmo, SLA, OTIF, NPS, churn, orçado x realizado, margem): `padroes
+  <assunto>`.
 - **No visual, comece pela decisão** ([design.md](referencias/design.md)): uma
-  página por pergunta, poucos cartões, cor só com significado. Prefira visual
-  nativo; medida SVG para meta, status e variação dentro da tabela
-  (`svg_barra_meta` o Deidara gera; à mão, siga [svg.md](referencias/svg.md)).
-  Abas, chave liga/desliga, destaque, aviso, setas, skyline e ajuda também
-  saem prontas (`deidara.py visuais`). Para causa raiz: espinha de peixe
-  (`svg_espinha`), jitter plot (`jitter`) e ranking de impacto (`impacto`),
-  ao lado da árvore de decomposição. No mapa, `"marcador"` troca a bolha
-  pela imagem de uma medida SVG (`svg_estrelas`, `svg_progresso`) e
-  `"camada": "colunas"` põe colunas 3D. HTML Content e Deneb (`html`,
-  `vegalite`) e o tour guiado da página (`"tour": true`) só quando a pessoa
-  pede: o administrador precisa liberar os visuais do AppSource; registre no
-  LEIA-ME. Chord, Word Cloud, Violin Plot, Gantt e Play Axis o Deidara só
-  descreve, não gera. Tema do time ou da comunidade: `"tema": {"arquivo":
-  ...}`. Período (atual, acumulado, ano anterior) para todas as medidas:
-  `"grupo_calculo"` com um segmentador de botões. Perfil de um item a partir
-  de qualquer página: `"detalhe": "Tabela[Coluna]"`; resumo ao passar o
-  mouse: página com `"dica": true` e `"dica"` no visual. Texto livre
-  (chamados, comentários) vira tema antes do painel com
-  `ferramentas/agrupar_textos.py`, rodado onde os dados estão.
+  página por pergunta, poucos cartões, cor só com significado, visual nativo
+  primeiro. Meta, status e variação dentro da tabela: medidas SVG geradas
+  (`visuais meta`; à mão, [svg.md](referencias/svg.md)). Causa raiz: árvore de
+  decomposição, espinha de peixe, jitter e impacto (`visuais causa`). Rosca só
+  com até 5 fatias; acima disso, barras ordenadas.
+- **Galeria da comunidade** (`deidara.py galeria <assunto>`, em português:
+  cascata, minigráfico, ibcs, bullet, ranking no tempo, distribuição, feriado):
+  158 modelos Deneb, 66 pacotes de funções DAX (daxlib), calendários e feriados
+  (Bravo), todos MIT, com a licença em `terceiros/`. Use no `argila.json` com
+  `"funcoes_dax"`, `"modelo"` no visual `vegalite` e `"feriados": "BR"` no
+  calendário. Nunca copie conteúdo de repositório sem licença para o projeto.
+- **Recursos que pedem cuidado**: HTML Content, Deneb e o tour guiado só
+  quando a pessoa pede (o administrador libera os visuais do AppSource;
+  registre no LEIA-ME). Chord, Word Cloud, Violin, Gantt e Play Axis o Deidara
+  só descreve. Tema próprio (`"tema"`), período para todas as medidas
+  (`"grupo_calculo"`), detalhamento (`"detalhe"`) e dica (`"dica"`): sintaxe
+  em [argila.md](referencias/argila.md). Texto livre vira tema antes do painel
+  com `ferramentas/agrupar_textos.py`, rodado onde os dados estão.
 - **Na entrega**, diga quem faz o quê (DBA, analista, dono do indicador), o
   que ficou pendente e que a homologação vem antes de publicar.
 
 ## Referências
 
+- [referencias/c0.md](referencias/c0.md): engenharia reversa (estudar, propor, importar)
 - [referencias/tutorial.md](referencias/tutorial.md): 15 minutos, do zero ao projeto, com o exemplo
 - [referencias/fluxo.md](referencias/fluxo.md): passo a passo e perguntas de descoberta
 - [referencias/fontes.md](referencias/fontes.md): receitas, catalogar, fontes, ligação declarada
@@ -171,6 +201,7 @@ São 8 passos, os mesmos do `deidara.py` sem argumentos e do `ROTEIRO.md` da pas
 - [referencias/argila.md](referencias/argila.md): formato do argila.json
 - [referencias/metricas.md](referencias/metricas.md): onde criar cada métrica, padrões, dicionário de funções
 - [referencias/design.md](referencias/design.md): princípios de design, página, cor, tema e técnicas de visual
+- [referencias/estatistica.md](referencias/estatistica.md): C4 Karura, sinal ou ruído, meta x faixa, tendência
 - [referencias/svg.md](referencias/svg.md): medidas que desenham (SVG em DAX), regras e conferência
 - [referencias/modelos.md](referencias/modelos.md): os onze modelos de layout (fundo desenhado, navegação)
 - [referencias/memory-card.md](referencias/memory-card.md): o cartão do time

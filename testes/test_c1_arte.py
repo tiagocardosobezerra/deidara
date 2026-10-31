@@ -110,12 +110,12 @@ class TestModelos(unittest.TestCase):
         self.assertEqual(_calado(deidara.main, ['gerar', self.argila, '-o', saida])[0], 0)
         rep = os.path.join(saida, 'Quadro_e_Turnover.Report')
         paginas = {}
-        for pid in json.load(open(os.path.join(rep, 'definition', 'pages', 'pages.json'), encoding='utf-8'))['pageOrder']:
+        for pid in _json(os.path.join(rep, 'definition', 'pages', 'pages.json'))['pageOrder']:
             base = os.path.join(rep, 'definition', 'pages', pid)
             vis = []
             for v in os.listdir(os.path.join(base, 'visuals')):
-                vis.append(json.load(open(os.path.join(base, 'visuals', v, 'visual.json'), encoding='utf-8')))
-            paginas[pid] = (json.load(open(os.path.join(base, 'page.json'), encoding='utf-8')), vis)
+                vis.append(_json(os.path.join(base, 'visuals', v, 'visual.json')))
+            paginas[pid] = (_json(os.path.join(base, 'page.json')), vis)
         with open(os.path.join(self.dir, 'argila.prototipo.html'), encoding='utf-8') as f:
             html_ = f.read()
         return saida, rep, paginas, html_
@@ -124,7 +124,7 @@ class TestModelos(unittest.TestCase):
         for modelo in self.MODELOS:
             with self.subTest(modelo=modelo):
                 saida, rep, paginas, html_ = self._gerar(modelo)
-                report = json.load(open(os.path.join(rep, 'definition', 'report.json'), encoding='utf-8'))
+                report = _json(os.path.join(rep, 'definition', 'report.json'))
                 imagens = {i['name'] for i in report['resourcePackages'][0]['items'] if i['type'] == 'Image'}
                 for pid, (page, vis) in paginas.items():
                     self.assertEqual(page['width'], 1920)
@@ -239,7 +239,7 @@ class TestSimulacao(unittest.TestCase):
     def test_divisao_e_coerente(self):
         f = [(self.cargo, 'Cargo B')]
         self.assertAlmostEqual(self.sim.valor('Remuneração Média', f),
-                               self.sim.valor('Remuneração Total', f) / self.sim.valor('Cadastros', f))
+                               self.sim.valor('Remuneração Total', f) / self.sim.valor('Headcount', f))
 
     def test_coluna_que_nao_filtra_repete_o_valor(self):
         rot = self.cat(self.m, self.motivo)

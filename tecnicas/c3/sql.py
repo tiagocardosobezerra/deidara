@@ -140,6 +140,45 @@ SELECT {_lit(md['nome'])} AS indicador, f.fim_do_mes,
 FROM f
 ORDER BY f.fim_do_mes;
 """)
+    out += _conferencia_no_estoque(m, fonte, len(out) + 3)
+    return out
+
+
+def _conferencia_no_estoque(m, fonte, n):
+    """Soma (média...) só de quem está dentro do estoque no último dia de cada mês ("no_estoque")."""
+    out = []
+    for md in m['medidas']:
+        cfg = md.get('no_estoque')
+        est = next((x for x in m['medidas'] if cfg and x['nome'] == cfg['estoque'] and x.get('estoque')), None)
+        if not est:
+            continue
+        e = est['estoque']
+        te = _tabela(m, e['entradas'][0])
+        ts = _tabela(m, e['saidas'][0]) if e['saidas'] else None
+        if te.get('fonte') != fonte['nome'] or (ts and ts.get('fonte') != fonte['nome']):
+            continue
+        cond = f'e.{sql_nome(e["entradas"][1])} <= f.fim_do_mes'
+        if e['fim']:
+            fim = sql_nome(e['fim'][1])
+            cond += f' AND (e.{fim} IS NULL OR e.{fim} > f.fim_do_mes)'
+        if ts:
+            r = next((r for r in m['relacionamentos'] if r['de'] == ts['nome'] and r['para'] == te['nome'] and r['ativo']),
+                     None)
+            if not r:
+                continue
+            cond += (f'\n         AND NOT EXISTS (SELECT 1 FROM {nome_view(m, ts)} AS s WHERE s.{sql_nome(r["de_coluna"])} = '
+                     f'e.{sql_nome(r["para_coluna"])} AND s.{sql_nome(e["saidas"][1])} <= f.fim_do_mes)')
+        func = {'soma': 'SUM', 'media': 'AVG', 'minimo': 'MIN', 'maximo': 'MAX', 'contagem': 'COUNT'}[cfg['agregacao']]
+        col = sql_nome(cfg['coluna'][1])
+        out.append(f"""-- {n + len(out)}) {md['nome']}: só de quem está em "{est['nome']}" no último dia de cada mês
+WITH n AS (SELECT TOP (24) ROW_NUMBER() OVER (ORDER BY (SELECT NULL)) - 1 AS k FROM sys.all_objects),
+     f AS (SELECT EOMONTH(GETDATE(), -k) AS fim_do_mes FROM n)
+SELECT {_lit(md['nome'])} AS indicador, f.fim_do_mes,
+       (SELECT CAST({func}(CAST(e.{col} AS decimal(38,6))) AS decimal(38,6)) FROM {nome_view(m, te)} AS e
+         WHERE {cond}) AS total_no_banco
+FROM f
+ORDER BY f.fim_do_mes;
+""")
     return out
 
 
@@ -168,6 +207,7 @@ def qualidade(m, fonte):
         if de['origem'] and not para['origem'] and para.get('calendario'):
             k = sql_nome(r['de_coluna'])
             partes.append(f"SELECT N'fora_calendario' AS checagem, {_lit(rotulo)} AS onde, COUNT_BIG(*) AS ocorrencias FROM {nome_view(m, de)} "
-                          f"WHERE {k} < '{para['inicio']}0101' OR {k} > '{para['fim']}1231'")
+                          f"WHERE {k} < '{para['inicio']}0101' OR {k} > "
+                          + ("DATEFROMPARTS(YEAR(GETDATE()), 12, 31)" if para.get('fim_dinamico') else f"'{para['fim']}1231'"))
     out.append('\nUNION ALL\n'.join(partes) + ';' if partes else '-- Nenhum relacionamento para checar.')
     return '\n'.join(out) + '\n'

@@ -108,6 +108,9 @@ def receita_dax():
         return (f'"secao", "{secao}", "tabela", {tabela}, "coluna", {coluna}, "tipo", {tipo}, '
                 f'"descricao", {descricao}, "extra", {extra}, "expressao", {expressao}')
     return f"""// Deidara — receita DAX: estrutura do modelo Power BI (só metadados; nenhuma linha de dado)
+// Traz tabelas, colunas, relacionamentos, consultas e também as medidas (a fórmula, não o valor): o
+// catalogar usa a estrutura; o C0 (deidara.py c0 estudar) estuda as medidas. Uma fórmula pode ter um
+// valor digitado à mão (um nome ou CPF num filtro): confira o resultado antes de enviar.
 // 1. No Power BI Desktop, abra o .pbix que já carrega as fontes (Excel, SharePoint, banco...).
 // 2. Exibição de consulta DAX > nova consulta > cole tudo isto > Executar.
 // 3. Na grade do resultado: Copiar tabela; cole num .txt.
@@ -126,7 +129,18 @@ DEFINE
         SELECTCOLUMNS(
             INFO.VIEW.COLUMNS(),
             {linha('coluna', '[Table]', '[Name]', '[DataType]', _codifica('[Description]'),
-                   'IF(ISBLANK([Expression]), IF([IsHidden], "oculta", ""), "calculada")')}
+                   'IF(ISBLANK([Expression]), IF([IsHidden], "oculta", ""), "calculada")', _codifica('[Expression]'))}
+        )
+    VAR _medidas =
+        SELECTCOLUMNS(
+            INFO.VIEW.MEASURES(),
+            {linha('medida', '[Table]', '[Name]', 'IF([IsHidden], "oculta", "")', _codifica('[Description]'),
+                   '[FormatString] & "|" & [DisplayFolder]', _codifica('[Expression]'))}
+        )
+    VAR _calendario =
+        SELECTCOLUMNS(
+            FILTER(INFO.VIEW.TABLES(), [DataCategory] = "Time"),
+            {linha('calendario', '[Name]')}
         )
     VAR _relacoes =
         SELECTCOLUMNS(
@@ -152,7 +166,7 @@ DEFINE
             {linha('expressao', '[Name]', tipo='FORMAT([Kind], "0")', expressao=_codifica('[Expression]'))}
         )
 EVALUATE
-    UNION(_tabelas, _colunas, _relacoes, _particoes, _expressoes)
+    UNION(_tabelas, _colunas, _relacoes, _particoes, _expressoes, _medidas, _calendario)
 """
 
 

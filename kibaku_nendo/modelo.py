@@ -285,8 +285,10 @@ def tabelas_da_medida(m, nome, vistos=None):
     md = medida(m, nome)
     if not md:
         return set()
-    if md.get('tipo') == 'meta':                   # meta fixa é um número: não lê tabela nenhuma
+    if md.get('tipo') in ('meta', 'corte'):        # meta fixa é um número; a data de corte ignora todo filtro
         return set()
+    if md.get('tipo') == 'meta_periodo':           # a meta do período só multiplica a meta de base pelos meses
+        return tabelas_da_medida(m, md['base'], vistos)
     out = set()
     if md.get('tipo') in SVG_GERADAS + RANKINGS + EXTRAS:   # a coluna das linhas só organiza; os dados vêm das medidas
         for n in md.get('depende') or []:
@@ -344,6 +346,32 @@ def sintaxe_dax(dax):
     return out
 
 
+def boas_praticas_dax(dax):
+    """As regras de DAX do Best Practice Analyzer da Microsoft (microsoft/Analysis-Services, BPARules.json) que dá
+    para conferir no texto, sem o motor. Devolve [(regra, conselho)]."""
+    texto = re.sub(r'"(?:[^"]|"")*"|//[^\n]*|--[^\n]*|/\*.*?\*/', '""', dax, flags=re.S)
+    texto = re.sub(r"'(?:[^']|'')*'", "''", texto)
+    sem_nomes = re.sub(r'\[(?:[^\]]|\]\])*\]', '[]', texto)
+    out = []
+    if re.search(r'[\])\w]\s*/\s*(?!\d+(?:\.\d+)?\b(?!\s*[(\[]))[\[(\w]', sem_nomes):   # ÷ número fixo (365.25) é seguro
+        out.append(('divisão com "/"', 'use DIVIDE(numerador, denominador): não dá erro quando o denominador é zero '
+                                       'ou vazio'))
+    if re.search(r'\b(IFERROR|ISERROR)\s*\(', texto, re.I):
+        out.append(('IFERROR/ISERROR', 'evite: esconde o erro e deixa a medida lenta; trate o caso (DIVIDE, ISBLANK, '
+                                       'IF) antes de ele acontecer'))
+    if re.search(r'\bEARLIER\s*\(', texto, re.I):
+        out.append(('EARLIER', 'troque por VAR: mais claro e não depende de contexto de linha aninhado'))
+    if re.search(r'\bCALCULATE\s*\([^()]*(?:\([^()]*\)[^()]*)*,\s*FILTER\s*\(\s*(?:\'\'|\w+)\s*,', texto, re.I):
+        out.append(('FILTER na tabela inteira dentro do CALCULATE', 'filtre a coluna (Tabela[Coluna] = valor) em vez '
+                                                                    'da tabela inteira: mais rápido e não traz junto '
+                                                                    'filtros que você não pediu'))
+    if re.search(r'\b(SUMX|AVERAGEX|COUNTX|MINX|MAXX)\s*\(\s*FILTER\s*\(', texto, re.I) is None and \
+            re.search(r'\bSUMX\s*\(\s*VALUES\s*\(', texto, re.I) is None and \
+            re.search(r'\bCOUNTROWS\s*\(\s*DISTINCT\s*\(', texto, re.I):
+        out.append(('COUNTROWS(DISTINCT())', 'use DISTINCTCOUNT: mesmo resultado, mais rápido'))
+    return out
+
+
 def nova_coluna(nome, origem, familia, descricao='', oculta=False, formato=None, expressao_sql=None):
     if not formato:
         formato = {'inteiro': None, 'decimal': 'decimal', 'real': 'decimal', 'data': 'data',
@@ -362,8 +390,12 @@ COLUNAS_CALENDARIO = [
 ]
 
 
-CALENDARIO_OCULTAS = {'Ano-Mês Num', 'Ano-Trimestre Num'}
+# ano fiscal que não começa em janeiro ("mes_inicio_fiscal"): o ano fiscal leva o nome do ano em que termina
+COLUNAS_FISCAIS = [('Ano Fiscal', 'inteiro', None), ('Mês Fiscal', 'inteiro', None)]
+
+
+CALENDARIO_OCULTAS = {'Ano-Mês Num', 'Ano-Trimestre Num', 'Mês Fiscal'}
 
 
 # colunas do calendário que repetem todo ano: sem o ano no filtro, somam todos os anos
-CALENDARIO_SEM_ANO = {'Mês', 'Nome do Mês', 'Trimestre'}
+CALENDARIO_SEM_ANO = {'Mês', 'Nome do Mês', 'Trimestre', 'Mês Fiscal'}

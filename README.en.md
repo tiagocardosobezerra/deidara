@@ -7,7 +7,7 @@
 ![Python 3.8+](https://img.shields.io/badge/python-3.8%2B-3776AB?style=flat-square&logo=python&logoColor=white)
 ![No dependencies](https://img.shields.io/badge/dependencies-none-2ea44f?style=flat-square)
 ![Power BI .pbip](https://img.shields.io/badge/Power%20BI-.pbip%20(TMDL%20%2B%20PBIR)-F2C811?style=flat-square&logo=powerbi&logoColor=black)
-![Tests](https://img.shields.io/badge/tests-174%20passing-2ea44f?style=flat-square)
+[![Tests](https://github.com/tiagocardosobezerra/deidara/actions/workflows/testes.yml/badge.svg)](https://github.com/tiagocardosobezerra/deidara/actions/workflows/testes.yml)
 ![MIT](https://img.shields.io/badge/license-MIT-blue?style=flat-square)
 
 <img width="100%" alt="Deidara: from request to Power BI report, with an approved prototype before the project" src="assets/deidara-banner-en-animado.svg" />
@@ -100,6 +100,8 @@ python3 deidara.py aprovar meu/argila.json --por "Gestor de RH"
 python3 deidara.py gerar meu/argila.json -o C:/paineis/turnover
 python3 deidara.py gerar meu/argila.json -o C:/paineis/demo --demo   # fictional data: opens and calculates with no database
 python3 deidara.py situacao meu/argila.json                     # where am I and what's next
+python3 deidara.py c0 estudar C:/paineis/antigo                # reverse-engineer a report that already exists
+python3 deidara.py galeria cascata                              # community Deneb templates and DAX functions
 ```
 
 With no arguments, `python3 deidara.py` shows the full walkthrough.
@@ -129,6 +131,14 @@ Sources other than SQL Server (Excel, SharePoint, APIs...) come in through **the
 ### Design and visuals
 
 The principles in [`referencias/design.md`](referencias/design.md): start from the decision, one page per question, color only with meaning (and never as the only cue), contrast checked by `validar`. Native visual techniques (button slicer as a segmented control, clickable KPI cards, top and bottom in one table, Pareto, decomposition tree, fishbone, jitter plot, impact ranking, star and progress map markers, 3D map columns, guided tour, period slicer via calculation group, drillthrough, tooltip page) are in `deidara.py visuais`. Measures that draw inside a table follow [`referencias/svg.md`](referencias/svg.md); Deidara generates the bar-versus-target ready to use (`"tipo": "svg_barra_meta"`).
+
+### C0: reverse engineering
+
+Bring what already exists (one measure, the .pbip folder or the DAX recipe result from a .pbix) and Deidara takes it apart: what the formula really does, the tree down to the columns, a 0 to 10 grade with each problem and its effect on the number (rate over the headcount table, average of rates, prior year against the full year, target hidden in code...), the Deidara version of each measure and, with `c0 importar`, the report rebuilt with a "before vs after" homologation in the same model. Guide in [`referencias/c0.md`](referencias/c0.md) (Portuguese); example in `exemplos/legado/`.
+
+### Community gallery
+
+What the Power BI community released under MIT, inside Deidara in [`terceiros/`](terceiros/) (license and origin of each source in [`LICENCAS-DE-TERCEIROS.md`](LICENCAS-DE-TERCEIROS.md)): 158 Deneb templates (waterfall, bullet, slope, bump chart, histogram, boxplot, violin, treemap, waffle, sankey, maps), 66 packages with 602 DAX functions from [daxlib](https://daxlib.org) (sparkline, IBCS, waterfall, boxplot, heatmap, statistics, ABC curve) and the calendars and holidays from SQLBI's Bravo. Search is in Portuguese (`deidara.py galeria cascata`) and use is one line in `argila.json`: `"funcoes_dax"`, `"modelo"` on a `vegalite` visual or `"feriados": "BR"` on the calendar. `ferramentas/atualizar_terceiros.py` pulls new versions of the sources.
 
 ### Layout templates
 
@@ -185,11 +195,15 @@ deidara/
 │   ├── katsu.py           #   "Katsu!": the sign-off and the approved snapshot
 │   ├── c3/                #   the big work: TMDL, PBIR, SQL views and documentation
 │   ├── arte/              #   "art is an explosion": layout models and visual placement
+│   ├── c0/                #   reverse engineering: reads, grades and rebuilds an existing report
+│   ├── galeria.py         #   the community gallery (terceiros/)
 │   ├── sasori.py          #   eternal art: function dictionary and checked patterns
 │   └── memory_card.py     #   the team's memory card
 ├── dicionario/            # DAX and Power Query functions, KPI patterns, visual techniques and synonyms
 ├── referencias/           # Guides: flow, sources, discovery, argila.json, metrics, design, SVG, Memory Card, Power BI and tutorial
 ├── exemplos/aurora/       # Complete fictional example, from pasted result to generated project
+├── exemplos/legado/       # Old report with deliberate flaws, for C0
+├── terceiros/             # Community MIT sources (Deneb, daxlib, Bravo), with license and origin
 ├── ferramentas/           # .pbip validator, skill packager and free-text topic grouper
 ├── assets/                # README images
 └── testes/                # Test suite

@@ -31,7 +31,9 @@ python3 ferramentas/empacotar.py
 Ele cria `deidara-skill-<versão>.zip` ao lado da pasta (a versão no nome diz qual está
 instalada), só com o que a skill usa: num
 clone git, só arquivo rastreado (pasta de cliente ou rascunho solto nunca vai
-junto), sem imagens do README, saídas geradas nem aprovações locais. Suba o arquivo
+junto), sem imagens do README, saídas geradas nem aprovações locais. Se houver
+código novo da skill ainda fora do git, ele recusa e lista os arquivos (o pacote
+sairia incompleto): faça `git add` antes. Suba o arquivo
 na área de Skills das configurações do claude.ai.
 
 No claude.ai, a skill funciona até o protótipo e a geração do projeto. O

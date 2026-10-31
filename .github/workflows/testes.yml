@@ -1,0 +1,43 @@
+name: testes
+
+on:
+  push:
+  pull_request:
+
+jobs:
+  testes:
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, windows-latest]
+        python: ["3.8", "3.12"]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python }}
+      - name: Dependências de desenvolvimento (a skill em si não tem nenhuma)
+        run: python -m pip install -r ferramentas/requisitos-dev.txt
+      - name: Lint (erro de verdade, não estilo)
+        run: python -m ruff check .
+      - name: Testes
+        run: python -m unittest discover -s testes
+      - name: Catálogo da galeria em dia com terceiros/
+        shell: bash
+        run: python ferramentas/catalogar_terceiros.py && git diff --exit-code terceiros/catalogo.json
+      - name: Placar do motor (o esboço e as armadilhas de indicador)
+        run: python ferramentas/avaliar.py exemplos/aurora/avaliacao.json
+      - name: Exemplo de ponta a ponta, conferido contra os schemas da Microsoft
+        shell: bash
+        run: |
+          set -e
+          S="$RUNNER_TEMP/aurora"
+          cp -r exemplos/aurora "$S"
+          python deidara.py validar "$S/argila.json"
+          python deidara.py prototipar "$S/argila.json"
+          python deidara.py aprovar "$S/argila.json" --por CI
+          python deidara.py gerar "$S/argila.json" -o "$RUNNER_TEMP/saida"
+          python deidara.py gerar "$S/argila.json" -o "$RUNNER_TEMP/demo" --demo
+          python ferramentas/validar_pbip.py "$RUNNER_TEMP/saida"
+          python ferramentas/validar_pbip.py "$RUNNER_TEMP/demo"

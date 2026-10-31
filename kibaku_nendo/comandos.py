@@ -172,6 +172,7 @@ def cmd_gerar(a):
     gravar_texto(os.path.join(pasta, 'docs', 'dicionario_indicadores.md'),
                  docs.dicionario(modelo, aprov.get('historico') or []))
     gravar_texto(os.path.join(pasta, 'docs', 'medidas.dax'), docs.medidas_dax(modelo))
+    gravar_texto(os.path.join(pasta, 'docs', 'conferencia.dax'), docs.consulta_dax(modelo))
     leia = docs.leia_me(modelo, nome, aprov, problemas.avisos)
     if a.demo:
         leia = ('> **DEMONSTRAÇÃO.** Este projeto traz linhas fictícias embutidas (geradas pelo Deidara, sem fonte de '

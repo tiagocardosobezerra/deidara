@@ -18,15 +18,55 @@ def medidas_dax(m):
     return '\n'.join(out)
 
 
+def _ancora(nome):
+    import re
+    return re.sub(r'[^\w\- ]', '', nome.lower(), flags=re.U).strip().replace(' ', '-')
+
+
+def _celula(texto):
+    return (texto or '—').replace('|', '\\|').replace('\n', ' ')
+
+
+def _ficha(m, md):
+    """A ficha técnica de um indicador: o que é, como se calcula, de onde vem e quem responde por ele."""
+    from kibaku_nendo.modelo import tabelas_da_medida
+    tabs = sorted(tabelas_da_medida(m, md['nome']))
+    origem = []
+    for tn in tabs:
+        t = next((t for t in m['tabelas'] if t['nome'] == tn), None)
+        if t and t['origem']:
+            origem.append(f'{tn} ({t.get("fonte")}: {t["origem"]})')
+    meta = md['meta_medida'] or '—'
+    if md.get('base_meta') in ('ano', 'mes'):
+        meta += f' (meta {"anual" if md["base_meta"] == "ano" else "mensal"}, proporcional aos meses do filtro)'
+    linhas = [f'### {md["nome"]}', '',
+              f'- **Definição:** {md["descricao"] or "—"}',
+              f'- **Unidade:** {md["formato"] or "imagem"} · **Polaridade:** {md["polaridade"].replace("_", " ")}',
+              f'- **Meta:** {meta}']
+    if md.get('tolerancia'):
+        linhas.append(f'- **Faixas:** verde bateu a meta; amarelo até {md["tolerancia"]:.0%} da meta do lado ruim; '
+                      'vermelho além disso')
+    linhas += [f'- **Dono:** {md.get("dono") or "—"} · **Periodicidade:** {md.get("periodicidade") or "—"}',
+               f'- **Fonte:** {", ".join(origem) or "calculada a partir de outras medidas"}']
+    if md.get('depende'):
+        linhas.append(f'- **Depende de:** {", ".join(md["depende"])}')
+    linhas += ['', '```dax', f'{md["nome"]} =', md['dax'] or '', '```', '']
+    return linhas
+
+
 def dicionario(m, historico=()):
     out = [f'# {m["projeto"]} — dicionário de indicadores' + (f' (versão {m["versao"]})' if m.get('versao') else ''), '']
     if m['descricao']:
         out += [m['descricao'], '']
-    out += ['| Indicador | Definição | Fórmula (DAX) | Formato | Polaridade | Meta |', '|---|---|---|---|---|---|']
-    for md in [x for x in m['medidas'] if x['tipo'] != 'cor']:
-        dax = md['dax'].replace('\n', ' ').replace('|', '\\|')
-        out.append(f'| **{md["nome"]}** | {md["descricao"] or "—"} | `{dax}` | {md["formato"]} | '
-                   f'{md["polaridade"].replace("_", " ")} | {md["meta_medida"] or "—"} |')
+    inds = [x for x in m['medidas'] if x['tipo'] not in ('cor', 'corte')]
+    out += ['| Indicador | Definição | Polaridade | Meta | Dono | Periodicidade |', '|---|---|---|---|---|---|']
+    for md in inds:
+        out.append(f'| [{md["nome"]}](#{_ancora(md["nome"])}) | {_celula(md["descricao"])} | '
+                   f'{md["polaridade"].replace("_", " ")} | {md["meta_medida"] or "—"} | {md.get("dono") or "—"} | '
+                   f'{md.get("periodicidade") or "—"} |')
+    out += ['', '## Fichas dos indicadores', '']
+    for md in inds:
+        out += _ficha(m, md)
     out += ['', '## Origem dos dados', '', '| Tabela do modelo | Tipo | Fonte · origem | Lida por |', '|---|---|---|---|']
     for t in m['tabelas']:
         leitura = (nome_view(m, t) if t.get('fonte_tipo') == 'sqlserver' else
@@ -95,6 +135,45 @@ def _onde_ler(m, nome):
     return sorted(achados, key=lambda x: x[0])[0][1]
 
 
+def consulta_dax(m):
+    """As consultas DAX da homologação: os mesmos números do 02_conferencia.sql, calculados pelo modelo. Rode na
+    Exibição de consulta DAX do Power BI Desktop (ou no DAX Studio) e compare linha a linha com o SQL."""
+    from kibaku_nendo.util import dax_coluna, dax_medida
+    out = [f'// {m["projeto"]} — conferência pelo modelo (homologação)',
+           '// Rode na Exibição de consulta DAX do Power BI Desktop (ou no DAX Studio), depois de Atualizar.',
+           '// Cada bloco tem o par no sql/<fonte>/02_conferencia.sql: os números precisam bater.', '']
+    simples = [md for md in m['medidas'] if md.get('conferencia')]
+    if simples:
+        pares = ',\n    '.join(f'"{md["nome"]}", {dax_medida(md["nome"])}' for md in simples)
+        out += ['// 1) Total geral (sem filtro)', 'EVALUATE', f'ROW(\n    {pares}\n)', '']
+    cal = (m.get('calendario') or {}).get('tabela')
+    if cal and simples:
+        cols = ',\n    '.join(f'"{md["nome"]}", {dax_medida(md["nome"])}' for md in simples)
+        out += ['// 2) Por ano', 'EVALUATE', f'SUMMARIZECOLUMNS(\n    {dax_coluna(cal, "Ano")},\n    {cols}\n)',
+                f'ORDER BY {dax_coluna(cal, "Ano")}', '']
+    mensais = [md for md in m['medidas'] if md.get('estoque') or md.get('no_estoque')]
+    if cal and mensais:
+        cols = ',\n    '.join(f'"{md["nome"]}", {dax_medida(md["nome"])}' for md in mensais)
+        out += ['// 3) Estoque no último dia de cada mês (compare com os blocos de fim de mês do SQL)', 'EVALUATE',
+                f'TOPN(\n    24,\n    SUMMARIZECOLUMNS(\n        {dax_coluna(cal, "Ano-Mês")},\n        '
+                + cols.replace('\n    ', '\n        ') + f'\n    ),\n    {dax_coluna(cal, "Ano-Mês")}, DESC\n)',
+                f'ORDER BY {dax_coluna(cal, "Ano-Mês")}', '']
+    nomes = {md['nome'] for md in m['medidas']}
+    pares = [(md['nome'][:-len(' (antes)')], md['nome']) for md in m['medidas']
+             if md['nome'].endswith(' (antes)') and md['nome'][:-len(' (antes)')] in nomes]
+    if pares:                                     # C0: a fórmula antiga e a nova lado a lado, no mesmo modelo
+        cols = ',\n    '.join(f'"{n} (antes)", {dax_medida(a)},\n    "{n} (Deidara)", {dax_medida(n)}' for n, a in pares)
+        out += ['// 4) Antes x depois (C0): a fórmula antiga e a do Deidara, no mesmo modelo. Onde muda, a diferença',
+                '//    é a correção que o c0_relatorio.md explica; leve ao dono do indicador antes de publicar.',
+                'EVALUATE', f'ROW(\n    {cols}\n)', '']
+        if cal:
+            out += ['EVALUATE', f'SUMMARIZECOLUMNS(\n    {dax_coluna(cal, "Ano")},\n    {cols}\n)',
+                    f'ORDER BY {dax_coluna(cal, "Ano")}', '']
+    if len(out) == 4:
+        out.append('// Nenhum indicador com conferência direta: confira pelos componentes no HOMOLOGACAO.md.')
+    return '\n'.join(out) + '\n'
+
+
 def homologacao(m, nome, aprovacao):
     """A folha de homologação: o que conferir, onde anotar e o critério de cada item."""
     from tecnicas.c3.sql import fontes_sql
@@ -112,21 +191,32 @@ def homologacao(m, nome, aprovacao):
                       'atualização não reclamou de valor duplicado, e o corte por ela não tem "(Em branco)" inesperado')
     if not sqls and not declaradas:
         linhas.append('- [ ] a primeira atualização terminou sem erro')
+    linhas.append('- [ ] (opcional) Best Practice Analyzer do Tabular Editor sobre a pasta `definition` do modelo, sem '
+                  'violação de gravidade 3 (comando no `referencias/powerbi.md` do Deidara)')
     linhas += ['', '## 2. Cada indicador bate com a fonte', '',
                'Sem nenhum filtro marcado no painel. Para os de agregação simples, o total do banco sai de '
-               '`02_conferencia.sql`; para os outros, confira os componentes (numerador e denominador).', '',
+               '`02_conferencia.sql`; para os outros, confira os componentes (numerador e denominador). O '
+               '`docs/conferencia.dax` calcula os mesmos números pelo modelo: rode na Exibição de consulta DAX do '
+               'Power BI Desktop e compare com o SQL, sem copiar número de cartão.', '',
                '| ✓ | Indicador | Onde ler no painel | Como conferir | Total na fonte | Total no painel |',
                '|---|---|---|---|---|---|']
     for md in m['medidas']:
-        if md['tipo'] in ('cor', 'meta') or md.get('imagem'):
+        if md['tipo'] in ('cor', 'meta', 'corte') or md.get('imagem'):
             continue
         tab = next((t for t in m['tabelas'] if t['nome'] == (md.get('conferencia') or {}).get('tabela')), None)
         da_planilha = tab is not None and tab.get('fonte_tipo') != 'sqlserver'
         como = (f'na própria fonte ({tab["fonte"]}: {tab["origem"]})' if da_planilha else
                 '02_conferencia.sql' if md.get('conferencia') else
                 f'pelos componentes: {", ".join(md.get("depende") or [])}' if md.get('depende') else 'com o dono do indicador')
-        if md.get('estoque'):
+        if md.get('estoque') or md.get('no_estoque'):
             como = '02_conferencia.sql (um número por fim de mês)'
+        if md.get('tabela_da_meta'):                        # meta ponderada: confere item a item na fonte
+            t = next(t for t in m['tabelas'] if t['nome'] == md['tabela_da_meta'])
+            como = (f'na própria fonte ({t.get("fonte")}: {t.get("origem")}), item a item; o total é a média pesada '
+                    f'por {md["depende"][0]}')
+        if md['tipo'] == 'meta_periodo':
+            como = (f'{md["base"]} × meses do filtro' + (' ÷ 12' if md.get('base_meta') == 'ano' else '')
+                    + ' (até o último dado)')
         linhas.append(f'| [ ] | {md["nome"]} | {_onde_ler(m, md["nome"])} | {como} |  |  |')
     linhas += ['', '## 3. Cortes e metas', '',
                '- [ ] cada segmentador muda os números esperados (e só eles)',
@@ -196,7 +286,8 @@ em {aprovacao.get('em', '?')}.
 | `{nome}.SemanticModel/` | o modelo (tabelas, relacionamentos, medidas) em TMDL |
 | `{nome}.Report/` | as páginas e os visuais, na mesma posição do protótipo |
 {arquivos}| `HOMOLOGACAO.md` | a folha de homologação: o que conferir e onde anotar |
-| `docs/dicionario_indicadores.md` | definição, fórmula, origem e prova de cada número |
+| `docs/dicionario_indicadores.md` | a ficha de cada indicador: definição, fórmula, meta, dono, origem e prova |
+| `docs/conferencia.dax` | os números da homologação calculados pelo modelo (Exibição de consulta DAX) |
 | `docs/medidas.dax` | as medidas em texto (referência) |
 | `prototipo.html` | o protótipo aprovado |
 

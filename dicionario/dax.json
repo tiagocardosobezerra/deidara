@@ -976,6 +976,28 @@
     "FIRSTDATE(<dates> or <calendar>)"
    ]
   },
+  "FIRSTNONBLANK": {
+   "categorias": [
+    "Inteligência de tempo"
+   ],
+   "url": "https://learn.microsoft.com/pt-br/dax/firstnonblank-function-dax",
+   "descricao": "Primeiro valor da coluna em que a expressão não é vazia (no contexto atual).",
+   "uso": "",
+   "sintaxe": [
+    "FIRSTNONBLANK(<column>,<expression>)"
+   ]
+  },
+  "FIRSTNONBLANKVALUE": {
+   "categorias": [
+    "Inteligência de tempo"
+   ],
+   "url": "https://learn.microsoft.com/pt-br/dax/firstnonblankvalue-function-dax",
+   "descricao": "O valor da expressão no primeiro item da coluna em que ela não é vazia.",
+   "uso": "",
+   "sintaxe": [
+    "FIRSTNONBLANKVALUE(<column>, <expression>)"
+   ]
+  },
   "FIXED": {
    "categorias": [
     "Texto"
@@ -1774,6 +1796,28 @@
    "uso": "",
    "sintaxe": [
     "LASTDATE(<dates> or <calendar>)"
+   ]
+  },
+  "LASTNONBLANK": {
+   "categorias": [
+    "Inteligência de tempo"
+   ],
+   "url": "https://learn.microsoft.com/pt-br/dax/lastnonblank-function-dax",
+   "descricao": "Último valor da coluna em que a expressão não é vazia: saldo do último dia com registro.",
+   "uso": "",
+   "sintaxe": [
+    "LASTNONBLANK(<column>,<expression>)"
+   ]
+  },
+  "LASTNONBLANKVALUE": {
+   "categorias": [
+    "Inteligência de tempo"
+   ],
+   "url": "https://learn.microsoft.com/pt-br/dax/lastnonblankvalue-function-dax",
+   "descricao": "O valor da expressão no último item da coluna em que ela não é vazia.",
+   "uso": "",
+   "sintaxe": [
+    "LASTNONBLANKVALUE(<column>, <expression>)"
    ]
   },
   "LCM": {
@@ -2858,6 +2902,17 @@
     "Estatísticas"
    ],
    "url": "https://learn.microsoft.com/pt-br/dax/t-inv-function-dax"
+  },
+  "T.INV.2T": {
+   "categorias": [
+    "Estatísticas"
+   ],
+   "url": "https://learn.microsoft.com/pt-br/dax/t-inv-2t-function-dax",
+   "descricao": "Valor t bicaudal da distribuição t de Student.",
+   "uso": "",
+   "sintaxe": [
+    "T.INV.2T(Probability,Deg_freedom)"
+   ]
   },
   "T.INV.2t": {
    "categorias": [

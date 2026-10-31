@@ -1,0 +1,173 @@
+{
+  "$schema": "https://vega.github.io/schema/vega/v5.json",
+  "description": "...",
+  "usermeta": {
+    "Copyright": "Andrzej Leszkiewicz",
+    "License": "MIT Expat License (https://en.wikipedia.org/wiki/MIT_License)",
+    "Permission": "Permission is hereby granted, free of charge, to any person obtaining a copy of this software and associated documentation files (the “Software”), to deal in the Software without restriction, including without limitation the rights to use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies of the Software, and to permit persons to whom the Software is furnished to do so, subject to the following conditions: The above copyright notice and this permission notice shall be included in all copies or substantial portions of the Software.",
+    "Github": "https://github.com/avatorl/Deneb-Vega/"
+  },
+  "background": "white",
+  "width": 600,
+  "height": 300,
+  "padding": 5,
+  "signals": [
+    {"name": "axeXLabelColor", "value": "#666666"},
+    {"name": "axeLabelColor", "value": "#AAAAAA"},
+    {"name": "axeGridColor", "value": "#CCCCCC"},
+    {"name": "rectColor", "value": "#BBBBBB"}
+  ],
+  "title": {
+    "text": "Average daily number of bicycles by month and average temperature",
+    "anchor": "start",
+    "fontWeight": "lighter",
+    "font": "Tahoma",
+    "fontSize": 18
+  },
+  "data": [
+    {
+      "name": "data-csv",
+      "url": "https://raw.githubusercontent.com/avatorl/Deneb-Vega/main/bar-chart-with-temp/bike-monthly-temp.csv",
+      "format": {
+        "type": "csv",
+        "parse": {
+          "location": "string",
+          "m": "number",
+          "month": "string",
+          "temp": "number",
+          "count": "number"
+        },
+        "delimiter": ","
+      }
+    },
+    {
+      "name": "data",
+      "source": "data-csv",
+      "transform": [
+        {
+          "type": "aggregate",
+          "groupby": ["m", "month"],
+          "fields": ["temp", "count"],
+          "ops": ["average", "average"],
+          "as": ["temp", "count"]
+        }
+      ]
+    }
+  ],
+  "scales": [
+    {
+      "name": "scaleX",
+      "type": "band",
+      "range": "width",
+      "domain": {
+        "data": "data",
+        "field": "month",
+        "sort": {"field": "m", "order": "ascending"}
+      }
+    },
+    {
+      "name": "scaleY",
+      "type": "linear",
+      "domain": {"data": "data", "fields": ["count"]},
+      "range": [0, {"signal": "height"}],
+      "reverse": true,
+      "nice": true,
+      "zero": true
+    },
+    {
+      "name": "scaleY2",
+      "type": "band",
+      "domain": [0],
+      "range": [{"signal": "height"}, {"signal": "height-10"}],
+      "reverse": true
+    },
+    {
+      "name": "color",
+      "type": "sequential",
+      "domain": {"data": "data", "field": "temp"},
+      "range": [
+        "#2F78B3",
+        "#5da2cb",
+        "#9dcae1",
+        "#AAAAAA",
+        "#fbbf74",
+        "#e8932f",
+        "C5690D"
+      ],
+      "domainMin": -5,
+      "domainMid": 20,
+      "domainMax": 25,
+      "interpolate": "rgb"
+    }
+  ],
+  "axes": [
+    {
+      "orient": "left",
+      "scale": "scaleY",
+      "domain": false,
+      "grid": true,
+      "gridWidth": 0.2,
+      "ticks": false,
+      "tickCount": 5,
+      "labelColor": {"signal": "axeLabelColor"},
+      "labelFontSize": 11
+    },
+    {
+      "orient": "bottom",
+      "ticks": false,
+      "domain": false,
+      "scale": "scaleX",
+      "labelFontSize": 11,
+      "labelPadding": 3,
+      "labelColor": {"signal": "axeXLabelColor"}
+    }
+  ],
+  "marks": [
+    {
+      "type": "rect",
+      "from": {"data": "data"},
+      "encode": {
+        "enter": {
+          "fill": {"signal": "rectColor"},
+          "width": {"scale": "scaleX", "band": 0.6, "offset": 8}
+        },
+        "update": {
+          "x": {"scale": "scaleX", "field": "month", "offset": 7},
+          "y": {"scale": "scaleY", "field": "count"},
+          "y2": {"scale": "scaleY", "value": 0}
+        }
+      }
+    },
+    {
+      "type": "rect",
+      "from": {"data": "data"},
+      "encode": {
+        "enter": {
+          "fill": {"scale": "color", "field": "temp"},
+          "width": {"scale": "scaleX", "band": 0.6, "offset": 8}
+        },
+        "update": {
+          "x": {"scale": "scaleX", "field": "month", "offset": 7},
+          "y": {"scale": "scaleY", "value": "-150"},
+          "y2": {"scale": "scaleY", "value": -225}
+        }
+      }
+    },
+    {
+      "type": "text",
+      "from": {"data": "data"},
+      "encode": {
+        "enter": {
+          "fontSize": {"signal": "11"},
+          "text": {"signal": "(datum.temp>0?'+':'')+datum.temp+'°C'"},
+          "fill": {"scale": "color", "field": "temp"}
+        },
+        "update": {
+          "x": {"scale": "scaleX", "field": "month", "offset": 13},
+          "y": {"scale": "scaleY", "value": "-325"}
+        }
+      }
+    }
+  ],
+  "config": {"font": "Tahoma"}
+}

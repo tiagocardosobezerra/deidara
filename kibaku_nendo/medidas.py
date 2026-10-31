@@ -3,14 +3,15 @@ As medidas do argila.json: agregação, divisão, tempo, estoque, metas com a co
 desenham (SVG) e as técnicas que pedem tabela auxiliar.
 """
 
-from kibaku_nendo.desenhos import (COR_BOA, COR_RUIM, FORMATO_DAX, PREFIXO_SVG, html_kpis_dax, svg_barra_meta,
+from kibaku_nendo.desenhos import (COR_ATENCAO, COR_BOA, COR_RUIM, FORMATO_DAX, PREFIXO_SVG, html_kpis_dax, svg_barra_meta,
                                    svg_bolha, svg_dispersao, svg_espinha, svg_estrelas, svg_iniciais,
                                    svg_pilula, svg_posicao, svg_progresso, svg_radar, svg_seta, svg_variacao,
                                    texto_dax, conferir_svg)
 from kibaku_nendo.modelo import (AGREGACOES, AGREGACOES_NUMERICAS, COR_APAGADA, EXTRAS, RANKINGS, SVG_GERADAS,
                                  TEMPO, alcanca, nova_coluna, conferir_funcoes, depende_de, grafo_de_filtro,
                                  pista_medida, resolver_coluna, chave_coluna, coluna_do_modelo, medida,
-                                 pista_coluna, referencias_dax, sintaxe_dax, tabela_do_modelo)
+                                 pista_coluna, referencias_dax, sintaxe_dax, tabela_do_modelo, boas_praticas_dax,
+                                 tabelas_da_medida)
 from kibaku_nendo.util import FORMATOS, NUMERICAS, chave, dax_coluna, dax_medida, dax_tabela
 
 
@@ -38,7 +39,8 @@ def resolver_medidas(argila, m, p):
              'pasta': md.get('pasta', ''), 'tabela': md.get('tabela'), 'dax': None,
              'conferencia_sql': None, 'tipo': None, 'meta': md.get('meta'),
              'polaridade': md.get('polaridade', 'maior_melhor'), 'oculta': bool(md.get('oculta')),
-             'meta_medida': None, 'cor_medida': None}
+             'meta_medida': None, 'cor_medida': None, 'base_meta': md.get('base_meta'),
+             'dono': md.get('dono'), 'periodicidade': md.get('periodicidade'), 'tolerancia': md.get('tolerancia')}
         try:
             if 'agregacao' in md:
                 _medida_agregacao(m, md, r, p, onde)
@@ -53,6 +55,8 @@ def resolver_medidas(argila, m, p):
                 _medida_tempo(m, md, r, p, onde, nomes)
             elif md.get('tipo') == 'estoque_na_data':
                 _medida_estoque(m, md, r, p, onde)
+            elif md.get('tipo') == 'media_ponderada':
+                _medida_ponderada(m, md, r, p, onde, nomes)
             elif md.get('tipo') in SVG_GERADAS:
                 r['tipo'], r['formato'], r['imagem'], r['dax'] = md['tipo'], None, True, ''
                 r['svg'] = {'medida': md.get('medida') or (md.get('medidas') or [None])[0], 'categoria': md.get('categoria'),
@@ -75,6 +79,11 @@ def resolver_medidas(argila, m, p):
                 if 'data:image/svg+xml' in r['dax']:
                     r['imagem'], r['formato'] = True, None
                     conferir_svg(r['dax'], p, onde)
+                elif m.get('funcoes_dax'):            # chama uma função de imagem do daxlib (SVG, IBCS, cascata)
+                    from tecnicas.sasori import funcoes_usadas
+                    usadas = {n.upper() for n in funcoes_usadas(r['dax'])}
+                    if usadas & {n.upper() for n in m['funcoes_dax']['imagem']}:
+                        r['imagem'], r['formato'] = True, None
             else:
                 p.erro(onde, 'informe "agregacao", "tipo" (divisao, acumulado_ano, ano_anterior, '
                              'variacao_ano_anterior, variacao_mes_anterior, estoque_na_data, media_mensal, '
@@ -93,13 +102,17 @@ def resolver_medidas(argila, m, p):
         else:
             r['tabela'] = home['nome']
         m['medidas'].append(r)
+    _no_estoque(m, p)
+    _cadastro_inteiro(m, p)
+    _taxa_sobre_cadastro(m, p)
+    _herdar_polaridade(m, brutas)
     _metas(m, p)
     _svgs(m, p)
     _extras(m, p)
     _c4(m, p)
     _ciclos(m, p)
     for md in m['medidas']:
-        if md.get('tipo') not in ('cor', 'meta') and (not (md.get('descricao') or '').strip()
+        if md.get('tipo') not in ('cor', 'meta', 'corte') and (not (md.get('descricao') or '').strip()
                                                       or md['descricao'].strip().upper().startswith('A DEFINIR')):
             m['pendencias'].append(f'medida {md["nome"]}: definição de negócio pendente')
             p.aviso(f'medida {md["nome"]}', 'definição pendente: escreva o que o número significa (numerador, '
@@ -469,20 +482,42 @@ def _metas(m, p):
                                  'oculta': False, 'meta_medida': None, 'cor_medida': None, 'conferencia_sql': None})
         elif isinstance(meta, str) and medida(m, meta):
             nome_meta = medida(m, meta)['nome']
+            alvo = medida(m, nome_meta)
+            if md['tipo'] == 'divisao' and (alvo.get('dax') or '').startswith('AVERAGE('):
+                p.aviso(onde, f'a meta "{nome_meta}" é a média simples das linhas: no total, "{md["nome"]}" pesa cada '
+                              'item pelo tamanho dele e a meta não (a empresa de 10 pessoas vale o mesmo que a de '
+                              f'5.000). Use {{"tipo": "media_ponderada", "coluna": "...", "peso": '
+                              f'"{(md.get("depende") or ["", ""])[1]}", "por": "<coluna dos itens da meta>"}}')
         else:
             p.erro(onde, f'meta "{meta}" deve ser um número ou o nome de uma medida do modelo')
             continue
+        nome_meta = _meta_do_periodo(m, md, nome_meta, p, onde)
         op = '>=' if md['polaridade'] == 'maior_melhor' else '<='
         cor = f'Cor {md["nome"]}'
+        tol = md.get('tolerancia')
+        if tol is not None and (isinstance(tol, bool) or not isinstance(tol, (int, float)) or not 0 < tol < 1):
+            p.erro(onde, '"tolerancia" é a fração da meta que ainda conta como "perto" (ex.: 0.1 = até 10% do lado '
+                         'ruim fica amarelo)')
+            tol = None
+        if tol:                                       # três faixas: bateu, perto (amarelo) e longe
+            sinal = '-' if md['polaridade'] == 'maior_melhor' else '+'
+            regra = (f'IF(_valor {op} _meta, "{COR_BOA}", IF(_valor {op} _meta {sinal} ABS(_meta) * {tol}, '
+                     f'"{COR_ATENCAO}", "{COR_RUIM}"))')
+        else:
+            regra = f'IF(_valor {op} _meta, "{COR_BOA}", "{COR_RUIM}")'
         m['medidas'].append({
             'nome': cor, 'tipo': 'cor', 'formato': None, 'pasta': 'Metas', 'tabela': md['tabela'],
-            'descricao': f'Cor do status de {md["nome"]} contra a meta ({md["polaridade"].replace("_", " ")}).',
+            'descricao': f'Cor do status de {md["nome"]} contra a meta ({md["polaridade"].replace("_", " ")}'
+                         + (f'; até {tol:.0%} da meta do lado ruim fica amarelo' if tol else '') + ').',
             'dax': (f'VAR _valor = {dax_medida(md["nome"])}\nVAR _meta = {dax_medida(nome_meta)}\n'
                     f'RETURN\n    IF(\n        ISBLANK(_valor) || ISBLANK(_meta),\n        BLANK(),\n'
-                    f'        IF(_valor {op} _meta, "{COR_BOA}", "{COR_RUIM}")\n    )'),
+                    f'        {regra}\n    )'),
             'depende': [md['nome'], nome_meta], 'meta': None, 'polaridade': md['polaridade'], 'oculta': True,
             'meta_medida': None, 'cor_medida': None, 'conferencia_sql': None})
         md['meta_medida'], md['cor_medida'] = nome_meta, cor
+        if not (md.get('dono') or '').strip():
+            p.aviso(onde, f'quem responde por "{md["nome"]}"? Indicador com meta pede "dono" (a área ou a pessoa que '
+                          'explica o número e decide a ação); vai para a ficha do dicionário')
         alvo = medida(m, nome_meta)
         if alvo and alvo.get('tipo') != 'meta':             # meta de outra medida: o título do cartão mostra o valor
             fmt = {'percentual': '0.0%', 'inteiro': '#,0', 'moeda': '"R$" #,0.00'}.get(alvo.get('formato'), '#,0.00')
@@ -494,6 +529,174 @@ def _metas(m, p):
                 'polaridade': md['polaridade'], 'oculta': True, 'meta_medida': None, 'cor_medida': None,
                 'conferencia_sql': None})
             md['rotulo_meta'] = rotulo
+
+
+AGREGACAO_X = {'soma': 'SUMX', 'media': 'AVERAGEX', 'minimo': 'MINX', 'maximo': 'MAXX', 'contagem': 'COUNTX'}
+
+
+def _no_estoque(m, p):
+    """`"no_estoque": "Headcount"` numa agregação do cadastro: soma (média...) só de quem está dentro no último dia do
+    período, com as mesmas pontas do estoque. Sem isso, a remuneração do cadastro soma ativos e desligados."""
+    for r in m['medidas']:
+        cfg = r.get('no_estoque')
+        if not cfg:
+            continue
+        onde = f'medida {r["nome"]}'
+        est = medida(m, cfg['estoque'])
+        if not est or not est.get('estoque'):
+            p.erro(onde, f'"no_estoque" ("{cfg["estoque"]}") precisa ser uma medida estoque_na_data do modelo')
+            continue
+        if cfg['agregacao'] not in AGREGACAO_X:
+            p.erro(onde, f'"no_estoque" vale para {", ".join(AGREGACAO_X)}')
+            continue
+        (t, c), (te, ce) = cfg['coluna'], est['estoque']['entradas']
+        if t != te:
+            p.erro(onde, f'"no_estoque": a coluna precisa ser de {te} (a tabela das entradas de {est["nome"]})')
+            continue
+        cal = dax_coluna(m['calendario']['tabela'], 'Data')
+        corte = ref_corte(m)
+        cond = [f'{dax_coluna(te, ce)} <= _fim']
+        if est['estoque'].get('fim'):
+            tf, cf = est['estoque']['fim']
+            cond.append(f'(ISBLANK({dax_coluna(tf, cf)}) || {dax_coluna(tf, cf)} > _fim)')
+        lidas = [t]
+        if est['estoque'].get('saidas'):
+            ts, cs = est['estoque']['saidas']
+            if not any(x['de'] == ts and x['para'] == t and x['ativo'] for x in m['relacionamentos']):
+                p.erro(onde, f'"no_estoque" pede a ligação ativa {ts} -> {t} (para saber quem já saiu)')
+                continue
+            cond.append(f'ISEMPTY(FILTER(RELATEDTABLE({dax_tabela(ts)}), {dax_coluna(ts, cs)} <= _fim))')
+            lidas.append(ts)
+        juntas = '\n            && '.join(cond)
+        r['dax'] = (f'VAR _fim = MIN(MAX({cal}), {corte})\n'
+                    f'VAR _dentro =\n    FILTER(\n        {dax_tabela(t)},\n        {juntas}\n    )\n'
+                    f'RETURN\n    IF(MIN({cal}) > {corte}, BLANK(), '
+                    f'{AGREGACAO_X[cfg["agregacao"]]}(_dentro, {dax_coluna(t, c)}))')
+        r.pop('conferencia', None)
+        r['depende'], r['le_calendario'], r['tabelas_lidas'] = [est['nome']], True, lidas
+
+
+def _cadastro_inteiro(m, p):
+    """Soma ou média de valor da tabela de cadastro de um estoque (ex.: remuneração em dColaborador) junta ativos
+    e desligados: quase nunca é o que o gestor pensa ao ler o número."""
+    cadastros = {}
+    for r in m['medidas']:
+        if r.get('estoque'):
+            cadastros.setdefault(r['estoque']['entradas'][0], r['nome'])
+    for r in m['medidas']:
+        if r.get('tipo') != 'agregacao' or r.get('no_estoque') or not r.get('dax'):
+            continue
+        func = r['dax'].split('(')[0]
+        tabs = {tn for tn, _ in referencias_dax(r['dax']) if tn}
+        alvo = next((tn for tn in tabs if tn in cadastros), None)
+        if alvo and func in ('SUM', 'AVERAGE'):
+            p.aviso(f'medida {r["nome"]}', f'[Modelagem] "{r["nome"]}" {"soma" if func == "SUM" else "faz a média de"} '
+                                           f'{alvo} inteira, ativos e desligados (o estoque "{cadastros[alvo]}" conta só '
+                                           f'quem está dentro). Para só os ativos no fim do período, acrescente '
+                                           f'"no_estoque": "{cadastros[alvo]}"')
+
+
+def _taxa_sobre_cadastro(m, p):
+    """Regra 4 do Deidara: estoque não é contagem de cadastro. Taxa de evento (desligamentos, cancelamentos) dividida
+    pela contagem de uma dimensão conta ativos e desligados de todos os tempos e não muda com o período."""
+    fatos = {t['nome'] for t in m['tabelas'] if t['tipo'] == 'fato'}
+    for r in m['medidas']:
+        if r.get('tipo') != 'divisao' or len(r.get('depende') or []) < 2:
+            continue
+        num, den = (medida(m, x) for x in r['depende'][:2])
+        if not num or not den or den.get('tipo') != 'agregacao' or not (den.get('dax') or '').startswith('COUNTROWS('):
+            continue
+        dim = den.get('tabela')
+        if dim in fatos or not (set(tabelas_da_medida(m, num['nome'])) & fatos):
+            continue
+        p.aviso(f'medida {r["nome"]}', f'[Modelagem] "{r["nome"]}" divide por "{den["nome"]}", a contagem do cadastro '
+                                       f'{dim} inteiro (ativos e desligados, de todos os tempos): estoque não é '
+                                       'contagem de cadastro. Use um estoque_na_data (quem está dentro no fim do mês) '
+                                       'e o media_mensal dele no denominador (`deidara.py padroes turnover`)')
+
+
+def _herdar_polaridade(m, brutas):
+    """Conta de tempo sem polaridade própria segue a da base (desligamentos acumulados: menor é melhor)."""
+    explicitas = {chave(x.get('nome') or '') for x in brutas if 'polaridade' in x}
+    for _ in range(3):                             # cadeias curtas: acumulado de uma variação etc.
+        for r in m['medidas']:
+            if r.get('tipo') in TEMPO and chave(r['nome']) not in explicitas and r.get('depende'):
+                base = medida(m, r['depende'][0])
+                if base:
+                    r['polaridade'] = base['polaridade']
+
+
+def _medida_ponderada(m, md, r, p, onde, nomes):
+    """Média de uma coluna (ex.: a meta de cada empresa) ponderada por uma medida (ex.: o HC médio de cada uma),
+    item a item de `por`. É a meta do total que conversa com uma taxa: o turnover do grupo pesa cada empresa pelo
+    tamanho dela, e a meta do grupo precisa pesar igual (a média simples dá o mesmo peso à empresa de 10 pessoas e à
+    de 5.000)."""
+    r['tipo'] = 'media_ponderada'
+    t, c = resolver_coluna(m, md.get('coluna'))
+    if not c or c['familia'] not in NUMERICAS:
+        p.erro(onde, f'"coluna" ("{md.get("coluna")}") precisa ser uma coluna numérica do modelo (Tabela[Coluna])'
+                     + (pista_coluna(m, md.get('coluna'), NUMERICAS) if md.get('coluna') else ''))
+        return
+    tp, cp = resolver_coluna(m, md.get('por'))
+    if not cp:
+        p.erro(onde, f'"por" ("{md.get("por")}") precisa ser a coluna dos itens que pesam (ex.: dEmpresa[Cód. Empresa])'
+                     + (pista_coluna(m, md.get('por')) if md.get('por') else ''))
+        return
+    peso = md.get('peso', '')
+    if chave(peso) not in nomes:
+        p.erro(onde, f'"peso" "{peso}" não é uma medida do modelo' + pista_medida(peso, nomes))
+        return
+    if not alcanca(grafo_de_filtro(m, m.get('ligacoes_pendentes') or ()), tp['nome'], t['nome']):
+        p.erro(onde, f'{tp["nome"]}[{cp["nome"]}] não filtra {t["nome"]}: cada item precisa achar a sua linha em '
+                     f'{t["nome"]} (confira o relacionamento)')
+        return
+    r['tabela'] = md.get('tabela') or t['nome']
+    r['depende'], r['tabela_da_meta'] = [peso], t['nome']
+    r['dax'] = (f'VAR _itens =\n    ADDCOLUMNS(\n        VALUES({dax_coluna(tp["nome"], cp["nome"])}),\n'
+                f'        "@valor", CALCULATE(AVERAGE({dax_coluna(t["nome"], c["nome"])})),\n'
+                f'        "@peso", {dax_medida(peso)}\n    )\n'
+                'RETURN\n    DIVIDE(\n        SUMX(_itens, [@valor] * [@peso]),\n'
+                '        SUMX(FILTER(_itens, NOT ISBLANK([@valor])), [@peso])\n    )')
+
+
+def _meta_do_periodo(m, md, nome_meta, p, onde):
+    """Taxa de fluxo (desligamentos ÷ HC, faltas ÷ dias) cresce com o tamanho do período: o turnover de um mês é
+    perto de 1/12 do anual. `"base_meta": "ano"` (ou "mes") diz a que período a meta se refere; o Deidara cria
+    `<meta> no Período`, a meta proporcional aos meses do filtro (até o último dado), e compara com ela."""
+    base = md.get('base_meta')
+    den = medida(m, (md.get('depende') or [None, None])[1] or '') if md['tipo'] == 'divisao' else None
+    fluxo = den is not None and den.get('tipo') in ('estoque_na_data', 'media_mensal')
+    if base is None:
+        if fluxo and m.get('calendario'):
+            p.aviso(onde, f'a meta de "{md["nome"]}" é anual ou mensal? Uma taxa sobre estoque cresce com o período (a '
+                          'de um mês é perto de 1/12 da anual): sem dizer, a cor compara o mês contra a meta do ano. '
+                          'Use "base_meta": "ano" ou "mes" (ou "periodo", se ela vale para qualquer período)')
+        return nome_meta
+    if base not in ('ano', 'mes', 'periodo'):
+        p.erro(onde, '"base_meta" é "ano", "mes" ou "periodo"')
+        return nome_meta
+    if base == 'periodo':
+        return nome_meta
+    if not m.get('calendario'):
+        p.erro(onde, f'"base_meta": "{base}" pede "calendario" no argila.json')
+        return nome_meta
+    cal = m['calendario']['tabela']
+    k = dax_coluna(cal, 'Ano-Mês Num')
+    corte = ref_corte(m)
+    nome = f'{nome_meta} no Período'
+    if medida(m, nome):
+        return nome
+    fator = '_meses / 12' if base == 'ano' else '_meses'
+    m['medidas'].append({
+        'nome': nome, 'tipo': 'meta_periodo', 'formato': md['formato'], 'pasta': 'Metas', 'tabela': md['tabela'],
+        'descricao': (f'{nome_meta} proporcional aos meses do filtro (meta {"anual" if base == "ano" else "mensal"}; '
+                      'conta os meses até o último dado).'),
+        'dax': (f'VAR _ate = YEAR({corte}) * 100 + MONTH({corte})\n'
+                f'VAR _meses = COUNTROWS(FILTER(VALUES({k}), {k} <= _ate))\n'
+                f'RETURN\n    {dax_medida(nome_meta)} * {fator}'),
+        'depende': [nome_meta], 'meta': None, 'polaridade': md['polaridade'], 'oculta': False, 'meta_medida': None,
+        'cor_medida': None, 'conferencia_sql': None, 'base': nome_meta, 'base_meta': base})
+    return nome
 
 
 def _formato_padrao(md, nomes, vistos=()):
@@ -539,6 +742,9 @@ def _medida_agregacao(m, md, r, p, onde):
         return
     r['tabela'] = md.get('tabela') or t['nome']
     r['dax'] = f'{AGREGACOES[ag]}({dax_coluna(t["nome"], c["nome"])})'
+    if md.get('no_estoque'):                       # só de quem está dentro na data: montada depois do estoque
+        r['no_estoque'] = {'estoque': md['no_estoque'], 'agregacao': ag, 'coluna': (t['nome'], c['nome'])}
+        return
     if ag in ('quartil_1', 'quartil_3'):           # a faixa típica: o quartil de baixo e o de cima
         r['dax'] = f'PERCENTILE.INC({dax_coluna(t["nome"], c["nome"])}, {0.25 if ag == "quartil_1" else 0.75})'
     if ag in ('mediana', 'quartil_1', 'quartil_3'):
@@ -561,21 +767,84 @@ def _medida_tempo(m, md, r, p, onde, nomes):
     data = dax_coluna(m['calendario']['tabela'], 'Data')
     b = dax_medida(base)
     r['depende'] = [base]
+    fim_ano = m['calendario'].get('fim_ano')                  # ano fiscal: o 3º argumento do TOTALYTD
+    corte = ref_corte(m)
+    # comparação justa: o período anterior para no mesmo dia em que o dado atual para (jan-out deste ano contra
+    # jan-out do ano passado, e não contra o ano inteiro), o padrão "previous year up to a certain date" do SQLBI
+    ate = f'KEEPFILTERS({data} <= {corte})'
     expr = {
-        'acumulado_ano': f'TOTALYTD({b}, {data})',
-        'ano_anterior': f'CALCULATE({b}, SAMEPERIODLASTYEAR({data}))',
-        'variacao_ano_anterior': (f'VAR _atual = {b}\nVAR _anterior = CALCULATE({b}, SAMEPERIODLASTYEAR({data}))\n'
-                                  'RETURN DIVIDE(_atual - _anterior, _anterior)'),
-        'variacao_mes_anterior': (f'VAR _atual = {b}\nVAR _anterior = CALCULATE({b}, DATEADD({data}, -1, MONTH))\n'
-                                  'RETURN DIVIDE(_atual - _anterior, _anterior)'),
+        'acumulado_ano': f'TOTALYTD({b}, {data}' + (f', "{fim_ano}")' if fim_ano else ')'),
+        'ano_anterior': f'CALCULATE({b}, CALCULATETABLE(SAMEPERIODLASTYEAR({data}), {ate}))',
+        'variacao_ano_anterior': (f'VAR _atual = {b}\nVAR _anterior =\n    CALCULATE({b}, CALCULATETABLE('
+                                  f'SAMEPERIODLASTYEAR({data}), {ate}))\nRETURN DIVIDE(_atual - _anterior, _anterior)'),
+        'variacao_mes_anterior': (f'VAR _atual = {b}\nVAR _anterior =\n    CALCULATE({b}, CALCULATETABLE('
+                                  f'DATEADD({data}, -1, MONTH), {ate}))\nRETURN DIVIDE(_atual - _anterior, _anterior)'),
         # média dos valores de fim de mês no período (ex.: HC médio para o turnover)
         'media_mensal': f'AVERAGEX(VALUES({dax_coluna(m["calendario"]["tabela"], "Ano-Mês")}), {b})',
         'movel_12m': f'CALCULATE({b}, DATESINPERIOD({data}, MAX({data}), -12, MONTH))',
     }[md['tipo']]
-    # período futuro: sem isso o acumulado repete nos meses que ainda não aconteceram e a
+    # período depois do último dado: sem isso o acumulado repete nos meses que ainda não têm dado e a
     # variação dá -100% (atual em branco contra um ano anterior com valor)
     corpo = '\n'.join('    ' + l for l in expr.split('\n'))
-    r['dax'] = f'IF(\n    MIN({data}) > TODAY(),\n    BLANK(),\n{corpo}\n)'
+    r['dax'] = f'IF(\n    MIN({data}) > {corte},\n    BLANK(),\n{corpo}\n)'
+
+
+NOME_CORTE = 'Data de Corte'
+
+
+def ref_corte(m):
+    """A data até onde há dado: as contas de tempo param nela. Por padrão, a última data com registro nas datas do
+    calendário (e nas de entrada e saída dos estoques), nunca depois de hoje; `"corte": "hoje"` no calendário usa
+    a data de hoje (fonte atualizada todo dia, sem atraso)."""
+    if m['calendario'].get('corte') == 'hoje':
+        return 'TODAY()'
+    m['_usa_corte'] = True
+    return dax_medida(NOME_CORTE)
+
+
+def _colunas_do_corte(m):
+    colunas = [(d['tabela'], d['coluna']) for d in m['calendario']['datas'] if d['ativo']]
+    for md in m['medidas']:
+        for ponta in ('entradas', 'saidas', 'fim'):
+            x = (md.get('estoque') or {}).get(ponta)
+            if x and tuple(x) not in colunas:
+                colunas.append(tuple(x))
+    return colunas
+
+
+def _ultima_data(colunas):
+    maiores = [f'CALCULATE(MAX({dax_coluna(t, c)}), REMOVEFILTERS())' for t, c in colunas]
+    return ('BLANK()' if not maiores else maiores[0] if len(maiores) == 1
+            else 'MAXX({ ' + ', '.join(maiores) + ' }, [Value])')
+
+
+def corte_sem_medida(m):
+    """A data de corte escrita por extenso, sem citar a medida: é a que vai dentro do grupo de cálculo. Medida citada
+    num item de cálculo recebe o próprio item de novo (recursão lateral), e o Power BI recusa ou erra a conta."""
+    if m['calendario'].get('corte') == 'hoje':
+        return 'TODAY()'
+    ultima = _ultima_data(_colunas_do_corte(m))
+    return f'MIN(TODAY(), COALESCE({ultima}, TODAY()))'
+
+
+def garantir_corte(m, p):
+    """Cria a medida oculta `Data de Corte` quando alguma conta de tempo a usa."""
+    if not m.pop('_usa_corte', False):
+        return
+    colunas = _colunas_do_corte(m)
+    if any(chave(x['nome']) == chave(NOME_CORTE) for x in m['medidas']):
+        p.erro(f'medida {NOME_CORTE}', f'"{NOME_CORTE}" é o nome da medida que o Deidara cria para as contas de '
+                                       'tempo: renomeie a sua')
+        return
+    ultima = _ultima_data(colunas)
+    m['medidas'].append({
+        'nome': NOME_CORTE, 'tipo': 'corte', 'formato': 'data', 'pasta': 'Apoio', 'tabela': m['calendario']['tabela'],
+        'descricao': 'Último dia com dado (nunca depois de hoje): as contas de tempo param nele e o ano anterior '
+                     'é comparado até o mesmo dia.',
+        'dax': f'VAR _ultima = {ultima}\nRETURN\n    IF(ISBLANK(_ultima) || _ultima > TODAY(), TODAY(), _ultima)',
+        'depende': [], 'meta': None, 'polaridade': 'maior_melhor', 'oculta': True, 'meta_medida': None,
+        'cor_medida': None, 'conferencia_sql': None, 'tabelas_lidas': sorted({t for t, _ in colunas}),
+        'le_calendario': False})
 
 
 def _medida_estoque(m, md, r, p, onde):
@@ -610,7 +879,8 @@ def _medida_estoque(m, md, r, p, onde):
             return
         fim_ref = (f',\n        OR(ISBLANK({dax_coluna(tf["nome"], cf["nome"])}), '
                    f'{dax_coluna(tf["nome"], cf["nome"])} > _fim)')
-    dax = (f'VAR _fim = MAX({dax_coluna(cal, "Data")})\nVAR _entradas =\n    CALCULATE(\n'
+    corte = ref_corte(m)                    # admissão marcada para o futuro não entra no estoque de hoje
+    dax = (f'VAR _fim = MIN(MAX({dax_coluna(cal, "Data")}), {corte})\nVAR _entradas =\n    CALCULATE(\n'
            f'        COUNTROWS({dax_tabela(te["nome"])}),\n        {dax_coluna(te["nome"], ce["nome"])} <= _fim{fim_ref},\n'
            f'        REMOVEFILTERS({dax_tabela(cal)})\n    )\n')
     if md.get('saidas'):
@@ -623,9 +893,9 @@ def _medida_estoque(m, md, r, p, onde):
         lidas.append(ts['nome'])
         dax += (f'VAR _saidas =\n    CALCULATE(\n        COUNTROWS({dax_tabela(ts["nome"])}),\n'
                 f'        {dax_coluna(ts["nome"], cs["nome"])} <= _fim,\n        REMOVEFILTERS({dax_tabela(cal)})\n    )\n'
-                'RETURN\n    IF(MIN(' + dax_coluna(cal, 'Data') + ') > TODAY(), BLANK(), _entradas - _saidas)')
+                'RETURN\n    IF(MIN(' + dax_coluna(cal, 'Data') + f') > {corte}, BLANK(), _entradas - _saidas)')
     else:
-        dax += 'RETURN\n    IF(MIN(' + dax_coluna(cal, 'Data') + ') > TODAY(), BLANK(), _entradas)'
+        dax += 'RETURN\n    IF(MIN(' + dax_coluna(cal, 'Data') + f') > {corte}, BLANK(), _entradas)'
     r['estoque'] = {'entradas': (te['nome'], ce['nome']),
                     'fim': (tf['nome'], cf['nome']) if md.get('fim') else None,
                     'saidas': (ts['nome'], cs['nome']) if md.get('saidas') else None}
@@ -636,6 +906,15 @@ def _medida_estoque(m, md, r, p, onde):
 def _conferir_refs(m, r, nomes, p, onde):
     for problema in sintaxe_dax(r['dax']):
         p.erro(onde, f'DAX mal escrito: {problema}')
+    if r.get('pasta') != 'C0 · antes':        # a fórmula antiga fica como era, só para a homologação comparar
+        for regra, conselho in boas_praticas_dax(r['dax']):
+            p.aviso(onde, f'[Power BI] boa prática ({regra}): {conselho}')
+    import re as _re
+    for lit in _re.findall(r'"((?:[^"]|"")*)"', r['dax']):
+        if _re.search(r'\b\d{3}\.?\d{3}\.?\d{3}-?\d{2}\b', lit) or _re.search(r'[\w.+-]+@[\w-]+\.[\w.]+', lit):
+            p.aviso(onde, '[Privacidade] CPF ou e-mail escrito no DAX: vai junto para quem abre o modelo; filtre por '
+                          'código ou grupo (LGPD: só o necessário)')
+            break
     conferir_funcoes(r['dax'], p, onde)
     deps = []
     for tn, n in referencias_dax(r['dax']):
@@ -700,7 +979,10 @@ def _c4(m, p):
                 continue
             dn, dd = (dax_medida(num), dax_medida(den)) if tipo != 'xmr' else (None, None)
             dep = [base['nome']] + ([num, den] if tipo != 'xmr' else [])
-            md.update({'dax': c4.dax_controle('centro', b, dax_tabela(cal), tipo, dn, dd), 'formato': base['formato'],
+            ref = _referencia(cfg.get('referencia'), p, onde)
+            if ref is False:
+                continue
+            md.update({'dax': c4.dax_controle('centro', b, dax_tabela(cal), tipo, dn, dd, ref), 'formato': base['formato'],
                        'depende': list(dep)})
             textos = {'superior': 'Limite superior do gráfico de controle de ',
                       'inferior': 'Limite inferior do gráfico de controle de ',
@@ -709,17 +991,21 @@ def _c4(m, p):
             partes = {'superior': f'{nome} · limite superior', 'inferior': f'{nome} · limite inferior',
                       'sinal': f'{nome} · sinal'}
             for parte, nome_parte in partes.items():
-                novas.append(_derivada(md, nome_parte, c4.dax_controle(parte, b, dax_tabela(cal), tipo, dn, dd),
+                novas.append(_derivada(md, nome_parte, c4.dax_controle(parte, b, dax_tabela(cal), tipo, dn, dd, ref),
                                        'inteiro' if parte == 'sinal' else base['formato'], dep,
                                        textos[parte] + base['nome'] + '.', oculta=parte == 'sinal'))
             if base.get('meta_medida'):
                 partes['meta'] = f'{nome} · meta x faixa'
+                # a faixa é de UM mês: a meta proporcional ao período vira a meta de um mês (a anual ÷ 12)
+                mp = medida(m, base['meta_medida'])
+                meta_mes = (f'{dax_medida(mp["base"])}' + (' / 12' if mp.get('base_meta') == 'ano' else '')
+                            if mp and mp.get('tipo') == 'meta_periodo' else dax_medida(base['meta_medida']))
                 novas.append(_derivada(md, partes['meta'], c4.dax_meta_x_faixa(
-                    b, dax_medida(base['meta_medida']), dax_tabela(cal), tipo, base['polaridade'] == 'maior_melhor',
-                    base['formato'], dn, dd), None, dep + [base['meta_medida']],
+                    b, meta_mes, dax_tabela(cal), tipo, base['polaridade'] == 'maior_melhor',
+                    base['formato'], dn, dd, ref), None, dep + [base['meta_medida']],
                     f'Se a meta de {base["nome"]} cabe na faixa normal do processo.'))
             cfg.update({'base': base['nome'], 'grafico': tipo, 'partes': partes, 'numerador': num,
-                        'denominador': den, 'calendario': cal})
+                        'denominador': den, 'calendario': cal, 'periodo_referencia': ref})
             p.aviso(onde, f'[Design] o gráfico de controle precisa de uns {c4.PONTOS_MINIMOS} meses para os limites '
                           'valerem (NIST 6.3.2): com menos, leia os limites como provisórios')
         else:
@@ -747,6 +1033,24 @@ def _c4(m, p):
         for x in sintaxe_dax(md['dax']):
             p.erro(onde, f'DAX gerado mal escrito ({x}): avise o time do Deidara')
     m['medidas'].extend(novas)
+
+
+def _referencia(cfg, p, onde):
+    """`"referencia": {"de": "2023-01", "ate": "2023-12"}` -> (202301, 202312); None sem referência; False se
+    inválida (já relatado)."""
+    if not cfg:
+        return None
+    try:
+        de, ate = (int(str(cfg[k]).replace('-', '')) for k in ('de', 'ate'))
+        if not (190001 <= de <= ate <= 299912 and 1 <= de % 100 <= 12 and 1 <= ate % 100 <= 12):
+            raise ValueError
+    except (KeyError, TypeError, ValueError):
+        p.erro(onde, '"referencia" é {"de": "AAAA-MM", "ate": "AAAA-MM"} (o período de onde saem os limites)')
+        return False
+    if (ate // 100 * 12 + ate % 100) - (de // 100 * 12 + de % 100) + 1 < 20:
+        p.aviso(onde, '[Design] o período de referência tem menos de 20 meses: os limites ainda são provisórios '
+                      '(NIST 6.3.2)')
+    return de, ate
 
 
 def _derivada(md, nome, dax, formato, depende, descricao, tipo='c4', oculta=False):

@@ -1,0 +1,9 @@
+model Model
+	culture: pt-BR
+
+ref table Funcionarios
+ref table Desligamentos
+ref table Empresas
+ref table Metas
+ref table Calendario
+ref table LocalDateTable_6b2f3c1e-0d5a-4c1e-9a0b-2f6c9d1e7a10

@@ -14,7 +14,7 @@ import tempfile
 import unittest
 from contextlib import redirect_stderr, redirect_stdout
 
-__all__ = ['copy', 'io', 'json', 'os', 'shutil', 'sys', 'tempfile', 'unittest', 'redirect_stderr', 'redirect_stdout', 'RAIZ', 'deidara', 'empacotar', 'validar_pbip', 'referencias_dax', 'resolver', 'catalogo', 'receitas', 'EXEMPLO', 'RAIZ', 'EXEMPLO', '_base', '_md', 'CATALOGOS', '_resolver', '_aprovar_com_prototipo', '_calado', '_linha', '_schema_sintetico', 'ARGILA_PEDIDOS', 'COLADO_DAX', '_catalogo_grande']
+__all__ = ['copy', 'io', 'json', 'os', 'shutil', 'sys', 'tempfile', 'unittest', 'redirect_stderr', 'redirect_stdout', 'RAIZ', 'deidara', 'empacotar', 'validar_pbip', 'referencias_dax', 'resolver', 'catalogo', 'receitas', 'EXEMPLO', 'RAIZ', 'EXEMPLO', '_base', '_md', 'CATALOGOS', '_resolver', '_aprovar_com_prototipo', '_calado', '_linha', '_schema_sintetico', 'ARGILA_PEDIDOS', 'COLADO_DAX', '_catalogo_grande', '_json']
 
 
 RAIZ = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
@@ -36,6 +36,11 @@ EXEMPLO = os.path.join(RAIZ, 'exemplos', 'aurora')
 
 def _base():
     with open(os.path.join(EXEMPLO, 'argila.json'), encoding='utf-8') as f:
+        return json.load(f)
+
+
+def _json(arq):
+    with open(arq, encoding='utf-8') as f:
         return json.load(f)
 
 

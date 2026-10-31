@@ -1,0 +1,24 @@
+table Calendario
+	lineageTag: 19a274eb-5b37-5903-880f-f4e841b33af2
+
+	column Date
+		dataType: dateTime
+		lineageTag: 23517355-20eb-5670-81e1-450f55eefe61
+		summarizeBy: none
+		sourceColumn: Date
+
+	column Ano
+		dataType: int64
+		lineageTag: e439ac84-323d-5ae4-b96e-15b4a56dad53
+		summarizeBy: none
+		sourceColumn: Ano
+
+	column Mes
+		dataType: int64
+		lineageTag: 4b2c0f9f-5bb8-5d81-aae2-f494da73c33d
+		summarizeBy: none
+		sourceColumn: Mes
+
+	partition Calendario = calculated
+		mode: import
+		source = CALENDARAUTO()

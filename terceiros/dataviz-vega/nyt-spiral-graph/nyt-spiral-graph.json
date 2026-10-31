@@ -1,0 +1,214 @@
+{
+  "$schema": "https://vega.github.io/schema/vega/v5.json",
+  "description": "Reproduction of the New York Times spiral graph",
+  "usermeta": {
+    "Copyright": "Andrzej Leszkiewicz",
+    "License": "MIT Expat License (https://en.wikipedia.org/wiki/MIT_License)",
+    "Permission": "Permission is hereby granted, free of charge, to any person obtaining a copy of this software and associated documentation files (the “Software”), to deal in the Software without restriction, including without limitation the rights to use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies of the Software, and to permit persons to whom the Software is furnished to do so, subject to the following conditions: The above copyright notice and this permission notice shall be included in all copies or substantial portions of the Software.",
+    "Github": "https://github.com/avatorl/Deneb-Vega/",
+    "Original Idea Author": "Gus Wezerek and Sara Chodosh",
+    "Original Idea URL": "https://www.nytimes.com/2022/01/06/opinion/omicron-covid-us.html"
+  },
+  "background": "white",
+  "width": 250,
+  "height": 250,
+  "padding": 10,
+  "autosize": "pad",
+  "signals": [
+    {"name": "radius", "update": "200"},
+    {"name": "colorGridLine", "value": "#CCCCCC"},
+    {"name": "colorAxisLabels", "value": "#BBBBBB"},
+    {"name": "strokeWidthGridline", "value": 2},
+    {"name": "fillColorTrail", "value": "red"},
+    {"name": "opacityTrail", "value": "0.8"}
+  ],
+  "data": [
+    {
+      "name": "dataset-csv",
+      "url": "https://raw.githubusercontent.com/avatorl/Deneb-Vega/main/nyt-spiral-graph/us-covid-for-nyt-spiral.csv",
+      "format": {"type": "csv", "parse": "auto", "delimiter": ","}
+    },
+    {"name": "dataset", "source": "dataset-csv"},
+    {
+      "name": "dataset-years",
+      "source": "dataset",
+      "transform": [{"type": "filter", "expr": "datum.month==7&&datum.day==3"}]
+    },
+    {
+      "name": "months",
+      "values": [
+        "Oct",
+        "Nov",
+        "Dec",
+        "Jan",
+        "Feb",
+        "Mar",
+        "Apr",
+        "May",
+        "Jun",
+        "Jul",
+        "Aug",
+        "Sep",
+        ""
+      ]
+    }
+  ],
+  "scales": [
+    {
+      "name": "scaleTrailSize",
+      "type": "linear",
+      "range": [0, 100],
+      "domain": {"data": "dataset", "field": "new_cases_sm"}
+    },
+    {
+      "name": "angular",
+      "type": "point",
+      "range": {"signal": "[-PI, PI]"},
+      "padding": 0,
+      "align": 0,
+      "domain": {"data": "months", "field": "data"}
+    }
+  ],
+  "title": {
+    "text": {"signal": "'New COVID cases, United States'"},
+    "subtitle": "Reproduction of the New York Times spiral graph",
+    "subtitlePadding": 5,
+    "dy": -10,
+    "anchor": "start",
+    "font": {"value": "Tahoma"},
+    "fontSize": {"value": 18},
+    "fontWeight": "lighter"
+  },
+  "marks": [
+    {
+      "type": "rule",
+      "name": "radial-grid 1/2",
+      "from": {"data": "months"},
+      "zindex": 0,
+      "encode": {
+        "enter": {
+          "x": {"value": 0},
+          "y": {"value": 0},
+          "x2": {
+            "signal": "1.2*radius * cos(scale('angular', datum.data))*(1.1*radius * cos(scale('angular', datum.data))>0?0.9:1)"
+          },
+          "y2": {"signal": "1.1*radius * sin(scale('angular', datum.data))"},
+          "stroke": {"signal": "colorGridLine"},
+          "strokeOpacity": {"signal": "0.2"},
+          "strokeWidth": {"signal": "1"}
+        }
+      }
+    },
+    {
+      "type": "trail",
+      "name": "timeSpiral",
+      "zindex": 4,
+      "from": {"data": "dataset"},
+      "encode": {
+        "enter": {"fill": {"value": "gray"}},
+        "update": {
+          "x": {
+            "signal": "-0.2*(360/365*(datum.index-1)+90)*cos(PI*(360/365*(datum.index-1)+90)/180)"
+          },
+          "y": {
+            "signal": "-0.2*(360/365*(datum.index-1)+90)*sin(PI*(360/365*(datum.index-1)+90)/180)"
+          },
+          "size": {"value": 0.5},
+          "stroke": {"value": "gray"},
+          "strokeWidth": {"value": 0}
+        }
+      }
+    },
+    {
+      "type": "trail",
+      "name": "covidTrailStroke",
+      "zindex": 0,
+      "from": {"data": "dataset"},
+      "encode": {
+        "enter": {"fill": {"signal": "fillColorTrail"}},
+        "update": {
+          "x": {
+            "signal": "-0.2*(360/365*(datum.index-1)+90)*cos(PI*(360/365*(datum.index-1)+90)/180)"
+          },
+          "y": {
+            "signal": "-0.2*(360/365*(datum.index-1)+90)*sin(PI*(360/365*(datum.index-1)+90)/180)"
+          },
+          "size": {
+            "scale": "scaleTrailSize",
+            "signal": "datum.new_cases_sm+7000"
+          }
+        },
+        "opacity": {"value": 1},
+        "stroke": {"signal": "fillColorTrail"},
+        "strokeWidth": {"value": 0}
+      }
+    },
+    {
+      "type": "trail",
+      "name": "covidTrail",
+      "zindex": 3,
+      "from": {"data": "dataset"},
+      "encode": {
+        "enter": {"fill": {"value": "white"}},
+        "update": {
+          "x": {
+            "signal": "-0.2*(360/365*(datum.index-1)+90)*cos(PI*(360/365*(datum.index-1)+90)/180)"
+          },
+          "y": {
+            "signal": "-0.2*(360/365*(datum.index-1)+90)*sin(PI*(360/365*(datum.index-1)+90)/180)"
+          },
+          "size": {"scale": "scaleTrailSize", "signal": "datum.new_cases_sm"},
+          "opacity": {"signal": "opacityTrail"},
+          "strokeWidth": {"value": 0}
+        }
+      }
+    },
+    {
+      "type": "text",
+      "name": "monthLabels",
+      "from": {"data": "months"},
+      "zindex": 0,
+      "encode": {
+        "enter": {
+          "text": {"signal": "datum.data"},
+          "xc": {
+            "signal": "1.2* radius * cos(scale('angular', datum.data)+0.3)-20"
+          },
+          "yc": {
+            "signal": "1.2* radius * sin(scale('angular', datum.data)+0.3)"
+          },
+          "fontSize": {"value": 18},
+          "fontWeight": {"value": "lighter"},
+          "font": {"value": "Tahoma"},
+          "fill": {"signal": "colorAxisLabels"}
+        }
+      }
+    },
+    {
+      "type": "text",
+      "name": "yearLabels",
+      "zindex": 10,
+      "from": {"data": "dataset-years"},
+      "encode": {
+        "enter": {"fill": {"signal": "colorAxisLabels"}},
+        "update": {
+          "text": {"signal": "datum.year"},
+          "xc": {
+            "signal": "-0.2*(360/365*(datum.index-1)+90)*cos(PI*(360/365*(datum.index-1)+90)/180)"
+          },
+          "yc": {
+            "signal": "-0.2*(360/365*(datum.index-1)+90)*sin(PI*(360/365*(datum.index-1)+90)/180)"
+          },
+          "align": {"value": "center"},
+          "dx": {"value": 0},
+          "dy": {"value": -15},
+          "font": {"value": "Tahoma"},
+          "fontSize": {"value": 20},
+          "fontWeight": {"value": "lighter"},
+          "opacity": {"signal": "1"},
+          "strokeWidth": {"value": 0}
+        }
+      }
+    }
+  ]
+}

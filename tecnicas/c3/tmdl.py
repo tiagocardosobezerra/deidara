@@ -90,9 +90,16 @@ def _particao(m, t):
 
 
 def _particao_calendario(m, t):
+    fim = ('Date.EndOfYear(Date.From(DateTime.LocalNow()))' if t.get('fim_dinamico')   # acompanha o ano corrente
+           else f'#date({t["fim"]}, 12, 31)')
+    mf = t.get('mes_fiscal', 1)
+    fiscal = ('' if mf == 1 else
+              f',\n    AnoFiscal = Table.AddColumn(AnoTriNum, "Ano Fiscal", each [Ano] + (if [Mês] >= {mf} then 1 else 0), '
+              'Int64.Type),\n    MesFiscal = Table.AddColumn(AnoFiscal, "Mês Fiscal", each Number.Mod([Mês] - '
+              f'{mf} + 12, 12) + 1, Int64.Type)')
     m_expr = f'''let
     Inicio = #date({t["inicio"]}, 1, 1),
-    Fim = #date({t["fim"]}, 12, 31),
+    Fim = {fim},
     Datas = List.Dates(Inicio, Duration.Days(Fim - Inicio) + 1, #duration(1, 0, 0, 0)),
     Base = Table.FromList(Datas, Splitter.SplitByNothing(), {{"Data"}}),
     Tipada = Table.TransformColumnTypes(Base, {{{{"Data", type date}}}}),
@@ -104,10 +111,52 @@ def _particao_calendario(m, t):
     MesAno = Table.AddColumn(AnoMes, "Mês/Ano", each [Nome do Mês] & "/" & Text.From([Ano]), type text),
     AnoTri = Table.AddColumn(MesAno, "Ano-Trimestre", each Text.From([Ano]) & "-" & [Trimestre], type text),
     AnoMesNum = Table.AddColumn(AnoTri, "Ano-Mês Num", each [Ano] * 100 + [Mês], Int64.Type),
-    AnoTriNum = Table.AddColumn(AnoMesNum, "Ano-Trimestre Num", each [Ano] * 10 + Date.QuarterOfYear([Data]), Int64.Type)
-in
-    AnoTriNum'''
+    AnoTriNum = Table.AddColumn(AnoMesNum, "Ano-Trimestre Num", each [Ano] * 10 + Date.QuarterOfYear([Data]), Int64.Type){fiscal}'''
+    ultimo = 'AnoTriNum' if mf == 1 else 'MesFiscal'
+    if t.get('feriados'):
+        m_expr += ',\n' + _passos_feriados(t['feriados'], ultimo)
+        ultimo = 'DiaUtil'
+    m_expr += f'\nin\n    {ultimo}'
     return f'\tpartition {tmdl_nome(t["nome"])} = m\n\t\tmode: import\n\t\tsource =\n{_expressao(m_expr, 4)}\n'
+
+
+# Páscoa (algoritmo de Meeus/Jones/Butcher) e as regras do modelo de feriados do Bravo (SQLBI, MIT): data fixa,
+# Páscoa + dias (M = 99) ou o n-ésimo dia da semana do mês (S = dia da semana, 0 = domingo; O = semana, negativa
+# conta do fim do mês).
+_FERIADOS_M = '''    Pascoa = (a as number) as date =>
+        let
+            g = Number.Mod(a, 19),
+            c = Number.IntegerDivide(a, 100),
+            h = Number.Mod(c - Number.IntegerDivide(c, 4) - Number.IntegerDivide(8 * c + 13, 25) + 19 * g + 15, 30),
+            i = h - Number.IntegerDivide(h, 28) * (1 - Number.IntegerDivide(h, 28) * Number.IntegerDivide(29, h + 1) * Number.IntegerDivide(21 - g, 11)),
+            j = Number.Mod(a + Number.IntegerDivide(a, 4) + i + 2 - c + Number.IntegerDivide(c, 4), 7),
+            l = i - j,
+            mes = 3 + Number.IntegerDivide(l + 40, 44),
+            dia = l + 28 - 31 * Number.IntegerDivide(mes, 4)
+        in
+            #date(a, mes, dia),
+    DataDaRegra = (a as number, r as record) as date =>
+        if r[M] = 99 then Date.AddDays(Pascoa(a), r[D])
+        else if r[S] = 0 then Date.AddDays(#date(a, r[M], r[D]), r[X])
+        else if r[O] > 0 then
+            let p = #date(a, r[M], 1) in
+                Date.AddDays(p, Number.Mod(r[S] - Date.DayOfWeek(p, Day.Sunday) + 7, 7) + 7 * (r[O] - 1) + r[X])
+        else
+            let u = Date.EndOfMonth(#date(a, r[M], 1)) in
+                Date.AddDays(u, - Number.Mod(Date.DayOfWeek(u, Day.Sunday) - r[S] + 7, 7) + 7 * (r[O] + 1) + r[X]),
+    Anos = {Date.Year(Inicio)..Date.Year(Fim)},
+    ListaFeriados = List.Combine(List.Transform(Anos, (a) => List.Transform(Regras, (r) => [Data = DataDaRegra(a, r), Nome = r[N]]))),
+    TabelaFeriados = Table.Group(Table.TransformColumnTypes(Table.FromRecords(ListaFeriados), {{"Data", type date}}), {"Data"}, {{"Nome", each Text.Combine(List.Distinct([Nome]), " / "), type text}}),
+    ComFeriado = Table.NestedJoin(ULTIMO, {"Data"}, TabelaFeriados, {"Data"}, "F", JoinKind.LeftOuter),
+    Feriado = Table.AddColumn(ComFeriado, "Feriado", each if Table.IsEmpty([F]) then null else [F]{0}[Nome], type text),
+    DiaUtil = Table.AddColumn(Table.RemoveColumns(Feriado, {"F"}), "Dia Útil", each Date.DayOfWeek([Data], Day.Monday) < 5 and [Feriado] = null, type logical)'''
+
+
+def _passos_feriados(regras, ultimo):
+    lista = ', '.join(f'[M = {r["MonthNumber"]}, D = {r["DayNumber"]}, S = {r.get("WeekDayNumber", 0)}, '
+                      f'O = {r.get("OffsetWeek", 0)}, X = {r.get("OffsetDays", 0)}, N = {m_texto(r["HolidayName"])}]'
+                      for r in regras)
+    return f'    Regras = {{{lista}}},\n' + _FERIADOS_M.replace('ULTIMO', ultimo)
 
 
 ORDENAR_POR = {'Nome do Mês': 'Mês', 'Mês/Ano': 'Ano-Mês Num', 'Ano-Trimestre': 'Ano-Trimestre Num'}
@@ -254,6 +303,18 @@ def modelo(m):
             f'annotation __PBI_TimeIntelligenceEnabled = 0\n\n{refs}\n')
 
 
+def funcoes(m):
+    """O functions.tmdl: as funções dos pacotes do daxlib como vieram, com a palavra-chave em minúsculas e o
+    recuo em tabulação (o TMDL do projeto usa tabulação)."""
+    import re
+    out = []
+    for linha in m['funcoes_dax']['tmdl'].split('\n'):
+        linha = re.sub(r'^FUNCTION\b', 'function', linha)
+        espacos = len(linha) - len(linha.lstrip(' '))
+        out.append('\t' * (espacos // 4) + ' ' * (espacos % 4) + linha.lstrip(' ') if espacos else linha)
+    return '\n'.join(out)
+
+
 def gravar(m, pasta_projeto, nome):
     raiz = os.path.join(pasta_projeto, f'{nome}.SemanticModel')
     defi = os.path.join(raiz, 'definition')
@@ -262,6 +323,9 @@ def gravar(m, pasta_projeto, nome):
         '$schema': 'https://developer.microsoft.com/json-schemas/fabric/item/semanticModel/definitionProperties/1.0.0/schema.json',
         'version': '4.0', 'settings': {}})
     nivel = 1601 if any(md.get('formato_dinamico') for md in m['medidas']) else COMPATIBILIDADE   # formato dinâmico
+    if m.get('funcoes_dax'):                       # funções DAX definidas pelo usuário (daxlib)
+        nivel = max(nivel, 1702)
+        gravar_texto(os.path.join(defi, 'functions.tmdl'), funcoes(m))
     gravar_texto(os.path.join(defi, 'database.tmdl'), f'database\n\tcompatibilityLevel: {nivel}\n')
     gravar_texto(os.path.join(defi, 'model.tmdl'), modelo(m))
     exprs = expressoes(m)

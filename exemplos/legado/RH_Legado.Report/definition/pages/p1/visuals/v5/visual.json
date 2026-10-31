@@ -1,0 +1,53 @@
+{
+  "name": "v5",
+  "position": {
+    "x": 320,
+    "y": 220,
+    "z": 0,
+    "width": 300,
+    "height": 200
+  },
+  "visual": {
+    "visualType": "lineChart",
+    "query": {
+      "queryState": {
+        "Category": {
+          "projections": [
+            {
+              "field": {
+                "Column": {
+                  "Expression": {
+                    "SourceRef": {
+                      "Entity": "Calendario"
+                    }
+                  },
+                  "Property": "Mes"
+                }
+              },
+              "queryRef": "Calendario.Mes",
+              "nativeQueryRef": "Mes"
+            }
+          ]
+        },
+        "Y": {
+          "projections": [
+            {
+              "field": {
+                "Measure": {
+                  "Expression": {
+                    "SourceRef": {
+                      "Entity": "Desligamentos"
+                    }
+                  },
+                  "Property": "Qtd Desligamentos"
+                }
+              },
+              "queryRef": "Desligamentos.Qtd Desligamentos",
+              "nativeQueryRef": "Qtd Desligamentos"
+            }
+          ]
+        }
+      }
+    }
+  }
+}

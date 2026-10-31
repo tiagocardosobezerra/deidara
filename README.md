@@ -7,7 +7,7 @@
 ![Python 3.8+](https://img.shields.io/badge/python-3.8%2B-3776AB?style=flat-square&logo=python&logoColor=white)
 ![Sem dependências](https://img.shields.io/badge/depend%C3%AAncias-nenhuma-2ea44f?style=flat-square)
 ![Power BI .pbip](https://img.shields.io/badge/Power%20BI-.pbip%20(TMDL%20%2B%20PBIR)-F2C811?style=flat-square&logo=powerbi&logoColor=black)
-![Testes](https://img.shields.io/badge/testes-174%20passando-2ea44f?style=flat-square)
+[![Testes](https://github.com/tiagocardosobezerra/deidara/actions/workflows/testes.yml/badge.svg)](https://github.com/tiagocardosobezerra/deidara/actions/workflows/testes.yml)
 ![MIT](https://img.shields.io/badge/licen%C3%A7a-MIT-blue?style=flat-square)
 
 <img width="100%" alt="Deidara: do pedido ao painel Power BI, com protótipo aprovado antes do projeto" src="assets/deidara-banner-animado.svg" />
@@ -98,6 +98,8 @@ python3 deidara.py aprovar meu/argila.json --por "Gestor de RH"
 python3 deidara.py gerar meu/argila.json -o C:/paineis/turnover
 python3 deidara.py gerar meu/argila.json -o C:/paineis/demo --demo   # com dados fictícios: abre e calcula sem banco
 python3 deidara.py situacao meu/argila.json                     # onde estou e o próximo passo
+python3 deidara.py c0 estudar C:/paineis/antigo                # engenharia reversa de um painel que já existe
+python3 deidara.py galeria cascata                              # modelos Deneb e funções DAX da comunidade
 ```
 
 Sem argumentos, `python3 deidara.py` mostra o roteiro completo.
@@ -122,11 +124,19 @@ O `.pbix` é binário e fechado: o modelo vai num formato interno que só o Powe
 
 ### Dicionário de funções e padrões de indicador
 
-462 funções DAX e 667 de Power Query, com categoria, assinatura e link da documentação oficial; as mais usadas com descrição e uso em indicadores em pt-BR (`deidara.py funcoes buscar "ano anterior"`). Os padrões dizem como criar cada indicador e onde: medida, cálculo visual, grupo de cálculo, Power Query ou view SQL (`deidara.py padroes`). Guia em [`referencias/metricas.md`](referencias/metricas.md).
+467 funções DAX e 667 de Power Query, com categoria, assinatura e link da documentação oficial; as mais usadas com descrição e uso em indicadores em pt-BR (`deidara.py funcoes buscar "ano anterior"`). Os padrões dizem como criar cada indicador e onde: medida, cálculo visual, grupo de cálculo, Power Query ou view SQL (`deidara.py padroes`). Guia em [`referencias/metricas.md`](referencias/metricas.md).
 
 ### Design e visuais
 
 Os princípios de [`referencias/design.md`](referencias/design.md): comece pela decisão, uma página por pergunta, cor só com significado (e nunca como única pista), contraste conferido pelo `validar`. As técnicas com visuais nativos (segmentador de botões como controle segmentado, cartões clicáveis, melhores e piores na mesma tabela, Pareto, árvore de decomposição, espinha de peixe, jitter plot, ranking de impacto, estrelas e progresso como marcador do mapa, colunas 3D no mapa, tour guiado, segmentador de período por grupo de cálculo, detalhamento, página de dica) estão em `deidara.py visuais`. Medidas que desenham dentro da tabela seguem [`referencias/svg.md`](referencias/svg.md); a barra contra a meta o Deidara gera pronta (`"tipo": "svg_barra_meta"`).
+
+### C0: engenharia reversa
+
+Traga o que já existe (uma medida, a pasta do .pbip ou o resultado da receita DAX de um .pbix) e o Deidara desmonta: o que a fórmula faz de verdade, a árvore até as colunas, a nota de 0 a 10 com cada problema e o efeito dele no número (taxa sobre o cadastro, média de taxas, ano anterior contra o ano inteiro, meta escondida no código...), a versão Deidara de cada medida e, com `c0 importar`, o painel refeito com a homologação "antes x depois" no mesmo modelo. Guia em [`referencias/c0.md`](referencias/c0.md); exemplo em `exemplos/legado/`.
+
+### Galeria da comunidade
+
+O que a comunidade de Power BI abriu com licença MIT, dentro do Deidara em [`terceiros/`](terceiros/) (com a licença e a origem de cada fonte, ver [`LICENCAS-DE-TERCEIROS.md`](LICENCAS-DE-TERCEIROS.md)): 158 modelos Deneb (cascata, bullet, slope, ranking no tempo, histograma, boxplot, violino, treemap, waffle, sankey, mapas), 66 pacotes com 602 funções DAX do [daxlib](https://daxlib.org) (minigráfico, IBCS, cascata, boxplot, mapa de calor, estatística, curva ABC) e os calendários e feriados do Bravo, da SQLBI. A busca é em português (`deidara.py galeria cascata`) e o uso é uma linha no `argila.json`: `"funcoes_dax"`, `"modelo"` no visual `vegalite` ou `"feriados": "BR"` no calendário. `ferramentas/atualizar_terceiros.py` traz a versão nova das fontes.
 
 ### Modelos de layout
 
@@ -156,6 +166,7 @@ Para conferir a instalação a qualquer momento:
 ```bash
 python3 deidara.py status
 python3 -m unittest discover -s testes
+python3 ferramentas/avaliar.py exemplos/aurora/avaliacao.json   # placar: esboço e armadilhas de indicador
 ```
 
 ## Estrutura do repositório
@@ -183,11 +194,15 @@ deidara/
 │   ├── katsu.py           #   "Katsu!": o aceite e o retrato aprovado
 │   ├── c3/                #   a grande obra: TMDL, PBIR, views SQL e documentação
 │   ├── arte/              #   "a arte é uma explosão": modelos de layout e posição dos visuais
+│   ├── c0/                #   engenharia reversa: lê, examina, dá nota e refaz um painel que já existe
+│   ├── galeria.py         #   a galeria da comunidade (terceiros/)
 │   ├── sasori.py          #   arte eterna: dicionário de funções e padrões conferidos
 │   └── memory_card.py     #   o cartão de memória do time
 ├── dicionario/            # Funções DAX e Power Query, padrões de indicador, técnicas de visual e sinônimos
 ├── referencias/           # Guias: fluxo, fontes, descoberta, argila.json, métricas, design, SVG, Memory Card, Power BI e tutorial
 ├── exemplos/aurora/       # Exemplo fictício completo, do resultado colado ao projeto gerado
+├── exemplos/legado/       # Painel antigo com defeitos de propósito, para o C0
+├── terceiros/             # Fontes MIT da comunidade (Deneb, daxlib, Bravo), com licença e origem
 ├── ferramentas/           # Validador do .pbip, empacotador da skill e agrupador de textos livres em temas
 ├── assets/                # Imagens do README
 └── testes/                # Suíte de testes

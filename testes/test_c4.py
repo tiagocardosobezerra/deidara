@@ -178,3 +178,80 @@ class TestC2EscolheOC4(unittest.TestCase):
                 r['declarada']['por'] = 'T'
         _, p = _resolver(argila)
         self.assertEqual(p.erros, [])
+
+
+class TestLaneyEReferencia(unittest.TestCase):
+    """Grupo grande (HC de milhares): o gráfico p comum vira alarme em todo mês; o p' de Laney não."""
+
+    def _sobredisperso(self):
+        import random
+        r = random.Random(3)
+        dens = [5000 + r.randint(-200, 200) for _ in range(24)]
+        taxas = [0.012 + r.gauss(0, 0.004) for _ in dens]        # variação real entre meses além da binomial
+        return [t * d for t, d in zip(taxas, dens)], dens
+
+    def test_laney_tira_o_alarme_falso_do_grupo_grande(self):
+        from tecnicas import c4
+        nums, dens = self._sobredisperso()
+        taxas = [a / n for a, n in zip(nums, dens)]
+        comum, laney = c4.grafico_p(nums, dens), c4.grafico_p(nums, dens, laney=True)
+        fora = lambda g: sum(1 for t, s, i in zip(taxas, g['superior'], g['inferior']) if t > s or t < i)  # noqa: E731
+        self.assertGreater(laney['laney'], 1.5)
+        self.assertGreater(fora(comum), fora(laney))
+        self.assertLessEqual(fora(laney), 1)
+
+    def test_laney_sem_variacao_a_mais_e_o_grafico_p(self):
+        import random
+        from tecnicas import c4
+        fatores = []
+        for semente in range(100):                                             # binomial de verdade
+            r = random.Random(semente)
+            dens = [400] * 30
+            nums = [sum(1 for _ in range(n) if r.random() < 0.1) for n in dens]
+            fatores.append(c4.fator_laney(nums, dens))
+            self.assertGreaterEqual(c4.grafico_p(nums, dens, laney=True)['laney'], 1.0)   # nunca estreita
+        self.assertLess(abs(statistics.mean(fatores) - 1), 0.1)                 # em média, é o gráfico p
+        self.assertEqual(c4.grafico_p([round(x * 50) for x in NIST_P], [50] * 30)['laney'], 1.0)   # padrão: sem Laney
+
+    def test_dax_do_laney_e_da_referencia(self):
+        from kibaku_nendo.especificacao import sintaxe_dax
+        from tecnicas import c4, sasori
+        d = c4.dax_controle('superior', '[T]', 'dCalendario', 'p', '[D]', '[H]', (202301, 202412))
+        self.assertIn('"@dant"', d)
+        self.assertIn('VAR _laney = MAX(1, DIVIDE(AVERAGEX(_zs, ABS([@z] - [@zant])), 1.128))', d)
+        self.assertIn('VAR _base = FILTER(_pontos, dCalendario[Ano-Mês Num] >= 202301 && dCalendario[Ano-Mês Num] <= 202412)', d)
+        self.assertIn("p' de Laney", d)
+        for x in (d, c4.dax_meta_x_faixa('[T]', '[M]', 'dCalendario', 'u', True, 'decimal', '[D]', '[H]', (202301, 202312))):
+            self.assertEqual(sintaxe_dax(x), [], x[:80])
+            self.assertEqual(sasori.desconhecidas(x), [], x[:80])
+        self.assertNotIn('_laney', c4.dax_controle('centro', '[T]', 'dCalendario', 'xmr'))
+
+    def test_referencia_no_argila(self):
+        a = _base()
+        a['medidas'].append({'nome': 'Controle do Turnover', 'tipo': 'controle', 'medida': 'Turnover',
+                             'referencia': {'de': '2023-01', 'ate': '2024-12'}, 'descricao': 'x'})
+        m, p = _resolver(a)
+        self.assertEqual(p.erros, [])
+        self.assertIn('>= 202301 && dCalendario[Ano-Mês Num] <= 202412',
+                      next(x for x in m['medidas'] if x['nome'] == 'Controle do Turnover · limite superior')['dax'])
+        a['medidas'][-1]['referencia'] = {'de': '2023-13', 'ate': '2024-12'}
+        self.assertTrue(any('"referencia"' in e for e in _resolver(a)[1].erros))
+        a['medidas'][-1]['referencia'] = {'de': '2024-01', 'ate': '2024-06'}
+        self.assertTrue(any('menos de 20 meses' in x for x in _resolver(a)[1].avisos))
+
+
+class TestMetaDoMesNaFaixa(unittest.TestCase):
+    def test_meta_x_faixa_usa_a_meta_de_um_mes(self):
+        a = _base()
+        a['medidas'].append({'nome': 'Controle do Turnover', 'tipo': 'controle', 'medida': 'Turnover', 'descricao': 'x'})
+        m, p = _resolver(a)
+        self.assertEqual(p.erros, [])
+        dax = next(x for x in m['medidas'] if x['nome'] == 'Controle do Turnover · meta x faixa')['dax']
+        self.assertIn('VAR _meta = [Meta de Turnover] / 12', dax)            # meta anual: a faixa mensal compara 1/12
+        from tecnicas.bunshin.simulacao import Simulador
+        s = Simulador(m)
+        texto = s.valor('Controle do Turnover · meta x faixa')
+        mensal = s.valor('Meta de Turnover', [({'tabela': 'dCalendario', 'nome': 'Mês/Ano', 'tipo': 'coluna'},
+                                                'dez/2025')]) / 12
+        from tecnicas.c1.prototipo import formatar
+        self.assertIn(formatar(mensal, 'percentual', True), texto)

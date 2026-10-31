@@ -64,7 +64,8 @@ def _projecao(campo):
 def _query(v):
     tipo = TIPOS_VISUAL[v['tipo']]
     estado = {}
-    for chave_v, papel in PAPEIS[tipo].items():
+    papeis = {'campos_deneb': 'dataset'} if v.get('campos_deneb') else PAPEIS[tipo]   # modelo Deneb: todos, na ordem
+    for chave_v, papel in papeis.items():
         valor = v.get(chave_v)
         campos = valor if isinstance(valor, list) else ([valor] if valor else [])
         if campos:
@@ -204,8 +205,8 @@ def _tecnicas(m, v, vis, container, pos):
             container['background'] = [{'properties': {'show': _lit(True), 'transparency': _lit(0),
                                                        'color': _cor_da_medida(m, v['cor_fundo'])}}]
     elif v['tipo'] == 'vegalite':            # Deneb: a especificação Vega-Lite vai pronta
-        objs['vega'] = [{'properties': {'provider': _lit('vegaLite'), 'renderMode': _lit('svg'),
-                                        'jsonSpec': _lit(_spec_vegalite(v)), 'jsonConfig': _lit('{}'),
+        objs['vega'] = [{'properties': {'provider': _lit(v.get('provider') or 'vegaLite'), 'renderMode': _lit('svg'),
+                                        'jsonSpec': _lit(_spec_vegalite(v)), 'jsonConfig': _lit(v.get('config') or '{}'),
                                         'isNewDialogOpen': _lit(False)}}]
     elif v['tipo'] == 'mapa' and v.get('marcador'):   # cada ponto vira a imagem SVG da medida
         objs['bubbleLayer'] = [{'properties': {'show': _lit(True), 'markerType': _lit('image'), 'bubbleRadius': _int(45),

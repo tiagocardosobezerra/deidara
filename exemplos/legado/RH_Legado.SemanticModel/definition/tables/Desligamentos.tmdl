@@ -1,0 +1,101 @@
+table Desligamentos
+	lineageTag: 70db947a-2bb6-50ee-aae1-c540aacb73f3
+
+	measure 'Qtd Desligamentos' = COUNTROWS(Desligamentos)
+		formatString: 0
+		lineageTag: e2e82fae-7b22-5198-834a-2364ab76a17a
+
+	/// Quantidade de funcionários.
+	measure Headcount = COUNTROWS(Funcionarios)
+		formatString: 0
+		lineageTag: 21914e19-cb4c-5f99-80b7-0f586f732fbb
+
+	/// Turnover do período.
+	measure 'Turnover %' = [Qtd Desligamentos] / [Headcount]
+		formatString: 0.0%
+		lineageTag: ea1b6b71-b18c-5f5f-a151-65b7f68c34f1
+
+	/// Turnover médio das empresas.
+	measure 'Turnover Médio' = AVERAGEX(VALUES(Empresas[Empresa]), [Turnover %])
+		formatString: 0.0%
+		lineageTag: 799ccc88-f9f1-50d7-a222-cc5f3ee2d6c0
+
+	/// Meta de turnover.
+	measure 'Meta Turnover' = AVERAGE(Metas[MetaTurnover])
+		formatString: 0.0%
+		lineageTag: 70a02bcb-1df1-516e-8898-5a6f996f4a97
+
+	/// Status contra a meta.
+	measure 'Status Turnover' = IF([Turnover %] <= 0.05, "Dentro", "Fora")
+		lineageTag: e929b206-19da-5e13-ad36-4f9272738de1
+
+	/// Desligamentos no ano anterior.
+	measure 'Desligamentos AA' = CALCULATE([Qtd Desligamentos], SAMEPERIODLASTYEAR(Calendario[Date]))
+		formatString: 0
+		lineageTag: 5bc1e8ae-aaf6-5849-a0e0-86460dd191c4
+
+	/// Variação contra o ano anterior.
+	measure 'Var AA %' = IFERROR(([Qtd Desligamentos] - [Desligamentos AA]) / [Desligamentos AA], 0)
+		formatString: 0.0%
+		lineageTag: 9af8ca82-736c-5496-ba46-b8535bf29a69
+
+	/// Folha de pagamento.
+	measure 'Folha Total' = SUM(Funcionarios[Salario])
+		formatString: "R$" #,0
+		lineageTag: 1953ee73-9091-566e-943b-cc0476d814a9
+
+	/// Desligamentos no mês corrente.
+	measure 'Desligamentos Mês Atual' =
+			CALCULATE(
+			    [Qtd Desligamentos],
+			    FILTER(
+			        Desligamentos,
+			        MONTH(Desligamentos[DataDesligamento]) = MONTH(TODAY())
+			            && YEAR(Desligamentos[DataDesligamento]) = YEAR(TODAY())
+			    )
+			)
+		formatString: 0
+		lineageTag: 9135e44c-a06c-59d9-9647-e4b6086af1de
+
+	/// Desligamentos do diretor.
+	measure 'Desligamentos Diretor' = CALCULATE([Qtd Desligamentos], Funcionarios[CPF] = "123.456.789-09")
+		formatString: 0
+		lineageTag: c73954f4-43d5-5c5f-a856-132274467e96
+
+	/// Valor pago em rescisões.
+	measure 'Valor Rescisões' = SUM(Desligamentos[ValorRescisao])
+		formatString: "R$" #,0
+		lineageTag: e6e0be69-09a1-5114-bac5-b91c7783e2e3
+
+	/// Turnover acumulado no ano.
+	measure 'Turnover Acumulado' = TOTALYTD([Turnover %], Calendario[Date])
+		formatString: 0.0%
+		lineageTag: d3071c99-ff8d-5bf0-91bf-b66991f2fc1f
+
+	column Matricula
+		dataType: int64
+		isHidden
+		lineageTag: 1d6b1e36-fa51-59f4-aab4-d8f594c72a3b
+		summarizeBy: none
+		sourceColumn: Matricula
+
+	column DataDesligamento
+		dataType: dateTime
+		lineageTag: 3c530639-9bf1-509b-873c-ae3fd7f0efde
+		summarizeBy: none
+		sourceColumn: DataDesligamento
+
+	column Motivo
+		dataType: string
+		lineageTag: 3e07d477-b885-5aab-a74e-d0ce467a5098
+		summarizeBy: none
+		sourceColumn: Motivo
+
+	partition Desligamentos = m
+		mode: import
+		source =
+				let
+				    Fonte = Sql.Database("SRV-RH", "RH"),
+				    Dados = Value.NativeQuery(Fonte, "SELECT * FROM dbo.DESLIGAMENTOS")
+				in
+				    Dados

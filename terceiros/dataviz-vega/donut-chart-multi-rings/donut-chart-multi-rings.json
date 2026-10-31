@@ -1,0 +1,231 @@
+{
+  "$schema": "https://vega.github.io/schema/vega/v5.json",
+  "description": "",
+  "usermeta": {
+    "Copyright": "Andrzej Leszkiewicz",
+    "License": "MIT Expat License (https://en.wikipedia.org/wiki/MIT_License)",
+    "Permission": "Permission is hereby granted, free of charge, to any person obtaining a copy of this software and associated documentation files (the “Software”), to deal in the Software without restriction, including without limitation the rights to use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies of the Software, and to permit persons to whom the Software is furnished to do so, subject to the following conditions: The above copyright notice and this permission notice shall be included in all copies or substantial portions of the Software.",
+    "Github": "https://github.com/avatorl/Deneb-Vega/",
+    "Data Source": "https://www.americanbar.org/groups/diversity/DiversityCommission/model-diversity-survey/"
+  },
+  "width": 180,
+  "height": 180,
+  "padding": 20,
+  "autosize": "pad",
+  "background": "#fdfbee",
+  "data": [
+    {
+      "name": "dataset-csv",
+      "url": "https://raw.githubusercontent.com/avatorl/Deneb-Vega/main/donut-chart-multi-rings/donut-chart-multi-rings-diversity-data.csv",
+      "format": {"type": "csv", "parse": "auto", "delimiter": ","}
+    },
+    {
+      "name": "data-gender",
+      "source": "dataset-csv",
+      "transform": [
+        {"type": "filter", "expr": "datum.metric=='Gender Identity'"}
+      ]
+    },
+    {
+      "name": "data-firm-size-legend",
+      "source": "data-gender",
+      "transform": [
+        {"type": "filter", "expr": "datum['Role Group']=='Associates'"},
+        {
+          "type": "formula",
+          "as": "Role Group",
+          "expr": "'Firm Size, Attorneys'"
+        },
+        {"type": "formula", "as": "2019", "expr": "0"},
+        {"type": "formula", "as": "2020", "expr": "0"},
+        {"type": "formula", "as": "dif", "expr": "0"}
+      ]
+    },
+    {"name": "dataset", "source": ["data-gender", "data-firm-size-legend"]},
+    {
+      "name": "data-all-firm-sizes",
+      "source": "dataset",
+      "transform": [
+        {"type": "filter", "expr": "datum.group=='Female'"},
+        {
+          "type": "joinaggregate",
+          "groupby": ["Role Group"],
+          "fields": ["2020"],
+          "ops": ["average"],
+          "as": ["avg"]
+        }
+      ]
+    },
+    {"name": "data-no-data", "values": [0, 1, 2, 3]}
+  ],
+  "scales": [
+    {
+      "name": "color",
+      "type": "ordinal",
+      "domain": ["Male", "Female"],
+      "range": ["#CCCCCC", "#AAAAFF"]
+    },
+    {
+      "name": "color-change",
+      "type": "ordinal",
+      "domain": ["Decreased", "Increased"],
+      "range": ["#7777FF", "#FF7777"]
+    }
+  ],
+  "legends": [],
+  "axes": [],
+  "title": {
+    "text": "% of Female Attorneys in Law Firms",
+    "fontWeight": "bold",
+    "color": "#8888FF",
+    "fontSize": 22,
+    "anchor": "start",
+    "offset": 20,
+    "subtitle": "by Attorney Role and Firm Size, 2020 (and change over 2019)",
+    "subtitleColor": "#666666",
+    "subtitleFontWeight": "bold",
+    "subtitleFontSize": 20,
+    "subtitlePadding": 10
+  },
+  "marks": [
+    {
+      "type": "group",
+      "layout": {"align": "all", "bounds": "full", "columns": 3, "padding": 20},
+      "marks": [
+        {
+          "type": "group",
+          "from": {
+            "facet": {
+              "name": "group-cells",
+              "data": "dataset",
+              "groupby": "Role Group"
+            }
+          },
+          "title": {
+            "text": {"signal": "parent['Role Group']"},
+            "align": "center",
+            "baseline": "middle",
+            "anchor": "middle",
+            "color": {
+              "signal": "parent['Role Group']=='Firm Size, Attorneys'?'#999999':'#666666'"
+            },
+            "fontSize": {"signal": "20"},
+            "fontWeight": {
+              "signal": "parent['Role Group']=='Firm Size, Attorneys'?'normal':'bold'"
+            },
+            "encode": {"title": {"enter": {"strokeWidth": {"value": "0"}}}}
+          },
+          "marks": [
+            {
+              "type": "arc",
+              "from": {"data": "data-no-data"},
+              "encode": {
+                "enter": {
+                  "fill": {
+                    "signal": "parent['Role Group']=='Firm Size, Attorneys'?'#EEEEEE':'#DEDEDE'"
+                  },
+                  "x": {"signal": "width / 2"},
+                  "y": {"signal": "height / 2"}
+                },
+                "update": {
+                  "startAngle": {"field": "0"},
+                  "endAngle": {"signal": "2*PI"},
+                  "padAngle": {"signal": "0"},
+                  "innerRadius": {"signal": "width/2/4*(1+datum.data)"},
+                  "outerRadius": {"signal": "width/2/4*(2+datum.data)-5"},
+                  "cornerRadius": {"signal": "0"}
+                }
+              }
+            },
+            {
+              "name": "arc-female",
+              "type": "arc",
+              "from": {"data": "group-cells"},
+              "encode": {
+                "enter": {
+                  "fill": {"scale": "color", "field": "group"},
+                  "x": {"signal": "width / 2"},
+                  "y": {"signal": "height / 2"},
+                  "strokeWidth": {"signal": "1"},
+                  "strokeOpacity": {"signal": "0"}
+                },
+                "update": {
+                  "startAngle": {"field": "0"},
+                  "endAngle": {
+                    "signal": "(datum.group=='Female'?1:-1)*datum['2020']*2*PI"
+                  },
+                  "padAngle": {"signal": "0"},
+                  "innerRadius": {
+                    "signal": "width/2/4*(1+(datum.size=='1-20'?0:datum.size=='21-100'?1:datum.size=='101-400'?2:3))"
+                  },
+                  "outerRadius": {
+                    "signal": "width/2/4*(2+(datum.size=='1-20'?0:datum.size=='21-100'?1:datum.size=='101-400'?2:3))-5"
+                  },
+                  "cornerRadius": {"signal": "0"}
+                }
+              }
+            },
+            {
+              "name": "arc-female-change",
+              "type": "arc",
+              "from": {"data": "group-cells"},
+              "encode": {
+                "enter": {
+                  "stroke": {"signal": "datum.dif>0?'#7777FF':'#FF7777'"},
+                  "fill": {"signal": "datum.dif>0?'#7777FF':'#FF7777'"},
+                  "fillOpacity": {
+                    "signal": "parent['Role Group']=='Firm Size, Attorneys'?0:(datum.dif>0?0.5:0.0)"
+                  },
+                  "strokeWidth": {
+                    "signal": "datum.group=='Female'?datum['Role Group']=='Firm Size, Attorneys'?1:(datum.dif>0?0.5:0.5):0"
+                  },
+                  "strokeOpacity": {
+                    "signal": "datum['Role Group']=='Firm Size, Attorneys'?0:1"
+                  },
+                  "x": {"signal": "width / 2"},
+                  "y": {"signal": "height / 2"}
+                },
+                "update": {
+                  "startAngle": {
+                    "signal": "(datum.group=='Female'?1:0)*datum['2020']*2*PI-(datum.group=='Female'?1:0)*datum.dif*2*PI"
+                  },
+                  "endAngle": {
+                    "signal": "(datum.group=='Female'?1:0)*datum['2020']*2*PI"
+                  },
+                  "padAngle": {"signal": "0"},
+                  "innerRadius": {
+                    "signal": "width/2/4*(1+(datum.size=='1-20'?0:datum.size=='21-100'?1:datum.size=='101-400'?2:3))+1"
+                  },
+                  "outerRadius": {
+                    "signal": "width/2/4*(2+(datum.size=='1-20'?0:datum.size=='21-100'?1:datum.size=='101-400'?2:3))-5-1"
+                  },
+                  "cornerRadius": {"signal": "0"}
+                }
+              }
+            },
+            {
+              "type": "text",
+              "from": {"data": "group-cells"},
+              "encode": {
+                "enter": {
+                  "text": {
+                    "signal": "parent['Role Group']=='Firm Size, Attorneys'?datum.size:''"
+                  },
+                  "fontSize": {"value": 14},
+                  "fontWeight": {"value": "normal"},
+                  "fill": {"signal": "'#999999'"},
+                  "align": {"value": "center"},
+                  "x": {"signal": "width/2"},
+                  "y": {
+                    "signal": "width/2-width/2/4*(1+(datum.size=='1-20'?0:datum.size=='21-100'?1:datum.size=='101-400'?2:3))-4"
+                  }
+                }
+              }
+            }
+          ],
+          "config": {}
+        }
+      ]
+    }
+  ]
+}

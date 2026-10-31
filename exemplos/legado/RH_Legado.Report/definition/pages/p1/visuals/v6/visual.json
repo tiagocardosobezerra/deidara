@@ -1,0 +1,63 @@
+{
+  "name": "v6",
+  "position": {
+    "x": 640,
+    "y": 220,
+    "z": 0,
+    "width": 300,
+    "height": 200
+  },
+  "visual": {
+    "visualType": "tableEx",
+    "query": {
+      "queryState": {
+        "Values": {
+          "projections": [
+            {
+              "field": {
+                "Column": {
+                  "Expression": {
+                    "SourceRef": {
+                      "Entity": "Empresas"
+                    }
+                  },
+                  "Property": "Empresa"
+                }
+              },
+              "queryRef": "Empresas.Empresa",
+              "nativeQueryRef": "Empresa"
+            },
+            {
+              "field": {
+                "Measure": {
+                  "Expression": {
+                    "SourceRef": {
+                      "Entity": "Desligamentos"
+                    }
+                  },
+                  "Property": "Headcount"
+                }
+              },
+              "queryRef": "Desligamentos.Headcount",
+              "nativeQueryRef": "Headcount"
+            },
+            {
+              "field": {
+                "Measure": {
+                  "Expression": {
+                    "SourceRef": {
+                      "Entity": "Desligamentos"
+                    }
+                  },
+                  "Property": "Status Turnover"
+                }
+              },
+              "queryRef": "Desligamentos.Status Turnover",
+              "nativeQueryRef": "Status Turnover"
+            }
+          ]
+        }
+      }
+    }
+  }
+}

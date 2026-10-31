@@ -1,0 +1,1 @@
+# Advanced Deneb (Vega) Templates

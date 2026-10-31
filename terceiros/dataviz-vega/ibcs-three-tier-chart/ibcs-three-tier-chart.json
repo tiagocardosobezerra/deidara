@@ -1,0 +1,1133 @@
+{
+  "$schema": "https://vega.github.io/schema/vega/v5.json",
+  "description": "IBCS based three-tier chart to show: 1) absolute values, 2) absolute variances, 3) relative variances.",
+  "usermeta": {
+    "Copyright": "Andrzej Leszkiewicz",
+    "License": "MIT Expat License (https://en.wikipedia.org/wiki/MIT_License)",
+    "Permission": "Permission is hereby granted, free of charge, to any person obtaining a copy of this software and associated documentation files (the “Software”), to deal in the Software without restriction, including without limitation the rights to use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies of the Software, and to permit persons to whom the Software is furnished to do so, subject to the following conditions: The above copyright notice and this permission notice shall be included in all copies or substantial portions of the Software.",
+    "Github": "https://github.com/avatorl/Deneb-Vega/",
+    "Design Style": "IBCS Multi-tier bar charts",
+    "Design Style URL": "https://www.ibcs.com/resource/multi-tier-bar-charts/"
+  },
+  "padding": {
+    "left": 0,
+    "top": 0,
+    "right": 0,
+    "bottom": 0
+  },
+  "autosize": "fit",
+  "background": "#FFFFFF",
+  "signals": [
+    {
+      "name": "footnoteText",
+      "value": "IBCS based three-tier chart to show: 1) absolute values, 2) absolute variances, 3) relative variances. Dummy data. Author of Vega implementation: Andrzej Leszkiewicz http://powerofbi.org/."
+    },
+    {"name": "width", "value": 1000},
+    {"name": "height", "value": 600},
+    {
+      "name": "colorMain",
+      "value": "#323232"
+    },
+    {
+      "name": "colorPrev",
+      "description": "color for previous period data",
+      "value": "#c6c6c6"
+    },
+    {
+      "name": "colorNegative",
+      "value": "#ff0000"
+    },
+    {
+      "name": "labelsFontSize",
+      "value": "14"
+    },
+    {
+      "name": "titlesFontSize",
+      "value": "18"
+    },
+    {
+      "name": "colorPositive",
+      "description": "color option: #008e96, #8cb400",
+      "value": "#008e96"
+    },
+    {
+      "name": "sectionWidth",
+      "description": "width of each vertical chart (there are 3 charts)",
+      "update": "width/3"
+    },
+    {
+      "name": "sectionPadding",
+      "description": "padding between the sections (verical charts)",
+      "update": "width/12"
+    },
+    {
+      "name": "fieldName",
+      "description": "row (category) name - data field name",
+      "value": "Name"
+    },
+    {
+      "name": "fieldValue",
+      "description": "value - data field name",
+      "value": "AC"
+    },
+    {
+      "name": "fieldValuePrev",
+      "description": "previous period value - data field name",
+      "value": "PY"
+    },
+    {
+      "name": "fieldAbsVar",
+      "description": "absolute variance - data field name",
+      "value": "DeltaPY"
+    },
+    {
+      "name": "fieldRelVar",
+      "description": "relative variance - data field name",
+      "value": "DeltaPYP"
+    },
+    {
+      "name": "averageRowLabel",
+      "value": "Ø sales rep"
+    },
+    {
+      "name": "sortFieldPrevious",
+      "description": "previous sort field",
+      "init": "fieldValue",
+      "on": [
+        {
+          "events": "@axisNameTitle:click,@axisValueTitle:click,@axisValuePrevTitle:click,@axisDeltaTitle:click,@axisDeltaPTitle:click",
+          "update": "sortField",
+          "force": true
+        }
+      ]
+    },
+    {
+      "name": "sortField",
+      "description": "current sort field (click on an axis name changes the signal to the corresponding data field name)",
+      "init": "fieldValue",
+      "on": [
+        {
+          "events": "@axisNameTitle:click",
+          "update": "fieldName",
+          "force": true
+        },
+        {
+          "events": "@axisValueTitle:click",
+          "update": "fieldValue",
+          "force": true
+        },
+        {
+          "events": "@axisValuePrevTitle:click",
+          "update": "fieldValuePrev",
+          "force": true
+        },
+        {
+          "events": "@axisDeltaTitle:click",
+          "update": "fieldAbsVar",
+          "force": true
+        },
+        {
+          "events": "@axisDeltaPTitle:click",
+          "update": "fieldRelVar",
+          "force": true
+        }
+      ]
+    },
+    {
+      "name": "sortOrderIndex",
+      "description": "0 or 1 (if sortField==sortFieldPrevious, then click on an axis name changes the signal from 0 to 1 or from 1 to 0)",
+      "value": 1,
+      "on": [
+        {
+          "events": "@axisNameTitle:click",
+          "update": "sortField==fieldName&&sortFieldPrevious==sortField?1-sortOrderIndex:sortOrderIndex",
+          "force": true
+        },
+        {
+          "events": "@axisValueTitle:click",
+          "update": "sortField==fieldValue&&sortFieldPrevious==sortField?1-sortOrderIndex:sortOrderIndex",
+          "force": true
+        },
+        {
+          "events": "@axisValuePrevTitle:click",
+          "update": "sortField==fieldValuePrev&&sortFieldPrevious==sortField?1-sortOrderIndex:sortOrderIndex",
+          "force": true
+        },
+        {
+          "events": "@axisDeltaTitle:click",
+          "update": "sortField==fieldAbsVar&&sortFieldPrevious==sortField?1-sortOrderIndex:sortOrderIndex",
+          "force": true
+        },
+        {
+          "events": "@axisDeltaPTitle:click",
+          "update": "sortField==fieldRelVar&&sortFieldPrevious==sortField?1-sortOrderIndex:sortOrderIndex",
+          "force": true
+        }
+      ]
+    },
+    {
+      "name": "sortOrder",
+      "description": "convert 0 to 'ascending', 1 to 'descending'",
+      "update": "sortOrderIndex==0?'ascending':'descending'"
+    },
+    {
+      "name": "arrowDown",
+      "value": "🠧"
+    },
+    {"name": "arrowUp", "value": "🠥"},
+    {
+      "name": "titleSortName",
+      "update": "fieldName+(sortField==fieldName?(sortOrderIndex==0?arrowDown:arrowUp):'')"
+    },
+    {
+      "name": "titleSortValue",
+      "update": "fieldValue+(sortField==fieldValue?(sortOrderIndex==0?arrowDown:arrowUp):'')"
+    },
+    {
+      "name": "titleSortValuePrev",
+      "update": "fieldValuePrev+(sortField==fieldValuePrev?(sortOrderIndex==0?arrowDown:arrowUp):'')"
+    },
+    {
+      "name": "titleSortDelta",
+      "update": "'Δ'+fieldValuePrev+(sortField==fieldAbsVar?(sortOrderIndex==0?arrowDown:arrowUp):'')"
+    },
+    {
+      "name": "titleSortDeltaP",
+      "update": "'Δ'+fieldValuePrev+'%'+(sortField==fieldRelVar?(sortOrderIndex==0?arrowDown:arrowUp):'')"
+    },
+    {
+      "name": "highlight",
+      "description": "name of the row (category) under cursor (to highlight)",
+      "value": null,
+      "on": [
+        {
+          "events": "rect:mouseover",
+          "update": "datum.Name"
+        },
+        {
+          "events": "@text-value:mouseover, @text-abs-var:mouseover,@text-rel-var:mouseover",
+          "update": "datum.datum.Name"
+        },
+        {
+          "events": "@axisNameLabels:mouseover",
+          "update": "datum.label"
+        },
+        {
+          "events": "rect:mouseout, @text-value:mouseout,@text-abs-var:mouseout,@text-rel-var:mouseout, @axisNameLabels:mouseout",
+          "update": "null"
+        }
+      ]
+    }
+  ],
+  "data": [
+    {
+      "name": "data-csv",
+      "url": "https://dl.dropboxusercontent.com/s/xyycv8vd808ye6i/IBCF%20template%2004E.csv",
+      "format": {
+        "type": "csv",
+        "parse": "auto",
+        "delimiter": ","
+      },
+      "transform": [
+        {
+          "type": "formula",
+          "as": "order",
+          "expr": "datum[sortField]"
+        }
+      ]
+    },
+    {
+      "name": "data-blank",
+      "values": [1],
+      "transform": [
+        {
+          "type": "formula",
+          "as": {"signal": "'order'"},
+          "expr": "(sortOrderIndex==0?1:-1)*999999999999998"
+        },
+        {
+          "type": "formula",
+          "as": {"signal": "fieldName"},
+          "expr": "null"
+        },
+        {
+          "type": "formula",
+          "as": {
+            "signal": "fieldValue"
+          },
+          "expr": "null"
+        }
+      ]
+    },
+    {
+      "name": "data-average",
+      "source": "data-csv",
+      "transform": [
+        {
+          "type": "aggregate",
+          "fields": [
+            {"signal": "fieldValue"},
+            {"signal": "fieldValuePrev"}
+          ],
+          "ops": ["average", "average"],
+          "as": [
+            {"signal": "fieldValue"},
+            {"signal": "fieldValuePrev"}
+          ]
+        },
+        {
+          "type": "formula",
+          "as": {
+            "signal": "fieldValue"
+          },
+          "expr": "ceil(datum[fieldValue])"
+        },
+        {
+          "type": "formula",
+          "as": {
+            "signal": "fieldValuePrev"
+          },
+          "expr": "ceil(datum[fieldValuePrev])"
+        },
+        {
+          "type": "formula",
+          "as": {"signal": "fieldName"},
+          "expr": "averageRowLabel"
+        },
+        {
+          "type": "formula",
+          "as": {"signal": "'order'"},
+          "expr": "(sortOrderIndex==0?1:-1)*999999999999999"
+        },
+        {
+          "type": "formula",
+          "as": {
+            "signal": "fieldAbsVar"
+          },
+          "expr": "datum[fieldValue]-datum[fieldValuePrev]"
+        },
+        {
+          "type": "formula",
+          "as": {
+            "signal": "fieldRelVar"
+          },
+          "expr": "ceil((datum[fieldValue]-datum[fieldValuePrev])/datum[fieldValuePrev]*100)"
+        }
+      ]
+    },
+    {
+      "name": "data",
+      "source": [
+        "data-csv",
+        "data-blank",
+        "data-average"
+      ],
+      "transform": [
+        {
+          "type": "extent",
+          "field": {
+            "signal": "fieldValue"
+          },
+          "signal": "extentValue"
+        },
+        {
+          "type": "extent",
+          "field": {
+            "signal": "fieldValuePrev"
+          },
+          "signal": "extentValuePrev"
+        },
+        {
+          "type": "extent",
+          "field": {
+            "signal": "fieldAbsVar"
+          },
+          "signal": "extentAbsVar"
+        }
+      ]
+    }
+  ],
+  "scales": [
+    {
+      "name": "scaleY",
+      "type": "band",
+      "domain": {
+        "data": "data",
+        "field": "Name",
+        "sort": {
+          "field": "order",
+          "order": {
+            "signal": "sortOrder"
+          },
+          "op": "max"
+        }
+      },
+      "range": "height",
+      "padding": 0.1
+    },
+    {
+      "name": "scaleXValue",
+      "type": "linear",
+      "domain": [
+        0,
+        {
+          "signal": "max(extentValue[1],extentValuePrev[1])"
+        }
+      ],
+      "range": [
+        {"signal": "0"},
+        {"signal": "sectionWidth"}
+      ],
+      "nice": true
+    },
+    {
+      "name": "scaleXDelta",
+      "type": "linear",
+      "domain": [
+        {"signal": "extentAbsVar[0]"},
+        {"signal": "extentAbsVar[1]"}
+      ],
+      "range": [
+        {
+          "signal": "sectionWidth+sectionPadding"
+        },
+        {
+          "signal": "sectionWidth+sectionPadding+sectionWidth/max(extentValue[1],extentValuePrev[1])*(extentAbsVar[1]-extentAbsVar[0])"
+        }
+      ],
+      "nice": true
+    },
+    {
+      "name": "scaleXDeltaP",
+      "type": "linear",
+      "domain": {
+        "data": "data",
+        "field": {
+          "signal": "fieldRelVar"
+        }
+      },
+      "range": [
+        {
+          "signal": "sectionWidth+sectionPadding+sectionWidth/max(extentValue[1],extentValuePrev[1])*(extentAbsVar[1]-extentAbsVar[0])"
+        },
+        {
+          "signal": "width-sectionWidth+sectionPadding+sectionWidth/max(extentValue[1],extentValuePrev[1])*(extentAbsVar[1]-extentAbsVar[0])"
+        }
+      ],
+      "nice": true
+    }
+  ],
+  "axes": [
+    {
+      "scale": "scaleY",
+      "orient": "left",
+      "zindex": 1,
+      "domain": true,
+      "ticks": false,
+      "offset": 0,
+      "labelPadding": 5,
+      "labelFont": "Segoe UI",
+      "labelFontSize": {
+        "signal": "labelsFontSize"
+      },
+      "labelFontWeight": {
+        "signal": "'normal'"
+      },
+      "title": {
+        "signal": "titleSortName"
+      },
+      "titleAnchor": "start",
+      "titleAngle": 0,
+      "titleAlign": "right",
+      "titleX": -15,
+      "titleY": -4,
+      "titleColor": {
+        "signal": "colorMain"
+      },
+      "titleFont": "Segoe UI",
+      "titleFontSize": {
+        "signal": "titlesFontSize"
+      },
+      "titleFontWeight": "normal",
+      "encode": {
+        "axis": {
+          "update": {
+            "zindex": {"value": 0}
+          }
+        },
+        "labels": {
+          "interactive": true,
+          "name": "axisNameLabels",
+          "update": {
+            "text": {
+              "signal": "(datum.label==highlight?'':'')+(datum.value!=null?datum.label:'')"
+            },
+            "fontWeight": {
+              "signal": "datum.label==averageRowLabel?'bold':'normal'"
+            }
+          }
+        },
+        "title": {
+          "interactive": true,
+          "name": "axisNameTitle",
+          "update": {
+            "cursor": {
+              "value": "pointer"
+            }
+          }
+        }
+      }
+    },
+    {
+      "scale": "scaleXValue",
+      "orient": "top",
+      "title": {
+        "signal": "titleSortValue"
+      },
+      "titleColor": {
+        "signal": "colorMain"
+      },
+      "titleFont": "Segoe UI",
+      "titleFontSize": {
+        "signal": "titlesFontSize"
+      },
+      "titleFontWeight": "normal",
+      "titleX": {
+        "signal": "sectionWidth/4"
+      },
+      "domain": false,
+      "ticks": false,
+      "labels": false,
+      "encode": {
+        "title": {
+          "interactive": true,
+          "name": "axisValueTitle",
+          "update": {
+            "cursor": {
+              "value": "pointer"
+            }
+          }
+        }
+      }
+    },
+    {
+      "scale": "scaleXValue",
+      "orient": "top",
+      "title": {
+        "signal": "titleSortValuePrev"
+      },
+      "titleColor": {
+        "signal": "colorPrev"
+      },
+      "titleFont": "Segoe UI",
+      "titleFontSize": {
+        "signal": "titlesFontSize"
+      },
+      "titleFontWeight": "normal",
+      "titleX": {
+        "signal": "sectionWidth*3/4"
+      },
+      "domain": false,
+      "ticks": false,
+      "labels": false,
+      "encode": {
+        "title": {
+          "interactive": true,
+          "name": "axisValuePrevTitle",
+          "update": {
+            "cursor": {
+              "value": "pointer"
+            }
+          }
+        }
+      }
+    },
+    {
+      "scale": "scaleXDelta",
+      "orient": "top",
+      "titleColor": {
+        "signal": "colorMain"
+      },
+      "title": {
+        "signal": "titleSortDelta"
+      },
+      "titleFont": "Segoe UI",
+      "titleFontSize": {
+        "signal": "titlesFontSize"
+      },
+      "titleFontWeight": "normal",
+      "domain": false,
+      "ticks": false,
+      "labels": false,
+      "encode": {
+        "title": {
+          "interactive": true,
+          "name": "axisDeltaTitle",
+          "update": {
+            "cursor": {
+              "value": "pointer"
+            }
+          }
+        }
+      }
+    },
+    {
+      "scale": "scaleXDeltaP",
+      "orient": "top",
+      "title": {
+        "signal": "titleSortDeltaP"
+      },
+      "titleColor": {
+        "signal": "colorMain"
+      },
+      "titleFont": "Segoe UI",
+      "titleFontSize": {
+        "signal": "titlesFontSize"
+      },
+      "titleFontWeight": "normal",
+      "domain": false,
+      "ticks": false,
+      "labels": false,
+      "encode": {
+        "title": {
+          "interactive": true,
+          "name": "axisDeltaPTitle",
+          "update": {
+            "cursor": {
+              "value": "pointer"
+            }
+          }
+        }
+      }
+    }
+  ],
+  "marks": [
+    {
+      "name": "rect-value",
+      "type": "rect",
+      "from": {"data": "data"},
+      "zindex": 2,
+      "encode": {
+        "update": {
+          "x": {
+            "scale": "scaleXValue",
+            "value": 0
+          },
+          "x2": {
+            "scale": "scaleXValue",
+            "field": {
+              "signal": "fieldValue"
+            }
+          },
+          "y": {
+            "scale": "scaleY",
+            "field": {
+              "signal": "fieldName"
+            },
+            "band": 0.25
+          },
+          "height": {
+            "scale": "scaleY",
+            "band": 0.665
+          },
+          "fill": {
+            "signal": "colorMain"
+          },
+          "tooltip": {
+            "signal": "fieldValue+': '+datum[fieldValue]+', '+fieldValuePrev+': '+datum[fieldValuePrev]"
+          }
+        }
+      }
+    },
+    {
+      "name": "text-value",
+      "type": "text",
+      "from": {"data": "rect-value"},
+      "zindex": 3,
+      "encode": {
+        "update": {
+          "text": {
+            "signal": "datum.datum[fieldValue]==null?'':format(datum.datum[fieldValue],'d')"
+          },
+          "x": {
+            "field": "x2",
+            "offset": 5
+          },
+          "y": {
+            "field": "y",
+            "offset": {
+              "field": "height",
+              "mult": 0.75
+            }
+          },
+          "font": {
+            "signal": "'Segoe UI'"
+          },
+          "fontSize": {
+            "signal": "labelsFontSize"
+          },
+          "fill": {
+            "signal": "colorMain"
+          },
+          "fontWeight": {
+            "signal": "datum.datum[fieldName]==averageRowLabel?'bold':'normal'"
+          },
+          "tooltip": {
+            "signal": "fieldValue+': '+datum.datum[fieldValue]+', '+fieldValuePrev+': '+datum.datum[fieldValuePrev]"
+          }
+        }
+      }
+    },
+    {
+      "name": "rect-value-prev",
+      "type": "rect",
+      "from": {"data": "data"},
+      "zindex": 1,
+      "encode": {
+        "update": {
+          "x": {
+            "scale": "scaleXValue",
+            "value": 0
+          },
+          "x2": {
+            "scale": "scaleXValue",
+            "field": {
+              "signal": "fieldValuePrev"
+            }
+          },
+          "y": {
+            "scale": "scaleY",
+            "field": {
+              "signal": "fieldName"
+            },
+            "band": 0
+          },
+          "height": {
+            "scale": "scaleY",
+            "band": 0.665
+          },
+          "fill": {
+            "signal": "colorPrev"
+          },
+          "tooltip": {
+            "signal": "fieldValue+': '+datum[fieldValue]+', '+fieldValuePrev+': '+datum[fieldValuePrev]"
+          }
+        }
+      }
+    },
+    {
+      "name": "rect-abs-var",
+      "type": "rect",
+      "from": {"data": "data"},
+      "zindex": 1,
+      "encode": {
+        "update": {
+          "x": {
+            "scale": "scaleXDelta",
+            "value": 0
+          },
+          "x2": {
+            "scale": "scaleXDelta",
+            "field": {
+              "signal": "fieldAbsVar"
+            }
+          },
+          "y": {
+            "scale": "scaleY",
+            "field": "Name",
+            "band": 0.17
+          },
+          "height": {
+            "scale": "scaleY",
+            "band": 0.665
+          },
+          "fill": {
+            "signal": "datum[fieldAbsVar]<0?colorNegative:colorPositive"
+          },
+          "cornerRadius": {
+            "signal": "1"
+          },
+          "tooltip": {
+            "signal": "'Δ'+fieldValuePrev+': '+datum[fieldAbsVar]"
+          }
+        }
+      }
+    },
+    {
+      "name": "text-abs-var",
+      "type": "text",
+      "from": {"data": "rect-abs-var"},
+      "zindex": 2,
+      "encode": {
+        "update": {
+          "text": {
+            "signal": "datum.datum[fieldValue]==null?'':format(datum.datum[fieldAbsVar],'+d')"
+          },
+          "x": {
+            "signal": "datum.datum[fieldAbsVar]<0?datum.x-5:datum.x2+5"
+          },
+          "y": {
+            "field": "y",
+            "offset": {
+              "field": "height",
+              "mult": 0.7
+            }
+          },
+          "align": {
+            "signal": "datum.datum[fieldAbsVar]<0?'right':'left'"
+          },
+          "font": {
+            "signal": "'Segoe UI'"
+          },
+          "fontSize": {
+            "signal": "labelsFontSize"
+          },
+          "fontWeight": {
+            "signal": "datum.datum[fieldName]==averageRowLabel?'bold':'normal'"
+          },
+          "fill": {
+            "signal": "colorMain"
+          },
+          "tooltip": {
+            "signal": "'Δ'+fieldValuePrev+': '+datum.datum[fieldAbsVar]"
+          }
+        }
+      }
+    },
+    {
+      "name": "rect-rel-var-end",
+      "type": "rect",
+      "from": {"data": "data"},
+      "zindex": 1,
+      "encode": {
+        "update": {
+          "x": {
+            "scale": "scaleXDeltaP",
+            "field": {
+              "signal": "fieldRelVar"
+            },
+            "offset": 5
+          },
+          "x2": {
+            "scale": "scaleXDeltaP",
+            "field": {
+              "signal": "fieldRelVar"
+            },
+            "offset": -5
+          },
+          "y": {
+            "scale": "scaleY",
+            "field": "Name",
+            "band": 0.3
+          },
+          "height": {
+            "scale": "scaleY",
+            "band": 0.4
+          },
+          "fill": {
+            "signal": "colorMain"
+          },
+          "cornerRadius": {
+            "signal": "1"
+          },
+          "tooltip": {
+            "signal": "'Δ'+fieldValuePrev+'%: '+datum[fieldRelVar]"
+          }
+        }
+      }
+    },
+    {
+      "name": "rect-rel-var",
+      "type": "rect",
+      "from": {"data": "data"},
+      "zindex": 1,
+      "encode": {
+        "update": {
+          "x": {
+            "scale": "scaleXDeltaP",
+            "value": 0
+          },
+          "x2": {
+            "scale": "scaleXDeltaP",
+            "field": {
+              "signal": "fieldRelVar"
+            }
+          },
+          "y": {
+            "scale": "scaleY",
+            "field": "Name",
+            "band": 0.45
+          },
+          "height": {
+            "scale": "scaleY",
+            "band": 0.1
+          },
+          "fill": {
+            "signal": "datum[fieldRelVar]<0?colorNegative:colorPositive"
+          },
+          "tooltip": {
+            "signal": "'Δ'+fieldValuePrev+'%: '+datum[fieldRelVar]"
+          }
+        }
+      }
+    },
+    {
+      "name": "text-rel-var",
+      "type": "text",
+      "from": {"data": "rect-rel-var"},
+      "zindex": 2,
+      "encode": {
+        "update": {
+          "text": {
+            "signal": "datum.datum[fieldValue]==null?'':format(datum.datum[fieldRelVar],'+d')"
+          },
+          "x": {
+            "signal": "datum.datum[fieldRelVar]<0?(datum.x-10):(datum.x2+10)"
+          },
+          "y": {
+            "field": "y",
+            "offset": {
+              "field": "height",
+              "mult": 2
+            }
+          },
+          "align": {
+            "signal": "datum.datum[fieldRelVar]<0?'right':'left'"
+          },
+          "font": {
+            "signal": "'Segoe UI'"
+          },
+          "fontSize": {
+            "signal": "labelsFontSize"
+          },
+          "fontWeight": {
+            "signal": "datum.datum[fieldName]==averageRowLabel?'bold':'normal'"
+          },
+          "tooltip": {
+            "signal": "'Δ'+fieldValuePrev+'%: '+datum.datum[fieldRelVar]"
+          }
+        }
+      }
+    },
+    {
+      "name": "rule-highlight-row",
+      "zindex": 0,
+      "type": "rule",
+      "encode": {
+        "enter": {
+          "stroke": {
+            "signal": "'yellow'"
+          },
+          "strokeOpacity": {
+            "signal": "0.3"
+          },
+          "strokeWidth": {
+            "scale": "scaleY",
+            "band": 1
+          }
+        },
+        "update": {
+          "x": {
+            "signal": "highlight==null?0:-120"
+          },
+          "x2": {
+            "signal": "highlight==null?0:width+160"
+          },
+          "y": {
+            "scale": "scaleY",
+            "signal": "highlight",
+            "band": 0.44
+          }
+        }
+      }
+    },
+    {
+      "name": "rule-abs-var-axis",
+      "type": "rule",
+      "zindex": 0,
+      "encode": {
+        "enter": {
+          "x": {
+            "scale": "scaleXDelta",
+            "value": 0
+          },
+          "y": {"signal": "0"},
+          "y2": {"signal": "height"},
+          "stroke": {
+            "signal": "colorPrev"
+          },
+          "strokeWidth": {"signal": "2"}
+        }
+      }
+    },
+    {
+      "name": "rule-rel-var-axis",
+      "type": "rule",
+      "zindex": 0,
+      "encode": {
+        "enter": {
+          "x": {
+            "scale": "scaleXDeltaP",
+            "value": 0
+          },
+          "y": {"signal": "0"},
+          "y2": {"signal": "height"},
+          "stroke": {
+            "signal": "colorPrev"
+          },
+          "strokeWidth": {"signal": "2"}
+        }
+      }
+    },
+    {
+      "name": "rule-average-line",
+      "type": "rule",
+      "from": {"data": "data-average"},
+      "zindex": 0,
+      "encode": {
+        "enter": {
+          "x": {
+            "scale": "scaleXValue",
+            "signal": "datum[fieldValue]"
+          },
+          "y": {"signal": "0"},
+          "y2": {"signal": "height+5"},
+          "stroke": {
+            "signal": "colorMain"
+          },
+          "strokeWidth": {
+            "signal": "0.5"
+          }
+        }
+      }
+    },
+    {
+      "name": "symbol-average-arrow",
+      "type": "symbol",
+      "from": {"data": "data-average"},
+      "zindex": 0,
+      "encode": {
+        "enter": {
+          "shape": {
+            "value": "triangle-up"
+          },
+          "x": {
+            "scale": "scaleXValue",
+            "signal": "datum[fieldValue]"
+          },
+          "y": {"signal": "height+5"},
+          "fill": {
+            "signal": "colorMain"
+          },
+          "stroke": {
+            "signal": "colorMain"
+          },
+          "strokeWidth": {
+            "signal": "0.5"
+          }
+        }
+      }
+    },
+    {
+      "name": "text-average-arrow",
+      "type": "text",
+      "from": {
+        "data": "symbol-average-arrow"
+      },
+      "zindex": 2,
+      "encode": {
+        "enter": {
+          "text": {"signal": "'ØAC'"},
+          "x": {"signal": "datum.x"},
+          "y": {"signal": "datum.y+17"},
+          "align": {
+            "signal": "'center'"
+          },
+          "font": {
+            "signal": "'Segoe UI'"
+          },
+          "fontSize": {
+            "signal": "labelsFontSize"
+          },
+          "fontWeight": {
+            "signal": "'bold'"
+          },
+          "fill": {
+            "signal": "colorMain"
+          },
+          "tooltip": {
+            "signal": "'Δ'+fieldValuePrev+': '+datum.datum[fieldAbsVar]"
+          }
+        }
+      }
+    },
+    {
+      "name": "rule-avg-section-divider",
+      "type": "rule",
+      "zindex": 1,
+      "encode": {
+        "enter": {
+          "x": {"signal": "-155"},
+          "x2": {"signal": "width"},
+          "y": {
+            "scale": "scaleY",
+            "signal": "null",
+            "band": 0.44
+          },
+          "opacity": {"signal": "1"},
+          "stroke": {
+            "signal": "'#EFEFEF'"
+          },
+          "strokeWidth": {
+            "scale": "scaleY",
+            "band": 0.4
+          }
+        }
+      }
+    },
+    {
+      "name": "rule-footnote-divider",
+      "type": "rule",
+      "zindex": 1,
+      "encode": {
+        "enter": {
+          "x": {"signal": "-155"},
+          "x2": {"signal": "width"},
+          "y": {"signal": "height+35"},
+          "opacity": {"signal": "1"},
+          "stroke": {
+            "signal": "colorMain"
+          },
+          "strokeWidth": {
+            "signal": "0.3"
+          }
+        }
+      }
+    },
+    {
+      "name": "text-footnote",
+      "type": "text",
+      "zindex": 3,
+      "encode": {
+        "enter": {
+          "text": {
+            "signal": "footnoteText"
+          },
+          "x": {"signal": "-155"},
+          "y": {"signal": "height+50"},
+          "fill": {
+            "signal": "colorMain"
+          },
+          "opacity": {"signal": "0.5"},
+          "font": {
+            "signal": "'Segoe UI'"
+          },
+          "fontSize": {
+            "signal": "labelsFontSize"
+          }
+        }
+      }
+    }
+  ],
+  "config": {}
+}

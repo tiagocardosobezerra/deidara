@@ -193,7 +193,7 @@ class TestProva(unittest.TestCase):
                     'fMeta[Cód. Empresa]\tdEmpresa[CODEMPRESA]\t0\t100\t100\tsim\n')
         codigo, out = _calado(deidara.main, ['provar', '--de', res, '--argila', arq])
         self.assertEqual(codigo, 0, out)
-        r = next(r for r in json.load(open(arq, encoding="utf-8"))['relacionamentos'] if r['de'] == 'fMeta')
+        r = next(r for r in _json(arq)['relacionamentos'] if r['de'] == 'fMeta')
         self.assertEqual(r['declarada']['prova']['pct_linhas_com_par'], 100.0)
         shutil.rmtree(d, ignore_errors=True)
 
@@ -211,6 +211,32 @@ class TestEscala(unittest.TestCase):
         inicio = time.time()
         descoberta.relacionar({'erp': f}, tabs)
         self.assertLess(time.time() - inicio, 15)
+
+    def test_esboco_nao_troca_dimensao_por_tabela_solta_de_colunas_parecidas(self):
+        # revisão D7: com 3.000 tabelas de ruído (colunas CARGO1, MOTIVO2...), o esboço trocava F_CARGO e
+        # N_EMPRESA por tabelas sem nome nem ligação
+        import random
+        from tecnicas import te_no_kuchi
+        r = random.Random(3)
+        with open(os.path.join(EXEMPLO, 'catalogos', 'erp.json'), encoding='utf-8') as fh:
+            c = json.load(fh)
+        dom = ['empresa', 'filial', 'cargo', 'setor', 'cliente', 'produto', 'pedido', 'nota', 'titulo', 'conta',
+               'funcionario', 'desligamento', 'motivo', 'data']
+        for i in range(300):
+            cols = []
+            for j in range(25):
+                o = r.choice(dom)
+                cols.append({'coluna': f'{o.upper()}{j}', 'tipo': 'int', 'familia': 'inteiro', 'descricao': f'{o} {j}'})
+            c['tabelas'][f'T{i:05d}'] = {'descricao': '', 'pk': ['ID'], 'colunas': cols}
+        d = tempfile.mkdtemp(prefix='ddr')
+        arq = os.path.join(d, 'erp.json')
+        with open(arq, 'w', encoding='utf-8') as fh:
+            json.dump(c, fh)
+        cats = {'erp': catalogo.carregar(arq, 'erp'), 'metas': CATALOGOS['metas']}
+        a, _ = te_no_kuchi.esbocar(cats, 'desligamentos por motivo e cargo com a meta de turnover por empresa')
+        origens = {t['origem'] for t in a['tabelas']}
+        self.assertTrue({'F_CARGO', 'N_EMPRESA', 'F_MOTIVO_DESLIGAMENTO'} <= origens, origens)
+        self.assertFalse(any(o.startswith('T0') for o in origens), origens)
 
     def test_relacionar_sem_foco_em_catalogo_grande_pede_assunto(self):
         f = _catalogo_grande(120, 3)

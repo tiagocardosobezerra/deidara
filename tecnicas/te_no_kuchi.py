@@ -13,6 +13,7 @@ marcado e o `validar` não deixa passar:
 - definição de indicador -> "A DEFINIR: ...".
 """
 
+import datetime
 import re
 
 from tecnicas.luneta import descoberta
@@ -42,6 +43,7 @@ ACENTOS = {
     'credito': 'crédito', 'debito': 'débito', 'historico': 'histórico', 'servico': 'serviço', 'preco': 'preço',
     'orcamento': 'orçamento', 'responsavel': 'responsável', 'ultimo': 'último', 'media': 'média', 'contratacao':
     'contratação', 'producao': 'produção', 'avaliacao': 'avaliação', 'deligamento': 'desligamento',
+    'liquido': 'líquido', 'liquida': 'líquida', 'cancelamento': 'cancelamento', 'cotacao': 'cotação',
 }
 
 
@@ -52,7 +54,9 @@ def _acentuar(texto):
 def nome_amigavel(coluna):
     """Nome de exibição curto e com acento: 'Descricao do motivo de desligamento' -> 'Motivo';
     'Codigo da empresa' -> 'Cód. Empresa'."""
-    d = (coluna.get('descricao') or '').strip()
+    d = (coluna.get('descricao') or '').strip().replace('_', ' ')
+    if re.sub(r'[\s_]', '', chave(d)) == re.sub(r'[\s_]', '', chave(coluna['coluna'])):
+        d = ''                                       # a descrição só repete o código (META_VALOR): usa os pedaços
     toks = descoberta.tokens(coluna['coluna'])
     base = d if 3 <= len(d) <= 40 else (' '.join(toks) if toks else coluna['coluna'])
     base = re.sub(r'\s+(do|da|de|dos|das)\s+(colaborador|funcion[aá]rio|empregado|empresa|cliente)$', '', base, flags=re.I)
@@ -107,6 +111,22 @@ def _papeis_do_padrao(p):
     return papeis
 
 
+# palavra do padrão -> como ela costuma aparecer na coluna do ERP (VALORLIQUIDO faz o papel de "Receita Líquida")
+SINONIMOS_PAPEL = {'receita': {'valor', 'faturamento', 'venda', 'vendas', 'vlr', 'receita'},
+                   'custo': {'custo', 'cmv', 'cpv'}, 'pedido': {'pedido', 'nota', 'documento'},
+                   'cliente': {'cliente', 'consumidor'}, 'chamado': {'chamado', 'ticket', 'ocorrencia'}}
+
+
+def _radical(t):
+    return t[:5] if len(t) >= 5 else t
+
+
+def _casa(q, tem):
+    """O token `q` do papel aparece na coluna, pelo nome, por sinônimo ou pelo radical (líquida ~ líquido)."""
+    opcoes = SINONIMOS_PAPEL.get(q, {q})
+    return bool(opcoes & tem) or any(_radical(q) == _radical(x) for x in tem)
+
+
 def _coluna_do_papel(t, nome):
     """A coluna do catálogo que faz o papel de `nome` ('Data de Admissão' -> DATAADMISSAO), ou None."""
     quer = set(descoberta.tokens(nome))
@@ -115,11 +135,83 @@ def _coluna_do_papel(t, nome):
     pontos = []
     for c in candidatas:
         tem = set(descoberta.tokens(c['coluna'])) | set(descoberta.tokens(c.get('descricao') or ''))
-        pontos.append((len(quer & tem), c))
+        pontos.append((sum(1 for q in quer if _casa(q, tem)), c))
     pontos.sort(key=lambda x: -x[0])
     if pontos and pontos[0][0] >= min(2, len(quer)) and (len(pontos) == 1 or pontos[1][0] < pontos[0][0]):
         return pontos[0][1]
     return candidatas[0] if datas and len(candidatas) == 1 else None
+
+
+def _unificar_colunas(cadeias):
+    """A mesma coluna da origem com dois nomes em dois padrões (VALORLIQUIDO é "Receita" no ticket médio e
+    "Receita Líquida" na margem): fica o primeiro nome, e as medidas da segunda cadeia passam a citá-lo."""
+    nome_de = {}
+    for cd in cadeias:
+        for papel, (f, o, _) in cd['tabelas'].items():
+            novas = []
+            for orig, n in cd['colunas'].get(papel, []):
+                primeiro = nome_de.setdefault((f, o, chave(orig)), (papel, n))
+                if primeiro != (papel, n):
+                    for m in cd['medidas']:
+                        for k in ('coluna', 'entradas', 'saidas', 'fim'):
+                            if m.get(k) == f'{papel}[{n}]':
+                                m[k] = f'{primeiro[0]}[{primeiro[1]}]'
+                        if isinstance(m.get('dax'), str):
+                            m['dax'] = m['dax'].replace(f'{papel}[{n}]', f'{primeiro[0]}[{primeiro[1]}]')
+                    n = primeiro[1]
+                novas.append((orig, n))
+            cd['colunas'][papel] = novas
+
+
+def _sem_colisao(argila):
+    """Coluna e medida com o mesmo nome na mesma tabela (a cadeia do padrão chama a coluna e a soma de "Custo"):
+    a coluna vira "Valor de Custo" e as medidas passam a citar o nome novo."""
+    nomes = {chave(m['nome']) for m in argila['medidas']}
+    for t in argila['tabelas']:
+        for c in t['colunas']:
+            if isinstance(c, dict) and chave(c.get('nome') or '') in nomes:
+                velho, c['nome'] = c['nome'], f'Valor de {c["nome"]}'
+                for m in argila['medidas']:
+                    for k in ('coluna', 'entradas', 'saidas', 'fim', 'categoria', 'por'):
+                        if m.get(k) == f'{t["nome"]}[{velho}]':
+                            m[k] = f'{t["nome"]}[{c["nome"]}]'
+                    if isinstance(m.get('dax'), str):
+                        m['dax'] = m['dax'].replace(f'{t["nome"]}[{velho}]', f'{t["nome"]}[{c["nome"]}]')
+                for pg in argila['paginas']:
+                    for v in pg['visuais']:
+                        for k, x in list(v.items()):
+                            if x == f'{t["nome"]}[{velho}]':
+                                v[k] = f'{t["nome"]}[{c["nome"]}]'
+
+
+def _renomear(medidas, de, para):
+    """Troca a referência a [de] por [para] nas medidas (numerador, denominador, base, DAX)."""
+    for m in medidas:
+        for k in ('numerador', 'denominador', 'base', 'meta'):
+            if m.get(k) == de:
+                m[k] = para
+        if isinstance(m.get('dax'), str):
+            m['dax'] = m['dax'].replace(f'[{de}]', f'[{para}]')
+
+
+def _meta_ponderada(meta, alvo, rels, tabs, notas):
+    """Meta de taxa vinda de planilha por área (uma linha por empresa): no total, a média simples pesa igual a área
+    pequena e a grande. O esboço já sai com a média pesada pelo denominador da taxa, item a item da área."""
+    if meta.get('agregacao') != 'media' or alvo.get('tipo') != 'divisao' or not alvo.get('denominador'):
+        return
+    tm = meta['coluna'].split('[')[0]
+    r = next((r for r in rels if r['de'] == tm), None)
+    dim = next((t for t in tabs if r and t['nome'] == r['para']), None)
+    if not dim or not dim['colunas']:
+        return
+    orig = ((r.get('declarada') or {}).get('campos') or [[None, None]])[0][1]
+    col = next((c['nome'] for c in dim['colunas'] if chave(c['coluna']) == chave(orig or '')), dim['colunas'][0]['nome'])
+    meta.pop('agregacao')
+    meta.update({'tipo': 'media_ponderada', 'peso': alvo['denominador'], 'por': f'{dim["nome"]}[{col}]'})
+    meta['descricao'] = (f'Meta de {alvo["nome"]} da fonte ({meta["coluna"]}); com várias linhas de {dim["nome"]} no '
+                         f'filtro, a média das metas pesada por {alvo["denominador"]}.')
+    notas.append(f'meta "{meta["nome"]}" pesada por {alvo["denominador"]} em cada {dim["nome"]} (a média simples '
+                 'daria à área pequena o peso da grande)')
 
 
 def cadeias_do_pedido(catalogos, pedido, dentro=None):
@@ -127,10 +219,15 @@ def cadeias_do_pedido(catalogos, pedido, dentro=None):
     catálogos: [{'padrao', 'tabelas': {papel: (fonte, origem, tipo)}, 'colunas': {papel: [(coluna, nome)]},
     'medidas'}] e as notas do que não deu para achar. `dentro`: só estas (fonte, origem) (escolha à mão)."""
     from tecnicas.sasori import padroes
-    termos = descoberta.termos_do_pedido(pedido)
+    # o padrão entra pela palavra que a pessoa escreveu; o sinônimo só vale se nenhuma palavra bater ("meta" é
+    # sinônimo de "orçamento" na busca de tabelas, mas um pedido de turnover com meta não é orçado x realizado)
+    com_cadeia = [p for p in padroes()['padroes'] if p.get('cadeia')]
+    proprias = set(descoberta.tokens(pedido))
+    termos = proprias if any(proprias & {x for t in p['termos'] for x in descoberta.tokens(t)} for p in com_cadeia) \
+        else descoberta.termos_do_pedido(pedido)
     achadas, notas = [], []
-    for p in padroes()['padroes']:
-        if not p.get('cadeia') or not termos & {x for t in p['termos'] for x in descoberta.tokens(t)}:
+    for p in com_cadeia:
+        if not termos & {x for t in p['termos'] for x in descoberta.tokens(t)}:
             continue
         tabelas, colunas, falta = {}, {}, []
         usadas = set()
@@ -177,6 +274,23 @@ def _aplicar_briefing(argila, briefing, notas):
         if not md:                                        # "turnover" no briefing, "Turnover" na cadeia; ou só parecido
             quer = set(descoberta.tokens(nome))
             md = next((x for x in argila['medidas'] if quer and quer <= set(descoberta.tokens(x['nome']))), None)
+        if not md and quer:                               # "Receita" no briefing = a soma de VALORLIQUIDO no esboço
+            soma = [x for x in argila['medidas'] if x.get('agregacao') == 'soma' and x.get('coluna')
+                    and not x['nome'].lower().startswith('meta')
+                    and all(_casa(q, set(descoberta.tokens(x['coluna'].split('[', 1)[-1]))) for q in quer)]
+            if len(soma) == 1:
+                md = soma[0]
+                notas.append(f'"{md["nome"]}" virou "{nome}", como o gestor chama (confirme que é a mesma conta)')
+                _renomear(argila['medidas'], md['nome'], nome)
+                for pg in argila['paginas']:
+                    for v in pg['visuais']:
+                        for k, val in list(v.items()):
+                            if val == md['nome']:
+                                v[k] = nome
+                            elif isinstance(val, list):
+                                v[k] = [nome if y == md['nome'] else y for y in val]
+                md['nome'] = nome
+                por_nome[chave(nome)] = md
         if not md:
             notas.append(f'indicador "{nome}" do briefing ainda sem medida no esboço: `deidara.py padroes {nome}` e '
                          'acrescente em "medidas"')
@@ -195,8 +309,20 @@ def _aplicar_briefing(argila, briefing, notas):
             alvo = por_nome.get(chave(meta)) or next(
                 (x for x in argila['medidas'] if x['nome'].lower().startswith('meta')
                  and set(descoberta.tokens(nome)) <= set(descoberta.tokens(x['nome']))), None)
+            metas = [x for x in argila['medidas'] if x['nome'].lower().startswith('meta') and x is not md]
+            if not alvo and len(metas) == 1 and not any(x.get('meta') == metas[0]['nome'] for x in argila['medidas']):
+                alvo = metas[0]                           # uma meta só na fonte: é a deste indicador
+                novo = f'Meta de {md["nome"]}'
+                if chave(novo) not in {chave(x['nome']) for x in argila['medidas']}:
+                    _renomear(argila['medidas'], alvo['nome'], novo)
+                    alvo['nome'] = novo
+                    if alvo.get('descricao', '').startswith(PENDENTE_DEF):
+                        alvo['descricao'] = f'Meta de {md["nome"]} da planilha de metas, somada nos meses do filtro.'
+                notas.append(f'"{md["nome"]}" ligado à "{alvo["nome"]}" (a única meta da fonte; confirme com o dono)')
             if alvo:
                 md['meta'] = alvo['nome']
+                if alvo.get('formato') in (None, 'decimal') and md.get('formato'):
+                    alvo['formato'] = md['formato']
             else:
                 notas.append(f'meta de "{nome}" ("{meta}") não achada nos catálogos: catalogue a fonte da meta')
 
@@ -286,6 +412,43 @@ def _sem_distorcao(argila, catalogos, notas):
         pg['visuais'] = ficam
 
 
+def _pela_chave(catalogos, achados, do_padrao, pedido):
+    """Numa fonte com chaves estrangeiras, a tabela que só bate pelas COLUNAS e não se liga a nenhuma outra achada
+    (nem às do padrão) sai, se houver outra que se ligue: num ERP de milhares de tabelas, uma tabela solta com colunas CARGO1..CARGO9
+    não é a dimensão de cargo. E a mãe de uma tabela do padrão com uma palavra do pedido no nome (F_CARGO, mãe do
+    cadastro, para "por cargo") entra mesmo fora da busca. Fonte sem FK (planilha) fica como está."""
+    palavras = set(descoberta.tokens(pedido)) - descoberta.VAZIAS
+    vistas = {(r['fonte'], r['tabela']) for r in achados}
+    vizinhas = []
+    for nome, fonte in catalogos.items():
+        for fk in fonte.fks:
+            mae = (nome, fk['tabela_mae'])
+            if (nome, fk['tabela_filha']) in do_padrao and mae not in vistas and mae not in do_padrao:
+                t = fonte.tabela(fk['tabela_mae']) or {'nome': '', 'descricao': ''}
+                bate = palavras & (set(descoberta.tokens(t['nome'])) | set(descoberta.tokens(t.get('descricao') or '')))
+                if bate:
+                    vistas.add(mae)
+                    vizinhas.append({'fonte': nome, 'tabela': t['nome'], 'pontos': 0, 'colunas': [],
+                                     'descricao': t.get('descricao') or '', 'termos': sorted(bate)})
+    achadas = {(r['fonte'], r['tabela']) for r in achados} | set(do_padrao)
+    ligadas = set()
+    for nome, fonte in catalogos.items():
+        for fk in fonte.fks:
+            a, b = (nome, fk['tabela_filha']), (nome, fk['tabela_mae'])
+            if a in achadas and b in achadas:
+                ligadas |= {a, b}
+
+    def ilha(r):
+        fonte = catalogos[r['fonte']]
+        if not fonte.fks or (r['fonte'], r['tabela']) in ligadas | set(do_padrao):
+            return False
+        t = fonte.tabela(r['tabela'])
+        no_nome = set(descoberta.tokens(t['nome'])) | set(descoberta.tokens(t.get('descricao') or ''))
+        return not (no_nome & set(r['termos']))
+    boas = [r for r in achados if not ilha(r)] + vizinhas
+    return boas or achados
+
+
 def esbocar(catalogos, pedido, projeto=None, tabelas=None, limite=6, briefing=None, do_cartao=None):
     """Devolve (argila, notas). `tabelas`: [(fonte, origem)] para escolher à mão; senão, a busca escolhe.
     `briefing`: as respostas do gestor (painel.json); sem pedido, o pedido sai dele. `do_cartao`: os indicadores do
@@ -300,7 +463,7 @@ def esbocar(catalogos, pedido, projeto=None, tabelas=None, limite=6, briefing=No
     else:
         cadeias, notas_cadeia = cadeias_do_pedido(catalogos, pedido)
         do_padrao = {(f, o) for cd in cadeias for f, o, _ in cd['tabelas'].values()}
-        achados = descoberta.buscar(catalogos, pedido, limite)
+        achados = _pela_chave(catalogos, descoberta.buscar(catalogos, pedido, limite * 5), do_padrao, pedido)[:limite]
         literais = set(descoberta.tokens(pedido))
         # só as tabelas que batem com uma palavra DITA no pedido (não só por sinônimo) ou que o padrão pede
         diretas = [r for r in achados if literais & set(r['termos']) or (r['fonte'], r['tabela']) in do_padrao]
@@ -317,6 +480,7 @@ def esbocar(catalogos, pedido, projeto=None, tabelas=None, limite=6, briefing=No
     if tabelas:
         cadeias, notas_cadeia = cadeias_do_pedido(catalogos, pedido, set(escolhidas))
     notas += notas_cadeia
+    _unificar_colunas(cadeias)
     papel_de = {(f, o): (papel, tipo) for cd in cadeias for papel, (f, o, tipo) in cd['tabelas'].items()}
     cols_do_papel = {}
     for cd in cadeias:
@@ -408,26 +572,42 @@ def esbocar(catalogos, pedido, projeto=None, tabelas=None, limite=6, briefing=No
             datas.append({'tabela': tb['nome'], 'coluna': d['nome']})
 
     # medidas: a cadeia dos padrões citados primeiro; depois contagem de cada fato e soma de cada valor
-    medidas = [md for cd in cadeias for md in cd['medidas']]
+    medidas, iguais = [], {}
+    for md in (md for cd in cadeias for md in cd['medidas']):
+        chave_conta = (md.get('agregacao'), md.get('coluna') or md.get('tabela')) if md.get('agregacao') else None
+        if chave_conta and chave_conta in iguais:       # "Receita Líquida" da margem = "Receita" do ticket médio
+            _renomear(medidas + [md for cd in cadeias for md in cd['medidas']], md['nome'], iguais[chave_conta])
+            continue
+        if chave_conta:
+            iguais[chave_conta] = md['nome']
+        medidas.append(md)
     fatos_do_padrao = {nomes[k] for k, (_, tipo) in papel_de.items() if tipo == 'fato'}
     for tb in tabs:
         if tb['tipo'] != 'fato' or tb['nome'] in fatos_do_padrao:
             continue
         rotulo = re.sub(r'^f', '', tb['nome'])
         t = catalogos[tb['fonte']].tabela(tb['origem'])
-        if _datas(t):                                   # contagem só faz sentido em fato de evento (com data)
+        de_metas = bool(set(descoberta.tokens(tb['origem'])) & {'meta', 'orcamento', 'budget', 'plano', 'objetivo'})
+        if _datas(t) and not de_metas:                  # contagem só faz sentido em fato de evento (com data)
             medidas.append({'nome': f'Qtd {rotulo}', 'agregacao': 'contagem_linhas', 'tabela': tb['nome'],
                             'descricao': f'{PENDENTE_DEF}: o que cada linha de {tb["origem"]} representa e o que conta',
                             'pasta': rotulo})
         for c in tb['colunas']:
             if t['colunas'][chave(c['coluna'])].get('familia') in ('decimal', 'real'):
                 toks = set(descoberta.tokens(c['coluna'])) | set(descoberta.tokens(c['nome']))
-                taxa = toks & {'meta', 'percentual', 'pct', 'taxa', 'indice', 'perc', 'media', 'aliquota'}
-                nome_md = (f'Meta de {re.sub(r"^meta\s*", "", c["nome"], flags=re.I).strip() or rotulo}'
-                           if 'meta' in toks else f'{"Média" if taxa else "Total"} {c["nome"]}')
+                taxa = toks & {'percentual', 'pct', 'taxa', 'indice', 'perc', 'media', 'aliquota', 'turnover', 'margem'}
+                eh_meta = 'meta' in toks or de_metas
+                sem_meta = re.sub(r'^meta[\s_]*', '', c['nome'], flags=re.I).replace('_', ' ').strip()   # Python 3.8
+                if sem_meta.lower() in ('valor', 'vl', 'total', ''):
+                    sem_meta = ''
+                rot_meta = re.sub(r'^metas?_?', '', rotulo, flags=re.I) or rotulo
+                nome_md = (f'Meta de {sem_meta or rot_meta}' if eh_meta
+                           else f'{"Média" if taxa else "Total"} {c["nome"]}')
+                # meta de taxa (turnover) faz média das linhas; meta de valor (receita do mês) soma no período
                 medidas.append({'nome': nome_md,
                                 'agregacao': 'media' if taxa else 'soma', 'coluna': f'{tb["nome"]}[{c["nome"]}]',
-                                'formato': 'percentual' if taxa - {'media', 'indice'} else 'decimal',
+                                'formato': 'percentual' if taxa - {'media', 'indice'} else (
+                                    'moeda' if eh_meta and toks & {'valor', 'receita', 'venda', 'faturamento'} else 'decimal'),
                                 'descricao': f'{PENDENTE_DEF}: o que este número significa para o negócio',
                                 'pasta': rotulo})
 
@@ -447,6 +627,7 @@ def esbocar(catalogos, pedido, projeto=None, tabelas=None, limite=6, briefing=No
             if meta['descricao'].startswith(PENDENTE_DEF):
                 meta['descricao'] = (f'Meta de {alvo["nome"]} da fonte, coluna {meta["coluna"]} '
                                      f'({"média" if meta["agregacao"] == "media" else "soma"} das linhas no filtro).')
+            _meta_ponderada(meta, alvo, rels, tabs, notas)
             notas.append(f'"{alvo["nome"]}" ligado à meta "{meta["nome"]}" (a meta precisa chegar pelos mesmos cortes)')
 
     # página de visão geral: o fato principal (o do padrão, ou o primeiro com data) e só os cortes que chegam nele
@@ -500,10 +681,12 @@ def esbocar(catalogos, pedido, projeto=None, tabelas=None, limite=6, briefing=No
               'descricao': f'{PENDENTE_DEF}: para que serve o painel e que decisão ele apoia',
               'publico': PENDENTE_DEF, 'fontes': {}, 'tabelas': tabs, 'relacionamentos': rels,
               'medidas': medidas, 'paginas': [{'nome': 'Visão Geral', 'visuais': vis}]}
-    if datas:
-        anos = 2018, 2026
-        argila['calendario'] = {'inicio': anos[0], 'fim': anos[1], 'datas': datas}
+    if datas:                                        # sem "fim": o calendário acompanha o ano corrente
+        argila['calendario'] = {'inicio': datetime.date.today().year - 5, 'datas': datas}
+        notas.append(f'o calendário começa em {argila["calendario"]["inicio"]}: confirme com o dono do dado o ano do '
+                     'registro mais antigo que o painel precisa (o 03_qualidade.sql conta as datas fora dele)')
     _aplicar_briefing(argila, briefing, notas)
+    _sem_colisao(argila)
     _do_cartao(argila, do_cartao, notas)
     _sem_distorcao(argila, catalogos, notas)
     from tecnicas import c2                          # o dragão escolhe os visuais pela pergunta do painel

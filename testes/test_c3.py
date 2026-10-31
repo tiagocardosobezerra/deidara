@@ -85,7 +85,7 @@ class TestMigracao(unittest.TestCase):
         papeis, estilos = {}, {}
         for raiz, _, fs in os.walk(os.path.join(saida, 'Quadro_e_Turnover.Report')):
             if 'visual.json' in fs:
-                v = json.load(open(os.path.join(raiz, 'visual.json'), encoding='utf-8'))['visual']
+                v = _json(os.path.join(raiz, 'visual.json'))['visual']
                 papeis.setdefault(v['visualType'], set()).update((v.get('query') or {}).get('queryState', {}).keys())
                 estilos.setdefault(v['visualType'], set()).update((v.get('objects') or {}).keys())
         self.assertEqual(papeis['advancedSlicerVisual'], {'Values'})
@@ -182,7 +182,7 @@ class TestMigracao(unittest.TestCase):
         grades = []
         for raiz, _, fs in os.walk(os.path.join(saida, 'Quadro_e_Turnover.Report')):
             if 'visual.json' in fs:
-                v = json.load(open(os.path.join(raiz, 'visual.json'), encoding='utf-8'))['visual']
+                v = _json(os.path.join(raiz, 'visual.json'))['visual']
                 grades += [g['properties']['imageHeight']['expr']['Literal']['Value'] for g in (v.get('objects') or {}).get('grid', [])]
         self.assertIn('64D', grades)                   # o radar pede a linha alta
         with open(os.path.join(d, 'argila.prototipo.html'), encoding='utf-8') as f:

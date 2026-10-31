@@ -1,0 +1,239 @@
+{
+  "$schema": "https://vega.github.io/schema/vega/v5.json",
+  "description": "Reproduction of the chart initially designed by Jorge Camões",
+  "usermeta": {
+    "Copyright": "Andrzej Leszkiewicz",
+    "License": "MIT Expat License (https://en.wikipedia.org/wiki/MIT_License)",
+    "Permission": "Permission is hereby granted, free of charge, to any person obtaining a copy of this software and associated documentation files (the “Software”), to deal in the Software without restriction, including without limitation the rights to use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies of the Software, and to permit persons to whom the Software is furnished to do so, subject to the following conditions: The above copyright notice and this permission notice shall be included in all copies or substantial portions of the Software.",
+    "Github": "https://github.com/avatorl/Deneb-Vega/",
+    "Original Idea Author": "Jorge Camoes",
+    "Original Idea URL": "https://excelcharts.com/beautiful-but-terrible-population-pyramids/"
+  },
+  "width": 600,
+  "height": 1000,
+  "padding": 20,
+  "config": {
+    "background": "black",
+    "axis": {
+      "titleFont": "Tahoma",
+      "titleFontSize": 18,
+      "titleOpacity": {"signal": "opacityMain"},
+      "titleColor": {"signal": "colorMain"},
+      "labels": true,
+      "labelFont": "Tahoma",
+      "labelFontSize": 13,
+      "labelOpacity": {"signal": "opacityMain"},
+      "labelColor": {"signal": "colorMain"},
+      "labelPadding": 5,
+      "ticks": true,
+      "tickOpacity": {"signal": "opacityMain"},
+      "tickColor": {"signal": "colorMain"},
+      "domain": false
+    }
+  },
+  "signals": [
+    {"name": "colorMain", "value": "#E65B15"},
+    {"name": "opacityMain", "value": 0.8}
+  ],
+  "data": [
+    {
+      "name": "dataset-csv",
+      "url": "https://raw.githubusercontent.com/avatorl/Deneb-Vega/main/population-pyramid/Qatar1950-2100Population.csv",
+      "format": {"type": "csv", "parse": "auto", "delimiter": ","}
+    },
+    {"name": "dataset", "source": "dataset-csv"},
+    {
+      "name": "data-max",
+      "source": "dataset",
+      "transform": [
+        {"type": "aggregate", "fields": ["Max"], "ops": ["max"], "as": ["max"]}
+      ]
+    },
+    {
+      "name": "data-min",
+      "source": "data-max",
+      "transform": [{"type": "formula", "expr": "-datum.max", "as": "max"}]
+    },
+    {"name": "data-range", "source": ["data-max", "data-min"]}
+  ],
+  "scales": [
+    {
+      "name": "scaleY",
+      "type": "point",
+      "range": "height",
+      "domain": {"data": "dataset", "field": "AgeGrp"},
+      "reverse": true
+    },
+    {
+      "name": "scaleX",
+      "type": "linear",
+      "range": "width",
+      "domain": {"data": "data-range", "field": "max"}
+    },
+    {
+      "name": "scaleColor",
+      "type": "linear",
+      "range": {"scheme": "oranges"},
+      "domain": {"data": "dataset", "field": "Year", "sort": true},
+      "reverse": true
+    }
+  ],
+  "axes": [
+    {
+      "orient": "left",
+      "scale": "scaleY",
+      "title": "Male Age Group",
+      "titleAngle": 0,
+      "titleAnchor": "end",
+      "titleAlign": "left",
+      "titleY": -15,
+      "labelColor": {"signal": "colorMain"},
+      "tickColor": {"signal": "colorMain"},
+      "encode": {
+        "labels": {
+          "update": {
+            "text": {
+              "signal": "(ceil(datum.value/10)==datum.value/10)?(datum.label+(datum.value==100?'+':'')):''"
+            }
+          }
+        },
+        "ticks": {
+          "update": {
+            "strokeWidth": {
+              "signal": "(ceil(datum.value/10)==datum.value/10)?'1':0.3"
+            }
+          }
+        }
+      }
+    },
+    {
+      "orient": "right",
+      "scale": "scaleY",
+      "title": "Female Age Group",
+      "titleAngle": 0,
+      "titleAnchor": "end",
+      "titleAlign": "right",
+      "titleY": -15,
+      "encode": {
+        "labels": {
+          "update": {
+            "text": {
+              "signal": "(ceil(datum.value/10)==datum.value/10)?(datum.label+(datum.value==100?'+':'')):''"
+            }
+          }
+        },
+        "ticks": {
+          "update": {
+            "strokeWidth": {
+              "signal": "(ceil(datum.value/10)==datum.value/10)?'1':0.3"
+            }
+          }
+        }
+      }
+    },
+    {
+      "orient": "bottom",
+      "scale": "scaleX",
+      "title": "% of Population",
+      "titlePadding": 15,
+      "encode": {
+        "labels": {"update": {"text": {"signal": "abs(datum.value)+'%'"}}}
+      }
+    }
+  ],
+  "legends": [
+    {
+      "type": "gradient",
+      "fill": "scaleColor",
+      "orient": "left",
+      "title": "Year",
+      "titleColor": {"signal": "colorMain"},
+      "titleFont": "Tahoma",
+      "titleFontSize": 14,
+      "titleAlign": "center",
+      "offset": 10,
+      "labelColor": {"signal": "colorMain"},
+      "labelAlign": "center",
+      "labelOffset": 10,
+      "labelFontSize": 13,
+      "format": ".4"
+    }
+  ],
+  "title": {
+    "anchor": "start",
+    "fontSize": 22,
+    "text": {"signal": "'Qatar Population Pyramid, 1950-2100'"},
+    "color": {"signal": "colorMain"},
+    "subtitle": "Reproduction of the chart initially designed by Jorge Camões",
+    "subtitleColor": {"signal": "colorMain"},
+    "subtitlePadding": 5,
+    "dy": -20
+  },
+  "marks": [
+    {
+      "type": "group",
+      "from": {
+        "facet": {"name": "series", "data": "dataset", "groupby": "Year"}
+      },
+      "marks": [
+        {
+          "type": "line",
+          "from": {"data": "series"},
+          "encode": {
+            "enter": {
+              "x": {"scale": "scaleX", "signal": "datum.Female"},
+              "y": {"scale": "scaleY", "field": "AgeGrp"},
+              "stroke": {"scale": "scaleColor", "field": "Year"},
+              "strokeWidth": {"value": 0.5}
+            },
+            "update": {
+              "interpolate": {"signal": "'linear'"},
+              "strokeOpacity": {"value": 1}
+            },
+            "hover": {"strokeOpacity": {"value": 0.5}}
+          }
+        },
+        {
+          "type": "line",
+          "from": {"data": "series"},
+          "encode": {
+            "enter": {
+              "x": {"scale": "scaleX", "signal": "-datum.Male"},
+              "y": {"scale": "scaleY", "field": "AgeGrp"},
+              "stroke": {"scale": "scaleColor", "field": "Year"},
+              "strokeWidth": {"value": 0.5}
+            },
+            "update": {
+              "interpolate": {"signal": "'linear'"},
+              "strokeOpacity": {"value": 1}
+            },
+            "hover": {"strokeOpacity": {"value": 0.5}}
+          }
+        },
+        {
+          "type": "text",
+          "name": "DataSource",
+          "align": "left",
+          "encode": {
+            "enter": {
+              "align": {"value": "right"},
+              "text": {"value": "Data Source: UN 🔗"},
+              "x": {"signal": "50"},
+              "y": {"signal": "height+75"},
+              "strokeWidth": {"value": 0},
+              "fill": {"signal": "colorMain"},
+              "fillOpacity": {"signal": "0.2"},
+              "font": {"value": "Tahoma"},
+              "fontWeight": {"value": "normal"},
+              "fontSize": {"value": 12},
+              "href": {
+                "value": "https://population.un.org/wpp/Download/Standard/CSV/"
+              },
+              "cursor": {"value": "pointer"}
+            }
+          }
+        }
+      ]
+    }
+  ]
+}

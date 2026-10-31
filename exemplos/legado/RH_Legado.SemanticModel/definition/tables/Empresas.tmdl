@@ -1,0 +1,24 @@
+table Empresas
+	lineageTag: 27100a2e-6563-525d-8738-a586c826b336
+
+	column CodEmpresa
+		dataType: int64
+		isHidden
+		lineageTag: db8f8cf1-519d-5ca1-8a0b-21ac9470c799
+		summarizeBy: none
+		sourceColumn: CodEmpresa
+
+	column Empresa
+		dataType: string
+		lineageTag: 8e4bbd74-541e-5519-80be-5c19e577bbe3
+		summarizeBy: none
+		sourceColumn: Empresa
+
+	partition Empresas = m
+		mode: import
+		source =
+				let
+				    Fonte = Sql.Database("SRV-RH", "RH"),
+				    Dados = Value.NativeQuery(Fonte, "SELECT * FROM dbo.EMPRESAS")
+				in
+				    Dados

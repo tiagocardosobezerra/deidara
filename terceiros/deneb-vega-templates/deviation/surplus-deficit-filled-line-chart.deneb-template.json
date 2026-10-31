@@ -1,0 +1,329 @@
+{
+  "$schema": "https://vega.github.io/schema/vega/v5.json",
+  "usermeta": {
+    "deneb": {
+      "build": "1.5.1.0",
+      "metaVersion": 1,
+      "provider": "vega",
+      "providerVersion": "5.23.0"
+    },
+    "interactivity": {
+      "tooltip": true,
+      "contextMenu": true,
+      "selection": true,
+      "highlight": true,
+      "dataPointLimit": 50
+    },
+    "information": {
+      "name": "Deviation - Surplus/Deficit Filled Line Chart",
+      "description": "To show balance against a baseline or between 2 series",
+      "author": "Andrzej Leszkiewicz",
+      "uuid": "bfc091ce-549c-4202-8283-ae91beea583f",
+      "generated": "2023-09-15T22:02:12.665Z"
+    },
+    "dataset": [
+      {
+        "key": "__0__",
+        "name": "Date",
+        "description": "Date-time",
+        "type": "dateTime",
+        "kind": "column"
+      },
+      {
+        "key": "__1__",
+        "name": "Difference",
+        "description": "Values (negative/positive variance)",
+        "type": "numeric",
+        "kind": "column"
+      }
+    ],
+    "Project": "Deneb Vega Templates by Andrzej Leszkiewicz",
+    "Github": "https://github.com/avatorl/Deneb-Vega-Templates/",
+    "Author": "Andrzej Leszkewicz",
+    "License": "CC BY 4.0 (Share and Adapt with Attribution)",
+    "Inspired By (chart types)": "FT Visual Vocabulary (https://ft.com/vocabulary)"
+  },
+  "config": {},
+  "description": "Deviation - Surplus/Deficit Filled Line Chart. To show balance against a baseline or between 2 series.",
+  "padding": 15,
+  "autosize": "fit",
+  "background": "white",
+  "signals": [
+    {
+      "name": "width",
+      "description": "Responsive. Based on container size.",
+      "value": 400,
+      "update": "containerSize()[0]-30"
+    },
+    {
+      "name": "height",
+      "description": "Responsive. Based on container size.",
+      "value": 400,
+      "update": "containerSize()[1]-30"
+    },
+    {
+      "name": "titleText",
+      "value": "Surplus/Deficit Filled Line Chart"
+    },
+    {
+      "name": "subTitleText",
+      "value": "To show balance against a baseline or between 2 series"
+    },
+    {
+      "name": "barColor1",
+      "init": "pbiColor(0)"
+    },
+    {
+      "name": "barColor2",
+      "init": "pbiColor(2)"
+    },
+    {
+      "name": "titleColor",
+      "value": "#333333"
+    },
+    {
+      "name": "labelColor",
+      "value": "#666666"
+    },
+    {
+      "name": "titleFontSize",
+      "value": 24
+    },
+    {
+      "name": "subtitleFontSize",
+      "value": 16
+    },
+    {
+      "name": "labelFontSize",
+      "value": 16
+    },
+    {
+      "name": "strokeWidth",
+      "value": 0.5
+    },
+    {
+      "name": "strokeColor",
+      "value": "#666666"
+    },
+    {
+      "name": "titleOffset",
+      "description": "Blank space between the subtitle and the chart, px",
+      "value": 20
+    },
+    {
+      "name": "subtitlePadding",
+      "description": "Blank space between the title and the subtitle, px",
+      "value": 10
+    },
+    {
+      "name": "leftPadding",
+      "description": "For Axis Y",
+      "value": 10
+    },
+    {
+      "name": "bottomPadding",
+      "description": "For Axis X",
+      "value": 10
+    },
+    {
+      "name": "periods",
+      "description": "number of periods",
+      "update": "(length(data('dataset'))-1)"
+    },
+    {
+      "name": "pixelsPerDate",
+      "description": "number of pixels per period",
+      "update": "round((width-leftPadding)/periods)"
+    }
+  ],
+  "data": [
+    {"name": "dataset"},
+    {
+      "name": "pixels",
+      "transform": [
+        {
+          "type": "sequence",
+          "start": 0,
+          "stop": {
+            "signal": "width-leftPadding"
+          },
+          "as": "x"
+        },
+        {
+          "type": "formula",
+          "expr": "floor(datum.x/pixelsPerDate)",
+          "as": "row"
+        },
+        {
+          "type": "formula",
+          "expr": "datum.row+1",
+          "as": "row2"
+        },
+        {
+          "type": "formula",
+          "expr": "(datum.x/pixelsPerDate-floor(datum.x/pixelsPerDate))*pixelsPerDate",
+          "as": "rowx"
+        },
+        {
+          "type": "lookup",
+          "from": "dataset",
+          "key": "__row__",
+          "fields": ["row"],
+          "values": ["__1__"],
+          "as": ["dif1"]
+        },
+        {
+          "type": "lookup",
+          "from": "dataset",
+          "key": "__row__",
+          "fields": ["row2"],
+          "values": ["__1__"],
+          "as": ["dif2"]
+        },
+        {
+          "type": "formula",
+          "expr": "((datum.dif2-datum.dif1)/pixelsPerDate*datum.rowx+datum.dif1)",
+          "as": "y"
+        }
+      ]
+    }
+  ],
+  "scales": [
+    {
+      "name": "scaleTime",
+      "type": "time",
+      "domain": {
+        "data": "dataset",
+        "field": "__0__"
+      },
+      "range": [
+        {"signal": "leftPadding"},
+        {"signal": "width"}
+      ],
+      "nice": true
+    },
+    {
+      "name": "scaleValue",
+      "type": "linear",
+      "domain": {
+        "data": "dataset",
+        "field": "__1__"
+      },
+      "range": [
+        {
+          "signal": "height-bottomPadding"
+        },
+        {"signal": "0"}
+      ],
+      "nice": true
+    }
+  ],
+  "title": {
+    "text": {"signal": "titleText"},
+    "anchor": "start",
+    "offset": {"signal": "titleOffset"},
+    "color": {"signal": "titleColor"},
+    "fontSize": {
+      "signal": "titleFontSize"
+    },
+    "subtitle": {
+      "signal": "subTitleText"
+    },
+    "subtitlePadding": {
+      "signal": "subtitlePadding"
+    },
+    "subtitleFontSize": {
+      "signal": "subtitleFontSize"
+    }
+  },
+  "axes": [
+    {
+      "orient": "left",
+      "scale": "scaleValue",
+      "labels": true,
+      "grid": false,
+      "labelFontSize": {
+        "signal": "labelFontSize"
+      },
+      "labelColor": {
+        "signal": "labelColor"
+      },
+      "labelOverlap": true,
+      "ticks": true
+    },
+    {
+      "orient": "bottom",
+      "scale": "scaleTime",
+      "labels": true,
+      "grid": false,
+      "labelFontSize": {
+        "signal": "labelFontSize"
+      },
+      "labelColor": {
+        "signal": "labelColor"
+      },
+      "labelOverlap": true,
+      "ticks": true
+    }
+  ],
+  "marks": [
+    {
+      "name": "area-positive",
+      "type": "area",
+      "from": {"data": "pixels"},
+      "encode": {
+        "enter": {
+          "x": {
+            "signal": "leftPadding+datum.x"
+          },
+          "y": {
+            "scale": "scaleValue",
+            "signal": "datum.y>0?datum.y:0"
+          },
+          "y2": {
+            "scale": "scaleValue",
+            "signal": "0"
+          },
+          "fill": {
+            "signal": "barColor1"
+          },
+          "stroke": {
+            "signal": "strokeColor"
+          },
+          "strokeWidth": {
+            "signal": "strokeWidth"
+          }
+        }
+      }
+    },
+    {
+      "name": "area-negative",
+      "type": "area",
+      "from": {"data": "pixels"},
+      "encode": {
+        "enter": {
+          "x": {
+            "signal": "leftPadding+datum.x"
+          },
+          "y": {
+            "scale": "scaleValue",
+            "signal": "datum.y<0?datum.y:0"
+          },
+          "y2": {
+            "scale": "scaleValue",
+            "signal": "0"
+          },
+          "fill": {
+            "signal": "barColor2"
+          },
+          "stroke": {
+            "signal": "strokeColor"
+          },
+          "strokeWidth": {
+            "signal": "strokeWidth"
+          }
+        }
+      }
+    }
+  ]
+}
