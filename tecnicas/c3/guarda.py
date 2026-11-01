@@ -9,7 +9,9 @@ de terceiros:
 - a linha no tempo sem o eixo dos meses: o leitor não sabe de que mês é cada ponto;
 - o nome do item cortado no eixo das barras ("Departam..."): a margem do eixo vai a 45%;
 - o seletor de estado antigo no segmentador de botões ("selected", "hover"), que passa no schema e o Desktop
-  ignora calado (o texto do botão escolhido ficava branco no branco).
+  ignora calado (o texto do botão escolhido ficava branco no branco);
+- o texto do botão 100% transparente (o dashboard do kpis-clicaveis usava imagem no botão): os botões de
+  período e as abas saíam vazios.
 """
 
 import copy
@@ -66,6 +68,8 @@ def aplicar(tipo, vis):
         eixo['fontSize'] = _lit(11)
     elif tipo == 'advancedSlicerVisual':
         _estados(objetos)
+        for e in objetos.get('value', []):          # texto do botão sempre visível
+            e.get('properties', {}).pop('transparency', None)
     if not objetos:
         vis.pop('objects')
     return vis
