@@ -16,6 +16,7 @@ import glob
 import json
 import os
 import re
+from tecnicas.luneta.receitas import detectar_receita, ler_colado
 
 NOME = r"('(?:[^']|'')+'|[^\s'=.\[\]]+)"
 
@@ -382,7 +383,6 @@ def de_receita(linhas):
 # ===================================================================== entrada
 def ler(alvo):
     """Lê o que a pessoa passou: pasta de projeto, arquivo .pbip, resultado da receita, arquivo DAX ou o texto."""
-    from tecnicas.luneta.receitas import detectar_receita, ler_colado
     if os.path.isdir(alvo) or (os.path.isfile(alvo) and alvo.lower().endswith('.pbip')):
         return de_tmdl(alvo)
     if os.path.isfile(alvo):

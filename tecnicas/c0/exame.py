@@ -18,6 +18,7 @@ from kibaku_nendo.modelo import boas_praticas_dax, sintaxe_dax
 from kibaku_nendo.util import chave
 from tecnicas import sasori
 from tecnicas.c0.anatomia import TEMPO, dependencias, em_ciclo, limpo, refs_de, sem_texto
+from tecnicas.c0 import anatomia
 
 PESO = {'critico': 3.0, 'alto': 1.5, 'medio': 0.5, 'baixo': 0.1}
 ORDEM = {'critico': 0, 'alto': 1, 'medio': 2, 'baixo': 3}
@@ -380,7 +381,6 @@ def fns_condicao(up):
 
 def examinar(leg, so=None):
     """{'modelo': [achados], 'medidas': {nome: {...}}, 'nota_modelo', 'nota'}."""
-    from tecnicas.c0 import anatomia
     sasori.registrar_extras(leg.get('funcoes') or ())   # as funções do usuário do próprio modelo valem
     medidas = {}
     for nome, md in leg['medidas'].items():

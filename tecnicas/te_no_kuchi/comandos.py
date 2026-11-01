@@ -10,6 +10,7 @@ from tecnicas import memory_card
 from tecnicas import te_no_kuchi as esboco
 from tecnicas.luneta import receitas
 from kibaku_nendo.util import gravar_json, gravar_texto, ler_json
+from tecnicas.luneta import descoberta, treino
 
 
 ROTEIRO = """# {projeto} — roteiro
@@ -135,7 +136,6 @@ def cmd_esbocar(a):
         projeto = projeto or painel.get('projeto')
         briefing = painel.get('briefing') or {}
     if tabelas and a.pedido:                       # a pessoa corrigiu a escolha: a Luneta aprende (luneta/treino.py)
-        from tecnicas.luneta import descoberta, treino
         treino.aprender_tabelas(sorted(set(descoberta.tokens(a.pedido)) - descoberta.VAZIAS),
                                 [cats[f].tabela(t)['nome'] for f, t in tabelas if f in cats and cats[f].tabela(t)])
     try:
@@ -172,3 +172,19 @@ def cmd_esbocar(a):
     print(f'Próximo passo: `deidara.py validar {saida}` e ajuste o esboço com o usuário; com ligação "A CONFIRMAR", '
           'o protótipo já sai (a ligação fica nas pendências) para o gestor reagir cedo.')
     return 0
+
+
+def registrar(sub):
+    nv = sub.add_parser('novo', help='cria a pasta de um painel novo, com receitas e roteiro')
+    nv.add_argument('pasta')
+    nv.add_argument('--projeto')
+    nv.set_defaults(func=cmd_novo)
+    es = sub.add_parser('esbocar', help='primeiro argila.json a partir dos catálogos e do pedido')
+    es.add_argument('alvo', help='a pasta do painel (com catalogos/) ou um catálogo')
+    es.add_argument('--catalogos', nargs='+', help='mais catálogos (quando o alvo é um catálogo)')
+    es.add_argument('--pedido', help='o que o painel precisa mostrar, em português (sem ele, sai do briefing do painel.json)')
+    es.add_argument('--projeto')
+    es.add_argument('--tabelas', help='escolha à mão: fonte:TABELA,fonte:TABELA')
+    es.add_argument('-o', '--saida')
+    es.add_argument('--forcar', action='store_true')
+    es.set_defaults(func=cmd_esbocar)

@@ -4,7 +4,11 @@ O esboço deixa essas colunas de fora e o validar avisa quando uma delas entra n
 necessário).
 """
 
-from tecnicas.luneta.descoberta import tokens
+from kibaku_nendo.registro import usar
+
+
+def tokens(texto):
+    return usar('descoberta').tokens(texto)
 
 PESSOAIS = {'cpf', 'rg', 'cnh', 'pis', 'email', 'telefone', 'celular', 'nascimento', 'endereco', 'logradouro', 'cep',
             'mae', 'pai', 'sexo', 'genero', 'raca', 'religiao'}

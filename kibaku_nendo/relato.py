@@ -6,6 +6,7 @@ causa primeiro, com as consequências agrupadas embaixo dela), o que decidir
 """
 
 import textwrap
+from kibaku_nendo.especificacao import medida, medidas_do_visual as medidas_do_visual
 
 LARGURA = 108
 
@@ -112,7 +113,6 @@ def validacao(modelo, problemas, caminho):
 
 def nota_de_ajuda(m, v):
     """O que a nota da ajuda diz sobre o visual: o título e o que cada medida significa."""
-    from kibaku_nendo.especificacao import medida, medidas_do_visual as medidas_do_visual
     linhas = [v.get('titulo') or (v['categoria']['nome'] if v.get('categoria') else v['tipo'])]
     if v.get('categoria') and v['tipo'] in ('segmentador', 'botoes', 'abas', 'alternar'):
         linhas.append(f'Escolha aqui para filtrar a página por {v["categoria"]["nome"]}.' if v['tipo'] in

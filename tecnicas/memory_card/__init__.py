@@ -40,11 +40,13 @@ import re
 import shutil
 import subprocess
 
+from kibaku_nendo import util
 from kibaku_nendo.util import chave, gravar_json, gravar_texto, ler_json, sem_acento
+from tecnicas import katsu as governanca
 
 NOME_PADRAO = 'memory-card'
 SECAO = 'deidara'
-RAIZ_SKILL = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+RAIZ_SKILL = util.RAIZ
 CONFIG = os.path.join(os.path.expanduser('~'), '.deidara', 'memory_card.json')      # sobrevive a atualizar a skill
 STATUS = ('rascunho', 'em-uso')
 STATUS_INDICADOR = STATUS + ('oficial',)
@@ -265,7 +267,6 @@ def avisos_do_modelo(pasta, modelo):
 # ================================================================== enviar
 def planejar(pasta, argila, modelo, aprovacao, categoria, secao, artigo, motivo, texto, relacionados, status):
     """A prévia do `enviar`: o que vai mudar, versões, bloqueios e o artigo como vai ficar."""
-    from tecnicas import katsu as governanca
     ref = f'{slug(categoria)}/{slug(secao)}/{slug(artigo or modelo["projeto"])}'
     atual = dict(saves(pasta)).get(ref)
     retrato = governanca.retrato(modelo)

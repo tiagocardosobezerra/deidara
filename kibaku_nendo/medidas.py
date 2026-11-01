@@ -12,6 +12,7 @@ from kibaku_nendo.modelo import (AGREGACOES, AGREGACOES_NUMERICAS, COR_APAGADA, 
                                  pista_medida, resolver_coluna, chave_coluna, coluna_do_modelo, medida,
                                  pista_coluna, referencias_dax, sintaxe_dax, tabela_do_modelo, boas_praticas_dax,
                                  tabelas_da_medida)
+from kibaku_nendo.registro import usar
 from kibaku_nendo.util import FORMATOS, NUMERICAS, chave, dax_coluna, dax_medida, dax_tabela
 
 
@@ -84,7 +85,7 @@ def resolver_medidas(argila, m, p):
                     r['imagem'], r['formato'] = True, None
                     conferir_svg(r['dax'], p, onde)
                 elif m.get('funcoes_dax'):            # chama uma função de imagem do daxlib (SVG, IBCS, cascata)
-                    from tecnicas.sasori import funcoes_usadas
+                    funcoes_usadas = usar('dicionario').funcoes_usadas
                     usadas = {n.upper() for n in funcoes_usadas(r['dax'])}
                     if usadas & {n.upper() for n in m['funcoes_dax']['imagem']}:
                         r['imagem'], r['formato'] = True, None
@@ -210,12 +211,12 @@ def _svgs(m, p):
             md['depende'].append(base['meta_medida'])
             md['dax'] = svg_progresso(b, dax_medida(base['meta_medida']), col, op)
         elif tipo == 'leitura':                        # a frase do Tobi: o que o número fez e quem puxou
-            from tecnicas import tobi
+            tobi = usar('leitura')
             cfg['aditiva'] = tobi.aditiva(base)
             md['formato'] = None
             cal = (m.get('calendario') or {}).get('tabela')
             if cal:                                    # com calendário, a frase diz também a tendência (C4 Karura)
-                from tecnicas import c4
+                c4 = usar('estatistica')
                 tendencia = c4.dax_tendencia(b, dax_tabela(cal), base['formato'])
             md['dax'] = tobi.dax(base['nome'], b, dax_medida(cfg['comparar']), col, base['formato'], maior, cfg['aditiva'],
                                  tendencia if cal else None)
@@ -960,7 +961,7 @@ def _c4(m, p):
     """C4 Karura (tecnicas/c4.py): o gráfico de controle (centro, limites, sinal e a meta x faixa) e o fora da
     curva. O tipo do gráfico sai da medida: taxa em percentual vira gráfico p, outra divisão vira gráfico u, e o
     resto, XmR."""
-    from tecnicas import c4
+    c4 = usar('estatistica')
     novas = []
     for md in m['medidas']:
         if md.get('tipo') not in ('controle', 'fora_da_curva'):

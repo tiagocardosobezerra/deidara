@@ -12,7 +12,7 @@ from tecnicas.luneta import prova
 from tecnicas.luneta import receitas
 from tecnicas.luneta import treino
 from kibaku_nendo.util import gravar_json, gravar_texto, ler_json, pasta_local
-from kibaku_nendo.comandos_apoio import carregar_catalogos, lembrete, ponta_da_ligacao
+from tecnicas.comum import carregar_catalogos, lembrete, ponta_da_ligacao
 
 
 def cmd_receita(a):
@@ -211,3 +211,54 @@ def cmd_confirmar(a):
           f'`deidara.py receita prova --argila {a.argila} --de "{de}[{alvo["declarada"]["campos"][0][0]}]" '
           f'--para "{para}[{alvo["declarada"]["campos"][0][1]}]"`')
     return 0
+
+
+def registrar(sub):
+    r = sub.add_parser('receita', help='a consulta que a pessoa roda onde os dados estão (só estrutura)')
+    r.add_argument('tipo', choices=['sql', 'dax', 'm', 'funcoes-dax', 'funcoes-m', 'prova'])
+    r.add_argument('--argila')
+    r.add_argument('--catalogos', nargs='+')
+    r.add_argument('--de', help='prova: Tabela[COLUNA] da filha (lado muitos)')
+    r.add_argument('--para', help='prova: Tabela[COLUNA] da mãe (lado um)')
+    r.add_argument('--esquema', default='dbo')
+    r.add_argument('--tabelas', help='sql: tabelas separadas por vírgula (vazio = todas do esquema)')
+    r.add_argument('--consultas', help='m: consultas Power Query separadas por vírgula')
+    r.add_argument('-o', '--saida')
+    r.set_defaults(func=cmd_receita)
+    c = sub.add_parser('catalogar', help='resultado colado de uma receita -> catálogo da fonte')
+    c.add_argument('--de', required=True)
+    c.add_argument('--fonte')
+    c.add_argument('--funcoes', choices=['dax', 'm'], help='o resultado é da receita de funções (dicionário local)')
+    c.add_argument('--m', help='pasta com os .m (texto do Editor Avançado) das consultas, para a receita m')
+    c.add_argument('-o', '--saida')
+    c.set_defaults(func=cmd_catalogar)
+    bu = sub.add_parser('buscar', help='tabelas de um pedido, em todos os catálogos')
+    bu.add_argument('pedido')
+    bu.add_argument('--argila')
+    bu.add_argument('--catalogos', nargs='+')
+    bu.add_argument('--limite', type=int, default=10)
+    bu.set_defaults(func=cmd_buscar)
+    rl = sub.add_parser('relacionar', help='sugere ligações com evidência')
+    rl.add_argument('--argila')
+    rl.add_argument('--catalogos', nargs='+')
+    rl.add_argument('--tabelas', help='com --catalogos: só estas tabelas (separadas por vírgula)')
+    rl.add_argument('--json', action='store_true', help='mostra o trecho do argila.json de cada sugestão')
+    rl.add_argument('--pedido', help='com --catalogos: o assunto (a busca escolhe as tabelas)')
+    rl.add_argument('--todas', action='store_true', help='mostra todas as sugestões (padrão: as 25 melhores)')
+    rl.set_defaults(func=cmd_relacionar)
+    pv = sub.add_parser('provar', help='lê o resultado da receita de prova e grava na ligação')
+    pv.add_argument('--de', required=True)
+    pv.add_argument('--argila', help='grava a prova na ligação declarada correspondente')
+    pv.set_defaults(func=cmd_provar)
+    cf = sub.add_parser('confirmar', help='confirma (ou remove) uma ligação sugerida "A CONFIRMAR"')
+    cf.add_argument('argila')
+    cf.add_argument('--ligacao', required=True, help='de->para, ex.: fMetas->dEmpresa')
+    cf.add_argument('--por', help='quem confirmou com o dono do dado')
+    cf.add_argument('--motivo')
+    cf.add_argument('--remover', action='store_true', help='o dono do dado não confirmou: tira a ligação')
+    cf.set_defaults(func=cmd_confirmar, conferir=_conferir_confirmar)
+
+
+def _conferir_confirmar(a, parser):
+    if not a.remover and not a.por:
+        parser.error('confirmar pede --por "<quem confirmou>" (ou --remover)')

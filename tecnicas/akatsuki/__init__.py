@@ -12,9 +12,10 @@ import json
 import os
 import re
 
+from kibaku_nendo import util
 from kibaku_nendo.util import chave, sem_acento
 
-RAIZ = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+RAIZ = util.RAIZ
 _CACHE = {}
 # no pacote do claude.ai (máximo de 200 arquivos), os dados de terceiros/ vão juntos neste arquivo: {caminho: texto}
 PACOTE = os.path.join('terceiros', 'pacote.json')

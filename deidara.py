@@ -12,17 +12,21 @@ arquivo é ele: recebe o comando e chama a técnica certa, como a Stella faz com
 os satélites do Vegapunk. O motor é a argila (`kibaku_nendo/`) e cada etapa é
 uma técnica dele (`tecnicas/`):
 
-    luneta        receita, catalogar, buscar, relacionar, provar
     te_no_kuchi   novo, esbocar (com o C2, que escolhe os visuais, e o Tobi, a frase)
+    luneta        receita, catalogar, buscar, relacionar, provar, confirmar
+    comum         validar, situacao
     c1 + bunshin  prototipar (números fictícios)
-    katsu         aprovar, diff
-    c3            gerar
+    katsu         aprovar, diff (o "sim" que detona)
+    c3            gerar, conferir-desktop
+    memory_card   memory-card
     sasori        funcoes, padroes
+    arte          modelos, visuais
+    akatsuki      galeria (modelos Deneb, funções DAX e calendários de terceiros, MIT)
+    c0            estudar, propor, importar (engenharia reversa de um painel que já existe)
     onoki         onoki (o acerto da busca)
     c4            a estatística que o C2 escolhe (referencias/estatistica.md)
-    arte          modelos, visuais
-    c0            estudar, propor, importar (engenharia reversa de um painel que já existe)
-    galeria       galeria (modelos Deneb, funções DAX e calendários de terceiros, MIT)
+
+Cada técnica registra os próprios comandos (`tecnicas/<técnica>/comandos.py`, função `registrar`).
 
 Fluxo:
     receita     a consulta (SQL, DAX ou Power Query) que a pessoa roda onde os
@@ -71,6 +75,7 @@ com caminhos relativos a ele. Formato completo: referencias/argila.md.
 """
 
 import argparse
+import importlib
 import os
 import sys
 
@@ -79,14 +84,23 @@ sys.path.insert(0, RAIZ)
 
 from kibaku_nendo import VERSAO  # noqa: E402
 from kibaku_nendo.util import ErroDeUso  # noqa: E402
-from kibaku_nendo.comandos import (cmd_aprovar, cmd_conferir_desktop, cmd_diff, cmd_gerar, cmd_prototipar, cmd_situacao, cmd_validar)  # noqa: E402
-from tecnicas.consultas import (cmd_galeria, cmd_onoki, cmd_funcoes, cmd_memory_card, cmd_modelos, cmd_padroes,  # noqa: E402
-                                cmd_visuais)
-from tecnicas.luneta.comandos import (cmd_buscar, cmd_catalogar, cmd_confirmar, cmd_provar, cmd_receita,
-                                      cmd_relacionar)  # noqa: E402
-from tecnicas.te_no_kuchi_comandos import cmd_esbocar, cmd_novo  # noqa: E402
-from tecnicas.c0.comandos import cmd_c0  # noqa: E402
 
+
+# os módulos de comando, na ordem em que aparecem na ajuda: a do fluxo (cada um tem `registrar(sub)`)
+COMANDOS = [
+    'tecnicas.te_no_kuchi.comandos',   # novo, esbocar
+    'tecnicas.luneta.comandos',        # receita, catalogar, buscar, relacionar, provar, confirmar
+    'tecnicas.comum',                  # validar, situacao
+    'tecnicas.c1.comandos',            # prototipar
+    'tecnicas.katsu.comandos',         # aprovar, diff
+    'tecnicas.c3.comandos',            # gerar, conferir-desktop
+    'tecnicas.memory_card.comandos',   # memory-card
+    'tecnicas.sasori.comandos',        # funcoes, padroes
+    'tecnicas.arte.comandos',          # modelos, visuais
+    'tecnicas.akatsuki.comandos',      # galeria
+    'tecnicas.c0.comandos',            # c0
+    'tecnicas.onoki.comandos',         # onoki
+]
 
 GUIA = """Deidara — do dado ao painel Power BI: protótipo primeiro, projeto completo depois do "sim".
 
@@ -160,149 +174,13 @@ def main(argv=None):
         return 0
     ap = _Parser(prog='deidara', description='Do dado ao painel Power BI.')
     sub = ap.add_subparsers(dest='cmd', required=True, parser_class=_Parser, metavar='COMANDO')
-    r = sub.add_parser('receita', help='a consulta que a pessoa roda onde os dados estão (só estrutura)')
-    r.add_argument('tipo', choices=['sql', 'dax', 'm', 'funcoes-dax', 'funcoes-m', 'prova'])
-    r.add_argument('--argila')
-    r.add_argument('--catalogos', nargs='+')
-    r.add_argument('--de', help='prova: Tabela[COLUNA] da filha (lado muitos)')
-    r.add_argument('--para', help='prova: Tabela[COLUNA] da mãe (lado um)')
-    r.add_argument('--esquema', default='dbo')
-    r.add_argument('--tabelas', help='sql: tabelas separadas por vírgula (vazio = todas do esquema)')
-    r.add_argument('--consultas', help='m: consultas Power Query separadas por vírgula')
-    r.add_argument('-o', '--saida')
-    c = sub.add_parser('catalogar', help='resultado colado de uma receita -> catálogo da fonte')
-    c.add_argument('--de', required=True)
-    c.add_argument('--fonte')
-    c.add_argument('--funcoes', choices=['dax', 'm'], help='o resultado é da receita de funções (dicionário local)')
-    c.add_argument('--m', help='pasta com os .m (texto do Editor Avançado) das consultas, para a receita m')
-    c.add_argument('-o', '--saida')
-    v = sub.add_parser('validar', help='confere o argila.json (nomes, ligações, funções, filtros)')
-    v.add_argument('argila')
-    v.add_argument('--json', action='store_true')
-    p = sub.add_parser('prototipar', help='protótipo HTML para o gestor validar')
-    p.add_argument('argila')
-    p.add_argument('-o', '--saida')
-    ap_ = sub.add_parser('aprovar', help='registra o "sim" do gestor')
-    ap_.add_argument('argila')
-    ap_.add_argument('--por', required=True)
-    ap_.add_argument('--observacao')
-    ap_.add_argument('--resumo', help='o resumo copiado da aba "Para aprovar" (confere versão e decisão)')
-    ap_.add_argument('--sem-prototipo', action='store_true', help='o gestor aprovou sem protótipo, de propósito')
-    ap_.add_argument('--aceito-distorcao', metavar='MOTIVO',
-                     help='o gestor mantém um corte que filtra só parte da conta, sabendo disso (fica registrado)')
-    g = sub.add_parser('gerar', help='gera o projeto Power BI, SQL e documentação')
-    g.add_argument('argila')
-    g.add_argument('-o', '--saida')
-    g.add_argument('--demo', action='store_true',
-                   help='projeto de demonstração: linhas fictícias embutidas, abre e calcula sem banco nenhum')
-    cd = sub.add_parser('conferir-desktop', help='confere o DAX no Power BI Desktop aberto no projeto (só Windows)')
-    cd.add_argument('argila')
-    cd.add_argument('--porta', help='a porta do motor, com mais de um Power BI Desktop aberto')
-    cd.add_argument('--atualizar', action='store_true', help='atualiza os dados antes (o --demo não pede credencial)')
-    on = sub.add_parser('onoki', help='Ōnoki mede a busca contra os pedidos de verdade do time (e pega regressão)')
-    on.add_argument('--casos', required=True, help='JSON com os casos: [{"pedido", "esperadas"}] e o retrato gravado')
-    on.add_argument('--argila')
-    on.add_argument('--catalogos', nargs='+')
-    on.add_argument('--top', type=int, default=3)
-    on.add_argument('--gravar-retrato', action='store_true', help='grava a ordem atual como a referência')
-    bu = sub.add_parser('buscar', help='tabelas de um pedido, em todos os catálogos')
-    bu.add_argument('pedido')
-    bu.add_argument('--argila')
-    bu.add_argument('--catalogos', nargs='+')
-    bu.add_argument('--limite', type=int, default=10)
-    rl = sub.add_parser('relacionar', help='sugere ligações com evidência')
-    rl.add_argument('--argila')
-    rl.add_argument('--catalogos', nargs='+')
-    rl.add_argument('--tabelas', help='com --catalogos: só estas tabelas (separadas por vírgula)')
-    rl.add_argument('--json', action='store_true', help='mostra o trecho do argila.json de cada sugestão')
-    rl.add_argument('--pedido', help='com --catalogos: o assunto (a busca escolhe as tabelas)')
-    rl.add_argument('--todas', action='store_true', help='mostra todas as sugestões (padrão: as 25 melhores)')
-    pv = sub.add_parser('provar', help='lê o resultado da receita de prova e grava na ligação')
-    pv.add_argument('--de', required=True)
-    pv.add_argument('--argila', help='grava a prova na ligação declarada correspondente')
-    cf = sub.add_parser('confirmar', help='confirma (ou remove) uma ligação sugerida "A CONFIRMAR"')
-    cf.add_argument('argila')
-    cf.add_argument('--ligacao', required=True, help='de->para, ex.: fMetas->dEmpresa')
-    cf.add_argument('--por', help='quem confirmou com o dono do dado')
-    cf.add_argument('--motivo')
-    cf.add_argument('--remover', action='store_true', help='o dono do dado não confirmou: tira a ligação')
-    mc = sub.add_parser('memory-card', help='o cartão de memória do time (painéis e indicadores)')
-    mc.add_argument('acao', choices=['iniciar', 'catalogo', 'buscar', 'enviar', 'marcar', 'conferir', 'desligar'])
-    mc.add_argument('alvo', nargs='*', help='buscar: termos; enviar: argila.json; marcar: REF; conferir: REFs')
-    mc.add_argument('--repo')
-    mc.add_argument('--pasta')
-    mc.add_argument('--publico', action='store_true')
-    mc.add_argument('--json', action='store_true')
-    mc.add_argument('--limite', type=int, default=10)
-    mc.add_argument('--categoria')
-    mc.add_argument('--secao')
-    mc.add_argument('--artigo')
-    mc.add_argument('--texto')
-    mc.add_argument('--motivo')
-    mc.add_argument('--relacionado', action='append', default=[])
-    mc.add_argument('--status')
-    mc.add_argument('--por')
-    mc.add_argument('--confirmar', action='store_true')
-    mc.add_argument('--catalogos', nargs='+')
-    mc.add_argument('--registrar', action='store_true')
-    fu = sub.add_parser('funcoes', help='dicionário de funções DAX e M')
-    fu.add_argument('acao', choices=['buscar', 'ver'])
-    fu.add_argument('termo')
-    fu.add_argument('--linguagem', choices=['dax', 'm'])
-    pa = sub.add_parser('padroes', help='padrões de indicador e onde criar cada coisa')
-    pa.add_argument('termo', nargs='?')
-    sub.add_parser('modelos', help='os modelos de layout (faixa de KPIs, coluna de KPIs, história longa...)')
-    c0 = sub.add_parser('c0', help='engenharia reversa: estuda, avalia e refaz um indicador ou painel que já existe')
-    c0.add_argument('acao', choices=['estudar', 'propor', 'importar'])
-    c0.add_argument('alvo', help='pasta do .pbip, resultado da receita DAX, arquivo .dax ou o próprio DAX entre aspas')
-    c0.add_argument('--medida', action='append', help='só esta medida (repita para várias)')
-    c0.add_argument('-o', '--saida', help='estudar/propor: grava o relatório em Markdown; importar: a pasta do painel')
-    c0.add_argument('--json', action='store_true', help='o estudo em JSON (para outra ferramenta ler)')
-    c0.add_argument('--fonte', default='legado', help='importar: nome da fonte do modelo antigo')
-    c0.add_argument('--projeto', help='importar: nome do projeto')
-    c0.add_argument('--manter-antigas', action='store_true', dest='manter_antigas',
-                    help='importar: guarda as fórmulas antigas como "<nome> (antes)" para a homologação comparar')
-    c0.add_argument('--forcar', action='store_true')
-    gl = sub.add_parser('galeria', help='modelos Deneb, funções DAX, calendários e SVG da comunidade (MIT, em terceiros/)')
-    gl.add_argument('termo', nargs='?', default='')
-    gl.add_argument('--tipo', choices=['deneb', 'funcoes_dax', 'calendario', 'svg'])
-    gl.add_argument('--ver', help='id do item: o que ele pede e como usar no argila.json')
-    gl.add_argument('--limite', type=int, default=25)
-    vs = sub.add_parser('visuais', help='técnicas de visual (meta, ranking, causa, status...) e como fazer')
-    vs.add_argument('termo', nargs='?')
-    df = sub.add_parser('diff', help='o que mudou desde a aprovação')
-    df.add_argument('argila')
-    df.add_argument('--contra')
-    nv = sub.add_parser('novo', help='cria a pasta de um painel novo, com receitas e roteiro')
-    nv.add_argument('pasta')
-    nv.add_argument('--projeto')
-    es = sub.add_parser('esbocar', help='primeiro argila.json a partir dos catálogos e do pedido')
-    es.add_argument('alvo', help='a pasta do painel (com catalogos/) ou um catálogo')
-    es.add_argument('--catalogos', nargs='+', help='mais catálogos (quando o alvo é um catálogo)')
-    es.add_argument('--pedido', help='o que o painel precisa mostrar, em português (sem ele, sai do briefing do painel.json)')
-    es.add_argument('--projeto')
-    es.add_argument('--tabelas', help='escolha à mão: fonte:TABELA,fonte:TABELA')
-    es.add_argument('-o', '--saida')
-    es.add_argument('--forcar', action='store_true')
-    si = sub.add_parser('situacao', help='onde o projeto está e qual é o próximo passo')
-    si.add_argument('argila')
-    sub.add_parser('status', help='versão do Deidara')
+    for nome in COMANDOS:                          # cada técnica registra os próprios comandos, na ordem do fluxo
+        importlib.import_module(nome).registrar(sub)
+    sub.add_parser('status', help='versão do Deidara').set_defaults(func=cmd_status)
     a = ap.parse_args(argv)
-    if a.cmd == 'confirmar' and not a.remover and not a.por:
-        ap.error('confirmar pede --por "<quem confirmou>" (ou --remover)')
-    if a.cmd == 'memory-card':
-        a.termos = a.refs = a.alvo
-        a.argila = a.alvo[0] if a.alvo else None
-        a.ref = a.alvo[0] if a.alvo else None
-        if a.acao == 'enviar' and (not a.argila or not a.categoria or not a.secao):
-            ap.error('memory-card enviar pede argila.json, --categoria e --secao')
-        if a.acao == 'marcar' and (not a.ref or not a.status):
-            ap.error('memory-card marcar pede REF e --status')
-    return {'receita': cmd_receita, 'catalogar': cmd_catalogar, 'validar': cmd_validar, 'prototipar': cmd_prototipar, 'aprovar': cmd_aprovar,
-            'gerar': cmd_gerar, 'conferir-desktop': cmd_conferir_desktop, 'diff': cmd_diff, 'funcoes': cmd_funcoes, 'padroes': cmd_padroes, 'visuais': cmd_visuais, 'galeria': cmd_galeria, 'c0': cmd_c0, 'modelos': cmd_modelos,
-            'buscar': cmd_buscar, 'relacionar': cmd_relacionar, 'provar': cmd_provar,
-            'memory-card': cmd_memory_card, 'confirmar': cmd_confirmar, 'situacao': cmd_situacao, 'novo': cmd_novo, 'esbocar': cmd_esbocar, 'status': cmd_status, 'onoki': cmd_onoki}[a.cmd](a) or 0
-
+    if getattr(a, 'conferir', None):               # o que o argparse não confere sozinho (ex.: --por ou --remover)
+        a.conferir(a, sub.choices[a.cmd])
+    return a.func(a) or 0
 
 if __name__ == '__main__':
     if hasattr(sys.stdout, 'reconfigure'):

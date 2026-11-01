@@ -7,6 +7,7 @@ import os
 
 from kibaku_nendo.util import chave, gravar_texto
 from tecnicas.c0 import exame, leitura, proposta, relato
+from tecnicas.c0 import importar
 
 
 def _ler(alvo):
@@ -42,7 +43,6 @@ def cmd_c0(a):
     estudo = exame.examinar(leg, so)
     if a.acao == 'importar':
         import re
-        from tecnicas.c0 import importar
         if not re.fullmatch(r'[\w\-]+', a.fonte or ''):
             print(f'C0: --fonte "{a.fonte}" deve ter só letras, números, _ e - (vira o nome do arquivo do catálogo)')
             return 1
@@ -87,3 +87,18 @@ def cmd_c0(a):
     print('LEMBRETE: a nota diz se a fórmula está bem construída, não se o indicador é o certo para a decisão; leve '
           'o que "muda o número" ao dono do indicador antes de trocar.')
     return 0
+
+
+def registrar(sub):
+    c0 = sub.add_parser('c0', help='engenharia reversa: estuda, avalia e refaz um indicador ou painel que já existe')
+    c0.add_argument('acao', choices=['estudar', 'propor', 'importar'])
+    c0.add_argument('alvo', help='pasta do .pbip, resultado da receita DAX, arquivo .dax ou o próprio DAX entre aspas')
+    c0.add_argument('--medida', action='append', help='só esta medida (repita para várias)')
+    c0.add_argument('-o', '--saida', help='estudar/propor: grava o relatório em Markdown; importar: a pasta do painel')
+    c0.add_argument('--json', action='store_true', help='o estudo em JSON (para outra ferramenta ler)')
+    c0.add_argument('--fonte', default='legado', help='importar: nome da fonte do modelo antigo')
+    c0.add_argument('--projeto', help='importar: nome do projeto')
+    c0.add_argument('--manter-antigas', action='store_true', dest='manter_antigas',
+                    help='importar: guarda as fórmulas antigas como "<nome> (antes)" para a homologação comparar')
+    c0.add_argument('--forcar', action='store_true')
+    c0.set_defaults(func=cmd_c0)

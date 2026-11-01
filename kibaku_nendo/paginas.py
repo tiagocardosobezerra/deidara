@@ -9,12 +9,14 @@ from kibaku_nendo.modelo import (CALENDARIO_SEM_ANO, DIAGNOSTICOS, LIMITE_VISUAI
                                  campo_do_modelo, nova_coluna, conferir_funcoes, depende_de, grafo_de_filtro,
                                  medidas_do_visual, pista_medida, tabelas_da_medida, chega, medida,
                                  pista_coluna, tabela_do_modelo)
+from kibaku_nendo.registro import usar
 from kibaku_nendo.util import chave, dax_coluna, numero_br
+from kibaku_nendo.medidas import corte_sem_medida
 
 
 def resolver_layout(argila, m, p):
     """O modelo de layout (referencias/modelos.md). A história longa é escura: sem tema próprio, ganha o escuro."""
-    from tecnicas.arte.modelos import ESCURO, MODELOS
+    ESCURO, MODELOS = usar('layout').ESCURO, usar('layout').MODELOS
     modelo = argila.get('modelo') or 'padrao'
     if modelo not in MODELOS:
         import difflib
@@ -49,7 +51,7 @@ def resolver_layout(argila, m, p):
                 p.aviso('tema', f'[Design] o tema "{dado["arquivo"]}" vai inteiro no relatório: confira a licença de quem '
                                 'fez e dê o crédito no LEIA-ME')
     elif dado.get('paleta'):                       # as paletas dos temas do Power BI Design Files (terceiros/power-bi-design-files/paletas.json)
-        from tecnicas.sasori import paletas
+        paletas = usar('dicionario').paletas
         todas = paletas()['paletas']
         pal = todas.get(dado['paleta'])
         if not pal:
@@ -208,7 +210,6 @@ def resolver_grupo_calculo(argila, m, p):
         rotulo, dax, pct = ITENS_DE_TEMPO[x]
         dax = dax.replace('{d}', data)
         if x in ('ano_anterior', 'variacao_ano_anterior', 'mes_anterior', 'variacao_mes_anterior'):
-            from kibaku_nendo.medidas import corte_sem_medida             # o anterior para no mesmo dia do atual
             ate = f'KEEPFILTERS({data} <= _corte)'            # CALCULATE dentro do filtro True/False: recusado
             for f in ('SAMEPERIODLASTYEAR(' + data + ')', 'DATEADD(' + data + ', -1, MONTH)'):
                 dax = dax.replace(f, f'CALCULATETABLE({f}, {ate})')
@@ -237,9 +238,10 @@ def resolver_tours(m, p):
     pedidas = [pg for pg in m['paginas'] if pg.get('tour')]
     if not pedidas:
         return
-    from tecnicas.arte.modelos import montar, paginas_do_relatorio
+    montar, paginas_do_relatorio = usar('layout').montar, usar('layout').paginas_do_relatorio
     from kibaku_nendo.relato import nota_de_ajuda as _nota_de_ajuda
-    from tecnicas.c1.tour import dax_do_tour, html_do_tour, passos
+    tour = usar('tour')
+    dax_do_tour, html_do_tour, passos = tour.dax_do_tour, tour.html_do_tour, tour.passos
     if (m.get('modelo') or 'padrao') == 'historia-longa':
         p.aviso('tour', '[Design] a história longa é uma página só e rola: o tour guiado fica de fora; use "ajuda"')
         return
@@ -430,7 +432,7 @@ def _visual(m, v, p, onde, filtra):
         if not r['titulo']:
             r['titulo'] = f'{cfg["base"]}: sinal ou ruído?'
     elif tipo == 'vegalite' and v.get('modelo'):        # modelo Deneb da galeria (terceiros/, MIT)
-        from tecnicas import galeria
+        galeria = usar('galeria')
         it = galeria.item(v['modelo'])
         if not it or it['tipo'] != 'deneb':
             import difflib

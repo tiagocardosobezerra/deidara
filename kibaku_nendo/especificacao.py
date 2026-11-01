@@ -16,8 +16,7 @@ Formato completo do argila.json: referencias/argila.md.
 import calendar
 import datetime
 
-from tecnicas.luneta import prova
-
+from kibaku_nendo.registro import usar
 from kibaku_nendo.util import (FORMATOS, SQL_POR_FAMILIA, chave, sql_tipo)
 from kibaku_nendo.medidas import garantir_corte, resolver_medidas
 from kibaku_nendo.paginas import (conferir_design, resolver_grupo_calculo, resolver_layout, resolver_paginas,
@@ -107,7 +106,7 @@ def resolver(argila, catalogos):
 def _funcoes_dax(argila, m, p):
     """"funcoes_dax": ["DaxLib.SVG", "PowerofBI.IBCS"]: pacotes de funções DAX do daxlib (terceiros/daxlib, MIT) que
     entram no modelo (functions.tmdl) e podem ser chamados no "dax" das medidas."""
-    from tecnicas import galeria, sasori
+    galeria, sasori = usar('galeria'), usar('dicionario')
     pedidos = argila.get('funcoes_dax') or []
     m['funcoes_dax'] = None
     sasori.registrar_extras(())
@@ -338,7 +337,7 @@ def _calendario(argila, m, p):
         mes_fiscal = 1
     regras = []
     if cal.get('feriados'):                        # feriados nacionais (modelo do Bravo, SQLBI) e o dia útil
-        from tecnicas import galeria
+        galeria = usar('galeria')
         regras = galeria.feriados(cal['feriados'])
         if not regras:
             p.erro('calendario', f'sem feriados para "{cal["feriados"]}": use o código do país com 2 letras (ex.: '
@@ -471,6 +470,7 @@ def _declarada(catalogos, m, de, para, r, p, onde):
     rotulo = f'declarada por {d["por"]}'
     medida_na_fonte = d.get('prova')
     if medida_na_fonte:
+        prova = usar('prova')
         veredito, explicacao = prova.avaliar(medida_na_fonte)
         rotulo += '; ' + prova.texto(medida_na_fonte)
         if veredito == 'reprovada':

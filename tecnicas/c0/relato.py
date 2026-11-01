@@ -6,6 +6,8 @@ a ficha completa de cada medida para levar ao dono do indicador.
 import json
 
 from tecnicas.c0.exame import ROTULO
+from tecnicas.c0 import anatomia
+from tecnicas.c0 import proposta as pr
 
 ORDEM_NOTA = lambda x: (x[1]['nota'], x[0])   # noqa: E731  as piores primeiro
 
@@ -86,7 +88,6 @@ def resumo(leg, estudo):
 
 
 def terminal(leg, estudo, detalhe=False, propostas=None):
-    from tecnicas.c0 import anatomia
     out = [resumo(leg, estudo), ''] + [x.replace('**', '') for x in para_gestor(leg, estudo, propostas)]
     if estudo['modelo']:
         out.append('Modelo:')
@@ -130,8 +131,6 @@ def _proposta_texto(out, p):
 
 
 def markdown(leg, estudo, propostas=False):
-    from tecnicas.c0 import anatomia
-    from tecnicas.c0 import proposta as pr
     props = {n: pr.propor(n, leg, x, estudo['medidas']) for n, x in estudo['medidas'].items()} if propostas else None
     out = ['# C0 · estudo do indicador', '', resumo(leg, estudo), '', '## Em uma página', '']
     out += para_gestor(leg, estudo, props)

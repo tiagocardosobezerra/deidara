@@ -12,6 +12,7 @@ import re
 from kibaku_nendo.util import chave
 from tecnicas.c0.anatomia import limpo, refs, sem_texto
 from tecnicas.c0.exame import CADASTRO
+from tecnicas.sasori import padroes_para
 
 
 def formato(fmt):
@@ -194,7 +195,6 @@ def _portfolio(nome, leg, estudo, fmt):
                    f'DaxLib.SVG.Viz.Line(<coluna do mês>, [{nome}])')
     if any(v['tipo'] == 'cartao' for v in usos) and t == 'divisao':
         out.append(f'no cartão de [{nome}], a barra contra a meta ("svg_barra_meta") ou o bullet da galeria')
-    from tecnicas.sasori import padroes_para
     pad = next((x for x in padroes_para(nome) if x.get('cadeia') and any(
         chave(w) in chave(nome) for w in x['termos'] if len(w) > 4)), None)
     if pad:

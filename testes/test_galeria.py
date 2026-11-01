@@ -12,7 +12,7 @@ import sys
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 
 from apoio import *  # noqa: E402,F401,F403
-from tecnicas import galeria  # noqa: E402
+from tecnicas import akatsuki as galeria  # noqa: E402
 
 TERCEIROS = os.path.join(RAIZ, 'terceiros')
 

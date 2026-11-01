@@ -5,6 +5,11 @@ protótipo real, o dicionário de indicadores e as medidas em .dax.
 
 from tecnicas.c3.sql import nome_view
 from kibaku_nendo.util import FORMATOS
+from kibaku_nendo.modelo import tabelas_da_medida
+from kibaku_nendo.relato import TEMAS, tema_do_aviso
+from kibaku_nendo.util import dax_coluna, dax_medida
+from tecnicas.c3.sql import fontes_sql
+from tecnicas.c3.tmdl import parametros
 
 
 def medidas_dax(m):
@@ -29,7 +34,6 @@ def _celula(texto):
 
 def _ficha(m, md):
     """A ficha técnica de um indicador: o que é, como se calcula, de onde vem e quem responde por ele."""
-    from kibaku_nendo.modelo import tabelas_da_medida
     tabs = sorted(tabelas_da_medida(m, md['nome']))
     origem = []
     for tn in tabs:
@@ -102,7 +106,6 @@ def dicionario(m, historico=()):
 
 
 def _pendencias_por_tema(avisos):
-    from kibaku_nendo.relato import TEMAS, tema_do_aviso
     if not avisos:
         return '- Nenhuma.'
     grupos = {}
@@ -138,7 +141,6 @@ def _onde_ler(m, nome):
 def consulta_dax(m):
     """As consultas DAX da homologação: os mesmos números do 02_conferencia.sql, calculados pelo modelo. Rode na
     Exibição de consulta DAX do Power BI Desktop (ou no DAX Studio) e compare linha a linha com o SQL."""
-    from kibaku_nendo.util import dax_coluna, dax_medida
     out = [f'// {m["projeto"]} — conferência pelo modelo (homologação)',
            '// Rode na Exibição de consulta DAX do Power BI Desktop (ou no DAX Studio), depois de Atualizar.',
            '// Cada bloco tem o par no sql/<fonte>/02_conferencia.sql: os números precisam bater.', '']
@@ -176,7 +178,6 @@ def consulta_dax(m):
 
 def homologacao(m, nome, aprovacao):
     """A folha de homologação: o que conferir, onde anotar e o critério de cada item."""
-    from tecnicas.c3.sql import fontes_sql
     linhas = [f'# {m["projeto"]} — homologação', '',
               f'Painel aprovado por **{aprovacao.get("aprovado_por", "?")}** em {aprovacao.get("em", "?")}. '
               'Preencha depois da primeira atualização no Power BI Desktop. Só publique com tudo marcado.', '',
@@ -230,8 +231,6 @@ def homologacao(m, nome, aprovacao):
 
 
 def _passos_fontes(m, nome):
-    from tecnicas.c3.tmdl import parametros
-    from tecnicas.c3.sql import fontes_sql
     linhas, n = [], 1
     for f in fontes_sql(m):
         serv, banco = parametros(f)
@@ -252,7 +251,6 @@ def _passos_fontes(m, nome):
 
 
 def leia_me(m, nome, aprovacao, avisos):
-    from tecnicas.c3.sql import fontes_sql
     pend = _pendencias_por_tema(avisos)
     fontes, n = _passos_fontes(m, nome)
     sqls = fontes_sql(m)

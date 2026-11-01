@@ -346,3 +346,19 @@ class TestExperiencia(unittest.TestCase):
         texto = relato.validacao(m, p, 'x.json')
         self.assertIn('Próximo passo', texto)
         self.assertIn('[Ligações]', texto)
+
+
+class TestCamadas(unittest.TestCase):
+    def test_motor_nao_importa_tecnicas(self):
+        # o motor pede pelo papel (kibaku_nendo/registro.py); importar uma técnica traz o ciclo de volta
+        import ast
+        import glob
+        pasta = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), 'kibaku_nendo')
+        for arq in glob.glob(os.path.join(pasta, '*.py')):
+            with open(arq, encoding='utf-8') as f:
+                arvore = ast.parse(f.read())
+            for no in ast.walk(arvore):
+                nomes = ([no.module or ''] if isinstance(no, ast.ImportFrom)
+                         else [x.name for x in no.names] if isinstance(no, ast.Import) else [])
+                for nome in nomes:
+                    self.assertFalse(nome.split('.')[0] == 'tecnicas', f'{os.path.basename(arq)} importa {nome}')

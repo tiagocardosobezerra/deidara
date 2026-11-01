@@ -24,9 +24,10 @@ import json
 import os
 import re
 
-from kibaku_nendo.util import chave, pasta_local
+from kibaku_nendo.util import RAIZ, chave, pasta_local
+from tecnicas.akatsuki import json_de
 
-PASTA = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), 'dicionario')
+PASTA = os.path.join(RAIZ, 'dicionario')
 _cache = {}
 
 
@@ -63,12 +64,10 @@ DESIGN_FILES = os.path.join('terceiros', 'power-bi-design-files')
 
 def estilos():
     """A formatação de cada tipo de visual dos modelos de layout (Power BI Design Files, terceiros/)."""
-    from tecnicas.galeria import json_de
     return json_de(os.path.join(DESIGN_FILES, 'estilos.json'))
 
 
 def paletas():
-    from tecnicas.galeria import json_de
     return json_de(os.path.join(DESIGN_FILES, 'paletas.json'))
 
 

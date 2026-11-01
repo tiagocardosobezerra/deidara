@@ -19,6 +19,9 @@ import re
 from tecnicas.luneta import descoberta
 from kibaku_nendo.privacidade import pessoal
 from kibaku_nendo.util import chave, sem_acento
+from tecnicas.sasori import padroes
+from kibaku_nendo.especificacao import alcance, grafo_de_filtro, medida, resolver
+from tecnicas import c2
 
 PENDENTE_POR = 'A CONFIRMAR'
 PENDENTE_DEF = 'A DEFINIR'
@@ -218,7 +221,6 @@ def cadeias_do_pedido(catalogos, pedido, dentro=None):
     """Os padrões com a cadeia inteira (dicionario/padroes.json) que o pedido cita, com cada papel já achado nos
     catálogos: [{'padrao', 'tabelas': {papel: (fonte, origem, tipo)}, 'colunas': {papel: [(coluna, nome)]},
     'medidas'}] e as notas do que não deu para achar. `dentro`: só estas (fonte, origem) (escolha à mão)."""
-    from tecnicas.sasori import padroes
     # o padrão entra pela palavra que a pessoa escreveu; o sinônimo só vale se nenhuma palavra bater ("meta" é
     # sinônimo de "orçamento" na busca de tabelas, mas um pedido de turnover com meta não é orçado x realizado)
     com_cadeia = [p for p in padroes()['padroes'] if p.get('cadeia')]
@@ -361,7 +363,6 @@ def _sem_distorcao(argila, catalogos, notas):
     sai; gráfico ou tabela troca a medida por uma da página que o corte filtra inteira, ou sai. A meta pode não
     mudar com o corte (vira um aviso só no validar). Ligação a confirmar conta como ligada."""
     import copy
-    from kibaku_nendo.especificacao import alcance, grafo_de_filtro, medida, resolver
     try:
         m, _ = resolver(copy.deepcopy(argila), catalogos)
     except Exception:                                   # esboço que nem resolve: o validar mostra por quê
@@ -689,7 +690,6 @@ def esbocar(catalogos, pedido, projeto=None, tabelas=None, limite=6, briefing=No
     _sem_colisao(argila)
     _do_cartao(argila, do_cartao, notas)
     _sem_distorcao(argila, catalogos, notas)
-    from tecnicas import c2                          # o dragão escolhe os visuais pela pergunta do painel
     c2.soltar(argila, c2.intencoes(pedido, briefing.get('decisao')), notas)
     _sem_distorcao(argila, catalogos, notas)
     pendentes =[md['nome'] for md in medidas if (md.get('descricao') or '').startswith(PENDENTE_DEF)]

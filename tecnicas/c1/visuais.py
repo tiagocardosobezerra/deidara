@@ -10,6 +10,7 @@ from kibaku_nendo.especificacao import COR_BOA, COR_RUIM, medida
 from kibaku_nendo.desenhos import COR_ATENCAO
 from tecnicas.bunshin.simulacao import categorias
 from kibaku_nendo.util import numero_br
+from tecnicas import akatsuki as galeria
 
 
 def formatar(v, formato, compacto=False):
@@ -496,7 +497,6 @@ def _html(sim, v, w, h, cores):
 def _vegalite(sim, v, w, h, cores):
     """Deneb (Vega-Lite): o pirulito da especificação padrão; modelo da galeria: a prévia que o autor gravou."""
     if v.get('modelo'):
-        from tecnicas import galeria
         previa = galeria.previa_deneb(v['modelo'])
         it = galeria.item(v['modelo']) or {}
         corpo = (f'<image href="{_e(previa)}" x="12" y="34" width="{w - 24}" height="{h - 64}" '

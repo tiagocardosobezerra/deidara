@@ -15,6 +15,7 @@ from kibaku_nendo.relato import nota_de_ajuda
 from tecnicas.arte.modelos import montar, paginas_do_relatorio
 from tecnicas.c1.prototipo import titulo_do_cartao
 from kibaku_nendo.util import curto, gravar_json
+from tecnicas.sasori import estilos
 
 S = 'https://developer.microsoft.com/json-schemas/fabric/item/report/definition'
 
@@ -93,7 +94,6 @@ def _estilo(m, tipo):
     modelo = m.get('modelo') or 'padrao'
     if modelo == 'padrao':
         return None
-    from tecnicas.sasori import estilos
     dados = estilos()
     return (dados['modelos'].get(modelo) or {}).get(tipo) or dados['base'].get(tipo)
 

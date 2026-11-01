@@ -3,10 +3,13 @@ O que os comandos do Deidara têm em comum: carregar o argila.json com os catál
 relatório da validação, achar a aprovação e conferir se o protótipo está em dia.
 """
 
+import json
 import os
+import re
 import sys
 
 from tecnicas.luneta import catalogo
+from tecnicas import katsu as governanca
 from tecnicas import memory_card
 from kibaku_nendo import relato
 from kibaku_nendo.especificacao import resolver
@@ -173,3 +176,89 @@ def conferir_resumo(caminho, modelo):
     if 'Decisão: Aprovo' not in texto:
         return 'O resumo não traz "Decisão: Aprovo": o gestor pediu ajustes. Leia os comentários, ajuste e prototipe de novo.'
     return None
+
+
+def cmd_validar(a):
+    _, _, modelo, problemas, _ = carregar_argila(a.argila)
+    if a.json:
+        print(json.dumps({'ok': not problemas.erros, 'erros': problemas.erros, 'avisos': problemas.avisos,
+                          'resumo': resumo_do_modelo(modelo)}, ensure_ascii=False, indent=2))
+    else:
+        print(relato.validacao(modelo, problemas, a.argila))
+    return 1 if problemas.erros else 0
+
+
+def cmd_situacao(a):
+    """Onde o projeto está no fluxo e qual é o próximo passo."""
+    if not os.path.exists(a.argila):
+        print(f'{a.argila} não existe. Para começar: `deidara.py novo PASTA` (ver `deidara.py` sem argumentos).')
+        return 1
+    passos = []
+
+    def passo(ok, texto, proximo=None):
+        passos.append((ok, texto, proximo))
+        return ok
+
+    try:
+        argila, cats, modelo, problemas, caminhos = carregar_argila(a.argila)
+    except SystemExit as e:
+        print(f'✗ fontes: {e}')
+        print('Próximo passo: rode a receita da fonte e o `catalogar` (ver referencias/fontes.md).')
+        return 1
+    passo(True, f'fontes catalogadas: {", ".join(f"{n} ({c.tipo})" for n, c in cats.items())}')
+    prot = os.path.splitext(a.argila)[0] + '.prototipo.html'
+    pendentes = [e for e in problemas.erros if LIGACAO_PENDENTE in e]
+    if pendentes and len(pendentes) == len(problemas.erros):   # o protótipo já sai; o aceite espera a confirmação
+        passo(True, f'validação: só falta confirmar {len(pendentes)} ligação(ões) sugerida(s)')
+        if passo(mais_novo(prot, a.argila, *caminhos), 'protótipo em dia com o argila.json',
+                 f'deidara.py prototipar {a.argila}'):
+            ligacoes = ', '.join(re.sub(r'^relacionamentos\[\d+\]\s*', '', e.split(':')[0]).replace(' ', '') for e in pendentes)
+            passo(False, f'ligação(ões) A CONFIRMAR: {ligacoes}',
+                  f'confira os campos com o dono do dado e rode `deidara.py confirmar {a.argila} --ligacao DE->PARA '
+                  '--por "<quem confirmou>"` (ou --remover); o aceite vem depois')
+        return _imprimir_situacao(modelo, passos)
+    if not passo(not problemas.erros, f'validação: {len(problemas.erros)} erro(s), {len(problemas.avisos)} aviso(s)',
+                 f'deidara.py validar {a.argila}'):
+        return _imprimir_situacao(modelo, passos)
+    aprov, recusa = aprovacao_valida(a.argila, caminhos, modelo)
+    if not passo(mais_novo(prot, a.argila, *caminhos) or bool(aprov and aprov.get('sem_prototipo')),
+                 'protótipo em dia com o argila.json', f'deidara.py prototipar {a.argila}'):
+        return _imprimir_situacao(modelo, passos)
+    if not passo(aprov is not None, f'aprovação: {aprov["aprovado_por"]} em {aprov["em"]}' if aprov else
+                 f'aprovação: {recusa}', f'mostre o protótipo e, com o "sim", `deidara.py aprovar {a.argila} --por NOME`'):
+        return _imprimir_situacao(modelo, passos)
+    ger = aprov.get('ultima_geracao')
+    if not passo(bool(ger), f'projeto Power BI gerado em {ger["pasta"]} ({ger["em"]})' if ger else 'projeto Power BI gerado',
+                 f'deidara.py gerar {a.argila} -o C:/paineis/<nome>'):
+        return _imprimir_situacao(modelo, passos)
+    cartao = memory_card.configuracao().get('pasta')
+    if cartao and os.path.isdir(cartao):
+        salvo = [r for r, f in memory_card.saves(cartao)
+                 if f.get('tipo') == 'painel' and f.get('retrato') == governanca.retrato(modelo)]
+        passo(bool(salvo), f'salvo no Memory Card: {salvo[0]}' if salvo else 'salvo no Memory Card (versão atual)',
+              f'deidara.py memory-card enviar {a.argila} --categoria C --secao S')
+    else:
+        passo(True, 'Memory Card não configurado nesta máquina (opcional)')
+    return _imprimir_situacao(modelo, passos)
+
+
+def _imprimir_situacao(modelo, passos):
+    print(relato.resumo(modelo))
+    for ok, texto, _ in passos:
+        print(f'  {"✓" if ok else "✗"} {texto}')
+    pendente = next((p for p in passos if not p[0]), None)
+    if pendente:
+        print(f'Próximo passo: {pendente[2]}')
+        return 0
+    print('✓ Tudo feito. Siga o LEIA-ME da pasta gerada (views, atualizar, conferir, publicar).')
+    return 0
+
+
+def registrar(sub):
+    v = sub.add_parser('validar', help='confere o argila.json (nomes, ligações, funções, filtros)')
+    v.add_argument('argila')
+    v.add_argument('--json', action='store_true')
+    v.set_defaults(func=cmd_validar)
+    si = sub.add_parser('situacao', help='onde o projeto está e qual é o próximo passo')
+    si.add_argument('argila')
+    si.set_defaults(func=cmd_situacao)

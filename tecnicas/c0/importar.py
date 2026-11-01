@@ -15,6 +15,9 @@ import re
 from kibaku_nendo.util import chave, gravar_json, gravar_texto
 from tecnicas.c0 import exame as ex
 from tecnicas.c0 import proposta as pr
+from tecnicas.c0 import relato
+from tecnicas.luneta.receitas import catalogo_de_dax
+from tecnicas.c0.anatomia import refs
 
 CAL = 'dCalendario'
 COLUNAS_CAL = {'date': 'Data', 'data': 'Data', 'dia': 'Data', 'datas': 'Data', 'year': 'Ano', 'ano': 'Ano',
@@ -125,8 +128,6 @@ def _visual(v, antigo, avisos, onde, implicitas):
 
 def importar(leg, pasta, fonte='legado', projeto=None, manter_antigas=False, estudo=None):
     """Grava a pasta do painel (catálogo, argila.json, relatório do C0). Devolve (argila, avisos)."""
-    from tecnicas.c0 import relato
-    from tecnicas.luneta.receitas import catalogo_de_dax
     avisos = list(leg.get('avisos') or [])
     estudo = estudo or ex.examinar(leg)
     os.makedirs(os.path.join(pasta, 'catalogos'), exist_ok=True)
@@ -258,7 +259,6 @@ def _ligar_metas(medidas, leg, estudo, avisos):
 
 
 def _dependencias(nomes, leg):
-    from tecnicas.c0.anatomia import refs
     out, fila = set(), list(nomes)
     while fila:
         n = fila.pop()

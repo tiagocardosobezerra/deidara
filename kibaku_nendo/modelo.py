@@ -6,7 +6,7 @@ e até onde cada corte chega em cada medida. É a base das outras partes do moto
 import re
 from collections import deque
 from kibaku_nendo.util import chave, familia_da_coluna, tipo_tmdl
-from tecnicas import sasori as dicionario
+from kibaku_nendo.registro import usar
 
 
 TIPOS_TABELA = {'fato', 'dimensao'}
@@ -313,7 +313,7 @@ def medidas_do_visual(r):
 
 def conferir_funcoes(dax, p, onde):
     """Função que não está no dicionário DAX é erro: nunca se inventa função."""
-    for fn, sug in dicionario.desconhecidas(dax):
+    for fn, sug in usar('dicionario').desconhecidas(dax):
         p.erro(onde, f'função {fn} não está no dicionário DAX' + (f'; parecidas: {", ".join(sug)}' if sug else '')
                + ' (deidara.py funcoes buscar "<o que você quer fazer>")')
 

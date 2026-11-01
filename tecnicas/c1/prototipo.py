@@ -16,6 +16,10 @@ from tecnicas.arte.modelos import montar, paginas_do_relatorio
 from tecnicas.bunshin.simulacao import Simulador
 # o desenho de cada visual (e os nomes que outros módulos importam daqui)
 from tecnicas.c1.visuais import (_corta, _e, _mapa, formatar, svg_visual, titulo_do_cartao)  # noqa: F401
+from tecnicas.katsu import retrato
+from kibaku_nendo.especificacao import grafo_de_filtro as grafo_de_filtro, tabelas_da_medida as tabelas_da_medida, chega
+from kibaku_nendo.relato import para_gestor
+from kibaku_nendo.relato import nota_de_ajuda
 
 
 def _niveis(m):
@@ -234,12 +238,10 @@ def _texto_meta(m, md):
 def codigo_do_prototipo(m):
     """Identifica o que o gestor viu: muda quando muda qualquer coisa que aparece no painel."""
     import hashlib
-    from tecnicas.katsu import retrato
     return hashlib.sha1(json.dumps(retrato(m), sort_keys=True, ensure_ascii=False).encode('utf-8')).hexdigest()[:8]
 
 
 def _excecoes_do_filtro(m, v, pagina):
-    from kibaku_nendo.especificacao import grafo_de_filtro as grafo_de_filtro, tabelas_da_medida as tabelas_da_medida, chega
     if v['tipo'] not in ('segmentador', 'botoes', 'abas', 'alternar') or not v.get('categoria'):
         return []
     g = grafo_de_filtro(m)
@@ -276,7 +278,6 @@ def _secao_aprovar(m, problemas):
         inds.append(f'<div class="ind" data-nome="{_e(md["nome"])}"><label><input type="checkbox" data-guardar="ok:{_e(md["nome"])}">'
                     f'<span><b>{_e(md["nome"])}</b> — {_e(md["descricao"] or "sem definição")}</span></label>'
                     f'<div class="det">Aparece em: {_e(paginas)}{" · " + _e(meta) if meta else ""}</div></div>')
-    from kibaku_nendo.relato import para_gestor
     traduzidos = [t for t in dict.fromkeys(para_gestor(a) for a in problemas.avisos) if t]
     pontos = ''.join(f'<li>{_e(t)}</li>' for t in traduzidos) or '<li class="ok">Nenhum.</li>'
     comentarios = ''.join(f'<h3>Comentários sobre a página {_e(pg["nome"])}</h3><textarea data-guardar="c:{_e(pg["nome"])}" '
@@ -325,7 +326,6 @@ def gerar_html(m, problemas, versao):
                      f'aria-label="{_e(n["rotulo"])}" style="left:{n["x"]}px;top:{n["y"]}px;width:{n["w"]}px;height:{n["h"]}px">'
                      f'</button>' for n in lay['nav'])
         if pg.get('ajuda'):
-            from kibaku_nendo.relato import nota_de_ajuda
             notas = ''.join(f'<div class="nota-ajuda" style="left:{p["x"]}px;top:{p["y"]}px;width:{p["w"]}px;height:{p["h"]}px">'
                             + ''.join(f'<{"b" if k == 0 else "p"}>{_e(t)}</{"b" if k == 0 else "p"}>'
                                       for k, t in enumerate(nota_de_ajuda(m, v))) + '</div>' for v, p in lay['posicoes'])
