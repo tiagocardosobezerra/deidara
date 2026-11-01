@@ -204,9 +204,9 @@ def _filtros_em_coluna(seg, x, y, w, alto):
 
 
 def altura_do_kpi(v, padrao):
-    """Numa coluna estreita, o cartão novo empilha os valores (tecnicas/c3/pbir.py): pede uns 54 px por valor."""
+    """Numa coluna estreita, o cartão novo empilha os valores (tecnicas/c3/pbir.py): pede uns 64 px por valor."""
     if v['tipo'] == 'cartoes' and len(v.get('valores') or []) > 1:
-        return max(padrao, 54 * len(v['valores']) + 56)
+        return max(padrao, 64 * len(v['valores']) + 60)
     return padrao
 
 
@@ -842,7 +842,10 @@ def _equipes(m, paginas, i, c):
         yr += 520
     g, y2 = _grade(resto, x0, yr, larg, 2, 360, 20)
     pos += g
-    h = max(H, int(max(y + 200, (y2 if resto else yr)) + 8))
+    vis = _visiveis(paginas)
+    # a lista de páginas fica no pé do painel: a página cresce para ela começar depois do último filtro
+    lista = len(vis) * 54 + 64 + 24 if len(vis) > 1 else 0
+    h = max(H, int(max(y + 200, y + lista, (y2 if resto else yr)) + 8))
     f = Fundo(W, h, c['pagina'])
     f.ret(24, 24, 420, h - 48, c['acento'], 18)
     f.txt(lx, 84, pg['nome'], 30, '#FFFFFF', 700)
@@ -853,6 +856,5 @@ def _equipes(m, paginas, i, c):
             if v['tipo'] in KPI:
                 f.ret(p['x'] - 4, p['y'] - 4, p['w'] + 8, p['h'] + 8, '#FFFFFF', 12)
     _paineis(f, [(v, p) for v, p in pos if p['x'] > 450], c)
-    vis = _visiveis(paginas)
     nav = _nav_lista(f, paginas, i, c, 40, h - 64 - len(vis) * 54, 388, claro=True) if len(vis) > 1 else []
     return {'w': W, 'h': h, 'posicoes': pos, 'fundo': f.svg(), 'nav': nav}
