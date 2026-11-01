@@ -238,9 +238,12 @@ def desligar():
 
 
 def _medidas_reais(modelo):
-    """Indicadores de verdade: sem as medidas técnicas e sem as que só servem de meta a outro indicador."""
+    """Indicadores de verdade: sem as medidas técnicas (as escondidas: limites do gráfico de controle, cores, imagens
+    de apoio) e sem as que só servem de meta a outro indicador."""
     metas = {chave(md['meta_medida']) for md in modelo['medidas'] if md.get('meta_medida')}
-    return [md for md in modelo['medidas'] if md['tipo'] not in ('cor', 'meta', 'corte') and chave(md['nome']) not in metas]
+    tecnicas = ('cor', 'meta', 'corte', 'meta_periodo', 'controle', 'c4', 'leitura')   # partes de visual, não indicador
+    return [md for md in modelo['medidas'] if md['tipo'] not in tecnicas and not md.get('oculta') and not md.get('imagem')
+            and chave(md['nome']) not in metas]
 
 
 def avisos_do_modelo(pasta, modelo):

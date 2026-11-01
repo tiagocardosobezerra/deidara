@@ -31,9 +31,10 @@ def cmd_memory_card(a):
     pasta = cartao_ativo()
     if a.acao == 'catalogo':
         itens = memory_card.saves(pasta)
-        if a.json:
+        if a.json:                                  # só o JSON: outra ferramenta lê a saída
             print(json.dumps([{'ref': r, **{k: f.get(k) for k in ('tipo', 'titulo', 'versao', 'status', 'descricao')}}
                               for r, f in itens], ensure_ascii=False, indent=2))
+            return 0
         for r, f in itens:
             print(f'  [{f["tipo"]}] {r}  v{f["versao"]} · {f["status"]} — {f.get("descricao") or ""}'[:160])
         if not itens:
@@ -41,6 +42,10 @@ def cmd_memory_card(a):
         return 0
     if a.acao == 'buscar':
         achados = memory_card.buscar(pasta, a.termos or [], a.limite)
+        if a.json:
+            print(json.dumps([{'ref': r, **{k: f.get(k) for k in ('tipo', 'titulo', 'versao', 'status', 'descricao', 'dax')}}
+                              for r, f in achados], ensure_ascii=False, indent=2))
+            return 0
         for r, f in achados:
             selo = 'OFICIAL' if f.get('status') == 'oficial' else f['status']
             print(f'  [{f["tipo"]}] {f["titulo"]} ({selo}, v{f["versao"]}) — {r}')
