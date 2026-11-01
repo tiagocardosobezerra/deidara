@@ -241,3 +241,16 @@ class TestEmpacotar(unittest.TestCase):
             self.assertNotIn('cliente_real_teste.json', empacotar.codigo_fora_do_git())   # não é código da skill
         finally:
             os.remove(solto)
+
+
+class TestReferencia(unittest.TestCase):
+    """O aurora e a vitrine, gerados do zero, saem iguais à última geração conferida no Power BI Desktop."""
+
+    def test_geracao_igual_a_referencia(self):
+        sys.path.insert(0, os.path.join(RAIZ, 'ferramentas'))
+        import referencia
+        with open(referencia.ARQUIVO, encoding='utf-8') as f:
+            gravada = json.load(f)
+        diferencas = referencia.comparar(referencia.geracao_atual(), gravada)
+        self.assertEqual(diferencas, [], 'a saída mudou: confira no Desktop e rode ferramentas/referencia.py '
+                                         '--atualizar (referencias/powerbi.md, Roteiro de conferência)')
