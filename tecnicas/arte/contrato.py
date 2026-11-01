@@ -48,3 +48,24 @@ def ordem(v, m=None):
             if c and c['tipo'] == 'medida' and (medida(m, c['nome']) or {}).get('tipo') in ('pareto', 'posicao'):
                 return c, CRESCENTE
     return None
+
+
+def grade_dos_botoes(v, largura, alta=True):
+    """(colunas, linhas) dos botões de opções conhecidas (grupo de cálculo): numa faixa baixa, todos numa linha; numa
+    caixa alta, tantas colunas quantas cabem com a letra de 10 pt inteira ("Acumulado no ano"), e as linhas que
+    precisar. O layout reserva a altura e o PBIR monta a grade com a mesma conta. None: opções desconhecidas."""
+    if not v.get('opcoes'):
+        return None
+    n = len(v['opcoes'])
+    if not alta:
+        return n, 1
+    por_coluna = 0.75 * 10 * max(len(o) for o in v['opcoes']) + 24
+    colunas = max(1, min(n, int(largura // por_coluna)))
+    return colunas, -(-n // colunas)
+
+
+def altura_dos_botoes(v, largura, padrao):
+    """A altura que os botões pedem numa coluna de filtros (34 px por linha mais o respiro)."""
+    grade = grade_dos_botoes(v, largura)
+    return max(padrao, 34 * grade[1] + 30) if grade else padrao
+

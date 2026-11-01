@@ -16,7 +16,7 @@ from tecnicas.arte.modelos import montar, paginas_do_relatorio
 from tecnicas.c1.prototipo import titulo_do_cartao
 from kibaku_nendo.util import curto, gravar_json
 from tecnicas.sasori import estilos
-from tecnicas.arte.contrato import PAPEIS, ordem as ordem_do_visual
+from tecnicas.arte.contrato import PAPEIS, grade_dos_botoes, ordem as ordem_do_visual
 from tecnicas.c3 import guarda
 
 S = 'https://developer.microsoft.com/json-schemas/fabric/item/report/definition'
@@ -96,6 +96,10 @@ def _imagens_por_estado(m, apagada, acesa):
     return out
 
 
+# altura ÷ largura do desenho de cada medida que vai no visual imagem (kibaku_nendo/desenhos.py, viewBox)
+PROPORCAO_DA_IMAGEM = {'svg_dispersao': 0.75, 'svg_espinha': 0.5, 'svg_radar': 1.0}
+
+
 def _tecnicas(m, v, vis, container, pos):
     """A formatação das técnicas do Power BI Design Files que saem prontas (dicionario/visuais.json)."""
     objs = vis.setdefault('objects', {})
@@ -173,8 +177,12 @@ def _tecnicas(m, v, vis, container, pos):
     elif v['tipo'] == 'imagem':              # a medida SVG ocupa o cartão novo inteiro
         objs['value'] = [{'properties': {'show': _lit(False)}}]
         objs['label'] = [{'properties': {'show': _lit(False)}, 'selector': {'id': 'default'}}]
+        # o cartão novo estica a imagem pela largura da área: a área é a fração da largura em que o desenho cabe
+        # inteiro na altura (a espinha é 2:1, a dispersão 4:3); com 100% numa caixa larga, o desenho saía cortado
+        proporcao = PROPORCAO_DA_IMAGEM.get((medida(m, v['valores'][0]['nome']) or {}).get('tipo'), 0.75)
+        area = max(20, min(100, int(100 * (pos['h'] - 44) / max(1, pos['w'] * proporcao))))
         objs['image'] = [{'properties': {'show': _lit(True), 'imageType': _lit('imageUrl'),
-                                         'imageUrl': _medida_expr(m, v['valores'][0]['nome']), 'imageAreaSize': _int(100),
+                                         'imageUrl': _medida_expr(m, v['valores'][0]['nome']), 'imageAreaSize': _int(area),
                                          'padding': _int(0), 'position': _lit('Left')}, 'selector': {'id': 'default'}}]
     elif v['tipo'] == 'aviso':               # a faixa de aviso: texto vermelho, fundo vermelho claro só quando avisa
         objs['value'] = [{'properties': {'fontSize': _lit(14), 'fontColor': {'solid': {'color': _lit('#A4262C')}},
@@ -309,14 +317,16 @@ def _formato_botoes(m, v, pos, vis, container):
     colunas = max(2, min(7, int(pos['w'] // minimo)))       # cada botão com pelo menos 80 px (130 com imagem)
     automatica = not v.get('opcoes')                        # itens de uma coluna: quantos são só o Power BI sabe
     fonte = (9 if automatica else 12) if pos['h'] < 90 else 14   # grade automática na faixa: até três linhas
-    if v.get('opcoes'):                                     # opções conhecidas: nenhuma célula vazia rouba largura
-        colunas = max(1, min(colunas, len(v['opcoes'])))
+    linhas = 1 if colunas >= 7 or pos['h'] < 90 else 2
+    grade_conhecida = grade_dos_botoes(v, pos['w'], alta=pos['h'] >= 90)
+    if grade_conhecida:                                     # a mesma grade que o layout reservou (arte/contrato.py)
+        colunas, linhas = grade_conhecida
         # a letra cabe na largura de cada botão ("Acumulado no ano" inteiro): 1 pt ~ 0,75 px por caractere
         por_botao = pos['w'] / colunas - 20
         fonte = max(8, min(fonte, int(por_botao / (0.75 * max(len(o) for o in v['opcoes'])))))
     # grade fixa só com as opções conhecidas; com os itens de uma coluna, a grade automática mostra todos (a fixa
     # escondia o que passava das colunas: 4 de 8 empresas)
-    grade = {'autoGrid': _lit(True)} if automatica else {'autoGrid': _lit(False), 'rowCount': _int(1 if colunas >= 7 or pos['h'] < 90 else 2),
+    grade = {'autoGrid': _lit(True)} if automatica else {'autoGrid': _lit(False), 'rowCount': _int(linhas),
                                                           'columnCount': _int(colunas)}
     vis['objects'] = {'layout': [{'properties': {**grade, 'cellPadding': _int(6)}}],
                       # o botão é claro por padrão: o texto segue a cor de texto do tema, nunca a do estilo de origem

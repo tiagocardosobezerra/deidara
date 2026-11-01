@@ -149,6 +149,29 @@ def _em_linha(itens, x, y, w, h, gap=GAP):
     return [(v, {'x': x + k * (lw + gap), 'y': y, 'w': lw, 'h': h}) for k, v in enumerate(itens)]
 
 
+def _filtros_em_linha(seg, x, y, unidade, h, maximo=1300):
+    """Filtros lado a lado, cada um com a largura do seu peso (botões levam a largura das opções), sem passar de
+    `maximo` (o título da página fica à direita)."""
+    unidade = min(unidade, maximo / max(1, sum(peso_do_filtro(v) for v in seg)))
+    out = []
+    for v in seg:
+        w = unidade * peso_do_filtro(v) - GAP
+        out.append((v, {'x': x, 'y': y, 'w': w, 'h': h}))
+        x += w + GAP
+    return out
+
+
+def _filtros_em_coluna(seg, x, y, w, alto):
+    """Filtros um embaixo do outro; os botões ganham a altura das linhas que pedem (arte/contrato.py)."""
+    from tecnicas.arte.contrato import altura_dos_botoes
+    out = []
+    for v in seg:
+        h = altura_dos_botoes(v, w, alto) if v['tipo'] == 'botoes' else alto
+        out.append((v, {'x': x, 'y': y, 'w': w, 'h': h}))
+        y += h + GAP
+    return out, y
+
+
 def _em_coluna(itens, x, y, w, h, gap=GAP):
     if not itens:
         return []
@@ -174,7 +197,7 @@ def peso_do_filtro(v):
     if v['tipo'] == 'botoes' and v.get('opcoes'):     # opções conhecidas: cada uma com a largura do rótulo ("Acu...")
         return max(2.2, sum(0.12 + 0.065 * len(o) for o in v['opcoes']))
     if v['tipo'] == 'botoes':
-        return 3 if v.get('imagem') or v.get('icone') else 2.2
+        return 4.5 if v.get('imagem') or v.get('icone') else 3.5     # itens de uma coluna: duas linhas, não três
     return 0.9 if v['tipo'] == 'alternar' else 3 if v['tipo'] == 'aviso' else 1
 
 
@@ -296,7 +319,7 @@ def _faixa(m, paginas, i, c):
 def nova_coluna(m, paginas, i, c):
     pg = paginas[i]
     seg, kpi, graf, tab = _separar(pg['visuais'])
-    pos = _em_linha(seg[:5], 120, 22, min(5, len(seg)) * 236 - GAP, 68) if seg else []
+    pos = _filtros_em_linha(seg[:5], 120, 22, 236, 68) if seg else []
     itens = graf + tab
     x0 = 360 if kpi else 32
     larg = 1888 - x0
@@ -346,7 +369,7 @@ def _secoes(m, paginas, i, c):
     y = 176
     pos += _em_coluna(kpi[:4], 24, y, 252, len(kpi[:4]) * 118 - GAP) if kpi else []
     y += len(kpi[:4]) * 118 + (24 if kpi else 0)
-    pos += _em_coluna(seg, 24, y, 252, len(seg) * 80 - GAP) if seg else []
+    pos += _filtros_em_coluna(seg, 24, y, 252, 80 - GAP)[0] if seg else []
     x0, larg = 330, 1558
     y = 32
     secoes = []
@@ -644,7 +667,7 @@ def _mapa_central(m, paginas, i, c):
 def _causa_raiz(m, paginas, i, c):
     pg = paginas[i]
     seg, kpi, graf, tab = _separar(pg['visuais'])
-    pos = _em_coluna(seg, 24, 190, 252, len(seg) * 84 - GAP) if seg else []
+    pos = _filtros_em_coluna(seg, 24, 190, 252, 84 - GAP)[0] if seg else []
     x0, larg = 330, 1558
     y = 32
     if kpi:
@@ -728,8 +751,9 @@ def _equipes(m, paginas, i, c):
             pos.append((v, {'x': lx, 'y': y, 'w': lw, 'h': 112}))
             y += 126
     if seg:
-        pos += _em_coluna(seg, lx, y + 8, lw, len(seg) * 76 - GAP)
-        y += len(seg) * 76 + 8
+        filtros, fim = _filtros_em_coluna(seg, lx, y + 8, lw, 76 - GAP)
+        pos += filtros
+        y = fim
     heroi = next((v for v in graf if v['tipo'] == 'dispersao'), None)
     mini = [v for v in graf if v is not heroi][:3] if heroi else graf[:3]
     if not heroi and graf[3:]:
