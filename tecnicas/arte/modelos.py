@@ -253,6 +253,14 @@ def _filtros_no_canto(seg, direita, y, h, area):
     if not seg:
         return []
     pesos = [peso_do_filtro(v) for v in seg]
+    # nenhum filtro com menos de 120 px: quando falta espaço, os botões (os mais largos) cedem
+    outros = sum(p for v, p in zip(seg, pesos) if v['tipo'] != 'botoes')
+    botoes = [k for k, v in enumerate(seg) if v['tipo'] == 'botoes']
+    if botoes and (area - GAP * (len(seg) - 1)) / sum(pesos) < 120:
+        sobra = max(2.0 * len(botoes), (area - GAP * (len(seg) - 1)) / 120 - outros)
+        total_botoes = sum(pesos[k] for k in botoes)
+        for k in botoes:
+            pesos[k] = pesos[k] * sobra / total_botoes
     un = min(210, (area - GAP * (len(seg) - 1)) / sum(pesos))
     x = direita - un * sum(pesos) - GAP * (len(seg) - 1)
     out = []
@@ -706,13 +714,17 @@ def _mapa_central(m, paginas, i, c):
         f.txt(W / 2, 98, _quebra(pg['descricao'], 110)[0], 17, c['mudo'], 400, 'middle')
     _paineis(f, pos, c)
     nav = []
-    for k, (alvo, p) in enumerate(_visiveis(paginas)):
-        x = 32 + k * 210
+    visiveis = _visiveis(paginas)
+    # as abas ficam à esquerda do título do meio: com muitas páginas, cada uma ganha menos largura e letra menor
+    passo = min(210, (W / 2 - 260 - 32) / max(1, len(visiveis)))
+    letra = max(11, min(16, int(passo / (0.55 * max([len(p['nome']) for _, p in visiveis] or [1])))))
+    for k, (alvo, p) in enumerate(visiveis):
+        x = 32 + k * passo
         ativo = p['grupo'] == _ativa(paginas, i)
-        f.txt(x, 62, p['nome'], 16, c['acento'] if ativo else c['mudo'], 700 if ativo else 400)
+        f.txt(x, 62, p['nome'], letra, c['acento'] if ativo else c['mudo'], 700 if ativo else 400)
         if ativo:
             f.ret(x, 72, 60, 4, c['acento'], 2)
-        nav.append({'x': x - 6, 'y': 36, 'w': 200, 'h': 44, 'alvo': alvo, 'rotulo': p['nome']})
+        nav.append({'x': x - 6, 'y': 36, 'w': passo - 10, 'h': 44, 'alvo': alvo, 'rotulo': p['nome']})
     return {'w': W, 'h': h, 'posicoes': pos, 'fundo': f.svg(), 'nav': nav if len(nav) > 1 else []}
 
 
