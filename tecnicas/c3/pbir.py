@@ -323,7 +323,7 @@ def _formato_botoes(m, v, pos, vis, container):
         colunas, linhas = grade_conhecida
         # a letra cabe na largura de cada botão ("Acumulado no ano" inteiro): 1 pt ~ 0,75 px por caractere
         por_botao = pos['w'] / colunas - 20
-        fonte = max(8, min(fonte, int(por_botao / (0.75 * max(len(o) for o in v['opcoes'])))))
+        fonte = max(8, min(fonte, int(por_botao / (0.85 * max(len(o) for o in v['opcoes'])))))   # negrito: 0,85
     # grade fixa só com as opções conhecidas; com os itens de uma coluna, a grade automática mostra todos (a fixa
     # escondia o que passava das colunas: 4 de 8 empresas)
     grade = {'autoGrid': _lit(True)} if automatica else {'autoGrid': _lit(False), 'rowCount': _int(linhas),

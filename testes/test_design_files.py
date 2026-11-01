@@ -168,15 +168,15 @@ class TestGrupoDeCalculo(unittest.TestCase):
         self.assertEqual(p.erros, [])
         t = tabela_do_modelo(m, 'Período')
         itens = t['grupo_calculo']['itens']
-        self.assertEqual([x['rotulo'] for x in itens], ['Atual', 'Acumulado no ano', 'Var. ano anterior'])
+        self.assertEqual([x['rotulo'] for x in itens], ['Atual', 'Acum. no ano', 'Var. A/A'])
         for x in itens:
             self.assertEqual(dicionario.desconhecidas(x['dax']), [], x['rotulo'])
         texto = tmdl.tabela(m, t)
-        for trecho in ('\tcalculationGroup', "calculationItem 'Acumulado no ano' = CALCULATE(SELECTEDMEASURE(), "
+        for trecho in ('\tcalculationGroup', "calculationItem 'Acum. no ano' = CALCULATE(SELECTEDMEASURE(), "
                        'DATESYTD(dCalendario[Data]))', 'formatStringDefinition = IF(ISNUMBER(SELECTEDMEASURE())',
                        'sourceColumn: Name', 'sortByColumn: Ordem', "partition 'Período' = calculationGroup"):
             self.assertIn(trecho, texto)
-        self.assertEqual(categorias(m, {'tabela': 'Período', 'nome': 'Período'})[:2], ['Atual', 'Acumulado no ano'])
+        self.assertEqual(categorias(m, {'tabela': 'Período', 'nome': 'Período'})[:2], ['Atual', 'Acum. no ano'])
 
     def test_erros(self):
         a = self._argila()

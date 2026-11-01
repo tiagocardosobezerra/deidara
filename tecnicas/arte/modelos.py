@@ -214,7 +214,7 @@ def peso_do_filtro(v):
     if v['tipo'] == 'botoes' and v.get('opcoes'):     # opções conhecidas: cada uma com a largura do rótulo ("Acu...")
         return max(2.2, sum(0.12 + 0.065 * len(o) for o in v['opcoes']))
     if v['tipo'] == 'botoes':
-        return 4.5 if v.get('imagem') or v.get('icone') else 3.5     # itens de uma coluna: duas linhas, não três
+        return 6 if v.get('imagem') or v.get('icone') else 4.5     # itens de uma coluna: duas linhas, não três
     return 0.9 if v['tipo'] == 'alternar' else 3 if v['tipo'] == 'aviso' else 1
 
 

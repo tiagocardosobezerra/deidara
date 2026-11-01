@@ -167,18 +167,20 @@ def _alguem_mostra(m, coluna):
     return False
 
 
-ITENS_DE_TEMPO = {                 # item do grupo de cálculo: (rótulo, DAX com {d} = coluna de data, é percentual)
+# item do grupo de cálculo: (rótulo, DAX com {d} = coluna de data, é percentual). Rótulos curtos: viram botões, que
+# em faixa de filtros de 600 px cortavam "Acumulado no ano" (vitrine no Desktop, trilho-escuro)
+ITENS_DE_TEMPO = {
     'atual': ('Atual', 'SELECTEDMEASURE()', False),
-    'acumulado_ano': ('Acumulado no ano', 'CALCULATE(SELECTEDMEASURE(), DATESYTD({d}))', False),
+    'acumulado_ano': ('Acum. no ano', 'CALCULATE(SELECTEDMEASURE(), DATESYTD({d}))', False),
     'ano_anterior': ('Ano anterior', 'CALCULATE(SELECTEDMEASURE(), SAMEPERIODLASTYEAR({d}))', False),
-    'variacao_ano_anterior': ('Var. ano anterior', 'VAR _atual = SELECTEDMEASURE()\n'
+    'variacao_ano_anterior': ('Var. A/A', 'VAR _atual = SELECTEDMEASURE()\n'
                               'VAR _anterior = CALCULATE(SELECTEDMEASURE(), SAMEPERIODLASTYEAR({d}))\n'
                               'RETURN\n    IF(ISNUMBER(_atual), DIVIDE(_atual - _anterior, _anterior), _atual)', True),
     'mes_anterior': ('Mês anterior', 'CALCULATE(SELECTEDMEASURE(), DATEADD({d}, -1, MONTH))', False),
-    'variacao_mes_anterior': ('Var. mês anterior', 'VAR _atual = SELECTEDMEASURE()\n'
+    'variacao_mes_anterior': ('Var. M/M', 'VAR _atual = SELECTEDMEASURE()\n'
                               'VAR _anterior = CALCULATE(SELECTEDMEASURE(), DATEADD({d}, -1, MONTH))\n'
                               'RETURN\n    IF(ISNUMBER(_atual), DIVIDE(_atual - _anterior, _anterior), _atual)', True),
-    'movel_12m': ('Últimos 12 meses', 'CALCULATE(SELECTEDMEASURE(), DATESINPERIOD({d}, MAX({d}), -12, MONTH))', False),
+    'movel_12m': ('12 meses', 'CALCULATE(SELECTEDMEASURE(), DATESINPERIOD({d}, MAX({d}), -12, MONTH))', False),
 }
 
 

@@ -59,7 +59,7 @@ def grade_dos_botoes(v, largura, alta=True):
     n = len(v['opcoes'])
     if not alta:
         return n, 1
-    por_coluna = 0.75 * 10 * max(len(o) for o in v['opcoes']) + 24
+    por_coluna = 0.85 * 10 * max(len(o) for o in v['opcoes']) + 24
     colunas = max(1, min(n, int(largura // por_coluna)))
     return colunas, -(-n // colunas)
 

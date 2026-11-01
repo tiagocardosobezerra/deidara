@@ -436,10 +436,11 @@ class TestLayoutNoPowerBI(unittest.TestCase):
 
     def test_botoes_do_grupo_de_calculo_cabem_os_rotulos(self):
         from tecnicas.arte import modelos
-        opcoes = ['Atual', 'Acumulado no ano', 'Ano anterior', 'Var. ano anterior', 'Últimos 12 meses']
+        opcoes = ['Atual', 'Acum. no ano', 'Ano anterior', 'Var. A/A', '12 meses']
         seg = [{'tipo': 'segmentador'}, {'tipo': 'segmentador'}, {'tipo': 'botoes', 'opcoes': opcoes}]
         largura = modelos._filtros_no_canto(seg, 1880, 34, 64, 1100)[2][1]['w']
-        self.assertGreaterEqual(largura / len(opcoes), 140)            # "Acumulado no ano" inteiro, sem "Acu..."
+        # o rótulo mais longo inteiro em 10 pt negrito (~0,85 px por pt por caractere, mais o respiro)
+        self.assertGreaterEqual(largura / len(opcoes), 0.85 * 10 * max(len(o) for o in opcoes) + 20)
 
 
 class TestDemo(unittest.TestCase):
@@ -625,8 +626,8 @@ class TestVitrineNoDesktop(unittest.TestCase):
         # padrao, vitrine aberta no Desktop: "Acumulad...", 8 empresas em 56 px e a dispersão cortada
         from tecnicas.arte.layout import posicionar
         seg = {'tipo': 'segmentador', 'titulo': ''}
-        botoes = {'tipo': 'botoes', 'opcoes': ['Atual', 'Acumulado no ano', 'Ano anterior', 'Var. ano anterior',
-                                              'Últimos 12 meses']}
+        botoes = {'tipo': 'botoes', 'opcoes': ['Atual', 'Acum. no ano', 'Ano anterior', 'Var. A/A',
+                                              '12 meses']}
         destaque = {'tipo': 'botoes'}
         imagem = {'tipo': 'imagem'}
         barras = {'tipo': 'barras'}
