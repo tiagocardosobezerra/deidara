@@ -16,6 +16,7 @@ dos dados antes (o projeto de demonstração não pede credencial).
 import json
 import os
 import subprocess
+import time
 
 SCRIPT = r'''
 [Console]::OutputEncoding = [Text.Encoding]::UTF8
@@ -30,7 +31,7 @@ try {
     $titulo = (Get-Process -Id $pai -ErrorAction SilentlyContinue).MainWindowTitle
     $linha = (Get-CimInstance Win32_Process -Filter "ProcessId=$pai").CommandLine
     $arquivo = if ($linha -match '"([^"]+\.pbi[px])"') { $Matches[1] } else { $null }
-    $saida.instancias += [ordered]@{ porta = $porta; titulo = $titulo; arquivo = $arquivo; dll = (Join-Path (Split-Path $p.Path) 'Microsoft.PowerBI.AdomdClient.dll') }
+    $saida.instancias += [ordered]@{ porta = $porta; titulo = $titulo; arquivo = $arquivo; pid = $pai; dll = (Join-Path (Split-Path $p.Path) 'Microsoft.PowerBI.AdomdClient.dll') }
   }
   $alvo = $saida.instancias | Where-Object { -not $env:DEIDARA_PORTA -or "$($_.porta)" -eq $env:DEIDARA_PORTA } | Select-Object -First 1
   if ($alvo -and $env:DEIDARA_CONSULTAS) {
@@ -141,3 +142,31 @@ def conferir(medidas, calendario=None, porta=None, atualizar=False, pasta_tmp=No
         elif tipo == 'total' and (not x['linhas'] or not x['linhas'][0][0]):
             vazias.append(nome)
     return {'instancia': inst[0], 'problemas': problemas, 'calculadas': len(medidas), 'vazias': vazias}
+
+
+def _mesmo_arquivo(a, b):
+    return bool(a and b) and os.path.normcase(os.path.abspath(a)) == os.path.normcase(os.path.abspath(b))
+
+
+def abrir(pbip, espera=300):
+    """Abre o .pbip no Power BI Desktop e espera o motor dele responder. Devolve a porta, ou None no tempo esgotado."""
+    if os.name != 'nt':
+        return None
+    os.startfile(os.path.abspath(pbip))              # noqa: S606 (o Desktop é o programa associado ao .pbip)
+    limite = time.time() + espera
+    while time.time() < limite:
+        time.sleep(5)
+        inst = [i for i in _rodar().get('instancias') or [] if _mesmo_arquivo(i.get('arquivo'), pbip) and i.get('porta')]
+        if inst:
+            time.sleep(10)                           # o motor responde antes de o relatório terminar de carregar
+            return inst[0]['porta']
+    return None
+
+
+def fechar(porta):
+    """Fecha o Power BI Desktop daquela porta, sem salvar (é o projeto gerado, que se gera de novo)."""
+    inst = [i for i in _rodar().get('instancias') or [] if str(i.get('porta')) == str(porta)]
+    for i in inst:
+        subprocess.run(['taskkill', '/PID', str(i['pid']), '/F', '/T'], capture_output=True)
+    return bool(inst)
+

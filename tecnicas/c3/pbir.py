@@ -307,13 +307,17 @@ def _formato_botoes(m, v, pos, vis, container):
     """Botões: uma linha se o espaço é largo, duas se é estreito; sem título repetido."""
     minimo = 130 if v.get('imagem') or v.get('icone') else 80   # ícone e imagem tomam parte do botão
     colunas = max(2, min(7, int(pos['w'] // minimo)))       # cada botão com pelo menos 80 px (130 com imagem)
-    fonte = 12 if pos['h'] < 90 else 14
+    automatica = not v.get('opcoes')                        # itens de uma coluna: quantos são só o Power BI sabe
+    fonte = (9 if automatica else 12) if pos['h'] < 90 else 14   # grade automática na faixa: até três linhas
     if v.get('opcoes'):                                     # opções conhecidas: nenhuma célula vazia rouba largura
         colunas = max(1, min(colunas, len(v['opcoes'])))
         if pos['h'] < 90 and max(len(o) for o in v['opcoes']) > 12:
             fonte = 10                                      # "Acumulado no ano" inteiro na faixa dos filtros
-    vis['objects'] = {'layout': [{'properties': {'autoGrid': _lit(False), 'rowCount': _int(1 if colunas >= 7 or pos['h'] < 90 else 2),
-                                                 'columnCount': _int(colunas), 'cellPadding': _int(6)}}],
+    # grade fixa só com as opções conhecidas; com os itens de uma coluna, a grade automática mostra todos (a fixa
+    # escondia o que passava das colunas: 4 de 8 empresas)
+    grade = {'autoGrid': _lit(True)} if automatica else {'autoGrid': _lit(False), 'rowCount': _int(1 if colunas >= 7 or pos['h'] < 90 else 2),
+                                                          'columnCount': _int(colunas)}
+    vis['objects'] = {'layout': [{'properties': {**grade, 'cellPadding': _int(6)}}],
                       # o botão é claro por padrão: o texto segue a cor de texto do tema, nunca a do estilo de origem
                       'value': [{'properties': {'fontColor': {'solid': {'color': _lit(m['tema']['texto'])}},
                                                 'fontSize': _lit(fonte)}, 'selector': {'id': 'default'}},
@@ -329,8 +333,12 @@ def _formato_botoes(m, v, pos, vis, container):
 
 
 def _formato_cartao_novo(m, v, pos, vis, container):
-    """Número do cartão novo legível em qualquer estilo de origem."""
-    vis['objects'] = {'value': [{'properties': {'fontSize': _lit(max(16, min(30, round(pos['h'] / 4))))}}]}
+    """Número do cartão novo legível em qualquer estilo de origem, e inteiro: com vários indicadores lado a lado, a
+    letra cabe na largura de cada um ("R$ 10,46 Mil" tem uns 12 caracteres), senão o Power BI corta ("R$ 1...")."""
+    n = max(1, len(v.get('valores') or []))
+    largura = (pos['w'] - 24) / n - 16
+    tamanho = max(12, min(30, round(pos['h'] / 4), int(largura / 10)))   # 1 pt de letra ~ 0,8 px por caractere
+    vis['objects'] = {'value': [{'properties': {'fontSize': _lit(tamanho)}, 'selector': {'id': 'default'}}]}
 
 
 # a formatação nossa de cada visual nativo, antes do estilo de origem (que ela sobrepõe propriedade a propriedade)

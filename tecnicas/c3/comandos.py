@@ -110,8 +110,17 @@ def cmd_conferir_desktop(a):
         return 1
     medidas = [x['nome'] for x in modelo['medidas']]
     cal = modelo['calendario']['tabela'] if modelo.get('calendario') else None
-    r = desktop.conferir(medidas, cal, porta=a.porta, atualizar=a.atualizar,
+    porta = a.porta
+    if a.abrir:
+        print(f'Abrindo {a.abrir} no Power BI Desktop...')
+        porta = desktop.abrir(a.abrir)
+        if not porta:
+            print('✗ o Power BI Desktop não abriu o projeto no tempo (5 min): abra à mão e rode sem --abrir')
+            return 1
+    r = desktop.conferir(medidas, cal, porta=porta, atualizar=a.atualizar or bool(a.abrir),
                          pasta_tmp=os.path.dirname(os.path.abspath(a.argila)))
+    if a.fechar and porta:
+        desktop.fechar(porta)
     if r.get('erro'):
         print(f'✗ {r["erro"]}')
         for i in r.get('instancias') or []:
@@ -139,4 +148,6 @@ def registrar(sub):
     cd.add_argument('argila')
     cd.add_argument('--porta', help='a porta do motor, com mais de um Power BI Desktop aberto')
     cd.add_argument('--atualizar', action='store_true', help='atualiza os dados antes (o --demo não pede credencial)')
+    cd.add_argument('--abrir', metavar='PBIP', help='abre este .pbip no Desktop, espera o motor e atualiza antes')
+    cd.add_argument('--fechar', action='store_true', help='fecha o Desktop no fim, sem salvar (o projeto se gera de novo)')
     cd.set_defaults(func=cmd_conferir_desktop)

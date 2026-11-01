@@ -1,0 +1,322 @@
+#!/usr/bin/env python3
+"""
+Monta o argila.json da vitrine: o painel de RH de teste com TODO tipo de visual, de medida e de recurso que o
+Deidara gera, para conferir no Power BI Desktop (e no teste de referência) que cada um sai certo.
+
+Usa o catálogo fictício desta pasta (catalogos/erp.json e metas.json, só estrutura). O modelo de layout vem do
+argumento (padrão: faixa-de-kpis), para gerar a mesma vitrine nos doze modelos.
+
+    python3 exemplos/vitrine/montar.py [MODELO] [-o exemplos/vitrine/argila.json]
+"""
+
+import argparse
+import json
+import os
+
+AQUI = os.path.dirname(os.path.abspath(__file__))
+D = 'Diretoria de RH'
+SEG = [{'tipo': 'segmentador', 'campo': 'dCalendario[Ano]'}, {'tipo': 'segmentador', 'campo': 'dEmpresa[Empresa]'}]
+
+TEMPO_DE_CASA = (
+    'VAR _fim = MIN(MAX(dCalendario[Data]), TODAY())\n'
+    'RETURN\n'
+    '    AVERAGEX(\n'
+    '        FILTER(\n'
+    '            dColaborador,\n'
+    '            VAR _saida = CALCULATE(MAX(fDesligamento[Data do Desligamento]), REMOVEFILTERS(dCalendario))\n'
+    '            RETURN dColaborador[Data de Admissão] <= _fim && (ISBLANK(_saida) || _saida > _fim)\n'
+    '        ),\n'
+    '        DATEDIFF(dColaborador[Data de Admissão], _fim, DAY) / 365.25\n'
+    '    )')
+
+
+def col(coluna, nome, **extra):
+    return {'coluna': coluna, 'nome': nome, **extra}
+
+
+TABELAS = [
+    {'nome': 'dColaborador', 'tipo': 'dimensao', 'fonte': 'erp', 'origem': 'F_FUNCIONARIO', 'colunas': [
+        col('MATRICULA', 'Matrícula'), col('DATAADMISSAO', 'Data de Admissão'), col('SEXO', 'Sexo'),
+        col('TIPOCONTRATO', 'Tipo de Contrato'), col('VALORREMUNERACAO', 'Remuneração', formato='moeda')]},
+    {'nome': 'dCargo', 'tipo': 'dimensao', 'fonte': 'erp', 'origem': 'F_CARGO', 'colunas': [
+        col('CODCARGO', 'Cód. Cargo'), col('DESCRICAOCARGO', 'Cargo'), col('NIVELCARGO', 'Nível do Cargo')]},
+    {'nome': 'dDepartamento', 'tipo': 'dimensao', 'fonte': 'erp', 'origem': 'F_DEPARTAMENTO', 'colunas': [
+        col('CODDEPARTAMENTO', 'Cód. Departamento'), col('DESCRICAODEPARTAMENTO', 'Departamento'),
+        col('DIRETORIA', 'Diretoria')]},
+    {'nome': 'dEmpresa', 'tipo': 'dimensao', 'fonte': 'erp', 'origem': 'N_EMPRESA', 'colunas': [
+        col('CODEMPRESA', 'Código'), col('RAZAOSOCIAL', 'Empresa')]},
+    {'nome': 'dUnidade', 'tipo': 'dimensao', 'fonte': 'erp', 'origem': 'N_UNIDADE', 'colunas': [
+        col('CODUNIDADE', 'Cód. Unidade'), col('NOMEUNIDADE', 'Unidade'), col('CIDADE', 'Cidade'), col('UF', 'UF')]},
+    {'nome': 'fDesligamento', 'tipo': 'fato', 'fonte': 'erp', 'origem': 'F_DESLIGAMENTO', 'colunas': [
+        col('DATADESLIGAMENTO', 'Data do Desligamento')]},
+    {'nome': 'dMotivoDesligamento', 'tipo': 'dimensao', 'fonte': 'erp', 'origem': 'F_MOTIVO_DESLIGAMENTO', 'colunas': [
+        col('CODMOTIVO', 'Cód. Motivo'), col('DESCRICAOMOTIVO', 'Motivo'), col('TIPODESLIGAMENTO', 'Tipo de Desligamento')]},
+    {'nome': 'fAusencia', 'tipo': 'fato', 'fonte': 'erp', 'origem': 'F_AUSENCIA', 'colunas': [
+        col('HORASAUSENCIA', 'Horas'), col('DATAAUSENCIA', 'Data da Ausência')]},
+    {'nome': 'dTipoAusencia', 'tipo': 'dimensao', 'fonte': 'erp', 'origem': 'F_TIPO_AUSENCIA', 'colunas': [
+        col('CODTIPOAUSENCIA', 'Cód. Tipo'), col('DESCRICAOTIPOAUSENCIA', 'Tipo de Ausência')]},
+    {'nome': 'fJornada', 'tipo': 'fato', 'fonte': 'erp', 'origem': 'F_JORNADA', 'colunas': [
+        col('HORASPREVISTAS', 'Horas Previstas'), col('DATAJORNADA', 'Data da Jornada')]},
+    {'nome': 'fMetas', 'tipo': 'fato', 'fonte': 'metas', 'origem': 'Metas', 'colunas': [
+        col('Meta Turnover', 'Meta Turnover'), col('Meta Absenteísmo', 'Meta Absenteísmo')]},
+]
+
+RELACIONAMENTOS = [
+    {'de': 'fMetas', 'para': 'dEmpresa', 'declarada': {'campos': [['Cód. Empresa', 'CODEMPRESA']],
+                                                       'por': 'Time do Deidara (vitrine)',
+                                                       'motivo': 'mesmo código da empresa no ERP'}},
+    {'de': 'dColaborador', 'para': 'dCargo'}, {'de': 'dColaborador', 'para': 'dDepartamento'},
+    {'de': 'dColaborador', 'para': 'dEmpresa'}, {'de': 'dColaborador', 'para': 'dUnidade'},
+    {'de': 'fAusencia', 'para': 'dColaborador'}, {'de': 'fDesligamento', 'para': 'dColaborador'},
+    {'de': 'fDesligamento', 'para': 'dMotivoDesligamento'}, {'de': 'fJornada', 'para': 'dColaborador'},
+    {'de': 'fAusencia', 'para': 'dTipoAusencia'},
+]
+
+
+def medidas():
+    m = [
+        # a cadeia do turnover e do absenteísmo
+        {'nome': 'Desligamentos', 'agregacao': 'contagem_linhas', 'tabela': 'fDesligamento', 'polaridade': 'menor_melhor',
+         'descricao': 'Quantidade de desligamentos no período.', 'pasta': 'Turnover'},
+        {'nome': 'Desligamentos Voluntários', 'tabela': 'fDesligamento', 'formato': 'inteiro', 'polaridade': 'menor_melhor',
+         'dax': 'CALCULATE([Desligamentos], dMotivoDesligamento[Tipo de Desligamento] = "Voluntario")',
+         'descricao': 'Desligamentos a pedido do colaborador.', 'pasta': 'Turnover'},
+        {'nome': 'Admissões', 'tabela': 'dColaborador', 'formato': 'inteiro', 'polaridade': 'maior_melhor',
+         'dax': 'CALCULATE(COUNTROWS(dColaborador), TREATAS(VALUES(dCalendario[Data]), dColaborador[Data de Admissão]))',
+         'descricao': 'Colaboradores admitidos no período.', 'pasta': 'Movimentação'},
+        {'nome': 'Headcount', 'tipo': 'estoque_na_data', 'entradas': 'dColaborador[Data de Admissão]',
+         'saidas': 'fDesligamento[Data do Desligamento]', 'tabela': 'dColaborador', 'polaridade': 'maior_melhor',
+         'descricao': 'Colaboradores ativos no último dia do período.', 'pasta': 'Quadro', 'dono': D,
+         'periodicidade': 'mensal'},
+        {'nome': 'HC Médio', 'tipo': 'media_mensal', 'base': 'Headcount', 'descricao': 'Média do headcount de fim de mês.',
+         'pasta': 'Quadro'},
+        {'nome': 'Saldo de Movimentação', 'dax': '[Admissões] - [Desligamentos]', 'formato': 'inteiro', 'meta': 0,
+         'polaridade': 'maior_melhor', 'descricao': 'Admissões menos desligamentos: positivo, o quadro cresceu.',
+         'pasta': 'Movimentação', 'dono': D},
+        {'nome': 'Turnover', 'tipo': 'divisao', 'numerador': 'Desligamentos', 'denominador': 'HC Médio',
+         'formato': 'percentual', 'polaridade': 'menor_melhor', 'base_meta': 'ano', 'meta': 'Meta de Turnover',
+         'descricao': 'Desligamentos ÷ headcount médio do período.', 'pasta': 'Turnover', 'dono': D,
+         'periodicidade': 'mensal', 'tolerancia': 0.1},
+        {'nome': 'Turnover Voluntário', 'tipo': 'divisao', 'numerador': 'Desligamentos Voluntários',
+         'denominador': 'HC Médio', 'formato': 'percentual', 'polaridade': 'menor_melhor',
+         'descricao': 'Desligamentos a pedido ÷ headcount médio.', 'pasta': 'Turnover', 'dono': D},
+        {'nome': 'Horas Ausentes', 'agregacao': 'soma', 'coluna': 'fAusencia[Horas]', 'polaridade': 'menor_melhor',
+         'descricao': 'Horas de ausência no período.', 'pasta': 'Absenteísmo'},
+        {'nome': 'Horas de Jornada', 'agregacao': 'soma', 'coluna': 'fJornada[Horas Previstas]',
+         'descricao': 'Horas previstas na escala do período.', 'pasta': 'Absenteísmo'},
+        {'nome': 'Absenteísmo', 'tipo': 'divisao', 'numerador': 'Horas Ausentes', 'denominador': 'Horas de Jornada',
+         'formato': 'percentual', 'polaridade': 'menor_melhor', 'base_meta': 'periodo', 'meta': 'Meta de Absenteísmo',
+         'descricao': 'Horas ausentes ÷ horas previstas.', 'pasta': 'Absenteísmo', 'dono': D, 'tolerancia': 0.1},
+        {'nome': 'Meta de Turnover', 'tipo': 'media_ponderada', 'coluna': 'fMetas[Meta Turnover]', 'peso': 'HC Médio',
+         'por': 'dEmpresa[Código]', 'formato': 'percentual', 'pasta': 'Metas',
+         'descricao': 'Meta anual de turnover; no grupo, pesada pelo HC médio de cada empresa.'},
+        {'nome': 'Meta de Absenteísmo', 'tipo': 'media_ponderada', 'coluna': 'fMetas[Meta Absenteísmo]',
+         'peso': 'Horas de Jornada', 'por': 'dEmpresa[Código]', 'formato': 'percentual', 'pasta': 'Metas',
+         'descricao': 'Meta de absenteísmo; no grupo, pesada pelas horas previstas.'},
+        # custo e estatística descritiva
+        {'nome': 'Folha Mensal', 'agregacao': 'soma', 'coluna': 'dColaborador[Remuneração]', 'no_estoque': 'Headcount',
+         'formato': 'moeda', 'polaridade': 'menor_melhor', 'descricao': 'Remuneração dos ativos no fim do período.',
+         'pasta': 'Custo', 'dono': D},
+        {'nome': 'Remuneração Média', 'agregacao': 'media', 'coluna': 'dColaborador[Remuneração]',
+         'no_estoque': 'Headcount', 'formato': 'moeda', 'descricao': 'Remuneração média dos ativos.', 'pasta': 'Custo'},
+        {'nome': 'Remuneração Mediana', 'agregacao': 'mediana', 'coluna': 'dColaborador[Remuneração]', 'formato': 'moeda',
+         'descricao': 'A remuneração do meio da fila (cadastro).', 'pasta': 'Custo'},
+        {'nome': 'Remuneração Q1', 'agregacao': 'quartil_1', 'coluna': 'dColaborador[Remuneração]', 'formato': 'moeda',
+         'descricao': 'Até onde vai o quarto que ganha menos.', 'pasta': 'Custo'},
+        {'nome': 'Remuneração Q3', 'agregacao': 'quartil_3', 'coluna': 'dColaborador[Remuneração]', 'formato': 'moeda',
+         'descricao': 'A partir de onde começa o quarto que ganha mais.', 'pasta': 'Custo'},
+        {'nome': 'Tempo de Casa Médio', 'dax': TEMPO_DE_CASA, 'tabela': 'dColaborador', 'formato': 'decimal',
+         'polaridade': 'maior_melhor', 'descricao': 'Anos de empresa de quem está ativo.', 'pasta': 'Quadro'},
+        # tempo
+        {'nome': 'Desligamentos Ano Anterior', 'tipo': 'ano_anterior', 'base': 'Desligamentos',
+         'descricao': 'Desligamentos no mesmo período do ano anterior.'},
+        {'nome': 'Headcount Ano Anterior', 'tipo': 'ano_anterior', 'base': 'Headcount',
+         'descricao': 'Headcount no mesmo dia do ano anterior.'},
+        {'nome': 'Var. Headcount A/A', 'tipo': 'variacao_ano_anterior', 'base': 'Headcount',
+         'descricao': 'Variação do headcount contra o ano anterior.'},
+        {'nome': 'Desligamentos Acum. Ano', 'tipo': 'acumulado_ano', 'base': 'Desligamentos',
+         'descricao': 'Desligamentos acumulados no ano.'},
+        {'nome': 'Var. Desligamentos M/M', 'tipo': 'variacao_mes_anterior', 'base': 'Desligamentos',
+         'descricao': 'Variação dos desligamentos contra o mês anterior.'},
+        {'nome': 'Desligamentos Móvel 12m', 'tipo': 'movel_12m', 'base': 'Desligamentos',
+         'descricao': 'Desligamentos dos últimos 12 meses.'},
+        # rankings e medidas por linha
+        {'nome': 'Posição', 'tipo': 'posicao', 'medida': 'Desligamentos', 'categoria': 'dDepartamento[Departamento]',
+         'descricao': 'Posição do departamento em desligamentos.'},
+        {'nome': 'Selo da Posição', 'tipo': 'svg_posicao', 'medida': 'Desligamentos',
+         'categoria': 'dDepartamento[Departamento]', 'descricao': 'Selo com a posição do departamento.'},
+        {'nome': 'Pareto dos Motivos', 'tipo': 'pareto', 'medida': 'Desligamentos',
+         'categoria': 'dMotivoDesligamento[Motivo]', 'descricao': 'Percentual acumulado dos desligamentos.'},
+        {'nome': '3 Mais e 3 Menos', 'tipo': 'melhores_piores', 'medida': 'Desligamentos',
+         'categoria': 'dDepartamento[Departamento]', 'n': 3, 'descricao': 'Os 3 departamentos com mais e com menos.'},
+        {'nome': 'Turnover x Meta', 'tipo': 'svg_barra_meta', 'medida': 'Turnover', 'categoria': 'dEmpresa[Empresa]',
+         'descricao': 'Turnover contra a meta, por empresa.'},
+        {'nome': 'Status de Turnover', 'tipo': 'svg_pilula', 'medida': 'Turnover', 'categoria': 'dEmpresa[Empresa]',
+         'descricao': 'Na meta ou fora, por empresa.'},
+        {'nome': 'Progresso do Turnover', 'tipo': 'svg_progresso', 'medida': 'Turnover', 'categoria': 'dEmpresa[Empresa]',
+         'descricao': 'Quanto da meta o turnover usou.'},
+        {'nome': 'Variação de Desligamentos', 'tipo': 'svg_seta', 'medida': 'Desligamentos',
+         'comparar': 'Desligamentos Ano Anterior', 'categoria': 'dDepartamento[Departamento]',
+         'descricao': 'Seta do ano anterior até o atual.'},
+        {'nome': 'Desvio do Headcount', 'tipo': 'svg_variacao', 'medida': 'Headcount', 'comparar': 'Headcount Ano Anterior',
+         'categoria': 'dEmpresa[Empresa]', 'descricao': 'Desvio do headcount contra o ano anterior (IBCS).'},
+        {'nome': 'Estrelas do Quadro', 'tipo': 'svg_estrelas', 'medida': 'Headcount', 'categoria': 'dEmpresa[Empresa]',
+         'descricao': 'Nota de 0 a 5 do tamanho do quadro.'},
+        {'nome': 'Perfil do Cargo', 'tipo': 'svg_radar', 'medidas': ['Headcount', 'Remuneração Média', 'Turnover'],
+         'categoria': 'dCargo[Nível do Cargo]', 'descricao': 'Quadro, salário e turnover de cada nível.'},
+        {'nome': 'Bolha da Folha', 'tipo': 'svg_bolha', 'medida': 'Folha Mensal', 'categoria': 'dDepartamento[Diretoria]',
+         'colunas': 'dCargo[Nível do Cargo]', 'descricao': 'Folha por diretoria e nível.'},
+        {'nome': 'Cargos com Mais Desligamentos', 'tipo': 'lista_top', 'medida': 'Desligamentos',
+         'categoria': 'dCargo[Cargo]', 'n': 5, 'descricao': 'Os cinco cargos com mais desligamentos.'},
+        {'nome': 'Aviso de Turnover', 'tipo': 'aviso', 'medida': 'Turnover', 'categoria': 'dEmpresa[Empresa]',
+         'descricao': 'Empresas fora da meta de turnover.'},
+        # técnicas de visual
+        {'nome': 'Indicador Escolhido', 'tipo': 'escolha',
+         'opcoes': {'Pessoas': 'Headcount', 'Saídas': 'Desligamentos', 'Custo': 'Folha Mensal'},
+         'descricao': 'O indicador da aba escolhida.'},
+        {'nome': 'Quadro ou Custo', 'tipo': 'alternar', 'rotulo': 'Ver custo', 'desligado': 'Headcount',
+         'ligado': 'Folha Mensal', 'descricao': 'Headcount, ou a folha com a chave ligada.'},
+        {'nome': 'Cor do Destaque', 'tipo': 'cor_destaque', 'categoria': 'dEmpresa[Empresa]',
+         'descricao': 'Destaca a empresa escolhida no botão.'},
+        {'nome': 'Iniciais da Empresa', 'tipo': 'svg_iniciais', 'categoria': 'dEmpresa[Empresa]',
+         'descricao': 'Círculo com as iniciais da empresa.'},
+        {'nome': 'Dispersão dos Cargos', 'tipo': 'svg_dispersao', 'categoria': 'dCargo[Cargo]', 'x': 'Headcount',
+         'y': 'Remuneração Média', 'descricao': 'Quadro x salário de cada cargo, numa imagem.'},
+        {'nome': 'Faixa HTML', 'tipo': 'html_kpis', 'medidas': ['Headcount', 'Turnover', 'Absenteísmo'],
+         'descricao': 'Os indicadores em blocos HTML.'},
+        {'nome': 'Tendência do Turnover', 'dax': 'DaxLib.SVG.Viz.Line(dCalendario[Ano-Mês], [Turnover])',
+         'descricao': 'Minigráfico da tendência do turnover (função DaxLib.SVG).'},
+        # causa raiz e estatística (C4 Karura)
+        {'nome': 'X do Jitter', 'tipo': 'jitter', 'medida': 'Turnover', 'categoria': 'dCargo[Cargo]',
+         'descricao': 'Posição horizontal de cada cargo no jitter.'},
+        {'nome': 'Impacto em Desligamentos', 'tipo': 'impacto', 'medida': 'Desligamentos',
+         'comparar': 'Desligamentos Ano Anterior', 'categoria': 'dDepartamento[Departamento]',
+         'descricao': 'Quanto cada departamento mexeu nos desligamentos.'},
+        {'nome': 'Leitura de Desligamentos', 'tipo': 'leitura', 'medida': 'Desligamentos',
+         'comparar': 'Desligamentos Ano Anterior', 'categoria': 'dDepartamento[Departamento]',
+         'descricao': 'A frase do que os desligamentos fizeram.'},
+        {'nome': 'Espinha do Turnover', 'tipo': 'svg_espinha', 'medida': 'Turnover',
+         'cortes': ['dEmpresa[Empresa]', 'dDepartamento[Departamento]', 'dCargo[Cargo]'], 'n': 3,
+         'descricao': 'Espinha de peixe do turnover.'},
+        {'nome': 'Controle de Turnover', 'tipo': 'controle', 'medida': 'Turnover',
+         'descricao': 'Gráfico de controle do turnover.'},
+        {'nome': 'Fora da Curva no Salário', 'tipo': 'fora_da_curva', 'medida': 'Remuneração Média',
+         'categoria': 'dCargo[Cargo]', 'descricao': 'Quanto cada cargo foge do padrão de salário.'},
+    ]
+    return m
+
+
+def paginas():
+    return [
+        {'nome': 'Visão Geral', 'descricao': 'Como estamos em pessoas.', 'ajuda': True, 'tour': True, 'visuais': SEG + [
+            {'tipo': 'aviso', 'medida': 'Aviso de Turnover'},
+            {'tipo': 'cartao', 'medida': 'Headcount'}, {'tipo': 'cartao', 'medida': 'Turnover'},
+            {'tipo': 'cartao', 'medida': 'Absenteísmo'}, {'tipo': 'cartao', 'medida': 'Saldo de Movimentação'},
+            {'tipo': 'linha', 'categoria': 'dCalendario[Mês/Ano]', 'valores': ['Turnover', 'Turnover Voluntário'],
+             'titulo': 'Turnover mês a mês'},
+            {'tipo': 'colunas', 'categoria': 'dCalendario[Mês/Ano]', 'valores': ['Saldo de Movimentação'], 'meta': True,
+             'titulo': 'Saldo contra a meta'},
+            {'tipo': 'tabela', 'titulo': 'Empresas contra a meta', 'campos': [
+                'dEmpresa[Empresa]', 'Headcount', 'Turnover', 'Turnover x Meta', 'Status de Turnover']}]},
+        {'nome': 'Tempo e Custo', 'descricao': 'Medidor, cartão novo, área e faixa típica.', 'visuais': SEG + [
+            {'tipo': 'botoes', 'campo': 'Período[Período]'},
+            {'tipo': 'medidor', 'medida': 'Turnover', 'meta': 'Meta de Turnover'},
+            {'tipo': 'cartoes', 'medidas': ['Remuneração Q1', 'Remuneração Mediana', 'Remuneração Q3']},
+            {'tipo': 'cartao', 'medida': 'Var. Headcount A/A'},
+            {'tipo': 'area', 'categoria': 'dCalendario[Mês/Ano]', 'valores': ['Desligamentos Acum. Ano'],
+             'titulo': 'Desligamentos acumulados no ano'},
+            {'tipo': 'colunas', 'categoria': 'dCalendario[Mês/Ano]', 'valores': ['Var. Desligamentos M/M'],
+             'titulo': 'Variação contra o mês anterior'},
+            {'tipo': 'linha', 'categoria': 'dCalendario[Mês/Ano]', 'valores': ['Desligamentos Móvel 12m'],
+             'titulo': 'Últimos 12 meses'},
+            {'tipo': 'skyline', 'categoria': 'dCalendario[Mês/Ano]', 'legenda': 'dMotivoDesligamento[Tipo de Desligamento]',
+             'valores': ['Desligamentos'], 'titulo': 'Saídas por tipo'}]},
+        {'nome': 'Rankings', 'descricao': 'Posição, Pareto, melhores e piores e as imagens por linha.', 'visuais': SEG + [
+            {'tipo': 'tabela', 'titulo': 'Departamentos', 'campos': [
+                'dDepartamento[Departamento]', 'Desligamentos', 'Posição', 'Selo da Posição', '3 Mais e 3 Menos',
+                'Variação de Desligamentos'], 'dica': 'Resumo do departamento'},
+            {'tipo': 'tabela', 'titulo': 'Motivos (Pareto)', 'campos': [
+                'dMotivoDesligamento[Motivo]', 'Desligamentos', 'Pareto dos Motivos']},
+            {'tipo': 'tabela', 'titulo': 'Empresas', 'campos': [
+                'dEmpresa[Empresa]', 'Headcount', 'Progresso do Turnover', 'Desvio do Headcount', 'Estrelas do Quadro']},
+            {'tipo': 'tabela', 'titulo': 'Perfil por nível', 'campos': ['dCargo[Nível do Cargo]', 'Perfil do Cargo']},
+            {'tipo': 'matriz', 'titulo': 'Folha por diretoria e nível', 'linhas': ['dDepartamento[Diretoria]'],
+             'colunas': ['dCargo[Nível do Cargo]'], 'valores': ['Bolha da Folha']}]},
+        {'nome': 'Técnicas', 'descricao': 'Abas, chave, destaque, setas, iniciais e a dispersão em imagem.', 'visuais': SEG + [
+            {'tipo': 'abas', 'medida': 'Indicador Escolhido'},
+            {'tipo': 'alternar', 'medida': 'Quadro ou Custo'},
+            {'tipo': 'botoes', 'campo': 'Destacar Empresa[Empresa]', 'icone': True},
+            {'tipo': 'cartao', 'medida': 'Indicador Escolhido'},
+            {'tipo': 'cartao', 'medida': 'Quadro ou Custo'},
+            {'tipo': 'barras', 'categoria': 'dEmpresa[Empresa]', 'valores': ['Headcount'], 'cor': 'Cor do Destaque',
+             'titulo': 'Headcount, com destaque'},
+            {'tipo': 'setas', 'categoria': 'dEmpresa[Empresa]', 'medida': 'Headcount', 'comparar': 'Headcount Ano Anterior',
+             'titulo': 'Headcount contra o ano anterior'},
+            {'tipo': 'imagem', 'medida': 'Dispersão dos Cargos', 'titulo': 'Quadro x salário'}]},
+        {'nome': 'Causa e Estatística', 'descricao': 'Leitura, decomposição, impacto, jitter, controle e fora da curva.',
+         'visuais': SEG + [
+             {'tipo': 'cartao', 'medida': 'Leitura de Desligamentos'},
+             {'tipo': 'decomposicao', 'medida': 'Desligamentos', 'cortes': [
+                 'dEmpresa[Empresa]', 'dDepartamento[Departamento]', 'dMotivoDesligamento[Motivo]']},
+             {'tipo': 'barras', 'categoria': 'dDepartamento[Departamento]', 'valores': ['Impacto em Desligamentos'],
+              'titulo': 'Quem mais mexeu'},
+             {'tipo': 'dispersao', 'categoria': 'dCargo[Cargo]', 'x': 'X do Jitter', 'y': 'Turnover',
+              'titulo': 'Turnover de cada cargo (jitter)'},
+             {'tipo': 'controle', 'medida': 'Controle de Turnover'},
+             {'tipo': 'barras', 'categoria': 'dCargo[Cargo]', 'valores': ['Fora da Curva no Salário'],
+              'titulo': 'Fora da curva no salário'},
+             {'tipo': 'imagem', 'medida': 'Espinha do Turnover', 'titulo': 'Espinha de peixe'}]},
+        {'nome': 'Comunidade e Mapa', 'descricao': 'HTML Content, Deneb, função do daxlib e o mapa.', 'visuais': SEG + [
+            {'tipo': 'html', 'medida': 'Faixa HTML'},
+            {'tipo': 'vegalite', 'modelo': 'deneb-vega-templates/ranking/slope', 'titulo': 'Desligamentos: antes e agora',
+             'campos': {'Category': 'dDepartamento[Departamento]', 'Value 1': 'Desligamentos Ano Anterior',
+                        'Value 2': 'Desligamentos'}},
+            {'tipo': 'tabela', 'titulo': 'Tendência por empresa', 'campos': ['dEmpresa[Empresa]', 'Tendência do Turnover']},
+            {'tipo': 'mapa', 'local': 'dUnidade[Cidade]', 'valores': ['Headcount'], 'titulo': 'Quadro por cidade'},
+            {'tipo': 'rosca', 'categoria': 'dColaborador[Sexo]', 'valores': ['Headcount'], 'poucos_itens': True,
+             'titulo': 'Quadro por sexo'}]},
+        {'nome': 'Departamento em detalhe', 'detalhe': 'dDepartamento[Departamento]', 'visuais': [
+            {'tipo': 'cartao', 'medida': 'Headcount'}, {'tipo': 'cartao', 'medida': 'Turnover'},
+            {'tipo': 'linha', 'categoria': 'dCalendario[Mês/Ano]', 'valores': ['Desligamentos', 'Admissões'],
+             'titulo': 'Entradas e saídas'}]},
+        {'nome': 'Resumo do departamento', 'dica': True, 'visuais': [
+            {'tipo': 'cartao', 'medida': 'Headcount'}, {'tipo': 'cartao', 'medida': 'Desligamentos'},
+            {'tipo': 'cartao', 'medida': 'Absenteísmo'}]},
+    ]
+
+
+def argila(modelo='faixa-de-kpis'):
+    return {
+        'projeto': 'Vitrine Deidara', 'versao': '1.0', 'modelo': modelo, 'responsavel': D,
+        'descricao': 'Todo tipo de visual, de medida e de recurso que o Deidara gera, para conferir no Power BI Desktop.',
+        'publico': 'Time do Deidara (teste)',
+        'fontes': {'erp': {'catalogo': 'catalogos/erp.json', 'servidor': 'srv-rh-demo', 'banco': 'ERP_RH_DEMO',
+                           'esquema_origem': 'dbo', 'esquema_views': 'bi'},
+                   'metas': {'catalogo': 'catalogos/metas.json'}},
+        'tema': {'paleta': 'contraste-executivo'},
+        'funcoes_dax': ['DaxLib.SVG'],
+        'tabelas': TABELAS, 'relacionamentos': RELACIONAMENTOS,
+        'calendario': {'inicio': 2023, 'feriados': 'BR', 'datas': [
+            {'tabela': 'fDesligamento', 'coluna': 'Data do Desligamento'},
+            {'tabela': 'fAusencia', 'coluna': 'Data da Ausência'},
+            {'tabela': 'fJornada', 'coluna': 'Data da Jornada'}]},
+        'grupo_calculo': {'nome': 'Período', 'itens': ['atual', 'acumulado_ano', 'ano_anterior',
+                                                       'variacao_ano_anterior', 'movel_12m']},
+        'seguranca': [{'papel': 'Só a Empresa A', 'descricao': 'Teste de segurança por linha.',
+                       'regras': [{'tabela': 'dEmpresa', 'filtro': 'dEmpresa[Código] = 1'}]}],
+        'medidas': medidas(), 'paginas': paginas(),
+    }
+
+
+def main():
+    ap = argparse.ArgumentParser(description='monta o argila.json da vitrine')
+    ap.add_argument('modelo', nargs='?', default='faixa-de-kpis')
+    ap.add_argument('-o', '--saida', default=os.path.join(AQUI, 'argila.json'))
+    a = ap.parse_args()
+    with open(a.saida, 'w', encoding='utf-8') as f:
+        json.dump(argila(a.modelo), f, ensure_ascii=False, indent=2)
+    print(a.saida)
+
+
+if __name__ == '__main__':
+    main()

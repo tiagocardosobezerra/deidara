@@ -594,3 +594,29 @@ class TestContratoDeVisual(unittest.TestCase):
         q = pbir._query(v, m)['sortDefinition']['sort'][0]
         self.assertEqual((q['field']['Measure']['Property'], q['direction']), (campo['nome'], sentido))
         self.assertIsNone(contrato.ordem({'tipo': 'linha', 'valores': [campo]}, m))     # o tempo fica na ordem dele
+
+
+class TestVitrineNoDesktop(unittest.TestCase):
+    """O que a vitrine mostrou aberta no Power BI Desktop (01/11/2026)."""
+
+    def _visual(self, v, pos):
+        from tecnicas.c3 import pbir
+        m = {'medidas': [], 'tema': {'texto': '#252423', 'cores': ['#118DFF']}, 'modelo': 'faixa-de-kpis'}
+        return pbir.visual(m, v, pos, 'x', 0)['visual']
+
+    def test_cartao_novo_com_varios_valores_cabe_inteiro(self):
+        valores = [{'tipo': 'medida', 'tabela': 'f', 'nome': n} for n in ('A', 'B', 'C')]
+        vis = self._visual({'tipo': 'cartoes', 'titulo': '', 'valores': valores, 'campos': [], 'categoria': None,
+                            'legenda': None, 'linhas': [], 'colunas': [], 'meta': None},
+                           {'x': 0, 'y': 0, 'w': 576, 'h': 196})
+        valor = next(e for e in vis['objects']['value'] if (e.get('selector') or {}).get('id') == 'default')
+        self.assertLessEqual(int(valor['properties']['fontSize']['expr']['Literal']['Value'][:-1]), 18)
+
+    def test_botoes_de_coluna_em_grade_automatica(self):
+        coluna = {'tipo': 'coluna', 'tabela': 'Destacar Empresa', 'nome': 'Empresa'}
+        vis = self._visual({'tipo': 'botoes', 'titulo': '', 'categoria': coluna, 'valores': [], 'campos': [],
+                            'legenda': None, 'linhas': [], 'colunas': [], 'meta': None, 'icone': True},
+                           {'x': 0, 'y': 0, 'w': 520, 'h': 76})
+        layout = vis['objects']['layout'][0]['properties']
+        self.assertEqual(layout['autoGrid']['expr']['Literal']['Value'], 'true')    # a fixa escondia 4 de 8 empresas
+        self.assertNotIn('columnCount', layout)

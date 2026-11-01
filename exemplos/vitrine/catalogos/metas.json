@@ -1,0 +1,68 @@
+{
+  "formato": "deidara-catalogo/1",
+  "fonte": "metas",
+  "tipo": "powerquery",
+  "receita": "m",
+  "coletado_em": "31/10/2026 23:33",
+  "tabelas": {
+    "Metas": {
+      "descricao": "",
+      "pk": [],
+      "expressao_m": "let\n    Fonte = Excel.Workbook(File.Contents(CaminhoMetas), null, true),\n    Metas = Fonte{[Item=\"Metas\", Kind=\"Table\"]}[Data],\n    Tipos = Table.TransformColumnTypes(Metas, {{\"Cód. Empresa\", Int64.Type}, {\"Empresa\", type text}, {\"Meta Turnover\", Percentage.Type}, {\"Meta Absenteísmo\", Percentage.Type}})\nin\n    Tipos",
+      "colunas": [
+        {
+          "coluna": "Cód. Empresa",
+          "familia": "inteiro",
+          "tipo": "Int64.Type",
+          "precisao": null,
+          "escala": null,
+          "tamanho": null,
+          "nulo": 1,
+          "formato_sugerido": null,
+          "descricao": "",
+          "tipo_indefinido": false
+        },
+        {
+          "coluna": "Empresa",
+          "familia": "texto",
+          "tipo": "Text.Type",
+          "precisao": null,
+          "escala": null,
+          "tamanho": null,
+          "nulo": 1,
+          "formato_sugerido": null,
+          "descricao": "",
+          "tipo_indefinido": false
+        },
+        {
+          "coluna": "Meta Turnover",
+          "familia": "real",
+          "tipo": "Percentage.Type",
+          "precisao": null,
+          "escala": null,
+          "tamanho": null,
+          "nulo": 1,
+          "formato_sugerido": "percentual",
+          "descricao": "",
+          "tipo_indefinido": false
+        },
+        {
+          "coluna": "Meta Absenteísmo",
+          "familia": "real",
+          "tipo": "Percentage.Type",
+          "precisao": null,
+          "escala": null,
+          "tamanho": null,
+          "nulo": 1,
+          "formato_sugerido": "percentual",
+          "descricao": "",
+          "tipo_indefinido": false
+        }
+      ]
+    }
+  },
+  "fks": [],
+  "expressoes": {
+    "CaminhoMetas": "\"\\servidor\\rh\\metas_rh.xlsx\" meta [IsParameterQuery=true, Type=\"Text\", IsParameterQueryRequired=true]"
+  }
+}
