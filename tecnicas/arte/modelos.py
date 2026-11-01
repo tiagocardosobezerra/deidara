@@ -172,6 +172,23 @@ def _filtros_em_coluna(seg, x, y, w, alto):
     return out, y
 
 
+def altura_do_kpi(v, padrao):
+    """Numa coluna estreita, o cartão novo empilha os valores (tecnicas/c3/pbir.py): pede uns 54 px por valor."""
+    if v['tipo'] == 'cartoes' and len(v.get('valores') or []) > 1:
+        return max(padrao, 54 * len(v['valores']) + 56)
+    return padrao
+
+
+def _kpis_em_coluna(kpi, x, y, w, alto):
+    """Cartões um embaixo do outro, cada um com a altura que pede; devolve (posições, y do fim)."""
+    out = []
+    for v in kpi:
+        h = altura_do_kpi(v, alto)
+        out.append((v, {'x': x, 'y': y, 'w': w, 'h': h}))
+        y += h + GAP
+    return out, y
+
+
 def _em_coluna(itens, x, y, w, h, gap=GAP):
     if not itens:
         return []
@@ -367,8 +384,10 @@ def _secoes(m, paginas, i, c):
     seg, kpi, graf, tab = _separar(pg['visuais'])
     pos = []
     y = 176
-    pos += _em_coluna(kpi[:4], 24, y, 252, len(kpi[:4]) * 118 - GAP) if kpi else []
-    y += len(kpi[:4]) * 118 + (24 if kpi else 0)
+    if kpi:
+        cartoes, y = _kpis_em_coluna(kpi[:4], 24, y, 252, 118 - GAP)
+        pos += cartoes
+        y += 24 - GAP
     pos += _filtros_em_coluna(seg, 24, y, 252, 80 - GAP)[0] if seg else []
     x0, larg = 330, 1558
     y = 32
@@ -748,8 +767,9 @@ def _equipes(m, paginas, i, c):
     y = 180
     if kpi:                                          # um por linha: valor em reais precisa da largura toda
         for v in kpi[:5]:
-            pos.append((v, {'x': lx, 'y': y, 'w': lw, 'h': 112}))
-            y += 126
+            alto = altura_do_kpi(v, 112)
+            pos.append((v, {'x': lx, 'y': y, 'w': lw, 'h': alto}))
+            y += alto + 14
     if seg:
         filtros, fim = _filtros_em_coluna(seg, lx, y + 8, lw, 76 - GAP)
         pos += filtros

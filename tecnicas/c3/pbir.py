@@ -348,8 +348,13 @@ def _formato_cartao_novo(m, v, pos, vis, container):
     letra cabe na largura de cada um ("R$ 10,46 Mil" tem uns 12 caracteres), senão o Power BI corta ("R$ 1...")."""
     n = max(1, len(v.get('valores') or []))
     largura = (pos['w'] - 24) / n - 16
-    tamanho = max(12, min(30, round(pos['h'] / 4), int(largura / 10)))   # 1 pt de letra ~ 0,8 px por caractere
-    vis['objects'] = {'value': [{'properties': {'fontSize': _lit(tamanho)}, 'selector': {'id': 'default'}}]}
+    vis['objects'] = {}
+    if n > 1 and largura < 110:                # caixa estreita (barra lateral): um valor embaixo do outro
+        vis['objects']['layout'] = [{'properties': {'orientation': _lit(1)}}]
+        tamanho = max(9, min(18, int((pos['h'] - 30) / n * 0.45)))
+    else:
+        tamanho = max(12, min(30, round(pos['h'] / 4), int(largura / 10)))   # 1 pt de letra ~ 0,8 px por caractere
+    vis['objects']['value'] = [{'properties': {'fontSize': _lit(tamanho)}, 'selector': {'id': 'default'}}]
 
 
 # a formatação nossa de cada visual nativo, antes do estilo de origem (que ela sobrepõe propriedade a propriedade)
