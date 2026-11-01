@@ -13,22 +13,23 @@ corrige, nesta instalação:
   ela deixa de ser sugerida.
 
 Só estrutura: palavras do pedido, nomes de tabela e de coluna, nunca dado. O
-treino fica em dicionario/local/treino.json, fora do git e do pacote da skill.
-DEIDARA_TREINO aponta outro arquivo; DEIDARA_TREINO=- desliga.
+treino fica em ~/.deidara/treino.json (a pasta local, ver util.pasta_local), fora da pasta da skill: no claude.ai
+ela é só leitura ou recomeça a cada sessão. DEIDARA_TREINO aponta outro arquivo; DEIDARA_TREINO=- desliga.
 """
 
 import json
 import os
 
-from kibaku_nendo.util import chave
+from kibaku_nendo.util import chave, pasta_local
 
-ARQUIVO = os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))),
-                       'dicionario', 'local', 'treino.json')
 BONUS_POR_VEZ, BONUS_MAXIMO = 4.0, 12.0
 
 
 def _arquivo():
-    return os.environ.get('DEIDARA_TREINO') or ARQUIVO
+    if os.environ.get('DEIDARA_TREINO'):
+        return os.environ['DEIDARA_TREINO']
+    pasta = pasta_local()
+    return os.path.join(pasta, 'treino.json') if pasta else '-'
 
 
 def ler():

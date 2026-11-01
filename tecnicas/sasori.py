@@ -14,7 +14,7 @@ uma descrição e um uso em pt-BR (dicionario/dax.json, dicionario/m.json).
 Os padrões de indicador (dicionario/padroes.json) dizem onde criar cada
 coisa (medida, cálculo visual, grupo de cálculo, Power Query, view SQL).
 
-A pasta dicionario/local/ guarda o dicionário da versão do Power BI do
+A pasta local (~/.deidara, ver util.pasta_local) guarda o dicionário da versão do Power BI do
 usuário, gerado pela receita de funções (INFO.FUNCTIONS no DAX, #shared no
 M): o que estiver lá também vale.
 """
@@ -24,7 +24,7 @@ import json
 import os
 import re
 
-from kibaku_nendo.util import chave
+from kibaku_nendo.util import chave, pasta_local
 
 PASTA = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), 'dicionario')
 _cache = {}
@@ -40,8 +40,9 @@ def funcoes(linguagem='dax'):
     if linguagem in _cache:
         return _cache[linguagem]
     base = dict(_ler(f'{linguagem}.json')['funcoes'])
-    local = os.path.join(PASTA, 'local', f'{linguagem}.json')
-    if os.path.exists(local):
+    pasta = pasta_local()
+    local = pasta and os.path.join(pasta, f'{linguagem}.json')
+    if local and os.path.exists(local):
         with open(local, encoding='utf-8') as f:
             for nome, e in json.load(f).get('funcoes', {}).items():
                 base.setdefault(nome, {'categorias': ['(local)'], 'url': None, **e})

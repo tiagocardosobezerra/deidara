@@ -97,5 +97,5 @@ python3 deidara.py receita funcoes-m      # #shared, numa consulta nula
 python3 deidara.py catalogar --funcoes dax --de funcoes.txt
 ```
 
-Grava `dicionario/local/<dax|m>.json` (fora do controle de versão). Funções
+Grava `~/.deidara/<dax|m>.json` (a pasta local; `DEIDARA_LOCAL` aponta outra) (fora do controle de versão). Funções
 que existem na sua versão e o Deidara ainda não conhecia passam a valer.

@@ -324,3 +324,27 @@ class TestOnoki(unittest.TestCase):
         self.assertEqual(codigo, 1)
         self.assertIn('MUDOU', out)
         shutil.rmtree(d, ignore_errors=True)
+
+
+class TestPastaLocal(unittest.TestCase):
+    """O que o Deidara aprende fica fora da pasta da skill (no claude.ai ela é só leitura)."""
+
+    def test_pasta_local_e_copia_da_antiga(self):
+        import shutil
+        import tempfile
+        from unittest import mock
+        from kibaku_nendo import util
+        d = tempfile.mkdtemp(prefix='ddl')
+        antiga = os.path.join(d, 'skill', 'dicionario', 'local')
+        os.makedirs(antiga)
+        with open(os.path.join(antiga, 'treino.json'), 'w', encoding='utf-8') as f:
+            f.write('{}')
+        nova = os.path.join(d, 'casa', '.deidara')
+        os.makedirs(nova)                                                    # já existe (Memory Card)
+        with mock.patch.object(util, 'RAIZ', os.path.join(d, 'skill')), \
+                mock.patch.dict(os.environ, {'DEIDARA_LOCAL': nova}):
+            self.assertEqual(util.pasta_local(), nova)
+        self.assertTrue(os.path.exists(os.path.join(nova, 'treino.json')))      # a antiga veio junto
+        with mock.patch.dict(os.environ, {'DEIDARA_LOCAL': '-'}):
+            self.assertIsNone(util.pasta_local())
+        shutil.rmtree(d, ignore_errors=True)

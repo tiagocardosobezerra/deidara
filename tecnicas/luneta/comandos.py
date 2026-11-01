@@ -11,7 +11,7 @@ from tecnicas import sasori as dicionario
 from tecnicas.luneta import prova
 from tecnicas.luneta import receitas
 from tecnicas.luneta import treino
-from kibaku_nendo.util import gravar_json, gravar_texto, ler_json
+from kibaku_nendo.util import gravar_json, gravar_texto, ler_json, pasta_local
 from kibaku_nendo.comandos_apoio import carregar_catalogos, lembrete, ponta_da_ligacao
 
 
@@ -59,7 +59,10 @@ def cmd_catalogar(a):
         except ValueError as e:
             print(str(e))
             return 1
-        pasta = os.path.join(dicionario.PASTA, 'local')
+        pasta = pasta_local()
+        if not pasta:
+            print('DEIDARA_LOCAL=- desliga a pasta local: o dicionário da sua versão não tem onde ficar')
+            return 1
         os.makedirs(pasta, exist_ok=True)
         gravar_json(os.path.join(pasta, f'{a.funcoes}.json'), d)
         novas = [n for n in d['funcoes'] if n not in dicionario.funcoes(a.funcoes)]

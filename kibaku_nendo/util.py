@@ -14,6 +14,30 @@ import re
 import unicodedata
 import uuid
 
+RAIZ = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+
+
+def pasta_local():
+    """Onde fica o que o Deidara aprende na máquina de quem usa (o treino da Luneta, o dicionário de funções da versão
+    do Power BI): fora da pasta da skill, que no claude.ai é só leitura ou recomeça a cada sessão. DEIDARA_LOCAL
+    aponta outra pasta; "-" desliga (None). O que estiver na pasta antiga (dicionario/local/) e ainda não estiver na
+    nova é copiado."""
+    pasta = os.environ.get('DEIDARA_LOCAL') or os.path.join(os.path.expanduser('~'), '.deidara')
+    if pasta == '-':
+        return None
+    antiga = os.path.join(RAIZ, 'dicionario', 'local')
+    if os.path.isdir(antiga):                      # arquivo a arquivo: a pasta nova já pode existir (Memory Card)
+        import shutil
+        try:
+            os.makedirs(pasta, exist_ok=True)
+            for nome in os.listdir(antiga):
+                if not os.path.exists(os.path.join(pasta, nome)):
+                    shutil.copy2(os.path.join(antiga, nome), os.path.join(pasta, nome))
+        except OSError:
+            return antiga
+    return pasta
+
+
 NAMESPACE = uuid.UUID('6d1f3c2e-9a4b-5c7d-8e0f-de1da7a0c1a7')
 
 # Tipo base do SQL Server (catálogo da receita sql) -> família.

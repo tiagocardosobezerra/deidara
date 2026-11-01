@@ -55,4 +55,4 @@ nome parecido. Nada de função "que deve existir".
 **Sua versão.** Funções novas aparecem a cada versão do Power BI. Para
 validar contra exatamente o que você tem instalado, rode a receita de
 funções (`receita funcoes-dax` / `funcoes-m`) e `catalogar --funcoes`; o
-resultado fica em `dicionario/local/` e passa a valer junto.
+resultado fica na pasta local (`~/.deidara/`, ou `DEIDARA_LOCAL`) e passa a valer junto.

@@ -229,7 +229,7 @@ in
 
 
 def dicionario_local(caminho, linguagem):
-    """Resultado colado da receita de funções -> {nome: {descricao}} (fica em dicionario/local)."""
+    """Resultado colado da receita de funções -> {nome: {descricao}} (fica na pasta local, ~/.deidara)."""
     cab, linhas = ler_colado(caminho)
     col_nome = next((c for c in cab if c in ('function_name', 'functionname', 'name', 'nome')), None)
     if not col_nome:

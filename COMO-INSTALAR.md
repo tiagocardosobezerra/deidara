@@ -68,10 +68,12 @@ python3 ferramentas/validar_pbip.py <pasta do projeto gerado>
 | Projetos gerados | a pasta do `gerar -o`, ou `<painel>/saida/` | não (está no `.gitignore`) |
 | Configuração do Memory Card | `~/.deidara/memory_card.json` | não |
 | Cópia local do cartão do time | a pasta escolhida no `memory-card iniciar` | é o próprio repositório do cartão |
-| Dicionário de funções da sua versão do Power BI (opcional) | `dicionario/local/` | não (está no `.gitignore`) |
+| Dicionário de funções da sua versão do Power BI (opcional) | `~/.deidara/dax.json` e `m.json` | não |
+| O que a busca aprendeu com as suas correções (treino da Luneta) | `~/.deidara/treino.json` | não |
 | Cache dos schemas da Microsoft | `~/.cache/deidara/schemas` | não |
 
-Como nada disso fica nos arquivos da skill, atualizar ou reinstalar não apaga
+A pasta `~/.deidara` muda com `DEIDARA_LOCAL` (`-` desliga); quem usava a pasta antiga `dicionario/local/` tem
+o conteúdo copiado para lá na primeira vez. Como nada disso fica nos arquivos da skill, atualizar ou reinstalar não apaga
 painéis, cartão nem configuração.
 
 ## Atualizar
