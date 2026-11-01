@@ -536,3 +536,39 @@ class TestDemo(unittest.TestCase):
                   encoding='utf-8') as f:
             self.assertIn('Demonstração · dados fictícios', f.read())
         shutil.rmtree(d, ignore_errors=True)
+
+
+class TestConferirDesktop(unittest.TestCase):
+    """A leitura do que o motor do Power BI Desktop respondeu (sem Desktop aberto: a resposta é simulada)."""
+
+    def test_problemas_sem_repetir_o_mes(self):
+        from unittest import mock
+        from tecnicas.c3 import desktop
+        erro = "Uma função 'PLACEHOLDER' foi utilizada em uma expressão True/False"
+        base = {'instancias': [{'porta': 1, 'titulo': 'P', 'arquivo': 'C:/x/p.pbip'}], 'erro': None}
+        resp = {'instancias': base['instancias'], 'erro': None, 'resultados': [
+            {'id': 'erros:medidas', 'linhas': [['Ano Anterior', erro]], 'erro': None},
+            {'id': 'total:Ano Anterior', 'linhas': [], 'erro': erro},
+            {'id': 'mes:Ano Anterior', 'linhas': [], 'erro': erro},
+            {'id': 'total:Turnover', 'linhas': [['0,1']], 'erro': None}]}
+        with mock.patch.object(desktop, '_rodar', side_effect=[base, resp]):
+            r = desktop.conferir(['Ano Anterior', 'Turnover'], 'dCalendario')
+        self.assertEqual([o for o, _ in r['problemas']], ['medida Ano Anterior', 'medida Ano Anterior'])
+        self.assertEqual(r['vazias'], [])                                 # com erro não conta como vazia
+
+    def test_consultas_por_medida_e_mes(self):
+        from tecnicas.c3 import desktop
+        q = desktop.consultas_do_modelo(['A]b'], 'dCalendario')
+        self.assertIn('EVALUATE ROW("v", [A]]b])', [x['dax'] for x in q])
+        self.assertTrue(any("'dCalendario'[Ano-Mês]" in x['dax'] for x in q))
+
+    def test_varios_desktops_escolhe_pela_pasta(self):
+        from unittest import mock
+        from tecnicas.c3 import desktop
+        base = {'instancias': [{'porta': 1, 'titulo': 'P', 'arquivo': os.path.join('C:' + os.sep, 'a', 'p.pbip')},
+                               {'porta': 2, 'titulo': 'P', 'arquivo': os.path.join('C:' + os.sep, 'a_2', 'p.pbip')}],
+                'erro': None}
+        with mock.patch.object(desktop, '_rodar', side_effect=[base, {'resultados': []}]) as rodar:
+            r = desktop.conferir([], pasta_tmp=os.path.join('C:' + os.sep, 'a'))
+        self.assertEqual(r['instancia']['porta'], 1)
+        self.assertEqual(rodar.call_args.kwargs['porta'], 1)

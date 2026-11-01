@@ -291,3 +291,30 @@ def _imprimir_situacao(modelo, passos):
         return 0
     print('✓ Tudo feito. Siga o LEIA-ME da pasta gerada (views, atualizar, conferir, publicar).')
     return 0
+
+
+def cmd_conferir_desktop(a):
+    """O DAX conferido pelo motor do Power BI Desktop aberto no projeto (tecnicas/c3/desktop.py)."""
+    from tecnicas.c3 import desktop
+    _, _, modelo, problemas, _ = carregar_argila(a.argila)
+    if problemas.erros:
+        mostrar_relatorio(problemas)
+        return 1
+    medidas = [x['nome'] for x in modelo['medidas']]
+    cal = modelo['calendario']['tabela'] if modelo.get('calendario') else None
+    r = desktop.conferir(medidas, cal, porta=a.porta, atualizar=a.atualizar,
+                         pasta_tmp=os.path.dirname(os.path.abspath(a.argila)))
+    if r.get('erro'):
+        print(f'✗ {r["erro"]}')
+        for i in r.get('instancias') or []:
+            print(f'  porta {i["porta"]}: {i.get("arquivo") or i["titulo"] or "(sem título)"}')
+        return 1
+    print(f'Power BI Desktop: {r["instancia"].get("arquivo") or r["instancia"]["titulo"]} (porta {r["instancia"]["porta"]}), '
+          f'{r["calculadas"]} medida(s) calculadas no total' + (' e mês a mês' if cal else ''))
+    for onde, erro in r['problemas']:
+        print(f'  ✗ {onde}: {erro}')
+    if r['vazias'] and len(r['vazias']) == r['calculadas']:
+        print('  ! todas as medidas em branco: o modelo está sem dados (clique em Atualizar ou use --atualizar)')
+    if not r['problemas']:
+        print('✓ nenhuma medida, item de grupo de cálculo ou partição com erro no motor do Power BI')
+    return 1 if r['problemas'] else 0

@@ -124,8 +124,10 @@ São 8 passos, os mesmos do `deidara.py` sem argumentos e do `ROTEIRO.md` da pas
    sem `-o`, a saída vai para `<pasta>/saida/<projeto>`). Para testar ou
    mostrar o painel antes de a fonte estar pronta, `gerar ... --demo`: o
    mesmo projeto com linhas fictícias embutidas, que abre e calcula no Power BI
-   Desktop sem banco nenhum (clique em Atualizar).
-   Entregue o LEIA-ME (com papéis e "se algo der errado") e o
+   Desktop sem banco nenhum (clique em Atualizar). Com o projeto aberto no
+   Desktop (Windows), `conferir-desktop <pasta>/argila.json --atualizar`
+   pergunta ao motor do Power BI se alguma medida dá erro: o que o schema não
+   vê. Entregue o LEIA-ME (com papéis e "se algo der errado") e o
    `HOMOLOGACAO.md`.
 8. **Memory Card**: ofereça o `memory-card enviar` (regra 8).
 

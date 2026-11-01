@@ -46,6 +46,19 @@ desenhado e reconhece os botões como navegação de página.
   nova de cada schema publicada pela Microsoft (pede internet). Diferença ali é
   aviso: o projeto abre com a versão gravada e o Desktop converte ao salvar.
 
+### Conferência no Desktop aberto (`conferir-desktop`)
+
+Schema e TMDL certos não garantem DAX que o motor aceita: filtro True/False com
+medida dentro, por exemplo, passa em tudo e só aparece no Desktop, como um aviso
+no painel de campos. Com o projeto aberto no Power BI Desktop (Windows),
+`deidara.py conferir-desktop argila.json [--atualizar]` acha o motor local do
+Desktop (a porta do msmdsrv), usa a biblioteca ADOMD que vem com o Power BI e
+devolve o erro de cada medida, item de grupo de cálculo e partição, com cada
+medida calculada no total e mês a mês. Com mais de um Desktop aberto, escolhe o
+que abriu um projeto dentro da pasta do `argila.json` (ou `--porta`). Nada é
+gravado no modelo; `--atualizar` só pede a atualização dos dados (o `--demo`
+não pede credencial).
+
 ### Conferências extras (opcionais, na máquina com Power BI)
 
 O Deidara roda sem dependência; estas ferramentas da comunidade e da Microsoft

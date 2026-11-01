@@ -56,6 +56,7 @@ Uso:
     python3 deidara.py prototipar argila.json [-o prototipo.html]
     python3 deidara.py aprovar   argila.json --por NOME [--observacao TEXTO]
     python3 deidara.py gerar     argila.json [-o PASTA]
+    python3 deidara.py conferir-desktop argila.json [--porta N] [--atualizar]   (Power BI Desktop aberto, Windows)
     python3 deidara.py diff      argila.json [--contra OUTRO.json]
     python3 deidara.py funcoes   buscar "acumulado" | ver SAMEPERIODLASTYEAR [--linguagem dax|m]
     python3 deidara.py padroes   [turnover | taxa | estoque | ...]
@@ -78,7 +79,7 @@ sys.path.insert(0, RAIZ)
 
 from kibaku_nendo import VERSAO  # noqa: E402
 from kibaku_nendo.util import ErroDeUso  # noqa: E402
-from kibaku_nendo.comandos import (cmd_aprovar, cmd_diff, cmd_gerar, cmd_prototipar, cmd_situacao, cmd_validar)  # noqa: E402
+from kibaku_nendo.comandos import (cmd_aprovar, cmd_conferir_desktop, cmd_diff, cmd_gerar, cmd_prototipar, cmd_situacao, cmd_validar)  # noqa: E402
 from tecnicas.consultas import (cmd_galeria, cmd_onoki, cmd_funcoes, cmd_memory_card, cmd_modelos, cmd_padroes,  # noqa: E402
                                 cmd_visuais)
 from tecnicas.luneta.comandos import (cmd_buscar, cmd_catalogar, cmd_confirmar, cmd_provar, cmd_receita,
@@ -194,6 +195,10 @@ def main(argv=None):
     g.add_argument('-o', '--saida')
     g.add_argument('--demo', action='store_true',
                    help='projeto de demonstração: linhas fictícias embutidas, abre e calcula sem banco nenhum')
+    cd = sub.add_parser('conferir-desktop', help='confere o DAX no Power BI Desktop aberto no projeto (só Windows)')
+    cd.add_argument('argila')
+    cd.add_argument('--porta', help='a porta do motor, com mais de um Power BI Desktop aberto')
+    cd.add_argument('--atualizar', action='store_true', help='atualiza os dados antes (o --demo não pede credencial)')
     on = sub.add_parser('onoki', help='Ōnoki mede a busca contra os pedidos de verdade do time (e pega regressão)')
     on.add_argument('--casos', required=True, help='JSON com os casos: [{"pedido", "esperadas"}] e o retrato gravado')
     on.add_argument('--argila')
@@ -294,7 +299,7 @@ def main(argv=None):
         if a.acao == 'marcar' and (not a.ref or not a.status):
             ap.error('memory-card marcar pede REF e --status')
     return {'receita': cmd_receita, 'catalogar': cmd_catalogar, 'validar': cmd_validar, 'prototipar': cmd_prototipar, 'aprovar': cmd_aprovar,
-            'gerar': cmd_gerar, 'diff': cmd_diff, 'funcoes': cmd_funcoes, 'padroes': cmd_padroes, 'visuais': cmd_visuais, 'galeria': cmd_galeria, 'c0': cmd_c0, 'modelos': cmd_modelos,
+            'gerar': cmd_gerar, 'conferir-desktop': cmd_conferir_desktop, 'diff': cmd_diff, 'funcoes': cmd_funcoes, 'padroes': cmd_padroes, 'visuais': cmd_visuais, 'galeria': cmd_galeria, 'c0': cmd_c0, 'modelos': cmd_modelos,
             'buscar': cmd_buscar, 'relacionar': cmd_relacionar, 'provar': cmd_provar,
             'memory-card': cmd_memory_card, 'confirmar': cmd_confirmar, 'situacao': cmd_situacao, 'novo': cmd_novo, 'esbocar': cmd_esbocar, 'status': cmd_status, 'onoki': cmd_onoki}[a.cmd](a) or 0
 
