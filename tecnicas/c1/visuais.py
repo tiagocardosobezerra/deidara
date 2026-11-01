@@ -11,6 +11,7 @@ from kibaku_nendo.desenhos import COR_ATENCAO
 from tecnicas.bunshin.simulacao import categorias
 from kibaku_nendo.util import numero_br
 from tecnicas import akatsuki as galeria
+from tecnicas.arte.contrato import CRESCENTE, ordem as ordem_do_visual
 
 
 def formatar(v, formato, compacto=False):
@@ -63,11 +64,7 @@ def _eixo(r, rotulos, n):
 
 def svg_visual(sim, v, pos, cores):
     w, h = pos['w'], pos['h']
-    corpo = {'cartao': _cartao, 'medidor': _medidor, 'segmentador': _segmentador, 'tabela': _tabela,
-             'matriz': _matriz, 'rosca': _rosca, 'linha': _linha, 'barras': _barras, 'colunas': _colunas,
-             'botoes': _botoes, 'cartoes': _cartoes, 'decomposicao': _decomposicao, 'dispersao': _dispersao,
-             'area': _area, 'mapa': _mapa, 'abas': _abas, 'alternar': _alternar, 'skyline': _skyline,
-             'setas': _setas, 'imagem': _imagem, 'aviso': _aviso, 'html': _html, 'vegalite': _vegalite, 'controle': _controle}[v['tipo']]
+    corpo = desenhos()[v['tipo']]
     return (f'<svg viewBox="0 0 {w} {h}" width="{w}" height="{h}" role="img" aria-label="{_e(v["titulo"])}">'
             f'{corpo(sim, v, w, h, cores)}</svg>')
 
@@ -704,6 +701,10 @@ def _tabela(sim, v, w, h, cores):
     medidas_t = [c for c in cols if c['tipo'] == 'medida']
     if chaves and medidas_t:                       # linha em que toda medida fica em branco some, como no Power BI
         linhas = [l for l in linhas if any(sim.valor(c['nome'], l) is not None for c in medidas_t)] or linhas
+    o = ordem_do_visual(v, sim.m)                  # a mesma ordem do Power BI (tecnicas/arte/contrato.py)
+    if o and chaves:
+        sinal = 1 if o[1] == CRESCENTE else -1
+        linhas.sort(key=lambda l: (sim.valor(o[0]['nome'], l) is None, sinal * (sim.valor(o[0]['nome'], l) or 0)))
     radar = next((c for c in medidas_t if (medida(sim.m, c['nome']) or {}).get('tipo') == 'svg_radar'), None)
     rh = 64 if radar else 22                         # o radar pede uma linha alta (a imagem tem 64 x 64)
     n = max(1, min(len(linhas), int((h - 84) // rh)))
@@ -949,7 +950,10 @@ def _cor_fora(sim, v):
 def _barras(sim, v, w, h, cores):
     fora = _cor_fora(sim, v)
     rot, ss = _series(sim, v)
-    ordem = sorted(range(len(rot)), key=lambda i: -ss[0][1][i])    # maior primeiro, como no Power BI
+    if ordem_do_visual(v, sim.m):                  # o maior primeiro, como no Power BI (tecnicas/arte/contrato.py)
+        ordem = sorted(range(len(rot)), key=lambda i: -(ss[-1 if v['tipo'] == 'setas' else 0][1][i] or 0))
+    else:
+        ordem = list(range(len(rot)))
     rot = [rot[i] for i in ordem]
     ss = [(n, [s[i] for i in ordem], f) for n, s, f in ss]
     top, esq = (52 if len(ss) > 1 else 36), min(150, w * 0.32)
@@ -1038,3 +1042,14 @@ def _rosca(sim, v, w, h, cores):
 
 
 # ------------------------------------------------------------- modelo (SVG)
+
+
+def desenhos():
+    """O desenho de cada tipo de visual do argila.json no protótipo (um teste confere que nenhum tipo fica sem)."""
+    return {'cartao': _cartao, 'medidor': _medidor, 'segmentador': _segmentador, 'tabela': _tabela,
+            'matriz': _matriz, 'rosca': _rosca, 'linha': _linha, 'barras': _barras, 'colunas': _colunas,
+            'botoes': _botoes, 'cartoes': _cartoes, 'decomposicao': _decomposicao, 'dispersao': _dispersao,
+            'area': _area, 'mapa': _mapa, 'abas': _abas, 'alternar': _alternar, 'skyline': _skyline,
+            'setas': _setas, 'imagem': _imagem, 'aviso': _aviso, 'html': _html, 'vegalite': _vegalite,
+            'controle': _controle}
+

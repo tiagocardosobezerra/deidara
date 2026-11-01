@@ -16,30 +16,11 @@ from tecnicas.arte.modelos import montar, paginas_do_relatorio
 from tecnicas.c1.prototipo import titulo_do_cartao
 from kibaku_nendo.util import curto, gravar_json
 from tecnicas.sasori import estilos
+from tecnicas.arte.contrato import PAPEIS, ordem as ordem_do_visual
+from tecnicas.c3 import guarda
 
 S = 'https://developer.microsoft.com/json-schemas/fabric/item/report/definition'
 
-# Papéis (buckets) de dados de cada visual nativo.
-PAPEIS = {
-    'card': {'valores': 'Values'},
-    'gauge': {'valores': 'Y', 'meta': 'TargetValue'},
-    'slicer': {'categoria': 'Values'},
-    'tableEx': {'campos': 'Values'},
-    'pivotTable': {'linhas': 'Rows', 'colunas': 'Columns', 'valores': 'Values'},
-    'clusteredBarChart': {'categoria': 'Category', 'legenda': 'Series', 'valores': 'Y'},
-    'clusteredColumnChart': {'categoria': 'Category', 'legenda': 'Series', 'valores': 'Y'},
-    'lineChart': {'categoria': 'Category', 'legenda': 'Series', 'valores': 'Y'},
-    'donutChart': {'categoria': 'Category', 'valores': 'Y'},
-    'advancedSlicerVisual': {'categoria': 'Values'},
-    'cardVisual': {'valores': 'Data'},
-    'decompositionTreeVisual': {'valores': 'Analyze', 'linhas': 'ExplainBy'},
-    'areaChart': {'categoria': 'Category', 'legenda': 'Series', 'valores': 'Y'},
-    'azureMap': {'categoria': 'Category', 'legenda': 'Series', 'valores': 'Size'},
-    'scatterChart': {'categoria': 'Category'},          # X, Y e Size saem de "valores", na ordem
-    'columnChart': {'categoria': 'Category', 'legenda': 'Series', 'valores': 'Y'},
-    'htmlContent443BE3AD55E043BF878BED274D3A6865': {'valores': 'content'},
-    'deneb7E15AEF80B9E4D4F8E12924291ECE89A': {'categoria': 'dataset', 'valores': 'dataset'},
-}
 
 
 def _lit(valor):
@@ -76,16 +57,9 @@ def _query(v, m=None):
             if c:
                 estado[papel] = {'projections': [_projecao(c)]}
     q = {'queryState': estado}
-    if tipo in ('clusteredBarChart', 'donutChart') and v.get('valores'):
-        principal = v['valores'][-1] if v['tipo'] == 'setas' else v['valores'][0]    # setas: ordena pelo atual
-        q['sortDefinition'] = {'sort': [{'field': _projecao(principal)['field'], 'direction': 'Descending'}],
-                               'isDefaultSort': True}
-    if tipo == 'tableEx' and m:              # Pareto e posição só fazem sentido do maior para o menor
-        for c in v.get('campos') or []:
-            if c and c['tipo'] == 'medida' and (medida(m, c['nome']) or {}).get('tipo') in ('pareto', 'posicao'):
-                q['sortDefinition'] = {'sort': [{'field': _projecao(c)['field'], 'direction': 'Ascending'}],
-                                       'isDefaultSort': True}
-                break
+    o = ordem_do_visual(v, m)                  # a mesma ordem do protótipo (tecnicas/arte/contrato.py)
+    if o:
+        q['sortDefinition'] = {'sort': [{'field': _projecao(o[0])['field'], 'direction': o[1]}], 'isDefaultSort': True}
     return q
 
 
@@ -277,84 +251,106 @@ def _cor_da_medida(m, nome_cor):
                                                      'Property': md['nome']}}}}}
 
 
+def _formato_segmentador(m, v, pos, vis, container):
+    """Segmentador: caixa suspensa, sem o cabeçalho repetido; na faixa baixa, cabe o título e a caixa."""
+    vis['objects'] = {'data': [{'properties': {'mode': _lit('Dropdown')}}],
+                      'header': [{'properties': {'show': _lit(False)}}]}
+    if pos['h'] < 90:                    # faixa baixa: com o respiro do estilo de origem, o título empurra a caixa para fora
+        # 4 px, não menos: com 2 px o Power BI Desktop entra em laço de layout e trava ao abrir (testado na 2.159)
+        container['padding'] = [{'properties': {'top': _lit(4), 'bottom': _lit(4), 'left': _lit(12), 'right': _lit(12)}}]
+        container['spacing'] = [{'properties': {'verticalSpacing': _lit(4)}}]
+        container['title'][0]['properties']['fontSize'] = _lit(10)
+
+
+def _formato_cartao(m, v, pos, vis, container):
+    """Cartão: o título é a meta; o número no mesmo tamanho em toda a faixa, na cor da meta."""
+    meta = titulo_do_cartao(m, v)
+    rotulo = (medida(m, v['valores'][0]['nome']) or {}).get('rotulo_meta')
+    texto = _cor_da_medida(m, rotulo)['solid']['color'] if rotulo else (_lit(meta) if meta else None)
+    container['title'] = [{'properties': {'show': _lit(bool(meta)), **({'text': texto} if texto else {})}}]
+    md = medida(m, v['valores'][0]['nome']) or {}
+    rotulo_card = {}
+    if md.get('formato') in ('inteiro', 'decimal', 'percentual', 'moeda'):
+        # o mesmo tamanho em todo cartão de número da faixa, com ou sem meta (antes: 14 sem meta, automático com)
+        rotulo_card['fontSize'] = _lit(max(14, min(32, round(pos['h'] / 6))))
+    if md.get('cor_medida'):
+        rotulo_card['color'] = _cor_da_medida(m, md['cor_medida'])
+    if rotulo_card:
+        vis['objects'] = {'labels': [{'properties': rotulo_card}]}
+    if md.get('formato') not in ('inteiro', 'decimal', 'percentual', 'moeda', 'data'):
+        # frase (leitura, meta x faixa, top 5): quebra a linha em vez de cortar com "..."
+        vis.setdefault('objects', {})['wordWrap'] = [{'properties': {'show': _lit(True)}}]
+    if pos['h'] < 80:                    # cartão baixo (página de dica): o nome cabe embaixo do número
+        vis.setdefault('objects', {})['categoryLabels'] = [{'properties': {'fontSize': _lit(8)}}]
+        container['padding'] = [{'properties': {k: _lit(4) for k in ('top', 'bottom', 'left', 'right')}}]
+        container['title'] = [{'properties': {'show': _lit(False)}}]     # "Meta: x" tomava o cartão; a cor fica
+
+
+def _formato_tabela(m, v, pos, vis, container):
+    """Tabela e matriz: a cor da meta em cada coluna e o tamanho da imagem das medidas SVG."""
+    regras = []
+    for c in v['campos'] + v['valores']:
+        cor = c and c['tipo'] == 'medida' and (medida(m, c['nome']) or {}).get('cor_medida')
+        if cor:
+            regras.append({'properties': {'fontColor': _cor_da_medida(m, cor)},
+                           'selector': {'metadata': f'{c["tabela"]}.{c["nome"]}'}})
+    if regras:
+        vis['objects'] = {'values': regras}
+    if any(c and c['tipo'] == 'medida' and (medida(m, c['nome']) or {}).get('imagem') for c in v['campos'] + v['valores']):
+        # medida SVG (Image URL): o tamanho padrão da imagem na tabela é pequeno demais para a barra
+        tipos_img = {(medida(m, c['nome']) or {}).get('tipo') for c in v['campos'] + v['valores'] if c and c['tipo'] == 'medida'}
+        alto, largo = (64, 64) if 'svg_radar' in tipos_img else (24, 24) if tipos_img & {'svg_bolha'} else (24, 180)
+        vis.setdefault('objects', {})['grid'] = [{'properties': {'imageHeight': _lit(alto), 'imageWidth': _lit(largo)}}]
+
+
+def _formato_botoes(m, v, pos, vis, container):
+    """Botões: uma linha se o espaço é largo, duas se é estreito; sem título repetido."""
+    minimo = 130 if v.get('imagem') or v.get('icone') else 80   # ícone e imagem tomam parte do botão
+    colunas = max(2, min(7, int(pos['w'] // minimo)))       # cada botão com pelo menos 80 px (130 com imagem)
+    fonte = 12 if pos['h'] < 90 else 14
+    if v.get('opcoes'):                                     # opções conhecidas: nenhuma célula vazia rouba largura
+        colunas = max(1, min(colunas, len(v['opcoes'])))
+        if pos['h'] < 90 and max(len(o) for o in v['opcoes']) > 12:
+            fonte = 10                                      # "Acumulado no ano" inteiro na faixa dos filtros
+    vis['objects'] = {'layout': [{'properties': {'autoGrid': _lit(False), 'rowCount': _int(1 if colunas >= 7 or pos['h'] < 90 else 2),
+                                                 'columnCount': _int(colunas), 'cellPadding': _int(6)}}],
+                      # o botão é claro por padrão: o texto segue a cor de texto do tema, nunca a do estilo de origem
+                      'value': [{'properties': {'fontColor': {'solid': {'color': _lit(m['tema']['texto'])}},
+                                                'fontSize': _lit(fonte)}, 'selector': {'id': 'default'}},
+                                # escolhido (seletor "selection:selected", o que o Desktop grava): a cor de destaque; sem ela, branco no branco
+                                {'properties': {'fontColor': {'solid': {'color': _lit(m['tema']['cores'][0])}},
+                                                'fontSize': _lit(fonte)}, 'selector': {'id': 'selection:selected'}}]}
+    container['title'] = [{'properties': {'show': _lit(False)}}]
+    if pos['h'] < 90:                    # faixa baixa (canto dos filtros): o respiro de 20 px do estilo de origem
+        container['padding'] = [{'properties': {k: _lit(2) for k in ('top', 'bottom', 'left', 'right')}}]
+        vis['objects']['padding'] = [{'properties': {'paddingSelection': _lit('Custom'), 'topMargin': _int(2),
+                                                     'bottomMargin': _int(2), 'leftMargin': _int(6), 'rightMargin': _int(6)},
+                                      'selector': {'id': 'default'}}]                      # não deixa o botão cortar o texto
+
+
+def _formato_cartao_novo(m, v, pos, vis, container):
+    """Número do cartão novo legível em qualquer estilo de origem."""
+    vis['objects'] = {'value': [{'properties': {'fontSize': _lit(max(16, min(30, round(pos['h'] / 4))))}}]}
+
+
+# a formatação nossa de cada visual nativo, antes do estilo de origem (que ela sobrepõe propriedade a propriedade)
+_FORMATO = {'slicer': _formato_segmentador, 'card': _formato_cartao, 'tableEx': _formato_tabela,
+            'pivotTable': _formato_tabela, 'advancedSlicerVisual': _formato_botoes, 'cardVisual': _formato_cartao_novo}
+
+
 def visual(m, v, pos, nome, ordem, transparente=False):
     tipo = TIPOS_VISUAL[v['tipo']]
     container = {'title': [{'properties': {'show': _lit(bool(v['titulo'])), 'text': _lit(v['titulo'] or '')}}]}
     vis = {'visualType': tipo, 'query': _query(v, m), 'visualContainerObjects': container,
            'drillFilterOtherVisuals': True}
-    if tipo == 'slicer':
-        vis['objects'] = {'data': [{'properties': {'mode': _lit('Dropdown')}}],
-                          'header': [{'properties': {'show': _lit(False)}}]}
-        if pos['h'] < 90:                    # faixa baixa: com o respiro do estilo de origem, o título empurra a caixa para fora
-            # 4 px, não menos: com 2 px o Power BI Desktop entra em laço de layout e trava ao abrir (testado na 2.159)
-            container['padding'] = [{'properties': {'top': _lit(4), 'bottom': _lit(4), 'left': _lit(12), 'right': _lit(12)}}]
-            container['spacing'] = [{'properties': {'verticalSpacing': _lit(4)}}]
-            container['title'][0]['properties']['fontSize'] = _lit(10)
-    if tipo == 'card':
-        meta = titulo_do_cartao(m, v)
-        rotulo = (medida(m, v['valores'][0]['nome']) or {}).get('rotulo_meta')
-        texto = _cor_da_medida(m, rotulo)['solid']['color'] if rotulo else (_lit(meta) if meta else None)
-        container['title'] = [{'properties': {'show': _lit(bool(meta)), **({'text': texto} if texto else {})}}]
-        md = medida(m, v['valores'][0]['nome']) or {}
-        rotulo_card = {}
-        if md.get('formato') in ('inteiro', 'decimal', 'percentual', 'moeda'):
-            # o mesmo tamanho em todo cartão de número da faixa, com ou sem meta (antes: 14 sem meta, automático com)
-            rotulo_card['fontSize'] = _lit(max(14, min(32, round(pos['h'] / 6))))
-        if md.get('cor_medida'):
-            rotulo_card['color'] = _cor_da_medida(m, md['cor_medida'])
-        if rotulo_card:
-            vis['objects'] = {'labels': [{'properties': rotulo_card}]}
-        if md.get('formato') not in ('inteiro', 'decimal', 'percentual', 'moeda', 'data'):
-            # frase (leitura, meta x faixa, top 5): quebra a linha em vez de cortar com "..."
-            vis.setdefault('objects', {})['wordWrap'] = [{'properties': {'show': _lit(True)}}]
-        if pos['h'] < 80:                    # cartão baixo (página de dica): o nome cabe embaixo do número
-            vis.setdefault('objects', {})['categoryLabels'] = [{'properties': {'fontSize': _lit(8)}}]
-            container['padding'] = [{'properties': {k: _lit(4) for k in ('top', 'bottom', 'left', 'right')}}]
-            container['title'] = [{'properties': {'show': _lit(False)}}]     # "Meta: x" tomava o cartão; a cor fica
-    if tipo in ('tableEx', 'pivotTable'):
-        regras = []
-        for c in v['campos'] + v['valores']:
-            cor = c and c['tipo'] == 'medida' and (medida(m, c['nome']) or {}).get('cor_medida')
-            if cor:
-                regras.append({'properties': {'fontColor': _cor_da_medida(m, cor)},
-                               'selector': {'metadata': f'{c["tabela"]}.{c["nome"]}'}})
-        if regras:
-            vis['objects'] = {'values': regras}
-        if any(c and c['tipo'] == 'medida' and (medida(m, c['nome']) or {}).get('imagem') for c in v['campos'] + v['valores']):
-            # medida SVG (Image URL): o tamanho padrão da imagem na tabela é pequeno demais para a barra
-            tipos_img = {(medida(m, c['nome']) or {}).get('tipo') for c in v['campos'] + v['valores'] if c and c['tipo'] == 'medida'}
-            alto, largo = (64, 64) if 'svg_radar' in tipos_img else (24, 24) if tipos_img & {'svg_bolha'} else (24, 180)
-            vis.setdefault('objects', {})['grid'] = [{'properties': {'imageHeight': _lit(alto), 'imageWidth': _lit(largo)}}]
-    if tipo == 'advancedSlicerVisual':       # botões: uma linha se o espaço é largo, duas se é estreito; sem título repetido
-        minimo = 130 if v.get('imagem') or v.get('icone') else 80   # ícone e imagem tomam parte do botão
-        colunas = max(2, min(7, int(pos['w'] // minimo)))       # cada botão com pelo menos 80 px (130 com imagem)
-        fonte = 12 if pos['h'] < 90 else 14
-        if v.get('opcoes'):                                     # opções conhecidas: nenhuma célula vazia rouba largura
-            colunas = max(1, min(colunas, len(v['opcoes'])))
-            if pos['h'] < 90 and max(len(o) for o in v['opcoes']) > 12:
-                fonte = 10                                      # "Acumulado no ano" inteiro na faixa dos filtros
-        vis['objects'] = {'layout': [{'properties': {'autoGrid': _lit(False), 'rowCount': _int(1 if colunas >= 7 or pos['h'] < 90 else 2),
-                                                     'columnCount': _int(colunas), 'cellPadding': _int(6)}}],
-                          # o botão é claro por padrão: o texto segue a cor de texto do tema, nunca a do estilo de origem
-                          'value': [{'properties': {'fontColor': {'solid': {'color': _lit(m['tema']['texto'])}},
-                                                    'fontSize': _lit(fonte)}, 'selector': {'id': 'default'}},
-                                    # escolhido (seletor "selection:selected", o que o Desktop grava): a cor de destaque; sem ela, branco no branco
-                                    {'properties': {'fontColor': {'solid': {'color': _lit(m['tema']['cores'][0])}},
-                                                    'fontSize': _lit(fonte)}, 'selector': {'id': 'selection:selected'}}]}
-        container['title'] = [{'properties': {'show': _lit(False)}}]
-        if pos['h'] < 90:                    # faixa baixa (canto dos filtros): o respiro de 20 px do estilo de origem
-            container['padding'] = [{'properties': {k: _lit(2) for k in ('top', 'bottom', 'left', 'right')}}]
-            vis['objects']['padding'] = [{'properties': {'paddingSelection': _lit('Custom'), 'topMargin': _int(2),
-                                                         'bottomMargin': _int(2), 'leftMargin': _int(6), 'rightMargin': _int(6)},
-                                          'selector': {'id': 'default'}}]                      # não deixa o botão cortar o texto
+    if tipo in _FORMATO:
+        _FORMATO[tipo](m, v, pos, vis, container)
     meta = v.get('meta') and medida(m, v['meta']['nome'])
     if tipo in ('clusteredBarChart', 'clusteredColumnChart', 'lineChart', 'areaChart') and meta and meta.get('tipo') == 'meta':
         vis.setdefault('objects', {})['y1AxisReferenceLine'] = [{'properties': {
             'show': _lit(True), 'displayName': _lit('Meta'), 'value': _lit(float(meta['dax'])),
             'lineColor': {'solid': {'color': _lit('#252423')}}, 'style': _lit('dashed'),
             'dataLabelShow': _lit(True)}, 'selector': {'id': '1'}}]
-    if tipo == 'cardVisual':                 # número do cartão novo legível em qualquer estilo de origem
-        vis['objects'] = {'value': [{'properties': {'fontSize': _lit(max(16, min(30, round(pos['h'] / 4))))}}]}
     if transparente:                         # o fundo desenhado da página faz o painel (referencias/modelos.md)
         container['background'] = [{'properties': {'show': _lit(False)}}]
     if v.get('dica'):                        # ao passar o mouse, a página de dica no lugar da dica padrão
@@ -376,6 +372,7 @@ def visual(m, v, pos, nome, ordem, transparente=False):
             else:
                 cont[k] = valor
         vis['visualContainerObjects'] = cont
+    guarda.aplicar(tipo, vis)                # a legibilidade por cima do estilo de origem (tecnicas/c3/guarda.py)
     return {
         '$schema': f'{S}/visualContainer/2.0.0/schema.json',
         'name': nome,

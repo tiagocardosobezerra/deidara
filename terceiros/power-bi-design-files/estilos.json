@@ -37,7 +37,7 @@
        "fontSize": {
         "expr": {
          "Literal": {
-          "Value": "11D"
+          "Value": "13D"
          }
         }
        },
@@ -51,7 +51,7 @@
        "maxMarginFactor": {
         "expr": {
          "Literal": {
-          "Value": "45L"
+          "Value": "30L"
          }
         }
        },
@@ -2511,7 +2511,7 @@
        "fontSize": {
         "expr": {
          "Literal": {
-          "Value": "10D"
+          "Value": "8D"
          }
         }
        },
@@ -2525,7 +2525,7 @@
        "show": {
         "expr": {
          "Literal": {
-          "Value": "true"
+          "Value": "false"
          }
         }
        },
@@ -4949,7 +4949,7 @@
         }
        },
        "selector": {
-        "id": "selection:selected"
+        "id": "selected"
        }
       },
       {
@@ -4983,7 +4983,7 @@
         }
        },
        "selector": {
-        "id": "selection:selected"
+        "id": "selected"
        }
       },
       {
@@ -5013,7 +5013,7 @@
         }
        },
        "selector": {
-        "id": "selection:selected"
+        "id": "selected"
        }
       },
       {
@@ -5078,7 +5078,7 @@
         }
        },
        "selector": {
-        "id": "selection:selected"
+        "id": "selected"
        }
       }
      ],
@@ -5136,7 +5136,7 @@
         }
        },
        "selector": {
-        "id": "selection:selected"
+        "id": "selected"
        }
       }
      ]
@@ -15984,7 +15984,7 @@
         }
        },
        "selector": {
-        "id": "selection:selected"
+        "id": "selected"
        }
       },
       {
@@ -15998,7 +15998,7 @@
         }
        },
        "selector": {
-        "id": "interaction:hover"
+        "id": "hover"
        }
       }
      ],
@@ -16014,7 +16014,7 @@
         }
        },
        "selector": {
-        "id": "selection:selected"
+        "id": "selected"
        }
       }
      ],
@@ -16030,7 +16030,7 @@
         }
        },
        "selector": {
-        "id": "selection:selected"
+        "id": "selected"
        }
       }
      ]
@@ -19749,7 +19749,7 @@
         }
        },
        "selector": {
-        "id": "interaction:hover"
+        "id": "hover"
        }
       }
      ],
@@ -19802,7 +19802,7 @@
         }
        },
        "selector": {
-        "id": "selection:selected"
+        "id": "selected"
        }
       },
       {
@@ -19816,7 +19816,7 @@
         }
        },
        "selector": {
-        "id": "interaction:hover"
+        "id": "hover"
        }
       }
      ],
@@ -21243,7 +21243,7 @@
         }
        },
        "selector": {
-        "id": "selection:selected"
+        "id": "selected"
        }
       },
       {
@@ -21257,7 +21257,7 @@
         }
        },
        "selector": {
-        "id": "interaction:hover"
+        "id": "hover"
        }
       }
      ],
@@ -21331,7 +21331,7 @@
         }
        },
        "selector": {
-        "id": "interaction:hover"
+        "id": "hover"
        }
       }
      ],
@@ -21347,7 +21347,7 @@
         }
        },
        "selector": {
-        "id": "selection:selected"
+        "id": "selected"
        }
       },
       {
@@ -21375,7 +21375,7 @@
         }
        },
        "selector": {
-        "id": "interaction:hover"
+        "id": "hover"
        }
       }
      ]

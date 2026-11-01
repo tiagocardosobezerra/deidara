@@ -572,3 +572,25 @@ class TestConferirDesktop(unittest.TestCase):
             r = desktop.conferir([], pasta_tmp=os.path.join('C:' + os.sep, 'a'))
         self.assertEqual(r['instancia']['porta'], 1)
         self.assertEqual(rodar.call_args.kwargs['porta'], 1)
+
+
+class TestContratoDeVisual(unittest.TestCase):
+    """Protótipo (C1) e Power BI (C3) leem o mesmo contrato (tecnicas/arte/contrato.py)."""
+
+    def test_todo_tipo_tem_desenho_e_papeis(self):
+        from kibaku_nendo.especificacao import TIPOS_VISUAL
+        from tecnicas.arte.contrato import PAPEIS
+        from tecnicas.c1.visuais import desenhos
+        self.assertEqual(set(TIPOS_VISUAL), set(desenhos()))
+        self.assertEqual({k for k, v in TIPOS_VISUAL.items() if v not in PAPEIS}, set())
+
+    def test_mesma_ordem_no_prototipo_e_no_pbir(self):
+        from tecnicas.arte import contrato
+        from tecnicas.c3 import pbir
+        m = {'medidas': [{'nome': '% Acumulado', 'tipo': 'pareto'}]}
+        v = {'tipo': 'tabela', 'campos': [{'tipo': 'coluna', 'tabela': 'd', 'nome': 'Motivo'},
+                                          {'tipo': 'medida', 'tabela': 'f', 'nome': '% Acumulado'}]}
+        campo, sentido = contrato.ordem(v, m)
+        q = pbir._query(v, m)['sortDefinition']['sort'][0]
+        self.assertEqual((q['field']['Measure']['Property'], q['direction']), (campo['nome'], sentido))
+        self.assertIsNone(contrato.ordem({'tipo': 'linha', 'valores': [campo]}, m))     # o tempo fica na ordem dele

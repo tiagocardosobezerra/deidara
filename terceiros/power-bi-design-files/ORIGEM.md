@@ -18,7 +18,7 @@ versão nova do repositório; o que mudar entra aqui à mão.
 
 As correções de legibilidade do Deidara (eixo de meses na linha, nome inteiro no eixo das barras, seletor de
 estado do segmentador de botões) não ficam neste arquivo: ficam no código, na guarda aplicada depois do estilo
-(`tecnicas/c3/pbir.py`).
+(`tecnicas/c3/guarda.py`).
 
 ## O que é do Deidara, inspirado neste repositório
 
