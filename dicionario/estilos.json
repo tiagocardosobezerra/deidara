@@ -37,7 +37,7 @@
        "fontSize": {
         "expr": {
          "Literal": {
-          "Value": "13D"
+          "Value": "11D"
          }
         }
        },
@@ -51,7 +51,7 @@
        "maxMarginFactor": {
         "expr": {
          "Literal": {
-          "Value": "30L"
+          "Value": "45L"
          }
         }
        },
@@ -2511,7 +2511,7 @@
        "fontSize": {
         "expr": {
          "Literal": {
-          "Value": "8D"
+          "Value": "10D"
          }
         }
        },
@@ -2525,7 +2525,7 @@
        "show": {
         "expr": {
          "Literal": {
-          "Value": "false"
+          "Value": "true"
          }
         }
        },

@@ -61,7 +61,7 @@ def _projecao(campo):
     return {'field': field, 'queryRef': f'{campo["tabela"]}.{campo["nome"]}', 'nativeQueryRef': campo['nome']}
 
 
-def _query(v):
+def _query(v, m=None):
     tipo = TIPOS_VISUAL[v['tipo']]
     estado = {}
     papeis = {'campos_deneb': 'dataset'} if v.get('campos_deneb') else PAPEIS[tipo]   # modelo Deneb: todos, na ordem
@@ -79,6 +79,12 @@ def _query(v):
         principal = v['valores'][-1] if v['tipo'] == 'setas' else v['valores'][0]    # setas: ordena pelo atual
         q['sortDefinition'] = {'sort': [{'field': _projecao(principal)['field'], 'direction': 'Descending'}],
                                'isDefaultSort': True}
+    if tipo == 'tableEx' and m:              # Pareto e posição só fazem sentido do maior para o menor
+        for c in v.get('campos') or []:
+            if c and c['tipo'] == 'medida' and (medida(m, c['nome']) or {}).get('tipo') in ('pareto', 'posicao'):
+                q['sortDefinition'] = {'sort': [{'field': _projecao(c)['field'], 'direction': 'Ascending'}],
+                                       'isDefaultSort': True}
+                break
     return q
 
 
@@ -250,6 +256,21 @@ def _spec_vegalite(v):
     return json.dumps(spec, ensure_ascii=False)
 
 
+def _fundir(do_estilo, nossas):
+    """Nossas propriedades por cima das do estilo de origem, entrada a entrada pelo seletor: trocar a lista inteira
+    perdia a fonte e o negrito do estilo (e o "selected" dos botões)."""
+    if not do_estilo:
+        return nossas
+    out = copy.deepcopy(do_estilo)
+    for e in nossas:
+        par = next((x for x in out if x.get('selector') == e.get('selector')), None)
+        if par is None or 'selector' in e and set(e['selector']) - {'id'}:
+            out.append(e)                    # seletor de campo ou de série: a regra é nossa, inteira
+        else:
+            par['properties'].update(e['properties'])
+    return out
+
+
 def _cor_da_medida(m, nome_cor):
     md = medida(m, nome_cor)
     return {'solid': {'color': {'expr': {'Measure': {'Expression': {'SourceRef': {'Entity': md['tabela']}},
@@ -259,19 +280,37 @@ def _cor_da_medida(m, nome_cor):
 def visual(m, v, pos, nome, ordem, transparente=False):
     tipo = TIPOS_VISUAL[v['tipo']]
     container = {'title': [{'properties': {'show': _lit(bool(v['titulo'])), 'text': _lit(v['titulo'] or '')}}]}
-    vis = {'visualType': tipo, 'query': _query(v), 'visualContainerObjects': container,
+    vis = {'visualType': tipo, 'query': _query(v, m), 'visualContainerObjects': container,
            'drillFilterOtherVisuals': True}
     if tipo == 'slicer':
         vis['objects'] = {'data': [{'properties': {'mode': _lit('Dropdown')}}],
                           'header': [{'properties': {'show': _lit(False)}}]}
+        if pos['h'] < 90:                    # faixa baixa: com o respiro do estilo de origem, o título empurra a caixa para fora
+            # 4 px, não menos: com 2 px o Power BI Desktop entra em laço de layout e trava ao abrir (testado na 2.159)
+            container['padding'] = [{'properties': {'top': _lit(4), 'bottom': _lit(4), 'left': _lit(12), 'right': _lit(12)}}]
+            container['spacing'] = [{'properties': {'verticalSpacing': _lit(4)}}]
+            container['title'][0]['properties']['fontSize'] = _lit(10)
     if tipo == 'card':
         meta = titulo_do_cartao(m, v)
         rotulo = (medida(m, v['valores'][0]['nome']) or {}).get('rotulo_meta')
         texto = _cor_da_medida(m, rotulo)['solid']['color'] if rotulo else (_lit(meta) if meta else None)
         container['title'] = [{'properties': {'show': _lit(bool(meta)), **({'text': texto} if texto else {})}}]
-        cor = (medida(m, v['valores'][0]['nome']) or {}).get('cor_medida')
-        if cor:
-            vis['objects'] = {'labels': [{'properties': {'color': _cor_da_medida(m, cor)}}]}
+        md = medida(m, v['valores'][0]['nome']) or {}
+        rotulo_card = {}
+        if md.get('formato') in ('inteiro', 'decimal', 'percentual', 'moeda'):
+            # o mesmo tamanho em todo cartão de número da faixa, com ou sem meta (antes: 14 sem meta, automático com)
+            rotulo_card['fontSize'] = _lit(max(14, min(32, round(pos['h'] / 6))))
+        if md.get('cor_medida'):
+            rotulo_card['color'] = _cor_da_medida(m, md['cor_medida'])
+        if rotulo_card:
+            vis['objects'] = {'labels': [{'properties': rotulo_card}]}
+        if md.get('formato') not in ('inteiro', 'decimal', 'percentual', 'moeda', 'data'):
+            # frase (leitura, meta x faixa, top 5): quebra a linha em vez de cortar com "..."
+            vis.setdefault('objects', {})['wordWrap'] = [{'properties': {'show': _lit(True)}}]
+        if pos['h'] < 80:                    # cartão baixo (página de dica): o nome cabe embaixo do número
+            vis.setdefault('objects', {})['categoryLabels'] = [{'properties': {'fontSize': _lit(8)}}]
+            container['padding'] = [{'properties': {k: _lit(4) for k in ('top', 'bottom', 'left', 'right')}}]
+            container['title'] = [{'properties': {'show': _lit(False)}}]     # "Meta: x" tomava o cartão; a cor fica
     if tipo in ('tableEx', 'pivotTable'):
         regras = []
         for c in v['campos'] + v['valores']:
@@ -289,11 +328,19 @@ def visual(m, v, pos, nome, ordem, transparente=False):
     if tipo == 'advancedSlicerVisual':       # botões: uma linha se o espaço é largo, duas se é estreito; sem título repetido
         minimo = 130 if v.get('imagem') or v.get('icone') else 80   # ícone e imagem tomam parte do botão
         colunas = max(2, min(7, int(pos['w'] // minimo)))       # cada botão com pelo menos 80 px (130 com imagem)
+        fonte = 12 if pos['h'] < 90 else 14
+        if v.get('opcoes'):                                     # opções conhecidas: nenhuma célula vazia rouba largura
+            colunas = max(1, min(colunas, len(v['opcoes'])))
+            if pos['h'] < 90 and max(len(o) for o in v['opcoes']) > 12:
+                fonte = 10                                      # "Acumulado no ano" inteiro na faixa dos filtros
         vis['objects'] = {'layout': [{'properties': {'autoGrid': _lit(False), 'rowCount': _int(1 if colunas >= 7 or pos['h'] < 90 else 2),
                                                      'columnCount': _int(colunas), 'cellPadding': _int(6)}}],
                           # o botão é claro por padrão: o texto segue a cor de texto do tema, nunca a do estilo de origem
                           'value': [{'properties': {'fontColor': {'solid': {'color': _lit(m['tema']['texto'])}},
-                                                    'fontSize': _lit(12 if pos['h'] < 90 else 14)}}]}
+                                                    'fontSize': _lit(fonte)}, 'selector': {'id': 'default'}},
+                                    # escolhido (seletor "selection:selected", o que o Desktop grava): a cor de destaque; sem ela, branco no branco
+                                    {'properties': {'fontColor': {'solid': {'color': _lit(m['tema']['cores'][0])}},
+                                                    'fontSize': _lit(fonte)}, 'selector': {'id': 'selection:selected'}}]}
         container['title'] = [{'properties': {'show': _lit(False)}}]
         if pos['h'] < 90:                    # faixa baixa (canto dos filtros): o respiro de 20 px do estilo de origem
             container['padding'] = [{'properties': {k: _lit(2) for k in ('top', 'bottom', 'left', 'right')}}]
@@ -316,7 +363,8 @@ def visual(m, v, pos, nome, ordem, transparente=False):
     est = _estilo(m, tipo)
     if est:                                  # a formatação do dashboard de origem do modelo (dicionario/estilos.json)
         objetos = copy.deepcopy(est['objects'])
-        objetos.update(vis.get('objects') or {})
+        for k, entradas in (vis.get('objects') or {}).items():
+            objetos[k] = _fundir(objetos.get(k), entradas)
         if objetos:
             vis['objects'] = objetos
         cont = copy.deepcopy(est['container'])
@@ -524,8 +572,10 @@ def gravar(m, pasta_projeto, nome):
             gravar_json(os.path.join(adir, 'visuals', tid, 'visual.json'), _texto(tid, pos, nota_de_ajuda(m, v), k * 1000))
         vid = curto('voltar', pg['nome'])
         os.makedirs(os.path.join(adir, 'visuals', vid), exist_ok=True)
+        # no lugar do "?" que abriu a ajuda: no canto de cima, ficava por cima da nota dos filtros
         gravar_json(os.path.join(adir, 'visuals', vid, 'visual.json'),
-                    _botao_ajuda(vid, {'x': lay['w'] - 184, 'y': 16, 'w': 164, 'h': 44}, pid, 'back', 'Voltar', 95000))
+                    _botao_ajuda(vid, {'x': lay['w'] - 184, 'y': lay['h'] - 104, 'w': 164, 'h': 44}, pid, 'back',
+                                 'Voltar', 95000))
         ordem.append(aid)
     for pg, lay, tid, pid, fundo, nome_tour in tour_pags:
         tdir = os.path.join(defi, 'pages', tid)

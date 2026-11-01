@@ -21,6 +21,7 @@ As linhas são inventadas, nunca lidas de lugar nenhum, e coerentes entre si:
 
 import datetime
 import random
+import re
 
 from kibaku_nendo.util import M_POR_FAMILIA, m_texto
 
@@ -78,6 +79,7 @@ def linhas(m, semente='deidara'):
     tabelas = [t for t in m['tabelas'] if not t.get('calendario') and not t.get('auxiliar')]
     nomes = {t['nome'] for t in tabelas}
     rels = [r for r in m['relacionamentos'] if r['de'] in nomes and r['para'] in nomes]
+    textos = _textos_das_medidas(m)
     dados = {}
     for t in _ordem(tabelas, rels):
         pais = [r for r in rels if r['de'] == t['nome']]
@@ -85,7 +87,7 @@ def linhas(m, semente='deidara'):
         datas = [c for c in t['colunas'] if c['familia'] in ('data', 'datahora')]
         chaves = {r['para_coluna'] for r in filhos}
         chaves |= {c['nome'] for c in t['colunas'] if c.get('origem') and c['origem'].upper() in
-                   {x.upper() for x in t.get('pk') or []}}
+                   {x.upper() for x in t.get('pk') or []} and c not in datas}   # data da chave composta segue data
         chaves -= {r['de_coluna'] for r in pais}
         mae_com_data = next((r for r in pais if any(c['familia'] in ('data', 'datahora')
                                                      for c in _tab(m, r['para'])['colunas'])), None)
@@ -121,7 +123,7 @@ def linhas(m, semente='deidara'):
                 if c['nome'] in linha:
                     continue
                 linha[c['nome']] = _valor(rng, t, c, k, n, chaves, inicio, fim, linha.get('_mae'),
-                                          base[1] if base else None)
+                                          base[1] if base else None, textos.get((t['nome'], c['nome'])))
             linha.pop('_mae', None)
             out.append(linha)
         dados[t['nome']] = out
@@ -132,26 +134,47 @@ def _tab(m, nome):
     return next(t for t in m['tabelas'] if t['nome'] == nome)
 
 
-def _valor(rng, t, c, k, n, chaves, inicio, fim, mae, col_data_mae):
+def _textos_das_medidas(m):
+    """{(tabela, coluna): [valores]} que o DAX das medidas procura (dMotivo[Tipo] = "Voluntário"): sem eles na
+    demonstração, a medida filtrada sai em branco."""
+    out = {}
+    padrao = re.compile(r"'?([^'\[\]()=,]+?)'?\[([^\]]+)\]\s*=\s*\"((?:[^\"]|\"\")*)\"")
+    for md in m.get('medidas') or []:
+        for tabela, coluna, valor in padrao.findall(md.get('dax') or ''):
+            lista = out.setdefault((tabela.strip(), coluna), [])
+            if valor.replace('""', '"') not in lista:
+                lista.append(valor.replace('""', '"'))
+    return out
+
+
+def _valor(rng, t, c, k, n, chaves, inicio, fim, mae, col_data_mae, textos=None):
     fam = c['familia']
     if c['nome'] in chaves:
         return k + 1 if fam in ('inteiro', 'decimal', 'real') else f'{k + 1:03d}'
     if fam in ('data', 'datahora'):
         if mae is not None and col_data_mae and mae.get(col_data_mae):
-            ini = mae[col_data_mae] + datetime.timedelta(days=60)
+            # nunca antes do calendário: data fora dele vira a linha "(Em branco)" em todo gráfico por mês
+            ini = max(mae[col_data_mae] + datetime.timedelta(days=60), inicio)
             return ini + datetime.timedelta(days=rng.randint(0, max(0, (fim - ini).days)))
         if n >= LINHAS_ENTIDADE:                   # entradas antigas: o estoque começa cheio
             ini = inicio - datetime.timedelta(days=6 * 365)
             return ini + datetime.timedelta(days=int(rng.triangular(0, (fim - ini).days, (fim - ini).days * 0.35)))
         return inicio + datetime.timedelta(days=rng.randint(0, max(0, (fim - inicio).days)))
     if fam == 'texto':
-        if n > 26:
-            return f'{c["nome"]} {k + 1:03d}'
+        if textos and k % 2 == 0:                  # metade das linhas com o valor que a medida procura
+            return textos[(k // 2) % len(textos)]
+        if n > 26 and any(x in (c.get('origem') or c['nome']).lower() for x in ('nome', 'cpf', 'mail', 'matric')):
+            return f'{c["nome"]} {k + 1:03d}'      # identifica a pessoa: um por linha
+        if n > 26:                                 # atributo do cadastro (sexo, contrato): poucas categorias
+            return f'{c["nome"]} {chr(65 + rng.randrange(4))}'
         return f'{c["nome"]} {chr(65 + k)}'
     if fam == 'logico':
         return rng.random() < 0.5
     if c.get('formato') == 'percentual':
         return round(rng.uniform(0.12, 0.32), 3)
+    if fam in ('decimal', 'real', 'inteiro') and 'hora' in c['nome'].lower():
+        # horas: a jornada prevista do mês contra as horas de uma ausência (absenteísmo perto de uns poucos %)
+        return round(rng.uniform(160, 200), 1) if 'previst' in c['nome'].lower() else round(rng.uniform(1, 8), 1)
     if c.get('formato') == 'moeda' or fam == 'decimal':
         return round(rng.uniform(2500, 18000), 2)
     if fam == 'inteiro':

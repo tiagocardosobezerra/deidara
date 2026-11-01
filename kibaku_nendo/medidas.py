@@ -49,7 +49,11 @@ def resolver_medidas(argila, m, p):
                 for k in ('numerador', 'denominador'):
                     if chave(md.get(k, '')) not in nomes:
                         p.erro(onde, f'{k} "{md.get(k)}" não é uma medida do modelo' + pista_medida(md.get(k), nomes))
-                r['dax'] = f'DIVIDE({dax_medida(md.get("numerador", ""))}, {dax_medida(md.get("denominador", ""))})'
+                num = dax_medida(md.get('numerador', ''))
+                if md.get('formato') == 'percentual':
+                    # taxa: mês sem nenhum desligamento é 0%, não um buraco na linha (sem base, continua em branco)
+                    num += ' + 0'
+                r['dax'] = f'DIVIDE({num}, {dax_medida(md.get("denominador", ""))})'
                 r['depende'] = [md.get('numerador'), md.get('denominador')]
             elif md.get('tipo') in TEMPO:
                 _medida_tempo(m, md, r, p, onde, nomes)
@@ -770,8 +774,9 @@ def _medida_tempo(m, md, r, p, onde, nomes):
     fim_ano = m['calendario'].get('fim_ano')                  # ano fiscal: o 3º argumento do TOTALYTD
     corte = ref_corte(m)
     # comparação justa: o período anterior para no mesmo dia em que o dado atual para (jan-out deste ano contra
-    # jan-out do ano passado, e não contra o ano inteiro), o padrão "previous year up to a certain date" do SQLBI
-    ate = f'KEEPFILTERS({data} <= {corte})'
+    # jan-out do ano passado, e não contra o ano inteiro), o padrão "previous year up to a certain date" do SQLBI.
+    # A data vem numa variável: filtro True/False com medida dentro o Power BI recusa ("função PLACEHOLDER")
+    ate = f'KEEPFILTERS({data} <= _corte)'
     expr = {
         'acumulado_ano': f'TOTALYTD({b}, {data}' + (f', "{fim_ano}")' if fim_ano else ')'),
         'ano_anterior': f'CALCULATE({b}, CALCULATETABLE(SAMEPERIODLASTYEAR({data}), {ate}))',
@@ -786,7 +791,8 @@ def _medida_tempo(m, md, r, p, onde, nomes):
     # período depois do último dado: sem isso o acumulado repete nos meses que ainda não têm dado e a
     # variação dá -100% (atual em branco contra um ano anterior com valor)
     corpo = '\n'.join('    ' + l for l in expr.split('\n'))
-    r['dax'] = f'IF(\n    MIN({data}) > {corte},\n    BLANK(),\n{corpo}\n)'
+    r['dax'] = f'VAR _corte = {corte}\nRETURN\n    IF(\n        MIN({data}) > _corte,\n        BLANK(),\n' + \
+        '\n'.join('    ' + l for l in corpo.split('\n')) + '\n    )'
 
 
 NOME_CORTE = 'Data de Corte'

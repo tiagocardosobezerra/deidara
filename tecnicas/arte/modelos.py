@@ -167,7 +167,9 @@ def _separar(visuais):
 def _filtros_no_canto(seg, direita, y, h, area):
     if not seg:
         return []
-    pesos = [(3 if v.get('imagem') or v.get('icone') else 2.2) if v['tipo'] == 'botoes' else 0.9 if v['tipo'] == 'alternar'
+    # opções conhecidas (grupo de cálculo): cada uma com a largura do rótulo, ou o texto sai cortado ("Acu...")
+    pesos = [max(2.2, sum(0.12 + 0.065 * len(o) for o in v['opcoes'])) if v['tipo'] == 'botoes' and v.get('opcoes')
+             else (3 if v.get('imagem') or v.get('icone') else 2.2) if v['tipo'] == 'botoes' else 0.9 if v['tipo'] == 'alternar'
              else 3 if v['tipo'] == 'aviso' else 1
              for v in seg]      # botões precisam de largura para as opções
     un = min(210, (area - GAP * (len(seg) - 1)) / sum(pesos))
@@ -239,7 +241,7 @@ def _altura(*fins):
 def _faixa(m, paginas, i, c):
     pg = paginas[i]
     seg, kpi, graf, tab = _separar(pg['visuais'])
-    pos = _filtros_no_canto(seg, 1880, 34, 64, 1100)
+    pos = _filtros_no_canto(seg, 1880, 26, 76, 1100)
     y = 140
     if kpi:
         pos += _em_linha(kpi[:6], 120, y, 1760, 196)

@@ -144,7 +144,8 @@ class TestValidacao(unittest.TestCase):
     def test_medida_de_tempo_nao_mostra_futuro(self):
         m, _ = _resolver(_base())
         md = next(x for x in m['medidas'] if x['nome'] == 'Desligamentos Acum. Ano')
-        self.assertTrue(md['dax'].startswith('IF(\n    MIN(dCalendario[Data]) > [Data de Corte],'), md['dax'])
+        self.assertTrue(md['dax'].startswith('VAR _corte = [Data de Corte]\nRETURN\n    IF(\n        MIN(dCalendario[Data]) > _corte,'),
+                        md['dax'])
         self.assertEqual(md['formato'], 'inteiro')
 
     def test_trimestre_sem_ano_gera_aviso(self):

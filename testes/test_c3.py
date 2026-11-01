@@ -402,6 +402,38 @@ class TestCausaRaiz(unittest.TestCase):
         shutil.rmtree(d, ignore_errors=True)
 
 
+class TestLayoutNoPowerBI(unittest.TestCase):
+    """O que só aparecia aberto no Power BI Desktop (painel de RH de teste, 31/10/2026)."""
+
+    def test_tabela_de_pareto_vem_do_maior_para_o_menor(self):
+        from tecnicas.c3 import pbir
+        m = {'medidas': [{'nome': '% Acumulado', 'tipo': 'pareto'}, {'nome': 'Desligamentos'}]}
+        v = {'tipo': 'tabela', 'campos': [{'tipo': 'coluna', 'tabela': 'dMotivo', 'nome': 'Motivo'},
+                                          {'tipo': 'medida', 'tabela': 'f', 'nome': 'Desligamentos'},
+                                          {'tipo': 'medida', 'tabela': 'f', 'nome': '% Acumulado'}]}
+        ordem = pbir._query(v, m)['sortDefinition']['sort'][0]
+        self.assertEqual(ordem['field']['Measure']['Property'], '% Acumulado')
+        self.assertEqual(ordem['direction'], 'Ascending')
+
+    def test_formatacao_nossa_soma_a_do_estilo_pelo_seletor(self):
+        # trocar a lista inteira perdia a fonte do estilo; sem o seletor "default", o botão ignorava o tamanho
+        from tecnicas.c3 import pbir
+        estilo = [{'properties': {'fontFamily': 'Bold'}, 'selector': {'id': 'selected'}},
+                  {'properties': {'fontFamily': 'Normal', 'fontSize': '9D'}, 'selector': {'id': 'default'}}]
+        out = pbir._fundir(estilo, [{'properties': {'fontSize': '10D'}, 'selector': {'id': 'default'}}])
+        self.assertEqual(out[0]['properties'], {'fontFamily': 'Bold'})
+        self.assertEqual(out[1]['properties'], {'fontFamily': 'Normal', 'fontSize': '10D'})
+        regra = {'properties': {'fontColor': 'x'}, 'selector': {'metadata': 'f.Turnover'}}
+        self.assertIn(regra, pbir._fundir([{'properties': {'fontSize': '12D'}}], [regra]))
+
+    def test_botoes_do_grupo_de_calculo_cabem_os_rotulos(self):
+        from tecnicas.arte import modelos
+        opcoes = ['Atual', 'Acumulado no ano', 'Ano anterior', 'Var. ano anterior', 'Últimos 12 meses']
+        seg = [{'tipo': 'segmentador'}, {'tipo': 'segmentador'}, {'tipo': 'botoes', 'opcoes': opcoes}]
+        largura = modelos._filtros_no_canto(seg, 1880, 34, 64, 1100)[2][1]['w']
+        self.assertGreaterEqual(largura / len(opcoes), 140)            # "Acumulado no ano" inteiro, sem "Acu..."
+
+
 class TestDemo(unittest.TestCase):
     def test_linhas_coerentes(self):
         from tecnicas.bunshin import demo
@@ -420,7 +452,42 @@ class TestDemo(unittest.TestCase):
             adm = colab[x['MATRICULA']]['Data de Admissão']
             self.assertGreater(x['Data do Desligamento'], adm)
             self.assertLessEqual(x['Data do Desligamento'], datetime.date.today())
+            cal = next(t for t in m['tabelas'] if t.get('calendario'))
+            self.assertGreaterEqual(x['Data do Desligamento'], datetime.date(cal['inicio'], 1, 1))   # sem "(Em branco)"
         self.assertEqual(demo.linhas(m), d)                               # sempre os mesmos números
+
+    def test_data_na_chave_composta_continua_data(self):
+        # F_JORNADA (MATRICULA, DATAJORNADA): a data da chave primária não vira o código "001"
+        import datetime
+        from tecnicas.bunshin import demo
+        m = {'tabelas': [
+            {'nome': 'dPessoa', 'pk': ['MATRICULA'], 'colunas': [
+                {'nome': 'Matrícula', 'familia': 'inteiro', 'origem': 'MATRICULA'},
+                {'nome': 'Admissão', 'familia': 'data', 'origem': 'DATAADMISSAO'}]},
+            {'nome': 'fJornada', 'pk': ['MATRICULA', 'DATAJORNADA'], 'colunas': [
+                {'nome': 'MATRICULA', 'familia': 'inteiro', 'origem': 'MATRICULA'},
+                {'nome': 'Data da Jornada', 'familia': 'data', 'origem': 'DATAJORNADA'},
+                {'nome': 'Horas', 'familia': 'decimal', 'origem': 'HORAS'}]}],
+            'relacionamentos': [{'de': 'fJornada', 'para': 'dPessoa', 'de_coluna': 'MATRICULA',
+                                 'para_coluna': 'Matrícula'}]}
+        d = demo.linhas(m)
+        self.assertTrue(d['fJornada'])
+        self.assertTrue(all(isinstance(x['Data da Jornada'], datetime.date) for x in d['fJornada']))
+        self.assertIn('#date(', demo.expressoes(m)['fJornada'])
+
+    def test_valor_procurado_pela_medida_entra_na_demo(self):
+        # sem "Voluntario" nas linhas fictícias, a medida filtrada sai (Em branco) no Power BI
+        from tecnicas.bunshin import demo
+        m = {'tabelas': [{'nome': 'dMotivo', 'pk': ['COD'], 'colunas': [
+                {'nome': 'Cód.', 'familia': 'inteiro', 'origem': 'COD'},
+                {'nome': 'Tipo', 'familia': 'texto', 'origem': 'TIPO'},
+                {'nome': 'Horas Previstas', 'familia': 'decimal', 'origem': 'HP'},
+                {'nome': 'Horas', 'familia': 'decimal', 'origem': 'H'}]}],
+             'relacionamentos': [],
+             'medidas': [{'nome': 'Vol', 'dax': 'CALCULATE([Deslig], dMotivo[Tipo] = "Voluntario")'}]}
+        d = demo.linhas(m)['dMotivo']
+        self.assertIn('Voluntario', {x['Tipo'] for x in d})
+        self.assertTrue(all(160 <= x['Horas Previstas'] <= 200 and 1 <= x['Horas'] <= 8 for x in d))
 
     def test_gerar_demo_embute_as_linhas(self):
         d = tempfile.mkdtemp(prefix='ddd')
@@ -446,7 +513,16 @@ class TestDemo(unittest.TestCase):
             self.assertTrue(f.read().startswith('> **DEMONSTRAÇÃO.**'))
         _, tabelas, colunas, medidas, erros = validar_pbip.validar_tmdl(saida)
         self.assertEqual(erros, [])
-        fundos = [x for x in os.listdir(os.path.join(saida, 'Quadro_e_Turnover.Report', 'StaticResources',
+        import glob
+        for arq_v in glob.glob(os.path.join(saida, 'Quadro_e_Turnover.Report', 'definition', 'pages', '*', 'visuals', '*',
+                                            'visual.json')):
+            with open(arq_v, encoding='utf-8') as f:
+                vj = json.load(f)
+            if vj['visual']['visualType'] == 'slicer' and vj['position']['height'] < 90:
+                # título + caixa cabem na faixa; menos de 4 px de respiro trava o Power BI Desktop ao abrir
+                pad = vj['visual']['visualContainerObjects']['padding'][0]['properties']
+                self.assertEqual(pad['top']['expr']['Literal']['Value'], '4D')
+        fundos =[x for x in os.listdir(os.path.join(saida, 'Quadro_e_Turnover.Report', 'StaticResources',
                                                      'RegisteredResources')) if x.startswith('fundo_')]
         with open(os.path.join(saida, 'Quadro_e_Turnover.Report', 'StaticResources', 'RegisteredResources', fundos[0]),
                   encoding='utf-8') as f:

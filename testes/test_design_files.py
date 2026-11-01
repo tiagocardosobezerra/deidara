@@ -232,6 +232,16 @@ class TestDicaEDetalhe(unittest.TestCase):
             _, p = _resolver(a)
             self.assertTrue(any(trecho in e for e in p.erros), (trecho, p.erros))
 
+    def test_detalhe_sem_visual_que_leve_a_ele(self):
+        # o "Detalhar" só aparece sobre um item da coluna: sem visual com ela, a página fica inalcançável
+        aviso = 'ninguém consegue abrir este detalhamento'
+        _, p = _resolver(self._argila())
+        self.assertFalse(any(aviso in x for x in p.avisos))          # o painel base tem barras por cargo
+        a = self._argila()
+        a['paginas'][3]['detalhe'] = 'dColaborador[Matrícula]'
+        _, p = _resolver(a)
+        self.assertTrue(any(aviso in x for x in p.avisos), p.avisos)
+
     def test_pbip(self):
         from tecnicas.arte.modelos import paginas_do_relatorio
         d = tempfile.mkdtemp(prefix='ddd')

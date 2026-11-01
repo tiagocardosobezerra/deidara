@@ -128,6 +128,10 @@ def resolver_paginas(argila, m, p):
                           'poluída; considere dividir')
         for j, v in enumerate(vis):
             r = _visual(m, v, p, f'{onde}, visual {j + 1} ({v.get("tipo")})', filtra)
+            if r and r['tipo'] == 'botoes' and r.get('categoria'):   # o layout dá a cada opção a largura do rótulo
+                t = tabela_do_modelo(m, r['categoria']['tabela'])
+                if t and t.get('grupo_calculo'):
+                    r['opcoes'] = [x['rotulo'] for x in t['grupo_calculo']['itens']]
             if r:
                 pagina['visuais'].append(r)
         _conferir_pagina(m, pagina, p, onde, filtra)
@@ -140,7 +144,25 @@ def resolver_paginas(argila, m, p):
                        + (f' (páginas de dica: {", ".join(sorted(dicas))})' if dicas else ''))
         if pg['detalhe'] and (m.get('modelo') or 'padrao') == 'historia-longa':
             p.aviso(f'página {pg["nome"]}', '[Design] a história longa junta tudo numa página: o detalhamento fica de fora')
+        if pg['detalhe'] and not _alguem_mostra(m, pg['detalhe']):
+            # o "Detalhar" do botão direito só aparece sobre um item dessa coluna: sem ele, a página fica inalcançável
+            col = f'{pg["detalhe"]["tabela"]}[{pg["detalhe"]["nome"]}]'
+            p.aviso(f'página {pg["nome"]}', f'[Design] nenhum visual de outra página mostra {col} (eixo, linha ou '
+                                           'coluna de tabela): ninguém consegue abrir este detalhamento')
     _conferir_snowflake(m, p)
+
+
+def _alguem_mostra(m, coluna):
+    alvo = (coluna['tabela'], coluna['nome'])
+    for pg in m['paginas']:
+        if pg['detalhe'] or pg['dica']:
+            continue
+        for v in pg['visuais']:
+            campos = [v.get('categoria'), v.get('legenda')] + (v.get('campos') or []) + (v.get('linhas') or []) + \
+                (v.get('colunas') or [])
+            if any(c and c.get('tipo') == 'coluna' and (c['tabela'], c['nome']) == alvo for c in campos):
+                return True
+    return False
 
 
 ITENS_DE_TEMPO = {                 # item do grupo de cálculo: (rótulo, DAX com {d} = coluna de data, é percentual)
@@ -187,9 +209,10 @@ def resolver_grupo_calculo(argila, m, p):
         dax = dax.replace('{d}', data)
         if x in ('ano_anterior', 'variacao_ano_anterior', 'mes_anterior', 'variacao_mes_anterior'):
             from kibaku_nendo.medidas import corte_sem_medida             # o anterior para no mesmo dia do atual
-            ate = f'KEEPFILTERS({data} <= {corte_sem_medida(m)})'
+            ate = f'KEEPFILTERS({data} <= _corte)'            # CALCULATE dentro do filtro True/False: recusado
             for f in ('SAMEPERIODLASTYEAR(' + data + ')', 'DATEADD(' + data + ', -1, MONTH)'):
                 dax = dax.replace(f, f'CALCULATETABLE({f}, {ate})')
+            dax = f'VAR _corte = {corte_sem_medida(m)}\nRETURN\n    {dax}'
         if x == 'acumulado_ano' and m['calendario'].get('fim_ano'):       # ano fiscal
             dax = dax.replace('DATESYTD(' + data + ')', f'DATESYTD({data}, "{m["calendario"]["fim_ano"]}")')
         conferir_funcoes(dax, p, onde)

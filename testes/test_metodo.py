@@ -93,8 +93,11 @@ class TestDataDeCorte(unittest.TestCase):
 
     def test_ano_anterior_compara_ate_o_mesmo_dia(self):
         dax = self._md('Var. Desligamentos A/A')['dax']
+        self.assertIn('VAR _corte = [Data de Corte]', dax)
+        # filtro True/False com medida dentro o Power BI recusa ("função PLACEHOLDER"): a data vai numa variável
         self.assertIn('CALCULATETABLE(SAMEPERIODLASTYEAR(dCalendario[Data]), '
-                      'KEEPFILTERS(dCalendario[Data] <= [Data de Corte]))', dax)
+                      'KEEPFILTERS(dCalendario[Data] <= _corte))', dax)
+        self.assertNotIn('<= [Data de Corte]', dax)
         self.assertNotIn('TODAY()', dax)
 
     def test_estoque_para_no_corte(self):
@@ -111,7 +114,7 @@ class TestDataDeCorte(unittest.TestCase):
         m, p = _resolver(a)
         self.assertFalse(p.erros)
         self.assertFalse(any(x['nome'] == 'Data de Corte' for x in m['medidas']))
-        self.assertIn('> TODAY()', next(x for x in m['medidas'] if x['nome'] == 'Desligamentos Acum. Ano')['dax'])
+        self.assertIn('VAR _corte = TODAY()', next(x for x in m['medidas'] if x['nome'] == 'Desligamentos Acum. Ano')['dax'])
         a['calendario']['corte'] = 'ontem'
         self.assertTrue(any('"corte"' in e for e in _resolver(a)[1].erros))
 
@@ -127,8 +130,9 @@ class TestDataDeCorte(unittest.TestCase):
         self.assertFalse(p.erros)
         itens = next(t for t in m['tabelas'] if t.get('grupo_calculo'))['grupo_calculo']['itens']
         # sem citar medida dentro do item (recursão lateral): a data de corte vai por extenso
-        self.assertIn('KEEPFILTERS(dCalendario[Data] <= MIN(TODAY(), COALESCE(MAXX({ CALCULATE(MAX(fDesligamento['
+        self.assertIn('VAR _corte = MIN(TODAY(), COALESCE(MAXX({ CALCULATE(MAX(fDesligamento['
                       'Data do Desligamento]), REMOVEFILTERS())', itens[1]['dax'])
+        self.assertIn('KEEPFILTERS(dCalendario[Data] <= _corte)', itens[1]['dax'])   # CALCULATE fora do filtro
         self.assertIn('CALCULATETABLE(DATEADD(dCalendario[Data], -1, MONTH)', itens[2]['dax'])
         from kibaku_nendo.especificacao import referencias_dax
         for it in itens:
@@ -307,7 +311,7 @@ class TestFichaEHomologacao(unittest.TestCase):
         self.assertIn('- **Dono:** Gerência de Gente e Gestão · **Periodicidade:** mensal', texto)
         self.assertIn('amarelo até 10% da meta do lado ruim', texto)
         self.assertIn('(meta anual, proporcional aos meses do filtro)', texto)
-        self.assertIn('```dax\nTurnover =\nDIVIDE([Desligamentos], [HC Médio])\n```', texto)
+        self.assertIn('```dax\nTurnover =\nDIVIDE([Desligamentos] + 0, [HC Médio])\n```', texto)   # mês sem saída: 0%
 
     def test_consulta_dax_da_homologacao(self):
         from kibaku_nendo.especificacao import sintaxe_dax
