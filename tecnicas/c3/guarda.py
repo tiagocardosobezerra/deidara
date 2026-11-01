@@ -7,7 +7,7 @@ aberto no Power BI Desktop (31/10/2026). Elas ficam corrigidas aqui, depois de o
 de terceiros:
 
 - a linha no tempo sem o eixo dos meses: o leitor não sabe de que mês é cada ponto;
-- o nome do item cortado no eixo das barras ("Departam..."): a margem do eixo vai a 45%;
+- o nome do item cortado ou escondido no eixo das barras ("Departam..."): eixo visível, margem de 45%;
 - o seletor de estado antigo no segmentador de botões ("selected", "hover"), que passa no schema e o Desktop
   ignora calado (o texto do botão escolhido ficava branco no branco);
 - o texto do botão 100% transparente (o dashboard do kpis-clicaveis usava imagem no botão): os botões de
@@ -64,6 +64,7 @@ def aplicar(tipo, vis):
         eixo['fontSize'] = _lit(10)
     elif tipo == 'clusteredBarChart':
         eixo = _propriedades(objetos, 'categoryAxis')
+        eixo['show'] = _lit(True)                     # barra sem o nome do item não se lê (tabela-lateral escondia)
         eixo['maxMarginFactor'] = {'expr': {'Literal': {'Value': '45L'}}}
         eixo['fontSize'] = _lit(11)
     elif tipo == 'advancedSlicerVisual':

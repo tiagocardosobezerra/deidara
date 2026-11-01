@@ -794,13 +794,20 @@ def _tabela_lateral(m, paginas, i, c):
     nav = []
     vis = _visiveis(paginas)
     if len(vis) > 1:
+        # as abas ficam entre o título (à esquerda) e os filtros (à direita), sem passar por cima de nenhum
+        fim = min([p['x'] for v, p in pos if v['tipo'] in SEG] or [1880]) - 24
+        inicio = 560
+        passo = min(200, (fim - inicio) / len(vis))
+        x0 = inicio + ((fim - inicio) - passo * len(vis)) / 2
+        letra = max(11, min(16, int(passo / (0.55 * max(len(p['nome']) for _, p in vis)))))
         for k, (alvo, p) in enumerate(vis):
-            x = 900 + k * 200 - len(vis) * 100
+            x = x0 + k * passo
             ativo = p['grupo'] == _ativa(paginas, i)
-            f.txt(x + 90, 64, p['nome'], 16, c['acento'] if ativo else c['mudo'], 700 if ativo else 400, 'middle')
+            f.txt(x + passo / 2, 64, p['nome'], letra, c['acento'] if ativo else c['mudo'], 700 if ativo else 400,
+                  'middle')
             if ativo:
-                f.ret(x + 60, 74, 60, 4, c['acento'], 2)
-            nav.append({'x': x, 'y': 38, 'w': 180, 'h': 44, 'alvo': alvo, 'rotulo': p['nome']})
+                f.ret(x + passo / 2 - 30, 74, 60, 4, c['acento'], 2)
+            nav.append({'x': x, 'y': 38, 'w': passo - 10, 'h': 44, 'alvo': alvo, 'rotulo': p['nome']})
     return {'w': W, 'h': h, 'posicoes': pos, 'fundo': f.svg(), 'nav': nav}
 
 
