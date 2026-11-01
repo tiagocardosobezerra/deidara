@@ -66,12 +66,16 @@ outros pedem Windows com o Power BI Desktop.
 
 1. `python3 -m unittest discover -s testes`: inclui o teste de referência (o aurora e a vitrine gerados do zero,
    comparados arquivo a arquivo com `testes/referencia.json`) e a vitrine gerada nos doze modelos de layout.
-2. Saída mudou de propósito? `python3 ferramentas/referencia.py` lista os arquivos; confira os passos 3 a 5 e só
+2. `python3 ferramentas/ponta_a_ponta.py [--desktop]`: todo comando do Deidara rodado como quem usa roda, numa
+   casa temporária (o fluxo do zero, Memory Card, consultas, C0, Ōnoki, a vitrine nos doze modelos, a referência,
+   o pacote e a skill instalada numa pasta só de leitura, como no claude.ai). Tem de dar todos os passos certos.
+3. Saída mudou de propósito? `python3 ferramentas/referencia.py` lista os arquivos; confira os passos 4 a 6 e só
    então `python3 ferramentas/referencia.py --atualizar`.
-3. `python3 ferramentas/vitrine.py C:/paineis/vitrines --desktop`: gera a vitrine (os 24 tipos de visual, todos os
+4. `python3 ferramentas/vitrine.py C:/paineis/vitrines --desktop`: gera a vitrine (os 24 tipos de visual, todos os
    tipos de medida, RLS, tema, daxlib, Deneb, HTML, tour, dica, detalhamento, ajuda e grupo de cálculo) em cada
-   modelo, abre cada uma no Desktop, atualiza e roda o `conferir-desktop` (nenhuma medida com erro no motor).
-4. Em cada modelo, passe pelas páginas e confira:
+   modelo, abre cada uma no Desktop, atualiza e roda o `conferir-desktop` (nenhuma medida com erro no motor e
+   nenhuma lenta).
+5. Em cada modelo, passe pelas páginas e confira:
    - a caixa de cada segmentador aparece inteira ("Todos"), com o título em cima;
    - o texto de todo botão aparece inteiro, e o escolhido fica na cor de destaque;
    - todo cartão mostra o número inteiro (sem "R$ 1..."), do mesmo tamanho na faixa;
@@ -81,7 +85,7 @@ outros pedem Windows com o Power BI Desktop.
    - o tour abre, a ajuda (Ctrl+clique no "?") abre e o Voltar fica no canto de baixo;
    - HTML Content e Deneb pedem os visuais do AppSource; o mapa pede o Azure Maps (sem login, a mensagem é
      esperada).
-5. Abra o protótipo (`argila.prototipo.html`) de um modelo e confira que mostra o mesmo que o Desktop.
+6. Abra o protótipo (`argila.prototipo.html`) de um modelo e confira que mostra o mesmo que o Desktop.
 
 ### Conferências extras (opcionais, na máquina com Power BI)
 
