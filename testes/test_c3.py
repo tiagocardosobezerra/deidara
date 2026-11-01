@@ -620,3 +620,17 @@ class TestVitrineNoDesktop(unittest.TestCase):
         layout = vis['objects']['layout'][0]['properties']
         self.assertEqual(layout['autoGrid']['expr']['Literal']['Value'], 'true')    # a fixa escondia 4 de 8 empresas
         self.assertNotIn('columnCount', layout)
+
+    def test_layout_padrao_da_largura_aos_botoes_e_altura_a_imagem(self):
+        # padrao, vitrine aberta no Desktop: "Acumulad...", 8 empresas em 56 px e a dispersão cortada
+        from tecnicas.arte.layout import posicionar
+        seg = {'tipo': 'segmentador', 'titulo': ''}
+        botoes = {'tipo': 'botoes', 'opcoes': ['Atual', 'Acumulado no ano', 'Ano anterior', 'Var. ano anterior',
+                                              'Últimos 12 meses']}
+        destaque = {'tipo': 'botoes'}
+        imagem = {'tipo': 'imagem'}
+        barras = {'tipo': 'barras'}
+        pos = dict((id(v), p) for v, p in posicionar([seg, botoes, destaque, barras, imagem]))
+        self.assertGreater(pos[id(botoes)]['w'], 2 * pos[id(seg)]['w'])
+        self.assertEqual(pos[id(seg)]['h'], 84)                            # botões de coluna: a faixa cresce
+        self.assertGreaterEqual(pos[id(imagem)]['h'], pos[id(imagem)]['w'] * 0.75 - 1)

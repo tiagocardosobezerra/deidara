@@ -16,7 +16,7 @@ TITULO = 48              # faixa do título da página
 
 def posicionar(visuais):
     """Devolve [(visual, {'x','y','w','h'})] na ordem de leitura."""
-    from tecnicas.arte.modelos import GRAF, KPI, SEG
+    from tecnicas.arte.modelos import GRAF, KPI, SEG, peso_do_filtro
     seg = [v for v in visuais if v['tipo'] in SEG]
     kpi = [v for v in visuais if v['tipo'] in KPI]
     graf = [v for v in visuais if v['tipo'] in GRAF]
@@ -25,16 +25,28 @@ def posicionar(visuais):
     y = TITULO
     out = []
 
-    def faixa(itens, altura, por_linha):
+    def faixa(itens, altura, por_linha, peso=lambda v: 1):
         nonlocal y
         for i in range(0, len(itens), por_linha):
             linha = itens[i:i + por_linha]
-            w = (util - ESPACO * (len(linha) - 1)) / len(linha)
-            for k, v in enumerate(linha):
-                out.append((v, {'x': MARGEM + k * (w + ESPACO), 'y': y, 'w': w, 'h': altura}))
-            y += altura + ESPACO
+            if len(linha) == 1 and len(itens) > 1 and linha[0]['tipo'] == 'imagem':
+                linha_w = [(util - ESPACO) / 2]         # a imagem SVG sozinha na linha não estica: cortaria o desenho
+            else:
+                livre = util - ESPACO * (len(linha) - 1)
+                total = sum(peso(v) for v in linha)
+                linha_w = [livre * peso(v) / total for v in linha]
+            # a imagem SVG (dispersão, espinha) é 4:3 e o Power BI ajusta pela largura: a linha cresce com ela
+            alto = max([altura] + [w * 0.75 for v, w in zip(linha, linha_w) if v['tipo'] == 'imagem'])
+            x = float(MARGEM)
+            for v, w in zip(linha, linha_w):
+                out.append((v, {'x': x, 'y': y, 'w': w, 'h': alto}))
+                x += w + ESPACO
+            y += alto + ESPACO
 
-    faixa([v for v in seg if v['tipo'] != 'aviso'], 56, 6)
+    # os botões ganham a largura das opções (peso_do_filtro), como na faixa dos modelos
+    filtros = [v for v in seg if v['tipo'] != 'aviso']
+    # botões dos itens de uma coluna (quantos, só o Power BI sabe) vão em até três linhas: a faixa cresce
+    faixa(filtros, 84 if any(v['tipo'] == 'botoes' and not v.get('opcoes') for v in filtros) else 56, 6, peso_do_filtro)
     faixa([v for v in kpi if v['tipo'] == 'cartao'] + [v for v in kpi if v['tipo'] == 'medidor'], 104, 6)
     faixa([v for v in kpi if v['tipo'] == 'cartoes'], 120, 1)
     faixa([v for v in seg if v['tipo'] == 'aviso'], 56, 1)

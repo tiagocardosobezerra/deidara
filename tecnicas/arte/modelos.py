@@ -169,14 +169,19 @@ def _separar(visuais):
             [v for v in visuais if v['tipo'] in GRAF], [v for v in visuais if v['tipo'] in TAB])
 
 
+def peso_do_filtro(v):
+    """A largura de um filtro na faixa, em unidades de um segmentador: botões precisam de largura para as opções."""
+    if v['tipo'] == 'botoes' and v.get('opcoes'):     # opções conhecidas: cada uma com a largura do rótulo ("Acu...")
+        return max(2.2, sum(0.12 + 0.065 * len(o) for o in v['opcoes']))
+    if v['tipo'] == 'botoes':
+        return 3 if v.get('imagem') or v.get('icone') else 2.2
+    return 0.9 if v['tipo'] == 'alternar' else 3 if v['tipo'] == 'aviso' else 1
+
+
 def _filtros_no_canto(seg, direita, y, h, area):
     if not seg:
         return []
-    # opções conhecidas (grupo de cálculo): cada uma com a largura do rótulo, ou o texto sai cortado ("Acu...")
-    pesos = [max(2.2, sum(0.12 + 0.065 * len(o) for o in v['opcoes'])) if v['tipo'] == 'botoes' and v.get('opcoes')
-             else (3 if v.get('imagem') or v.get('icone') else 2.2) if v['tipo'] == 'botoes' else 0.9 if v['tipo'] == 'alternar'
-             else 3 if v['tipo'] == 'aviso' else 1
-             for v in seg]      # botões precisam de largura para as opções
+    pesos = [peso_do_filtro(v) for v in seg]
     un = min(210, (area - GAP * (len(seg) - 1)) / sum(pesos))
     x = direita - un * sum(pesos) - GAP * (len(seg) - 1)
     out = []

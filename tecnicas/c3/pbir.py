@@ -311,8 +311,9 @@ def _formato_botoes(m, v, pos, vis, container):
     fonte = (9 if automatica else 12) if pos['h'] < 90 else 14   # grade automática na faixa: até três linhas
     if v.get('opcoes'):                                     # opções conhecidas: nenhuma célula vazia rouba largura
         colunas = max(1, min(colunas, len(v['opcoes'])))
-        if pos['h'] < 90 and max(len(o) for o in v['opcoes']) > 12:
-            fonte = 10                                      # "Acumulado no ano" inteiro na faixa dos filtros
+        # a letra cabe na largura de cada botão ("Acumulado no ano" inteiro): 1 pt ~ 0,75 px por caractere
+        por_botao = pos['w'] / colunas - 20
+        fonte = max(8, min(fonte, int(por_botao / (0.75 * max(len(o) for o in v['opcoes'])))))
     # grade fixa só com as opções conhecidas; com os itens de uma coluna, a grade automática mostra todos (a fixa
     # escondia o que passava das colunas: 4 de 8 empresas)
     grade = {'autoGrid': _lit(True)} if automatica else {'autoGrid': _lit(False), 'rowCount': _int(1 if colunas >= 7 or pos['h'] < 90 else 2),
