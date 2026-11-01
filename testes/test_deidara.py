@@ -254,3 +254,16 @@ class TestReferencia(unittest.TestCase):
         diferencas = referencia.comparar(referencia.geracao_atual(), gravada)
         self.assertEqual(diferencas, [], 'a saída mudou: confira no Desktop e rode ferramentas/referencia.py '
                                          '--atualizar (referencias/powerbi.md, Roteiro de conferência)')
+
+    def test_vitrine_em_todos_os_modelos(self):
+        # a vitrine (todo visual e recurso) quebrava o protótipo no kpis-clicaveis e na historia-longa (01/11/2026)
+        import tempfile
+        sys.path.insert(0, os.path.join(RAIZ, 'ferramentas'))
+        import vitrine
+        from tecnicas.arte.modelos import MODELOS
+        d = tempfile.mkdtemp(prefix='vit')
+        for modelo in MODELOS:
+            _, pbip, erros = vitrine.gerar(d, modelo)
+            self.assertTrue(pbip, modelo)
+            self.assertEqual(erros, [], modelo)
+        shutil.rmtree(d, ignore_errors=True)

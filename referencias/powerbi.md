@@ -59,6 +59,30 @@ que abriu um projeto dentro da pasta do `argila.json` (ou `--porta`). Nada é
 gravado no modelo; `--atualizar` só pede a atualização dos dados (o `--demo`
 não pede credencial).
 
+### Roteiro de conferência (a cada versão do Deidara)
+
+O que prova que a versão nova gera igual ou melhor que a anterior. Os passos 1 e 2 rodam em qualquer máquina; os
+outros pedem Windows com o Power BI Desktop.
+
+1. `python3 -m unittest discover -s testes`: inclui o teste de referência (o aurora e a vitrine gerados do zero,
+   comparados arquivo a arquivo com `testes/referencia.json`) e a vitrine gerada nos doze modelos de layout.
+2. Saída mudou de propósito? `python3 ferramentas/referencia.py` lista os arquivos; confira os passos 3 a 5 e só
+   então `python3 ferramentas/referencia.py --atualizar`.
+3. `python3 ferramentas/vitrine.py C:/paineis/vitrines --desktop`: gera a vitrine (os 24 tipos de visual, todos os
+   tipos de medida, RLS, tema, daxlib, Deneb, HTML, tour, dica, detalhamento, ajuda e grupo de cálculo) em cada
+   modelo, abre cada uma no Desktop, atualiza e roda o `conferir-desktop` (nenhuma medida com erro no motor).
+4. Em cada modelo, passe pelas páginas e confira:
+   - a caixa de cada segmentador aparece inteira ("Todos"), com o título em cima;
+   - o texto de todo botão aparece inteiro, e o escolhido fica na cor de destaque;
+   - todo cartão mostra o número inteiro (sem "R$ 1..."), do mesmo tamanho na faixa;
+   - a linha no tempo mostra os meses no eixo; as barras mostram o nome inteiro do item;
+   - a tabela de Pareto e a de posição vêm do maior para o menor;
+   - as imagens SVG (barra contra a meta, selo, setas, estrelas, radar, espinha) aparecem;
+   - o tour abre, a ajuda (Ctrl+clique no "?") abre e o Voltar fica no canto de baixo;
+   - HTML Content e Deneb pedem os visuais do AppSource; o mapa pede o Azure Maps (sem login, a mensagem é
+     esperada).
+5. Abra o protótipo (`argila.prototipo.html`) de um modelo e confira que mostra o mesmo que o Desktop.
+
 ### Conferências extras (opcionais, na máquina com Power BI)
 
 O Deidara roda sem dependência; estas ferramentas da comunidade e da Microsoft

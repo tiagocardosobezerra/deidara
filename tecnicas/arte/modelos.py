@@ -41,6 +41,10 @@ KPI = ('cartao', 'medidor', 'cartoes', 'abas')
 GRAF = ('barras', 'colunas', 'linha', 'controle', 'rosca', 'area', 'dispersao', 'decomposicao', 'mapa', 'skyline', 'setas', 'imagem',
         'html', 'vegalite')
 TAB = ('tabela', 'matriz')
+# os gráficos que mostram qualquer medida de número: os outros têm medida própria (controle, impacto, imagem SVG)
+# ou mais de uma (dispersão, setas), e trocar a medida deles quebra o visual
+GRAF_DE_UMA_MEDIDA = ('barras', 'colunas', 'linha', 'area', 'rosca')
+NUMERICOS = ('inteiro', 'decimal', 'percentual', 'moeda')
 
 
 # ----------------------------------------------------------------- páginas do relatório
@@ -59,7 +63,8 @@ def paginas_do_relatorio(m):
         base = {'nome': pg['nome'], 'descricao': pg.get('descricao') or '', 'visuais': pg['visuais'],
                 'oculta': escondida, 'grupo': g, 'kpi_ativo': None, 'ajuda': pg.get('ajuda', False),
                 'dica': pg.get('dica', False), 'detalhe': pg.get('detalhe')}
-        cards = [v for v in pg['visuais'] if v['tipo'] == 'cartao']
+        # só cartão de número vira KPI clicável: a frase de leitura (texto) no lugar da medida do gráfico quebrava
+        cards = [v for v in pg['visuais'] if v['tipo'] == 'cartao' and v['valores'][0].get('formato') in NUMERICOS]
         if modelo != 'kpis-clicaveis' or not cards or escondida:
             out.append(base)
             continue
@@ -74,7 +79,7 @@ def _com_kpi(visuais, card):
     md = card['valores'][0]
     out, graf_ok, tab_ok = [], False, False
     for v in visuais:
-        if v['tipo'] in GRAF and not graf_ok:
+        if v['tipo'] in GRAF_DE_UMA_MEDIDA and not v.get('cor') and not graf_ok:   # cor própria (impacto, destaque) fica
             v = dict(v, valores=[md], legenda=None, titulo=f'{md["nome"]} por {v["categoria"]["nome"]}' if v.get('categoria') else md['nome'])
             graf_ok = True
         elif v['tipo'] == 'tabela' and not tab_ok:
@@ -475,9 +480,13 @@ def _historia(m, paginas, i, c):
     pg = paginas[i]
     seg = []
     vistos = set()
-    for v in pg['visuais']:
-        if v['tipo'] in SEG and (v['categoria']['tabela'], v['categoria']['nome']) not in vistos:
-            vistos.add((v['categoria']['tabela'], v['categoria']['nome']))
+    for v in pg['visuais']:                         # o mesmo filtro em várias seções aparece uma vez só
+        if v['tipo'] not in SEG:
+            continue
+        alvo = v.get('categoria') or (v.get('valores') or [{}])[0]   # chave e aviso: a medida, não uma coluna
+        chave_filtro = (v['tipo'], alvo.get('tabela'), alvo.get('nome'))
+        if chave_filtro not in vistos:
+            vistos.add(chave_filtro)
             seg.append(v)
     pos = _filtros_no_canto(seg[:4], 1850, 40, 60, 900)
     y = 170
