@@ -80,7 +80,7 @@ def cmd_gerar(a):
     aprov['ultima_geracao'] = {'em': datetime.datetime.now().strftime('%d/%m/%Y %H:%M'), 'pasta': os.path.abspath(pasta),
                                'deidara': VERSAO}
     gravar_json(arq, aprov)
-    print(f'Katsu! Projeto {"de DEMONSTRAÇÃO (linhas fictícias embutidas) " if a.demo else ""}gerado em {pasta}')
+    print(f'C3! Projeto {"de DEMONSTRAÇÃO (linhas fictícias embutidas) " if a.demo else ""}gerado em {pasta}')
     if a.demo:
         print('  Abra o .pbip e clique em Atualizar: as tabelas vêm do próprio projeto, sem banco nenhum.')
     print(f'  {nome}.pbip  ·  LEIA-ME.md  ·  HOMOLOGACAO.md' + ''.join(f'  ·  sql/{f["nome"]}/' for f in sql.fontes_sql(modelo)))

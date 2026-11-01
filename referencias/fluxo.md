@@ -110,7 +110,7 @@ o `aprovar` só passa depois do `confirmar`. Mostre ao usuário (abrir o arquivo
 navegador; em Claude Code, publicar como artifact ajuda a compartilhar com o
 time) e pergunte o que mudar. Lembre: números fictícios.
 
-## Passo 5 — Aceite
+## Passo 5 — Katsu! (o aceite)
 
 Só com o "sim" explícito:
 
@@ -122,7 +122,7 @@ Grava `argila.aprovacao.json` com o hash do argila e dos catálogos e os avisos
 aceitos. Mudou qualquer vírgula depois? O `gerar` recusa: protótipo de novo
 e novo aceite.
 
-## Passo 6 — Katsu!
+## Passo 6 — C3: o projeto Power BI
 
 ```bash
 python3 deidara.py gerar meu_painel/argila.json [-o PASTA]

@@ -21,12 +21,12 @@ Todos os comandos entram pelo `deidara.py`, que chama a técnica certa sobre a
 argila explosiva (`kibaku_nendo/`, o motor). Cada etapa é uma técnica dele, em
 `tecnicas/`: **Luneta** (receitas e descoberta, vê a fonte sem tocar),
 **Te no Kuchi** (o esboço), **C1** (o protótipo), **Bunshin** (os números
-fictícios), **Katsu** (o aceite), **C3** (o projeto completo), **Arte**
+fictícios), **Katsu** (o "sim" que detona: o aceite), **C3** (o projeto completo), **Arte**
 (layout), **Sasori** (funções e padrões conferidos), **C2** (escolhe os visuais pela
 pergunta do painel), **Tobi** (a frase de leitura), o **Treino** da Luneta (aprende
 com as correções), **Ōnoki** (mede o acerto da busca) e **C4 Karura** (a estatística: sinal ou ruído, fora
 da curva, meta x faixa, tendência; ver referencias/estatistica.md), **C0** (a engenharia
-reversa de um painel que já existe) e a **Galeria** (modelos e funções MIT da comunidade). Use os nomes só para se
+reversa de um painel que já existe) e a **Akatsuki** (a galeria: modelos e funções MIT da comunidade). Use os nomes só para se
 situar no código; com o usuário, fale da etapa ("o protótipo", "o aceite").
 
 ## Regras que valem sempre
@@ -120,7 +120,7 @@ São 8 passos, os mesmos do `deidara.py` sem argumentos e do `ROTEIRO.md` da pas
    Número distorcido (corte que filtra só parte da conta) bloqueia o aceite:
    corrija o `argila.json`; só se o gestor decidir manter, sabendo disso,
    `--aceito-distorcao "<motivo dele>"` (fica registrado).
-7. **Katsu!**: `gerar <pasta>/argila.json -o C:/paineis/<nome>` (pasta curta;
+7. **C3** (depois do "Katsu!"): `gerar <pasta>/argila.json -o C:/paineis/<nome>` (pasta curta;
    sem `-o`, a saída vai para `<pasta>/saida/<projeto>`). Para testar ou
    mostrar o painel antes de a fonte estar pronta, `gerar ... --demo`: o
    mesmo projeto com linhas fictícias embutidas, que abre e calcula no Power BI

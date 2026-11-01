@@ -158,7 +158,8 @@ O cartão é um repositório privado do time (`memory-card`), e o Deidara usa a 
 | **Argila** | a especificação do painel (`argila.json`): modelo, medidas, metas, páginas e visuais, conferida contra o catálogo e o dicionário |
 | **Esboço** | o primeiro `argila.json`, a partir do pedido (`esbocar`) |
 | **Escultura** | o protótipo HTML para o gestor aprovar (`prototipar`, `aprovar`) |
-| **Katsu!** | a geração do projeto Power BI, SQL e documentação (`gerar`) |
+| **Katsu!** | o "sim" do gestor, que libera a detonação (`aprovar`) |
+| **C3** | a geração do projeto Power BI, SQL e documentação (`gerar`) e a conferência no Desktop aberto (`conferir-desktop`) |
 | **Memory Card** | salva, versiona, busca e confere os painéis e indicadores do time |
 
 Para conferir a instalação a qualquer momento:
@@ -180,29 +181,30 @@ deidara/
 ├── AVISO.md               # Dados de terceiros e privacidade
 ├── LICENCAS-DE-TERCEIROS.md  # Licença MIT do Power BI Design Files e créditos
 ├── LICENSE                # MIT License
-├── deidara.py             # O Deidara: porta de entrada que chama cada técnica (todos os comandos)
-├── kibaku_nendo/          # A argila explosiva: o motor que lê e valida a especificação, e os comandos do fluxo
-├── tecnicas/              # As técnicas do Deidara, uma por etapa do fluxo:
+├── deidara.py             # O Deidara: porta de entrada; cada técnica registra os próprios comandos
+├── kibaku_nendo/          # A argila explosiva: o motor que lê e valida a especificação (não importa técnica nenhuma)
+├── tecnicas/              # As técnicas do Deidara: o personagem dá nome à pasta, os arquivos dentro têm nome descritivo
+│   ├── te_no_kuchi/       #   bocas das mãos: o esboço do argila.json a partir do pedido
 │   ├── luneta/            #   olho-luneta: receitas, catálogo, descoberta, prova e o treino (aprende com as correções)
-│   ├── te_no_kuchi.py     #   bocas das mãos: o esboço do argila.json a partir do pedido
 │   ├── c2.py              #   o dragão: escolhe os visuais pela pergunta do painel
 │   ├── tobi.py            #   o parceiro falante: a frase de leitura (o que o número fez e quem puxou)
-│   ├── onoki.py           #   o mestre: mede o acerto da busca e pega regressão
 │   ├── c4.py              #   C4 Karura: a estatística (sinal ou ruído, fora da curva, meta x faixa, tendência)
 │   ├── c1/                #   figuras pequenas: o protótipo HTML e o tour guiado
 │   ├── bunshin/           #   clone de argila: números fictícios e projeto de demonstração
-│   ├── katsu.py           #   "Katsu!": o aceite e o retrato aprovado
-│   ├── c3/                #   a grande obra: TMDL, PBIR, views SQL e documentação
+│   ├── katsu/             #   "Katsu!", a palavra que detona: o "sim" do gestor e o retrato aprovado
+│   ├── c3/                #   a grande bomba: TMDL, PBIR, views SQL, documentação e a conferência no Desktop
 │   ├── arte/              #   "a arte é uma explosão": modelos de layout e posição dos visuais
-│   ├── c0/                #   engenharia reversa: lê, examina, dá nota e refaz um painel que já existe
-│   ├── galeria.py         #   a galeria da comunidade (terceiros/)
-│   ├── sasori.py          #   arte eterna: dicionário de funções e padrões conferidos
-│   └── memory_card.py     #   o cartão de memória do time
-├── dicionario/            # Funções DAX e Power Query, padrões de indicador, técnicas de visual e sinônimos
+│   ├── sasori/            #   arte eterna: dicionário de funções e padrões conferidos
+│   ├── onoki/             #   o mestre: mede o acerto da busca e pega regressão
+│   ├── c0/                #   a autodestruição: desmonta o painel que já existe, dá nota e o refaz
+│   ├── akatsuki/          #   ninjas de outras vilas: a galeria da comunidade (terceiros/)
+│   ├── memory_card/       #   o cartão de memória do time
+│   └── comum.py           #   o que os comandos têm em comum (validar, situacao)
+├── dicionario/            # Do Deidara: funções DAX e Power Query, padrões de indicador, técnicas de visual e sinônimos
 ├── referencias/           # Guias: fluxo, fontes, descoberta, argila.json, métricas, design, SVG, Memory Card, Power BI e tutorial
 ├── exemplos/aurora/       # Exemplo fictício completo, do resultado colado ao projeto gerado
 ├── exemplos/legado/       # Painel antigo com defeitos de propósito, para o C0
-├── terceiros/             # Fontes MIT da comunidade (Deneb, daxlib, Bravo), com licença e origem
+├── terceiros/             # Fontes MIT de fora (Deneb, daxlib, Bravo, Power BI Design Files), com licença e origem
 ├── ferramentas/           # Validador do .pbip, empacotador da skill e agrupador de textos livres em temas
 ├── assets/                # Imagens do README
 └── testes/                # Suíte de testes

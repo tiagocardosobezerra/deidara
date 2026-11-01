@@ -160,7 +160,8 @@ The card is a private team repository (`memory-card`), and Deidara uses its `dei
 | **Argila** (clay) | the report specification (`argila.json`): model, measures, targets, pages and visuals, checked against the catalog and the dictionary |
 | **Draft** | the first `argila.json`, from the request (`esbocar`) |
 | **Sculpture** | the HTML prototype for the manager to approve (`prototipar`, `aprovar`) |
-| **Katsu!** | generation of the Power BI project, SQL and documentation (`gerar`) |
+| **Katsu!** | the manager's "yes", which allows the detonation (`aprovar`) |
+| **C3** | generation of the Power BI project, SQL and documentation (`gerar`) and the check in the open Desktop (`conferir-desktop`) |
 | **Memory Card** | saves, versions, searches and checks the team's reports and KPIs |
 
 To check the installation at any time:
@@ -181,25 +182,26 @@ deidara/
 ├── AVISO.md               # Third-party data and privacy
 ├── LICENCAS-DE-TERCEIROS.md  # Power BI Design Files MIT license and credits
 ├── LICENSE                # MIT License
-├── deidara.py             # Deidara himself: entry point that calls each technique (all commands)
-├── kibaku_nendo/          # Explosive clay: the engine that reads and validates the spec, and the flow commands
-├── tecnicas/              # Deidara's techniques, one per step of the flow:
+├── deidara.py             # Deidara: the entry point; each technique registers its own commands
+├── kibaku_nendo/          # The explosive clay: the engine that reads and validates the spec (imports no technique)
+├── tecnicas/              # Deidara's techniques: the character names the folder, the files inside have plain names
+│   ├── te_no_kuchi/       #   hand mouths: the argila.json draft from the request
 │   ├── luneta/            #   scope eye: recipes, catalog, discovery, proof and training (learns from corrections)
-│   ├── te_no_kuchi.py     #   hand mouths: drafts argila.json from the request
-│   ├── c2.py              #   the dragon: picks the visuals from the report's question
-│   ├── tobi.py            #   the chatty partner: the reading sentence (what the number did and who drove it)
-│   ├── onoki.py           #   the master: measures search accuracy and catches regressions
-│   ├── c4.py              #   C4 Karura: statistics (signal or noise, outliers, target vs normal range, trend)
+│   ├── c2.py              #   the dragon: picks the visuals from the dashboard's question
+│   ├── tobi.py            #   the talkative partner: the reading sentence (what the number did and who drove it)
+│   ├── c4.py              #   C4 Karura: the statistics (signal or noise, outliers, target x range, trend)
 │   ├── c1/                #   small figures: the HTML prototype and the guided tour
 │   ├── bunshin/           #   clay clone: fictitious numbers and demo project
-│   ├── katsu.py           #   "Katsu!": the sign-off and the approved snapshot
-│   ├── c3/                #   the big work: TMDL, PBIR, SQL views and documentation
+│   ├── katsu/             #   "Katsu!", the word that detonates: the manager's yes and the approved snapshot
+│   ├── c3/                #   the big bomb: TMDL, PBIR, SQL views, documentation and the check in Desktop
 │   ├── arte/              #   "art is an explosion": layout models and visual placement
-│   ├── c0/                #   reverse engineering: reads, grades and rebuilds an existing report
-│   ├── galeria.py         #   the community gallery (terceiros/)
-│   ├── sasori.py          #   eternal art: function dictionary and checked patterns
-│   └── memory_card.py     #   the team's memory card
-├── dicionario/            # DAX and Power Query functions, KPI patterns, visual techniques and synonyms
+│   ├── sasori/            #   eternal art: function dictionary and checked patterns
+│   ├── onoki/             #   the master: measures search accuracy and catches regressions
+│   ├── c0/                #   self-destruction: takes an existing dashboard apart, scores it and rebuilds it
+│   ├── akatsuki/          #   ninjas from other villages: the community gallery (terceiros/)
+│   ├── memory_card/       #   the team's memory card
+│   └── comum.py           #   what the commands share (validar, situacao)
+├── dicionario/            # Deidara's own: DAX and Power Query functions, indicator patterns, visual techniques, synonyms
 ├── referencias/           # Guides: flow, sources, discovery, argila.json, metrics, design, SVG, Memory Card, Power BI and tutorial
 ├── exemplos/aurora/       # Complete fictional example, from pasted result to generated project
 ├── exemplos/legado/       # Old report with deliberate flaws, for C0
