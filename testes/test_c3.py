@@ -426,6 +426,14 @@ class TestLayoutNoPowerBI(unittest.TestCase):
         regra = {'properties': {'fontColor': 'x'}, 'selector': {'metadata': 'f.Turnover'}}
         self.assertIn(regra, pbir._fundir([{'properties': {'fontSize': '12D'}}], [regra]))
 
+    def test_validar_pbip_pega_seletor_de_estado_antigo(self):
+        doc = {'visual': {'visualType': 'advancedSlicerVisual', 'objects': {'value': [
+            {'properties': {}, 'selector': {'id': 'selected'}},
+            {'properties': {}, 'selector': {'id': 'selection:selected'}}]}}}
+        erros = validar_pbip._seletores_de_estado(doc)
+        self.assertEqual(len(erros), 1)
+        self.assertIn('selection:selected', erros[0])
+
     def test_botoes_do_grupo_de_calculo_cabem_os_rotulos(self):
         from tecnicas.arte import modelos
         opcoes = ['Atual', 'Acumulado no ano', 'Ano anterior', 'Var. ano anterior', 'Últimos 12 meses']

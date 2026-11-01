@@ -39,6 +39,20 @@ from kibaku_nendo.modelo import (AGREGACOES, AGREGACOES_NUMERICAS, CALENDARIO_OC
                                  sintaxe_dax, tabela_do_modelo, tabelas_da_medida)  # noqa: F401
 
 
+def _conferir_dax_gerado(m, p):
+    """Todo DAX do modelo (o gerado pelo Deidara também) contra o que o Power BI recusa e o texto já mostra: filtro
+    True/False com medida dentro. O da medida livre já saiu no validar dela; aqui não se repete."""
+    from kibaku_nendo.modelo import _filtro_booleano_com_medida
+    textos = [(f'medida {x["nome"]}', x.get('dax') or '') for x in m['medidas']]
+    for t in m['tabelas']:
+        for it in (t.get('grupo_calculo') or {}).get('itens', []):
+            textos.append((f'grupo de cálculo {t["nome"]}, item {it["rotulo"]}', it['dax']))
+    for onde, dax in textos:
+        for problema in _filtro_booleano_com_medida(dax):
+            if not any(onde in e and problema in e for e in p.erros):
+                p.erro(onde, f'DAX mal escrito: {problema}')
+
+
 def resolver(argila, catalogos):
     """`catalogos`: {nome da fonte: catalogo.Fonte}. Devolve (modelo, problemas).
     Com erro, o modelo não deve ser usado."""
@@ -69,6 +83,7 @@ def resolver(argila, catalogos):
     resolver_grupo_calculo(argila, m, p)
     if m['calendario']:
         garantir_corte(m, p)
+    _conferir_dax_gerado(m, p)
     _seguranca(argila, m, p)
     resolver_paginas(argila, m, p)
     _privacidade(m, p)

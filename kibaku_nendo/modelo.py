@@ -343,6 +343,50 @@ def sintaxe_dax(dax):
                    'mesmo com o Power BI em português)')
     if re.search(r'[-+*/&,(]\s*$', texto.strip()):
         out.append('a expressão termina num operador ou vírgula: falta o fim da conta')
+    out += _filtro_booleano_com_medida(texto)
+    return out
+
+
+# argumentos de CALCULATE que já são tabela ou modificador (não são filtro True/False)
+_FILTRO_TABELA = re.compile(r'\s*(FILTER|ALL\w*|VALUES|DISTINCT|REMOVEFILTERS|USERELATIONSHIP|CROSSFILTER|TREATAS|'
+                            r'DATES\w*|SAMEPERIODLASTYEAR|DATEADD|PARALLELPERIOD|PREVIOUS\w*|NEXT\w*|CALCULATETABLE|'
+                            r'TOPN|SUMMARIZE\w*|ADDCOLUMNS|SELECTCOLUMNS|KEEPFILTERS\s*\(\s*FILTER|\{)\b', re.I)
+
+
+def _argumentos(texto, inicio):
+    """Os argumentos da chamada cujo "(" está em `inicio`, separados nas vírgulas do primeiro nível."""
+    args, nivel, atual = [], 0, ''
+    for ch in texto[inicio + 1:]:
+        if ch in '([{':
+            nivel += 1
+        elif ch in ')]}':
+            if nivel == 0:
+                args.append(atual)
+                return args
+            nivel -= 1
+        if ch == ',' and nivel == 0:
+            args.append(atual)
+            atual = ''
+        else:
+            atual += ch
+    return args
+
+
+def _filtro_booleano_com_medida(texto):
+    """Filtro True/False do CALCULATE com medida ou CALCULATE dentro: o Power BI recusa ("uma função PLACEHOLDER foi
+    usada numa expressão True/False usada como filtro de tabela"). O certo é guardar o valor numa VAR antes."""
+    texto = re.sub(r'"(?:[^"]|"")*"|//[^\n]*|--[^\n]*|/\*.*?\*/', '""', texto, flags=re.S)
+    texto = re.sub(r"'(?:[^']|'')*'", "''", texto)
+    out = []
+    for achado in re.finditer(r'\b(CALCULATE|CALCULATETABLE)\s*\(', texto, re.I):
+        for arg in _argumentos(texto, achado.end() - 1)[1:]:
+            miolo = re.sub(r'^\s*KEEPFILTERS\s*\((.*)\)\s*$', r'\1', arg, flags=re.S | re.I)
+            if _FILTRO_TABELA.match(miolo) or not re.search(r'<>|<=|>=|[=<>]|\bIN\b', miolo, re.I):
+                continue
+            sem_colunas = re.sub(r"(\w|'')\s*\[(?:[^\]]|\]\])*\]", r'\1', miolo)
+            if re.search(r'\[(?:[^\]]|\]\])*\]', sem_colunas) or re.search(r'\bCALCULATE\s*\(', miolo, re.I):
+                out.append(f'filtro True/False com medida ou CALCULATE dentro ("{miolo.strip()[:60]}"): o Power BI '
+                           'recusa; guarde o valor numa VAR antes do CALCULATE e compare com a VAR')
     return out
 
 

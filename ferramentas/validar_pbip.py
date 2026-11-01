@@ -168,7 +168,27 @@ def validar_visuais(pasta, tabelas, colunas, medidas):
                 ok = prop in medidas if tipo == 'Measure' else (ent, prop) in colunas
                 if not ok or ent not in tabelas:
                     erros.append(f'{os.path.basename(raiz)}: {tipo} {ent}.{prop} não existe no modelo')
+            erros += [f'{os.path.basename(raiz)}: {x}' for x in _seletores_de_estado(doc)]
     return erros
+
+
+# o segmentador de botões só reconhece o estado com o prefixo; "selected" e "hover" (formato antigo) passam no
+# schema e o Desktop ignora calado (o texto do botão escolhido ficava branco no branco)
+ESTADOS_SEM_PREFIXO = {'selected': 'selection:selected', 'hover': 'interaction:hover', 'press': 'interaction:press',
+                       'rest': 'interaction:rest'}
+
+
+def _seletores_de_estado(doc):
+    v = doc.get('visual') or {}
+    if v.get('visualType') != 'advancedSlicerVisual':
+        return []
+    out = []
+    for obj, entradas in (v.get('objects') or {}).items():
+        for e in entradas:
+            sid = (e.get('selector') or {}).get('id')
+            if sid in ESTADOS_SEM_PREFIXO:
+                out.append(f'{obj}: seletor "{sid}" que o Desktop ignora; use "{ESTADOS_SEM_PREFIXO[sid]}"')
+    return out
 
 
 def conferir(pasta):

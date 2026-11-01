@@ -265,6 +265,21 @@ class TestSintaxeDax(unittest.TestCase):
         self.assertTrue(any('aspas' in x for x in sintaxe_dax('"abc')))
         self.assertTrue(any('operador' in x for x in sintaxe_dax('[A] +')))
 
+    def test_filtro_true_false_com_medida(self):
+        # o Power BI recusa ("função PLACEHOLDER"); o ano anterior do Deidara caiu nisso até 31/10/2026
+        from kibaku_nendo.especificacao import sintaxe_dax
+        ruins = ['CALCULATE([X], CALCULATETABLE(SAMEPERIODLASTYEAR(d[Data]), KEEPFILTERS(d[Data] <= [Corte])))',
+                 'CALCULATE([X], d[Data] <= MIN(TODAY(), CALCULATE(MAX(f[D]), REMOVEFILTERS())))']
+        bons = ['VAR _c = [Corte] RETURN CALCULATE([X], KEEPFILTERS(d[Data] <= _c))',
+                'CALCULATE([X], dMotivo[Tipo] = "Voluntario [a] <= [b]")',
+                'CALCULATE(COUNTROWS(f), f[Data] <= _fim, REMOVEFILTERS(d))',
+                'CALCULATE([X], FILTER(ALL(d[A]), [Y] > 0))',
+                "CALCULATE([X], 'd Tab'[Col] IN {1, 2})"]
+        for dax in ruins:
+            self.assertTrue(any('True/False' in x for x in sintaxe_dax(dax)), dax)
+        for dax in bons:
+            self.assertEqual(sintaxe_dax(dax), [], dax)
+
     def test_todo_dax_que_o_deidara_escreve_passa(self):
         from kibaku_nendo.especificacao import sintaxe_dax
         for argila in (_base(), test_c3.TestTecnicasCompletas()._argila(), test_c3.TestCausaRaiz()._argila()):
