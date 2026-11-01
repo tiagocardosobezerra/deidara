@@ -361,7 +361,7 @@ def visual(m, v, pos, nome, ordem, transparente=False):
         container['visualTooltip'] = [{'properties': {'show': _lit(True), 'section': _lit(curto('pagina', v['dica']))}}]
     _tecnicas(m, v, vis, container, pos)
     est = _estilo(m, tipo)
-    if est:                                  # a formatação do dashboard de origem do modelo (dicionario/estilos.json)
+    if est:                                  # a formatação do dashboard de origem do modelo (terceiros/power-bi-design-files/estilos.json)
         objetos = copy.deepcopy(est['objects'])
         for k, entradas in (vis.get('objects') or {}).items():
             objetos[k] = _fundir(objetos.get(k), entradas)

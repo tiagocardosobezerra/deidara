@@ -6,9 +6,10 @@ Os modelos de layout (`tecnicas/arte/modelos.py`, [referencias/modelos.md](refer
 reproduzem a estrutura de páginas de dashboards do repositório
 [Power BI Design Files](https://github.com/Dashboard-Design/Power-BI-Design-Files):
 a divisão em regiões, as proporções e a técnica de fundo desenhado com
-visuais transparentes. A formatação dos visuais de cada modelo (`dicionario/estilos.json`) e as paletas
-(`dicionario/paletas.json`) foram tiradas dos `.pbix` dele, só as propriedades de formatação e as cores dos
-temas que ele montou. As imagens de fundo, os dados e os visuais
+visuais transparentes. A formatação dos visuais de cada modelo (`terceiros/power-bi-design-files/estilos.json`) e as paletas
+(`terceiros/power-bi-design-files/paletas.json`) foram tiradas dos `.pbix` dele, só as propriedades de formatação e as cores dos
+temas que ele montou; os dois arquivos ficam em `terceiros/power-bi-design-files/`, como as outras fontes da
+galeria, com a `LICENSE` original e o `ORIGEM.md` (commit, data da extração e a curadoria feita). As imagens de fundo, os dados e os visuais
 personalizados daqueles dashboards não vêm no Deidara. As práticas de design
 e de SVG em DAX ([referencias/design.md](referencias/design.md),
 [referencias/svg.md](referencias/svg.md), `dicionario/visuais.json`) foram

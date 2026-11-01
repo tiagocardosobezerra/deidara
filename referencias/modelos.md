@@ -41,7 +41,7 @@ baixo quando os visuais não cabem; nada é cortado.
 
 ## A formatação vem junto
 
-Cada modelo leva a formatação dos visuais do dashboard de onde veio (`dicionario/estilos.json`): fontes,
+Cada modelo leva a formatação dos visuais do dashboard de onde veio (`terceiros/power-bi-design-files/estilos.json`): fontes,
 tamanhos, cores de texto, cantos, espaçamentos, rótulos, eixos e o estilo de cartões, segmentadores, tabelas
 e gráficos. Do original sai só formatação: nada que dependa dos campos dele, imagem ou link. Cada propriedade
 é conferida contra o schema da Microsoft que o Deidara usa, e a que não passa fica de fora. O layout

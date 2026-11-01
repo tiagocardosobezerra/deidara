@@ -57,12 +57,18 @@ def visuais():
     return _ler('visuais.json')
 
 
+DESIGN_FILES = os.path.join('terceiros', 'power-bi-design-files')
+
+
 def estilos():
-    return _ler('estilos.json')
+    """A formatação de cada tipo de visual dos modelos de layout (Power BI Design Files, terceiros/)."""
+    from tecnicas.galeria import json_de
+    return json_de(os.path.join(DESIGN_FILES, 'estilos.json'))
 
 
 def paletas():
-    return _ler('paletas.json')
+    from tecnicas.galeria import json_de
+    return json_de(os.path.join(DESIGN_FILES, 'paletas.json'))
 
 
 def visuais_para(termo):

@@ -48,7 +48,7 @@ def resolver_layout(argila, m, p):
                 m['tema'].pop('arquivo', None)
                 p.aviso('tema', f'[Design] o tema "{dado["arquivo"]}" vai inteiro no relatório: confira a licença de quem '
                                 'fez e dê o crédito no LEIA-ME')
-    elif dado.get('paleta'):                       # as paletas dos temas do Power BI Design Files (dicionario/paletas.json)
+    elif dado.get('paleta'):                       # as paletas dos temas do Power BI Design Files (terceiros/power-bi-design-files/paletas.json)
         from tecnicas.sasori import paletas
         todas = paletas()['paletas']
         pal = todas.get(dado['paleta'])

@@ -43,6 +43,13 @@ def _texto(rel):
     return _pacote()[rel.replace(os.sep, '/')]
 
 
+def json_de(rel):
+    """Um JSON de terceiros/ (solto ou dentro do pacote.json), lido uma vez só."""
+    if rel not in _CACHE:
+        _CACHE[rel] = json.loads(_texto(rel))
+    return _CACHE[rel]
+
+
 def catalogo():
     if 'cat' not in _CACHE:
         arq = os.path.join(RAIZ, 'terceiros', 'catalogo.json')
