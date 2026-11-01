@@ -130,6 +130,8 @@ def cmd_conferir_desktop(a):
           f'{r["calculadas"]} medida(s) calculadas no total' + (' e mês a mês' if cal else ''))
     for onde, erro in r['problemas']:
         print(f'  ✗ {onde}: {erro}')
+    for nome, ms in sorted(r.get('lentas') or [], key=lambda x: -x[1]):
+        print(f'  ! medida {nome}: {ms / 1000:.1f} s para calcular (o visual com ela abre lento)')
     if r['vazias'] and len(r['vazias']) == r['calculadas']:
         print('  ! todas as medidas em branco: o modelo está sem dados (clique em Atualizar ou use --atualizar)')
     if not r['problemas']:

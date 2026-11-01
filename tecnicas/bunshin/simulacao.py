@@ -15,6 +15,7 @@ desse total. A coerência é a do Power BI:
 """
 
 import random
+import re
 
 from kibaku_nendo.especificacao import (grafo_de_filtro as grafo_de_filtro,
                                         tabelas_da_medida as tabelas_da_medida, chega, medida)
@@ -188,6 +189,10 @@ class Simulador:
             return self.aviso(md, filtros)
         if tipo in ('posicao', 'pareto', 'melhores_piores', 'jitter'):
             return self._ranking(md, filtros)
+        if tipo == 'dax':
+            conta = self._conta_de_medidas(md, filtros)
+            if conta is not None:
+                return conta
         if tipo == 'divisao':
             num, den = md['depende']
             d = self.valor(den, filtros)
@@ -362,6 +367,24 @@ class Simulador:
         else:
             zs = c4.z_modificado([self.valor(cfg['base'], outros + [(col, r)]) for r in rot])
         return dict(zip(rot, zs)).get(linha)
+
+    def _conta_de_medidas(self, md, filtros):
+        """[Admissões] - [Desligamentos]: o valor sai das partes simuladas (antes, um número sem relação com elas).
+        Só conta com medidas, números e + - * / ( ); o resto (CALCULATE, Tabela[Coluna]) segue a simulação de sempre."""
+        refs = re.findall(r'\[([^\]]+)\]', md['dax'])
+        if not refs or re.search(r"[\w']\s*\[", md['dax']):      # Tabela[Coluna] ou função: fica de fora
+            return None
+        texto = md['dax']
+        for nome in sorted(set(refs), key=len, reverse=True):
+            if not medida(self.m, nome):
+                return None
+            texto = texto.replace(f'[{nome}]', f'({float(self.valor(nome, filtros) or 0)!r})')
+        if not re.fullmatch(r'[\s\d.e+\-*/()]*', texto):
+            return None
+        try:
+            return eval(texto, {'__builtins__': {}}, {})      # noqa: S307 (só números e + - * / ( ), conferido acima)
+        except (ZeroDivisionError, SyntaxError):
+            return None
 
     def _ranking(self, md, filtros):
         cfg = md['ranking']

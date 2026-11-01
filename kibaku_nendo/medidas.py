@@ -235,8 +235,9 @@ def _svgs(m, p):
                          f'    RANKX(ALLSELECTED({col}), {b}, , {sentido}, Dense)\n)')
         elif tipo == 'pareto':
             md['formato'] = 'percentual'
-            md['dax'] = (f'VAR _valor = {b}\nVAR _total = CALCULATE({b}, ALLSELECTED({col}))\n'
-                         f'VAR _acumulado = SUMX(FILTER(ALLSELECTED({col}), {b} >= _valor), {b})\n'
+            # empate no valor: desempata pelo nome do item (dois itens iguais davam o mesmo % acumulado)
+            md['dax'] = (f'VAR _valor = {b}\nVAR _item = MAX({col})\nVAR _total = CALCULATE({b}, ALLSELECTED({col}))\n'
+                         f'VAR _acumulado =\n    SUMX(FILTER(ALLSELECTED({col}), {b} > _valor || ({b} = _valor && {col} <= _item)), {b})\n'
                          f'RETURN\n    IF(HASONEVALUE({col}) && NOT ISBLANK(_valor), DIVIDE(_acumulado, _total))')
         elif tipo == 'melhores_piores':
             n = cfg.get('n')

@@ -47,7 +47,8 @@ try {
     }
     $resultados = @()
     foreach ($q in (Get-Content -Raw -Encoding UTF8 $env:DEIDARA_CONSULTAS | ConvertFrom-Json)) {
-      $item = [ordered]@{ id = $q.id; linhas = @(); erro = $null }
+      $item = [ordered]@{ id = $q.id; linhas = @(); erro = $null; ms = 0 }
+      $relogio = [Diagnostics.Stopwatch]::StartNew()
       try {
         $cmd.CommandText = $q.dax
         $r = $cmd.ExecuteReader()
@@ -57,6 +58,7 @@ try {
         }
         $r.Close()
       } catch { $item.erro = $_.Exception.InnerException.Message; if (-not $item.erro) { $item.erro = $_.Exception.Message } }
+      $item.ms = $relogio.ElapsedMilliseconds
       $resultados += $item
     }
     $c.Close()
@@ -90,6 +92,9 @@ def _rodar(consultas=None, porta=None, atualizar=False, pasta_tmp=None):
     except ValueError:
         return {'instancias': [], 'erro': (r.stderr.decode('utf-8', 'replace') or texto or 'sem resposta')[:500]}
 
+
+# consulta de uma medida que passa disso, com os dados que estiverem no Desktop, merece olhar (o visual abre lento)
+LENTA_MS = 2000
 
 ROTULOS = {'medidas': 'medida', 'grupo': 'item do grupo de cálculo', 'particoes': 'partição'}
 
@@ -129,7 +134,7 @@ def conferir(medidas, calendario=None, porta=None, atualizar=False, pasta_tmp=No
                pasta_tmp=pasta_tmp)
     if r.get('erro'):
         return {'erro': r['erro']}
-    problemas, vazias = [], []
+    problemas, vazias, lentas = [], [], []
     for x in r.get('resultados') or []:
         tipo, _, nome = x['id'].partition(':')
         if x['erro'] and tipo == 'mes' and (f'medida {nome}', x['erro'].strip()) in problemas:
@@ -141,7 +146,10 @@ def conferir(medidas, calendario=None, porta=None, atualizar=False, pasta_tmp=No
             problemas += [(f'{ROTULOS[nome]} {ln[0]}', ln[1]) for ln in x['linhas']]
         elif tipo == 'total' and (not x['linhas'] or not x['linhas'][0][0]):
             vazias.append(nome)
-    return {'instancia': inst[0], 'problemas': problemas, 'calculadas': len(medidas), 'vazias': vazias}
+        if tipo in ('total', 'mes') and (x.get('ms') or 0) > LENTA_MS:
+            lentas.append((nome + (' (mês a mês)' if tipo == 'mes' else ''), x['ms']))
+    return {'instancia': inst[0], 'problemas': problemas, 'calculadas': len(medidas), 'vazias': vazias,
+            'lentas': lentas}
 
 
 def _mesmo_arquivo(a, b):

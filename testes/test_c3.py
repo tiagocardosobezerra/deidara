@@ -635,3 +635,38 @@ class TestVitrineNoDesktop(unittest.TestCase):
         self.assertGreater(pos[id(botoes)]['w'], 2 * pos[id(seg)]['w'])
         self.assertEqual(pos[id(seg)]['h'], 84)                            # botões de coluna: a faixa cresce
         self.assertGreaterEqual(pos[id(imagem)]['h'], pos[id(imagem)]['w'] * 0.75 - 1)
+
+
+class TestMelhoriasDaAvaliacao(unittest.TestCase):
+    """As melhorias da avaliação de 01/11/2026."""
+
+    def test_pareto_desempata_pelo_nome(self):
+        # dois motivos com 33 desligamentos davam 31,4% e 31,4%
+        a = _base()
+        a['medidas'].append({'nome': 'Pareto', 'tipo': 'pareto', 'medida': 'Desligamentos',
+                             'categoria': 'dMotivo[Motivo]', 'descricao': 'x'})
+        m, p = _resolver(a)
+        self.assertEqual(p.erros, [])
+        dax = next(x for x in m['medidas'] if x['nome'] == 'Pareto')['dax']
+        self.assertIn('VAR _item = MAX(dMotivo[Motivo])', dax)
+        self.assertIn('= _valor && dMotivo[Motivo] <= _item', dax)
+
+    def test_prototipo_faz_a_conta_do_dax_livre(self):
+        from tecnicas.bunshin.simulacao import Simulador
+        a = _base()
+        a['medidas'].append({'nome': 'Saldo', 'dax': '[Desligamentos] - [Headcount]', 'formato': 'inteiro',
+                             'descricao': 'x'})
+        m, p = _resolver(a)
+        self.assertEqual(p.erros, [])
+        sim = Simulador(m)
+        self.assertAlmostEqual(sim.valor('Saldo'), sim.valor('Desligamentos') - sim.valor('Headcount'))
+
+    def test_conferir_desktop_aponta_medida_lenta(self):
+        from unittest import mock
+        from tecnicas.c3 import desktop
+        base = {'instancias': [{'porta': 1, 'titulo': 'P', 'arquivo': 'C:/x/p.pbip'}], 'erro': None}
+        resp = {'resultados': [{'id': 'total:Tempo de Casa', 'linhas': [['5,4']], 'erro': None, 'ms': 4200},
+                               {'id': 'total:Turnover', 'linhas': [['0,1']], 'erro': None, 'ms': 30}]}
+        with mock.patch.object(desktop, '_rodar', side_effect=[base, resp]):
+            r = desktop.conferir(['Tempo de Casa', 'Turnover'])
+        self.assertEqual(r['lentas'], [('Tempo de Casa', 4200)])
