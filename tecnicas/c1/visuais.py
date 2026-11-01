@@ -11,7 +11,7 @@ from kibaku_nendo.desenhos import COR_ATENCAO
 from tecnicas.bunshin.simulacao import categorias
 from kibaku_nendo.util import numero_br
 from tecnicas import akatsuki as galeria
-from tecnicas.arte.contrato import CRESCENTE, ordem as ordem_do_visual
+from tecnicas.arte.contrato import CRESCENTE, letra_do_cartao, ordem as ordem_do_visual
 
 
 def formatar(v, formato, compacto=False):
@@ -124,7 +124,8 @@ def _cartao(sim, v, w, h, cores):
     selo = '' if st is None or w < 300 else (f'<text x="{w - 36}" y="20" class="sub" text-anchor="end"{_cor_status(sim, md["nome"])}>'
                                              f'{ {"boa": "✓ na meta", "atencao": "! perto da meta", "ruim": "✗ fora da meta"}[sim.faixa(md["nome"])] }</text>')   # estreito: a cor já diz
     txt = formatar(val, md['formato'], True)
-    tam = max(16, min(54, (h - 44) * 0.62, (w - 24) / (0.58 * max(1, len(txt)))))  # cabe na altura e na largura
+    # a letra do Power BI (arte/contrato.py), menor só se o número não couber na largura
+    tam = max(16, min(letra_do_cartao(h) * 4 / 3, (w - 24) / (0.58 * max(1, len(txt)))))
     cor = _cor_status(sim, md['nome'])
     estilo = f' style="font-size:{tam:.0f}px;{cor[8:-1]}"' if cor else f' style="font-size:{tam:.0f}px"'
     return (topo + selo + f'<text x="{w / 2}" y="{h / 2 + tam * 0.3:.0f}" class="kpi" text-anchor="middle"{estilo}>'

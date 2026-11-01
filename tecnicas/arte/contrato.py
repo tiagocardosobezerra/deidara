@@ -69,3 +69,8 @@ def altura_dos_botoes(v, largura, padrao):
     grade = grade_dos_botoes(v, largura)
     return max(padrao, 34 * grade[1] + 30) if grade else padrao
 
+
+def letra_do_cartao(altura):
+    """O tamanho (pt) do número do cartão: o mesmo em todo cartão da faixa, no Power BI e no protótipo (px = pt x 4/3)."""
+    return max(14, min(32, round(altura / 6)))
+

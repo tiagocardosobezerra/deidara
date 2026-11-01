@@ -16,7 +16,7 @@ from tecnicas.arte.modelos import montar, paginas_do_relatorio
 from tecnicas.c1.prototipo import titulo_do_cartao
 from kibaku_nendo.util import curto, gravar_json
 from tecnicas.sasori import estilos
-from tecnicas.arte.contrato import PAPEIS, grade_dos_botoes, ordem as ordem_do_visual
+from tecnicas.arte.contrato import PAPEIS, grade_dos_botoes, letra_do_cartao, ordem as ordem_do_visual
 from tecnicas.c3 import guarda
 
 S = 'https://developer.microsoft.com/json-schemas/fabric/item/report/definition'
@@ -280,7 +280,7 @@ def _formato_cartao(m, v, pos, vis, container):
     rotulo_card = {}
     if md.get('formato') in ('inteiro', 'decimal', 'percentual', 'moeda'):
         # o mesmo tamanho em todo cartão de número da faixa, com ou sem meta (antes: 14 sem meta, automático com)
-        rotulo_card['fontSize'] = _lit(max(14, min(32, round(pos['h'] / 6))))
+        rotulo_card['fontSize'] = _lit(letra_do_cartao(pos['h']))
     if md.get('cor_medida'):
         rotulo_card['color'] = _cor_da_medida(m, md['cor_medida'])
     if rotulo_card:
