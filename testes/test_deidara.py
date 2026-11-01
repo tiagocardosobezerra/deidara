@@ -267,3 +267,19 @@ class TestReferencia(unittest.TestCase):
             self.assertTrue(pbip, modelo)
             self.assertEqual(erros, [], modelo)
         shutil.rmtree(d, ignore_errors=True)
+
+    def test_historia_longa_nunca_passa_da_altura_do_power_bi(self):
+        # a vitrine numa página só dava 10172 px: o Desktop travava (01/11/2026)
+        import tempfile
+        sys.path.insert(0, os.path.join(RAIZ, 'ferramentas'))
+        import vitrine
+        d = tempfile.mkdtemp(prefix='vit')
+        _, pbip, erros = vitrine.gerar(d, 'historia-longa')
+        self.assertEqual(erros, [])
+        paginas = os.path.join(os.path.dirname(pbip), 'Vitrine_Deidara.Report', 'definition', 'pages')
+        for pasta in os.listdir(paginas):
+            if os.path.isdir(os.path.join(paginas, pasta)):
+                with open(os.path.join(paginas, pasta, 'page.json'), encoding='utf-8') as f:
+                    self.assertLessEqual(json.load(f)['height'], 8192)
+        self.assertEqual(validar_pbip.validar_paginas(paginas), [])
+        shutil.rmtree(d, ignore_errors=True)

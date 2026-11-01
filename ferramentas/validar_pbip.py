@@ -191,11 +191,28 @@ def _seletores_de_estado(doc):
     return out
 
 
+# o Power BI não aceita página maior que isso: com 10172 px de altura, o Desktop entrava em laço e travava
+MAIOR_PAGINA = 8192
+
+
+def validar_paginas(pasta):
+    erros = []
+    for raiz, _, fs in os.walk(pasta):
+        if 'page.json' in fs:
+            with open(os.path.join(raiz, 'page.json'), encoding='utf-8-sig') as f:
+                pg = json.load(f)
+            for lado in ('width', 'height'):
+                if pg.get(lado, 0) > MAIOR_PAGINA:
+                    erros.append(f'{os.path.basename(raiz)}: página "{pg.get("displayName")}" com {lado} {pg[lado]} '
+                                 f'(o Power BI aceita até {MAIOR_PAGINA})')
+    return erros
+
+
 def conferir(pasta):
     """Todos os erros do projeto (schema da Microsoft, TMDL e campos dos visuais). Sem `jsonschema`, falha alto."""
     n, erros = validar_json(pasta)
     nt, tabelas, colunas, medidas, et = validar_tmdl(pasta)
-    erros += et + validar_visuais(pasta, tabelas, colunas, medidas)
+    erros += et + validar_visuais(pasta, tabelas, colunas, medidas) + validar_paginas(pasta)
     if not n:
         erros.append('nenhum JSON do projeto foi conferido contra o schema')
     return erros
@@ -223,7 +240,7 @@ def main():
         print('Falta o pacote jsonschema: pip install jsonschema (a checagem de TMDL roda mesmo assim).')
         n, erros = 0, []
     nt, tabelas, colunas, medidas, et = validar_tmdl(pasta)
-    ev = validar_visuais(pasta, tabelas, colunas, medidas)
+    ev = validar_visuais(pasta, tabelas, colunas, medidas) + validar_paginas(pasta)
     print(f'JSON conferidos contra o schema da Microsoft: {n}' + ('' if n else ' (instale `jsonschema` para conferir)'))
     print(f'TMDL: {nt} arquivo(s), {len(tabelas)} tabela(s), {len(colunas)} coluna(s), {len(medidas)} medida(s)')
     todos = erros + et + ev

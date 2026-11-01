@@ -54,9 +54,7 @@ def paginas_do_relatorio(m):
     modelo = m.get('modelo') or 'padrao'
     pgs = m['paginas']
     if modelo == 'historia-longa':
-        return [{'nome': m['projeto'], 'descricao': m.get('descricao') or '', 'visuais': [v for p in pgs for v in p['visuais']],
-                 'oculta': False, 'grupo': 0, 'secoes': pgs, 'kpi_ativo': None,
-                 'ajuda': any(p.get('ajuda') for p in pgs)}]
+        return _historia_em_partes(m, pgs)
     out = []
     for g, pg in enumerate(pgs):
         escondida = bool(pg.get('dica') or pg.get('detalhe'))     # dica e detalhe não entram na navegação
@@ -71,6 +69,39 @@ def paginas_do_relatorio(m):
         for k, card in enumerate(cards):
             out.append(dict(base, nome=pg['nome'] if k == 0 else f'{pg["nome"]} · {card["valores"][0]["nome"]}',
                             oculta=k > 0, kpi_ativo=k, visuais=_com_kpi(pg['visuais'], card), ajuda=base['ajuda'] and k == 0))
+    return out
+
+
+ALTURA_MAXIMA = 8000          # o Power BI não aceita página mais alta que 8192 px (com 10172, o Desktop travava)
+
+
+def _parte_da_historia(m, nome, secoes, grupo):
+    return {'nome': nome, 'descricao': m.get('descricao') or '', 'visuais': [v for p in secoes for v in p['visuais']],
+            'oculta': False, 'grupo': grupo, 'secoes': secoes, 'kpi_ativo': None,
+            'ajuda': any(p.get('ajuda') for p in secoes)}
+
+
+def _historia_em_partes(m, pgs):
+    """A história longa numa página só, ou em partes quando passaria da altura máxima do Power BI. Dica e
+    detalhamento ficam fora da história, como páginas escondidas."""
+    secoes = [p for p in pgs if not (p.get('dica') or p.get('detalhe'))]
+    partes, atual = [], []
+    for sec in secoes:
+        candidata = atual + [sec]
+        if atual and _historia(m, [_parte_da_historia(m, '', candidata, 0)], 0, _cores(m))['h'] > ALTURA_MAXIMA:
+            partes.append(atual)
+            atual = [sec]
+        else:
+            atual = candidata
+    if atual:
+        partes.append(atual)
+    out = [_parte_da_historia(m, m['projeto'] if len(partes) == 1 else f'{m["projeto"]} · {k + 1} de {len(partes)}',
+                              parte, k) for k, parte in enumerate(partes)]
+    for g, pg in enumerate(pgs):
+        if pg.get('dica') or pg.get('detalhe'):
+            out.append({'nome': pg['nome'], 'descricao': pg.get('descricao') or '', 'visuais': pg['visuais'],
+                        'oculta': True, 'grupo': len(partes) + g, 'kpi_ativo': None, 'ajuda': False,
+                        'dica': pg.get('dica', False), 'detalhe': pg.get('detalhe')})
     return out
 
 
@@ -252,6 +283,8 @@ def montar(m, paginas, i):
         return {'w': LARGURA_PADRAO, 'h': altura_da_pagina(pos), 'posicoes': pos, 'fundo': None, 'nav': [],
                 'escuro': False, 'sem_titulo': set()}
     c = _cores(m)
+    if modelo == 'historia-longa' and 'secoes' not in pg:
+        modelo = 'faixa-de-kpis'                     # o detalhamento, fora da história: uma página comum
     r = {'faixa-de-kpis': _faixa, 'coluna-de-kpis': nova_coluna, 'secoes-com-rolagem': _secoes,
          'trilho-escuro': _trilho, 'kpis-clicaveis': _clicaveis, 'historia-longa': _historia,
          'executivo': _executivo, 'mapa-central': _mapa_central, 'causa-raiz': _causa_raiz,
