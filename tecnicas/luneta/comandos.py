@@ -12,7 +12,7 @@ from tecnicas.luneta import prova
 from tecnicas.luneta import receitas
 from tecnicas.luneta import treino
 from kibaku_nendo.util import gravar_json, gravar_texto, ler_json, pasta_local
-from tecnicas.comum import carregar_catalogos, lembrete, ponta_da_ligacao
+from tecnicas.comum import carregar_catalogos, lembrar_conferir_cartao, lembrete, ponta_da_ligacao
 
 
 def cmd_receita(a):
@@ -83,6 +83,7 @@ def cmd_catalogar(a):
         saida = os.path.join(pasta_cat, f'{a.fonte}.json')          # pasta criada pelo `novo`
     else:
         saida = a.saida or os.path.join(pasta_de, f'{a.fonte}.catalogo.json')
+    existia = os.path.exists(saida)              # catálogo refeito: a fonte pode ter mudado
     gravar_json(saida, cat)
     ncol = sum(len(t['colunas']) for t in cat['tabelas'].values())
     print(f'Fonte {a.fonte} ({cat["tipo"]}, receita {cat["receita"]}): {len(cat["tabelas"])} tabela(s), {ncol} coluna(s), '
@@ -96,6 +97,8 @@ def cmd_catalogar(a):
     else:
         lembrete(f'aponte no argila.json: "fontes": {{"{a.fonte}": {{"catalogo": "<caminho relativo de '
                   f'{os.path.basename(saida)}>"}}}}')
+    if existia:
+        lembrar_conferir_cartao(saida)
     return 0
 
 

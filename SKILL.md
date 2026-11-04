@@ -53,11 +53,13 @@ situar no código; com o usuário, fale da etapa ("o protótipo", "o aceite").
    "Como conduzir").
 7. **O .pbix sai do Power BI Desktop**: o Deidara entrega o .pbip; nunca
    prometa um .pbix gerado direto.
-8. **Memory Card: procure antes, ofereça depois.** Com cartão configurado,
-   `memory-card buscar` antes de um indicador novo; indicador **oficial** não
-   se reescreve. Depois do `gerar`, ofereça `memory-card enviar` (prévia;
-   `--confirmar` só com o "sim"; mudança pede `--motivo`). Sem `gh`
-   autenticado (ex.: claude.ai), diga isso em vez de prometer o envio.
+8. **Memory Card: procure antes, ofereça depois.** O cartão é o do time, o
+   mesmo do Vegapunk (o Deidara grava em `saves/deidara/`). Com cartão
+   configurado, `memory-card buscar` antes de um indicador novo; indicador
+   **oficial** não se reescreve. Depois do `gerar`, ofereça `memory-card
+   enviar` (prévia; `--confirmar` só com o "sim"; mudança pede `--motivo`).
+   Siga toda linha `LEMBRETE:` da saída. Sem `gh` autenticado (ex.:
+   claude.ai), diga isso em vez de prometer o envio.
 9. **Saída em pt-BR** (`dd/MM/aaaa`, `1.234.567,89`). Leia e siga os `LEMBRETE:`.
 
 ## Já existe um indicador ou painel? Comece pelo C0

@@ -137,6 +137,12 @@ def memory_card(b, arq):
                                             '--secao', 'Turnover', '--motivo', 'bateria'])
     b.rodar('memory-card enviar --confirmar', ['memory-card', 'enviar', arq, '--categoria', 'Recursos Humanos',
                                                '--secao', 'Turnover', '--motivo', 'bateria', '--confirmar'])
+    b.checar('cartão do time: save em saves/deidara/',
+             os.path.exists(os.path.join(cartao, 'saves', 'deidara', 'recursos-humanos', 'turnover')))
+    with open(os.path.join(cartao, 'CATALOGO.md'), encoding='utf-8') as f:
+        b.checar('cartão do time: CATALOGO.md da raiz no formato do Vegapunk', '## Deidara' in f.read())
+    b.rodar('gerar com o cartão (lembrete de salvar)', ['gerar', arq, '-o', os.path.join(b.pasta, 'painel', 'demo2'),
+                                                        '--demo'], contem=['LEMBRETE: painel gerado e aprovado'])
     b.rodar('memory-card catalogo', ['memory-card', 'catalogo'], contem=['Turnover'])
     b.rodar('memory-card buscar', ['memory-card', 'buscar', 'turnover'], contem=['Turnover'])
     saida = b.rodar('memory-card buscar --json', ['memory-card', 'buscar', 'turnover', '--json'])

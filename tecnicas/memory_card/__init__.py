@@ -1,20 +1,22 @@
 """
-Memory Card: a seção do Deidara no cartão de memória do time. Foge do tema
+Memory Card: o cartão de memória do time, o mesmo do Vegapunk. Foge do tema
 de propósito, como no Vegapunk: o nome é o da ideia, não de uma técnica.
 
 Como o memory card de um videogame: cada painel aprovado fica salvo (um
 "save"), com versão e histórico, para ser carregado de novo quando precisar.
-O cartão é UM repositório do time (`memory-card`, privado); cada solução tem a
-sua seção, com a estrutura padrão. O Deidara só lê e grava a seção `deidara/`:
-nunca toca nos arquivos da raiz nem nas outras seções.
+O cartão é UM repositório do time (`memory-card`, privado), com um nível por
+solução em `saves/` (`saves/<solucao>/<categoria>/<secao>/<artigo>/`, como o
+Vegapunk grava). O Deidara só grava `saves/deidara/` e o `CATALOGO.md` da
+raiz, que lista os saves de todas as soluções no mesmo formato do Vegapunk
+(quem enviar por último gera o mesmo arquivo). Nunca toca nos saves das outras
+soluções nem no README da raiz de um cartão que já existe.
 
     memory-card/
     ├── README.md                       o cartão (só é criado se ainda não existir)
-    ├── ...                             outras soluções (não são tocadas)
-    └── deidara/                        a seção do Deidara
-        ├── README.md                   o que é a seção
-        ├── CATALOGO.md                 gerado a cada envio
-        └── saves/
+    ├── CATALOGO.md                     todas as soluções, gerado a cada envio
+    └── saves/
+        ├── vegapunk/...                outras soluções (não são tocadas)
+        └── deidara/
             ├── <categoria>/<secao>/<artigo>/        um painel
             │   ├── README.md               o artigo (corpo entre <!-- corpo --> e <!-- /corpo -->)
             │   ├── ficha.json              versão, status, aprovação, fontes, indicadores, histórico, conferência
@@ -25,8 +27,10 @@ nunca toca nos arquivos da raiz nem nas outras seções.
                 ├── README.md
                 └── ficha.json              definição, DAX, especificação, status, painéis, histórico
 
-REF = <categoria>/<secao>/<artigo> (relativo a deidara/saves/). Status:
-`rascunho` (padrão), `em-uso`; indicador também pode ser `oficial`.
+REF = <categoria>/<secao>/<artigo> (relativo a saves/deidara/). Status:
+`rascunho` (padrão), `em-uso`; indicador também pode ser `oficial`. A ficha
+leva também `solucao`, `artigo` e `conferencia.ok`, os campos que o catálogo
+e a busca do Vegapunk leem.
 
 Procure antes, ofereça depois: `buscar` antes de criar; depois do aceite,
 `enviar` mostra a prévia e só grava com `--confirmar`; mudança pede
@@ -45,7 +49,9 @@ from kibaku_nendo.util import chave, gravar_json, gravar_texto, ler_json, sem_ac
 from tecnicas import katsu as governanca
 
 NOME_PADRAO = 'memory-card'
-SECAO = 'deidara'
+SECAO = 'deidara'                     # a pasta da solução em saves/ (e a da seção antiga, na raiz)
+SOLUCAO = 'Deidara'
+SAVES = 'saves'
 RAIZ_SKILL = util.RAIZ
 CONFIG = os.path.join(os.path.expanduser('~'), '.deidara', 'memory_card.json')      # sobrevive a atualizar a skill
 STATUS = ('rascunho', 'em-uso')
@@ -73,8 +79,20 @@ def configuracao():
     return cfg if cfg.get('pasta') else {}
 
 
-def secao(pasta):
-    return os.path.join(pasta, SECAO)
+def _base(pasta):
+    """Onde ficam os saves do Deidara: saves/deidara/."""
+    return os.path.join(pasta, SAVES, SECAO)
+
+
+def funciona_aqui(cfg=None):
+    """True se o cartão está configurado E funciona nesta máquina: a pasta é um clone git daqui e, com repositório
+    no GitHub, o `gh` está instalado. Como no Vegapunk: numa sandbox (claude.ai) o cartão não funciona e o lembrete de
+    salvar viraria promessa falsa."""
+    cfg = configuracao() if cfg is None else cfg
+    pasta = cfg.get('pasta')
+    if not pasta or (re.match(r'^[A-Za-z]:[\\/]', pasta) and os.name != 'nt'):
+        return False
+    return os.path.isdir(os.path.join(pasta, '.git')) and (not cfg.get('repo') or shutil.which('gh') is not None)
 
 
 def rodar(cmd, cwd=None):
@@ -90,26 +108,26 @@ def _git(pasta, *args):
 
 README_RAIZ = """# Memory Card
 
-O cartão de memória do time: cada solução guarda aqui, na sua seção, o que foi
-aprovado e salvo, com versão e histórico.
+O cartão de memória do time: cada relatório, painel e indicador aprovado fica
+salvo aqui, com versão e histórico.
 
-- [deidara/](deidara/): painéis e indicadores (Power BI).
-"""
+Cada save fica em `saves/<solucao>/<categoria>/<secao>/<artigo>/`. A solução é
+a ferramenta que gerou o save (o Deidara, o Vegapunk, ou outra).
 
-README_SECAO = """# Memory Card — seção Deidara
+- `README.md`: o artigo (o que faz, quando usar, como funciona, relacionados e
+  histórico).
+- `ficha.json`: versão, status (`rascunho`, `em-uso`; um indicador pode ser
+  `oficial`), relacionados, histórico e a última conferência.
+- No Deidara, um painel leva também a especificação aprovada (`argila.json`),
+  o dicionário de indicadores e o protótipo; um indicador, a definição e o DAX.
 
-Os painéis e indicadores do time: cada painel aprovado no Deidara fica salvo aqui
-(um "save"), com versão, histórico e o que foi aprovado; cada indicador também,
-com a sua definição (e a OFICIAL, quando houver).
+O [CATALOGO.md](CATALOGO.md) lista os saves por solução, categoria e seção.
+É gerado a cada envio: não edite à mão.
 
-- [CATALOGO.md](CATALOGO.md): os painéis por categoria e seção, e os indicadores (oficiais primeiro).
-- `saves/<categoria>/<secao>/<artigo>/`: um painel (artigo, ficha, especificação, dicionário, protótipo).
-- `saves/indicadores/<pasta>/<indicador>/`: um indicador (definição, fórmula, painéis que usam, histórico).
-
-Não edite à mão: use `deidara.py memory-card` (enviar, marcar, conferir). O texto do
-artigo, entre `<!-- corpo -->` e `<!-- /corpo -->`, pode ser editado.
-
-A estrutura das fontes (catálogos) nunca vem para o cartão.
+Cada mudança num artigo sobe a versão e exige um motivo, que entra no
+histórico do artigo e na mensagem do commit. Envio só pela ferramenta
+(`deidara.py memory-card enviar`, `stella.py cartao enviar`): primeiro a prévia,
+depois `--confirmar`.
 """
 
 
@@ -150,18 +168,14 @@ def iniciar(repo=None, pasta=None, publico=False):
         if not os.path.isdir(os.path.join(pasta, '.git')) and shutil.which('git'):
             _git(pasta, 'init', '-q')
         msgs.append(f'cartão local em {pasta} (sem repositório remoto: nada é enviado)')
-    atualizar(pasta)
-    os.makedirs(os.path.join(pasta, SECAO, 'saves'), exist_ok=True)
-    novos = []
-    if not os.path.exists(os.path.join(pasta, 'README.md')):
-        gravar_texto(os.path.join(pasta, 'README.md'), README_RAIZ)     # cartão novo: a raiz ainda não existe
-        novos.append('README.md')
-    if not os.path.exists(os.path.join(pasta, SECAO, 'README.md')):
-        gravar_texto(os.path.join(pasta, SECAO, 'README.md'), README_SECAO)
+    msgs += atualizar(pasta, repo, publico)
+    if not os.path.exists(os.path.join(pasta, 'README.md')):              # cartão novo: a raiz ainda não existe
+        gravar_texto(os.path.join(pasta, 'README.md'), README_RAIZ)
         _catalogo_md(pasta)
-        msgs.append(_commit(pasta, 'Memory Card: seção deidara', novos, repo, publico))
+        msgs.append(_commit(pasta, 'Memory Card', ['README.md'], repo, publico))
     else:
-        msgs.append(f'a seção {SECAO}/ já existe no cartão')
+        n = sum(1 for _ in saves(pasta))
+        msgs.append(f'cartão que já existe: nada foi gravado nele ({n} save(s) do Deidara em {SAVES}/{SECAO}/)')
     os.makedirs(os.path.dirname(CONFIG), exist_ok=True)
     gravar_json(CONFIG, {'repo': repo, 'pasta': pasta, 'publico': publico})
     msgs.append(f'configuração em {CONFIG}')
@@ -170,14 +184,29 @@ def iniciar(repo=None, pasta=None, publico=False):
 
 # ================================================================== leitura
 def saves(pasta):
-    """[(ref, ficha)] de todos os saves."""
-    base = os.path.join(pasta, SECAO, 'saves')
+    """[(ref, ficha)] dos saves do Deidara (saves/deidara/)."""
+    base = _base(pasta)
     out = []
     for raiz, _, arqs in os.walk(base):
         if 'ficha.json' in arqs:
             ref = os.path.relpath(raiz, base).replace(os.sep, '/')
-            out.append((ref, ler_json(os.path.join(raiz, 'ficha.json'))))
+            out.append((ref, _normalizar(ler_json(os.path.join(raiz, 'ficha.json')))))
     return sorted(out)
+
+
+def _normalizar(f):
+    """Ficha de antes do cartão do time (sem os campos que o catálogo e a busca do Vegapunk leem)."""
+    f.setdefault('solucao', SOLUCAO)
+    f.setdefault('artigo', f.get('titulo') or f.get('nome') or '')
+    f.setdefault('titulo', f['artigo'])
+    f.setdefault('categoria', 'Indicadores' if f.get('tipo') == 'indicador' else '')
+    f.setdefault('secao', '')
+    f.setdefault('versao', 1)
+    f.setdefault('status', 'rascunho')
+    conf = f.get('conferencia')
+    if conf and 'situacao' in conf:
+        conf['ok'] = conf['situacao'] == 'ok'
+    return f
 
 
 def indicadores(pasta):
@@ -185,7 +214,7 @@ def indicadores(pasta):
 
 
 def _texto_do_save(pasta, ref):
-    arq = os.path.join(pasta, SECAO, 'saves', ref, 'README.md')
+    arq = os.path.join(_base(pasta), ref, 'README.md')
     if not os.path.exists(arq):
         return ''
     with open(arq, encoding='utf-8') as f:
@@ -248,7 +277,7 @@ def _medidas_reais(modelo):
 
 def avisos_do_modelo(pasta, modelo):
     """Para o `validar`: medida com o nome de um indicador do cartão, mas com outra definição."""
-    if not pasta or not os.path.isdir(os.path.join(pasta, SECAO, 'saves')):
+    if not pasta or not os.path.isdir(_base(pasta)):
         return []
     lib = indicadores(pasta)
     out = []
@@ -416,7 +445,7 @@ def gravar(pasta, plano, por, caminho_argila, artefatos):
         raise ValueError('\n'.join(plano['bloqueios'] + plano['erros']))
     hoje = _agora()
     ref, atual = plano['ref'], plano['atual'] or {}
-    dsave = os.path.join(pasta, SECAO, 'saves', *ref.split('/'))
+    dsave = os.path.join(_base(pasta), *ref.split('/'))
     os.makedirs(dsave, exist_ok=True)
     corpo = plano['texto'] or _corpo_existente(pasta, ref) or ''
     hist = list(atual.get('historico', []))
@@ -427,7 +456,8 @@ def gravar(pasta, plano, por, caminho_argila, artefatos):
     rel_inds = [i['ref'] for i in plano['indicadores']]
     rels = list(dict.fromkeys(list(atual.get('relacionados', [])) + plano['relacionados'] + rel_inds))
     aprov = plano['aprovacao']
-    ficha = {'tipo': 'painel', 'titulo': plano['titulo'], 'categoria': plano['categoria'], 'secao': plano['secao'],
+    ficha = {'tipo': 'painel', 'solucao': SOLUCAO, 'titulo': plano['titulo'], 'artigo': plano['titulo'],
+             'categoria': plano['categoria'], 'secao': plano['secao'],
              'descricao': plano['descricao'], 'versao': plano['versao'], 'status': plano['status'],
              'versao_painel': plano['retrato'].get('versao') or '', 'aprovado_por': aprov.get('aprovado_por'),
              'aprovado_em': aprov.get('em'), 'salvo_por': por, 'salvo_em': hoje,
@@ -454,20 +484,21 @@ def gravar(pasta, plano, por, caminho_argila, artefatos):
 
 
 def _gravar_indicador(pasta, i, ref_painel, titulo_painel, por, motivo, hoje):
-    dind = os.path.join(pasta, SECAO, 'saves', *i['ref'].split('/'))
+    dind = os.path.join(_base(pasta), *i['ref'].split('/'))
     os.makedirs(dind, exist_ok=True)
     arq = os.path.join(dind, 'ficha.json')
     atual = ler_json(arq) if os.path.exists(arq) else None
     reg = i['registro']
     if atual is None:
-        ficha = {'tipo': 'indicador', 'titulo': reg['nome'], 'nome': reg['nome'], 'categoria': 'Indicadores',
+        ficha = {'tipo': 'indicador', 'solucao': SOLUCAO, 'titulo': reg['nome'], 'artigo': reg['nome'],
+                 'nome': reg['nome'], 'categoria': 'Indicadores',
                  'secao': reg['pasta'], 'descricao': reg['descricao'], 'versao': 1, 'status': 'rascunho',
                  **{k: reg[k] for k in ('dax', 'formato', 'polaridade', 'meta', 'especificacao')},
                  'relacionados': [ref_painel],
                  'historico': [{'versao': 1, 'em': hoje, 'por': por, 'motivo': f'criado em {titulo_painel}',
                                 'mudancas': ['criado']}]}
     else:
-        ficha = dict(atual)
+        ficha = _normalizar(dict(atual))
         ficha['relacionados'] = list(dict.fromkeys(atual.get('relacionados', []) + [ref_painel]))
         if i['mudancas']:
             ficha.update({'descricao': reg['descricao'],
@@ -485,13 +516,13 @@ def _reescrever_readme(pasta, ref, ficha, corpo=None):
     corpo = corpo if corpo is not None else (_corpo_existente(pasta, ref) or '')
     artefatos = [] if ficha['tipo'] == 'indicador' else [n for n in ('argila.json', 'dicionario_indicadores.md',
                                                                       'prototipo.html')
-                                                         if os.path.exists(os.path.join(pasta, SECAO, 'saves', ref, n))]
-    gravar_texto(os.path.join(pasta, SECAO, 'saves', *ref.split('/'), 'README.md'),
+                                                         if os.path.exists(os.path.join(_base(pasta), ref, n))]
+    gravar_texto(os.path.join(_base(pasta), *ref.split('/'), 'README.md'),
                  _readme(ficha, corpo, [(r, titulos.get(r, r)) for r in ficha.get('relacionados', [])], artefatos))
 
 
 def _ligar_de_volta(pasta, ref, outro, titulo):
-    arq = os.path.join(pasta, SECAO, 'saves', *ref.split('/'), 'ficha.json')
+    arq = os.path.join(_base(pasta), *ref.split('/'), 'ficha.json')
     f = ler_json(arq)
     if outro not in f.get('relacionados', []):
         f['relacionados'] = f.get('relacionados', []) + [outro]
@@ -502,10 +533,10 @@ def _ligar_de_volta(pasta, ref, outro, titulo):
 def marcar(pasta, ref, status, por, motivo=None):
     if not re.fullmatch(r'[a-z0-9-]+(/[a-z0-9-]+)+', ref or ''):
         raise ValueError(f'"{ref}" não é uma referência do cartão (categoria/secao/artigo; veja `memory-card catalogo`)')
-    arq =os.path.join(pasta, SECAO, 'saves', *ref.split('/'), 'ficha.json')
+    arq =os.path.join(_base(pasta), *ref.split('/'), 'ficha.json')
     if not os.path.exists(arq):
         raise ValueError(f'{ref} não existe no cartão (veja `memory-card catalogo`)')
-    f = ler_json(arq)
+    f = _normalizar(ler_json(arq))
     validos = STATUS_INDICADOR if f['tipo'] == 'indicador' else STATUS
     if status not in validos:
         raise ValueError(f'status válidos para {f["tipo"]}: {", ".join(validos)}')
@@ -523,33 +554,101 @@ def marcar(pasta, ref, status, por, motivo=None):
     return _commit(pasta, f'{f["titulo"]}: {status}' + (f' ({motivo})' if motivo else ''))
 
 
+def _fichas_do_cartao(pasta):
+    """As fichas de TODAS as soluções do cartão (com `ref` relativa a saves/), na ordem do catálogo do Vegapunk."""
+    fichas = []
+    raiz = os.path.join(pasta, SAVES)
+    for d, _, arqs in os.walk(raiz):
+        if 'ficha.json' in arqs:
+            f = ler_json(os.path.join(d, 'ficha.json'))
+            ref = os.path.relpath(d, raiz).replace(os.sep, '/')
+            if ref.split('/')[0] == SECAO:
+                _normalizar(f)
+            f.setdefault('solucao', 'Vegapunk')          # save antigo do Vegapunk, de antes do nível da solução
+            for k in ('categoria', 'secao', 'artigo'):
+                f.setdefault(k, '')
+            f.setdefault('versao', 1)
+            f.setdefault('status', 'rascunho')
+            f['ref'] = ref
+            fichas.append(f)
+    return sorted(fichas, key=lambda x: (x['solucao'].lower(), x['categoria'].lower(), x['secao'].lower(),
+                                         x['artigo'].lower()))
+
+
+def catalogo_md(fichas):
+    """O CATALOGO.md da raiz, no MESMO formato do Vegapunk (satelites/memory_card.py, gerar_catalogo_md): quem enviar
+    por último, Deidara ou Vegapunk, gera o mesmo arquivo, sem um desfazer o do outro."""
+    linhas = ['# Catálogo', '', 'Gerado pelo envio. Não edite à mão.', '']
+    sol = cat = sec = None
+    for f in fichas:
+        if linhas[-1] and (f['solucao'] != sol or f['categoria'] != cat or f['secao'] != sec):
+            linhas.append('')
+        if f['solucao'] != sol:
+            sol, cat, sec = f['solucao'], None, None
+            linhas += [f'## {sol}', '']
+        if f['categoria'] != cat:
+            cat, sec = f['categoria'], None
+            linhas += [f'### {cat}', '']
+        if f['secao'] != sec:
+            sec = f['secao']
+            linhas += [f'#### {sec}', '']
+        desc = f' — {f["descricao"]}' if f.get('descricao') else ''
+        quebrado = ' · **conferir: schema mudou**' if (f.get('conferencia') or {}).get('ok') is False else ''
+        linhas.append(f'- [{f["artigo"]}]({SAVES}/{f["ref"]}/){desc} · v{f["versao"]} · {f["status"]}{quebrado}')
+    por_tabela = {}
+    for f in fichas:
+        for t in f.get('tabelas', []):
+            por_tabela.setdefault(t, []).append(f)
+    if por_tabela:
+        linhas += ['', '## Por tabela', '']
+        for t in sorted(por_tabela):
+            linhas.append(f'- `{t}`: ' + ', '.join(f'[{f["artigo"]}]({SAVES}/{f["ref"]}/)' for f in por_tabela[t]))
+    if len(linhas) > 4:
+        linhas.append('')
+    return '\n'.join(linhas) + '\n'
+
+
 def _catalogo_md(pasta):
-    todos = saves(pasta)
-    pns = [(r, f) for r, f in todos if f.get('tipo') == 'painel']
-    inds = [(r, f) for r, f in todos if f.get('tipo') == 'indicador']
-    linhas = ['# Catálogo do Memory Card', '', 'Gerado pelo Deidara a cada envio. Não edite à mão.', '',
-              '## Painéis', '']
-    cat_atual = None
-    for r, f in sorted(pns, key=lambda x: (x[1]['categoria'], x[1]['secao'], x[1]['titulo'])):
-        if f['categoria'] != cat_atual:
-            cat_atual = f['categoria']
-            linhas += [f'### {cat_atual}', '', '| Seção | Painel | Versão | Status | Aprovado por |', '|---|---|---|---|---|']
-        linhas.append(f'| {f["secao"]} | [{f["titulo"]}](saves/{r}/) | v{f["versao"]} | {f["status"]} | '
-                      f'{f.get("aprovado_por") or "—"} |')
-    linhas += ['', '## Indicadores', '', '| Indicador | Pasta | Versão | Status | Definição |', '|---|---|---|---|---|']
-    for r, f in sorted(inds, key=lambda x: (x[1]['status'] != 'oficial', chave(x[1]['titulo']))):
-        linhas.append(f'| [{f["titulo"]}](saves/{r}/) | {f["secao"]} | v{f["versao"]} | '
-                      f'{"**oficial**" if f["status"] == "oficial" else f["status"]} | '
-                      f'{(f.get("descricao") or "—").replace("|", "/")} |')
-    gravar_texto(os.path.join(pasta, SECAO, 'CATALOGO.md'), '\n'.join(linhas) + '\n')
+    gravar_texto(os.path.join(pasta, 'CATALOGO.md'), catalogo_md(_fichas_do_cartao(pasta)))
 
 
-def atualizar(pasta):
-    """Traz o que as outras pessoas (e soluções) enviaram, antes de ler ou gravar."""
+def atualizar(pasta, repo=None, publico=None):
+    """Traz o que as outras pessoas (e soluções) enviaram, antes de ler ou gravar; um cartão com a seção antiga
+    (deidara/saves/, de antes do cartão do time) vai para saves/deidara/."""
     if os.path.isdir(os.path.join(pasta, '.git')):
         remoto = _git(pasta, 'remote')
         if remoto and remoto.stdout.strip():
             _git(pasta, 'pull', '--ff-only', '--quiet')
+    return _migrar_secao_antiga(pasta, repo, publico)
+
+
+def _migrar_secao_antiga(pasta, repo=None, publico=None):
+    antiga = os.path.join(pasta, SECAO, 'saves')
+    if not os.path.isdir(antiga):
+        return []
+    if os.path.isdir(_base(pasta)) and os.listdir(_base(pasta)):
+        return [f'aviso: o cartão tem {SECAO}/saves/ (antigo) e {SAVES}/{SECAO}/: junte à mão antes de enviar']
+    os.makedirs(os.path.join(pasta, SAVES), exist_ok=True)
+    shutil.move(antiga, _base(pasta))
+    for ref, f in saves(pasta):                       # grava os campos novos (solução, artigo, conferencia.ok)
+        gravar_json(os.path.join(_base(pasta), *ref.split('/'), 'ficha.json'), f)
+    for nome in ('README.md', 'CATALOGO.md'):
+        if os.path.exists(os.path.join(pasta, SECAO, nome)):
+            os.remove(os.path.join(pasta, SECAO, nome))
+    if os.path.isdir(os.path.join(pasta, SECAO)) and not os.listdir(os.path.join(pasta, SECAO)):
+        os.rmdir(os.path.join(pasta, SECAO))
+    _catalogo_md(pasta)
+    r = _commit(pasta, f'Deidara: saves movidos de {SECAO}/saves/ para {SAVES}/{SECAO}/ (cartão do time)', [SECAO],
+                repo, publico)
+    return [f'seção antiga movida para {SAVES}/{SECAO}/: {r}']
+
+
+def _no_git_ou_na_pasta(pasta, caminho):
+    """O git recusa o add de um caminho que não existe e nunca existiu (ex.: saves/deidara/ antes do primeiro save)."""
+    if os.path.exists(os.path.join(pasta, caminho)):
+        return True
+    r = _git(pasta, 'ls-files', '--', caminho)
+    return bool(r and r.stdout.strip())
 
 
 def _privado_ok(repo, publico):
@@ -560,12 +659,15 @@ def _privado_ok(repo, publico):
 
 
 def _commit(pasta, mensagem, extras=(), repo=None, publico=None):
-    """Commit SÓ da seção deidara/ (e de arquivos de raiz criados agora) e push, se houver remoto."""
+    """Commit SÓ de saves/deidara/, do CATALOGO.md (e de arquivos de raiz criados agora) e push, se houver remoto."""
     if not os.path.isdir(os.path.join(pasta, '.git')):
         return 'gravado na pasta (sem git: não versionado)'
     cfg = configuracao() if repo is None else {'repo': repo, 'publico': publico}
-    _git(pasta, 'add', '-A', '--', SECAO, *extras)
-    r = _git(pasta, 'commit', '-q', '-m', mensagem, '--', SECAO, *extras)
+    caminhos = [c for c in (f'{SAVES}/{SECAO}', 'CATALOGO.md', *extras) if _no_git_ou_na_pasta(pasta, c)]
+    if not caminhos:
+        return 'nada a versionar'
+    _git(pasta, 'add', '-A', '--', *caminhos)
+    r = _git(pasta, 'commit', '-q', '-m', mensagem, '--', *caminhos)
     if r is None:
         return 'gravado na pasta (git não encontrado)'
     if r.returncode != 0 and not any(x in (r.stdout + r.stderr) for x in ('nothing to commit', 'no changes added')):
@@ -589,7 +691,7 @@ def conferir(pasta, catalogos_por_fonte, resolver, refs=(), registrar=False, por
     for ref, f in saves(pasta):
         if f.get('tipo') != 'painel' or (refs and ref not in refs):
             continue
-        argila = ler_json(os.path.join(pasta, SECAO, 'saves', *ref.split('/'), 'argila.json'))
+        argila = ler_json(os.path.join(_base(pasta), *ref.split('/'), 'argila.json'))
         faltam = [n for n in (argila.get('fontes') or {}) if n not in catalogos_por_fonte]
         if faltam:
             out[ref] = ('sem catálogo', [f'falta o catálogo da fonte {n} (gere com a receita e o catalogar)'
@@ -604,8 +706,9 @@ def conferir(pasta, catalogos_por_fonte, resolver, refs=(), registrar=False, por
         situacao = 'quebrado' if prob.erros else 'divergente' if detalhes else 'ok'
         out[ref] = (situacao, detalhes)
         if registrar:
-            f['conferencia'] = {'situacao': situacao, 'em': _agora(), 'por': por, 'detalhes': detalhes[:20]}
-            gravar_json(os.path.join(pasta, SECAO, 'saves', *ref.split('/'), 'ficha.json'), f)
+            f['conferencia'] = {'situacao': situacao, 'ok': situacao == 'ok', 'em': _agora(), 'por': por,
+                                'detalhes': detalhes[:20]}
+            gravar_json(os.path.join(_base(pasta), *ref.split('/'), 'ficha.json'), f)
             _reescrever_readme(pasta, ref, f)
     if registrar and out:
         _catalogo_md(pasta)

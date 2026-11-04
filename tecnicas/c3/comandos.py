@@ -13,7 +13,8 @@ from tecnicas.c1 import prototipo
 from tecnicas.c3 import sql
 from tecnicas.c3 import tmdl
 from kibaku_nendo.util import gravar_json, gravar_texto, ident, ler_json
-from tecnicas.comum import (LONGEST_RELATIVO, arquivo_da_aprovacao, carregar_argila, hashes_da_aprovacao, lembrete, mostrar_relatorio)
+from tecnicas.comum import (LONGEST_RELATIVO, arquivo_da_aprovacao, carregar_argila, hashes_da_aprovacao, lembrar_salvar_no_cartao,
+                            lembrete, mostrar_relatorio)
 from tecnicas.bunshin import demo
 from tecnicas.c3 import desktop
 
@@ -89,6 +90,7 @@ def cmd_gerar(a):
         print(f'  1. [Analista] abrir {nome}.pbip no Power BI Desktop e clicar em Atualizar (nenhuma credencial)')
         print('  2. [Analista + gestor] conferir o painel com os números fictícios: layout, cortes e navegação')
         print('  3. [Analista] para o painel real, gerar de novo sem --demo (aí entram as views SQL e a homologação)')
+        lembrar_salvar_no_cartao(a.argila)
         return 0
     passo = 1
     for f in sql.fontes_sql(modelo):
@@ -99,6 +101,7 @@ def cmd_gerar(a):
     print(f'  {passo + 2}. [Analista] Salvar como .pbix e publicar; depois `memory-card enviar ... --status em-uso`')
     lembrete('o .pbix sai do Power BI Desktop: abra o .pbip e use Arquivo > Salvar como (passo "Gerar o .pbix" do '
               'LEIA-ME), depois de preencher o HOMOLOGACAO.md.')
+    lembrar_salvar_no_cartao(a.argila)
     return 0
 
 

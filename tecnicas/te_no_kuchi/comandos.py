@@ -7,6 +7,7 @@ import os
 
 from tecnicas.luneta import catalogo
 from tecnicas import memory_card
+from tecnicas.comum import lembrar_buscar_no_cartao
 from tecnicas import te_no_kuchi as esboco
 from tecnicas.luneta import receitas
 from kibaku_nendo.util import gravar_json, gravar_texto, ler_json
@@ -171,6 +172,7 @@ def cmd_esbocar(a):
               'do gestor e rode de novo com --forcar)')
     print(f'Próximo passo: `deidara.py validar {saida}` e ajuste o esboço com o usuário; com ligação "A CONFIRMAR", '
           'o protótipo já sai (a ligação fica nas pendências) para o gestor reagir cedo.')
+    lembrar_buscar_no_cartao(a.pedido or projeto)
     return 0
 
 

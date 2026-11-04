@@ -146,7 +146,7 @@ Put `"modelo": "faixa-de-kpis"` in `argila.json` (it is what `esbocar` writes) a
 
 ### Memory Card: the team's reports
 
-The card is a private team repository (`memory-card`), and Deidara uses its `deidara/` section. Before creating a KPI, search (`memory-card buscar`); after approval, save (`memory-card enviar`, with a preview and only after your "yes"). A definition marked **official** cannot be rewritten by a report, and `memory-card conferir` warns when a source changes. Source structure never goes to the card. Full guide in [`referencias/memory-card.md`](referencias/memory-card.md).
+The card is a private team repository (`memory-card`), the same one Vegapunk uses: each tool saves under `saves/<solution>/`, Deidara under `saves/deidara/`, with the root `CATALOGO.md` in the same format. Before creating a KPI, search (`memory-card buscar`); after `gerar`, Deidara reminds you to save (`memory-card enviar`, with a preview and only after your "yes"). A definition marked **official** cannot be rewritten by a report, and `memory-card conferir` warns when a source changes. Source structure never goes to the card. Full guide in [`referencias/memory-card.md`](referencias/memory-card.md).
 
 ## How it works inside
 

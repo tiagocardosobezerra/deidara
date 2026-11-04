@@ -13,7 +13,7 @@ from apoio import *  # noqa: E402,F401,F403
 
 
 class TestMemoryCard(unittest.TestCase):
-    """Cartão do time local (sem GitHub); o Deidara usa a seção deidara/ com a estrutura padrão."""
+    """Cartão do time local (sem GitHub); o Deidara grava em saves/deidara/, como o Vegapunk em saves/vegapunk/."""
 
     def setUp(self):
         from tecnicas import memory_card
@@ -46,31 +46,49 @@ class TestMemoryCard(unittest.TestCase):
         _calado(_aprovar_com_prototipo, ['aprovar', self.argila, '--por', 'Ana'])
         return self._enviar('--confirmar')
 
-    def test_estrutura_padrao_na_secao_deidara(self):
-        for x in ('README.md', 'CATALOGO.md', 'saves'):
-            self.assertTrue(os.path.exists(os.path.join(self.cartao, 'deidara', x)), x)
-        self.assertTrue(os.path.exists(os.path.join(self.cartao, 'README.md')))      # cartão novo: raiz criada
-        self.assertFalse(os.path.exists(os.path.join(self.cartao, 'saves')))
-        self.assertEqual((self.mc.NOME_PADRAO, self.mc.SECAO), ('memory-card', 'deidara'))
+    def test_estrutura_do_cartao_do_time(self):
+        for x in ('README.md', 'CATALOGO.md'):
+            self.assertTrue(os.path.exists(os.path.join(self.cartao, x)), x)      # cartão novo: raiz criada
+        self.assertFalse(os.path.exists(os.path.join(self.cartao, 'deidara')))    # a seção antiga não existe mais
+        self._aprovado_e_enviado()
+        self.assertTrue(os.path.isdir(os.path.join(self.cartao, 'saves', 'deidara', 'recursos-humanos', 'turnover')))
+        self.assertEqual((self.mc.NOME_PADRAO, self.mc.SECAO, self.mc.SOLUCAO), ('memory-card', 'deidara', 'Deidara'))
+        ficha = dict(self.mc.saves(self.cartao))['recursos-humanos/turnover/quadro-e-turnover']
+        for k in ('solucao', 'categoria', 'secao', 'artigo', 'versao', 'status'):    # o que o Vegapunk lê
+            self.assertIn(k, ficha)
 
-    def test_convive_com_outra_solucao_no_mesmo_cartao(self):
+    def _cartao_do_vegapunk(self):
+        """Um cartão como o do time: um save do Vegapunk e o README e o CATALOGO.md que ele gerou."""
         import subprocess
         outro = os.path.join(self.dir, 'cartao_do_time')
-        os.makedirs(os.path.join(outro, 'saves', 'rh', 'funcionarios', 'relatorio'))
-        raiz = {'README.md': '# Memory Card\n(de outra solução)\n', 'CATALOGO.md': '# Catálogo da outra solução\n',
-                os.path.join('saves', 'rh', 'funcionarios', 'relatorio', 'ficha.json'): '{"categoria": "RH"}'}
+        save = os.path.join('saves', 'vegapunk', 'recursos-humanos', 'funcionarios', 'pessoas-acima-de-75-anos')
+        os.makedirs(os.path.join(outro, save))
+        ficha = {'categoria': 'Recursos Humanos', 'secao': 'Funcionários', 'artigo': 'Pessoas acima de 75 anos',
+                 'descricao': 'Idade calculada', 'status': 'rascunho', 'versao': 2, 'tabelas': ['PFUNC', 'PPESSOA'],
+                 'relacionados': [], 'historico': [], 'solucao': 'Vegapunk'}
+        raiz = {'README.md': '# Memory Card\n(do Vegapunk)\n', 'CATALOGO.md': '# Catálogo\n',
+                os.path.join(save, 'ficha.json'): json.dumps(ficha, ensure_ascii=False, indent=2) + '\n',
+                os.path.join(save, 'relatorio.sql'): 'SELECT 1\n'}
         for nome, texto in raiz.items():
-            with open(os.path.join(outro, nome), 'w', encoding='utf-8') as f:
+            with open(os.path.join(outro, nome), 'w', encoding='utf-8', newline='\n') as f:
                 f.write(texto)
         for args in (['init', '-q'], ['add', '-A'], ['-c', 'user.name=t', '-c', 'user.email=t@t', 'commit', '-q', '-m', 'outra']):
             subprocess.run(['git', '-C', outro, *args], capture_output=True)
+        return outro, raiz
+
+    def test_convive_com_o_vegapunk_no_mesmo_cartao(self):
+        import subprocess
+        outro, raiz = self._cartao_do_vegapunk()
         with open(os.path.join(outro, 'pendente.txt'), 'w', encoding='utf-8') as f:
             f.write('trabalho em andamento de outra solução')
-        # identidade do git só para o teste (o CI não tem user.name global; sem ela o commit do iniciar falhava)
+        # identidade do git só para o teste (o CI não tem user.name global; sem ela o commit falhava)
         os.environ['GIT_AUTHOR_NAME'] = os.environ['GIT_COMMITTER_NAME'] = 't'
         os.environ['GIT_AUTHOR_EMAIL'] = os.environ['GIT_COMMITTER_EMAIL'] = 't@t'
         try:
-            self.mc.iniciar(None, outro)
+            msgs = self.mc.iniciar(None, outro)
+            self.assertIn('nada foi gravado', ' '.join(msgs))
+            commits = subprocess.run(['git', '-C', outro, 'rev-list', '--count', 'HEAD'], capture_output=True, text=True)
+            self.assertEqual(commits.stdout.strip(), '1')                           # ligar ao cartão não commita nada
             os.environ['DEIDARA_MEMORY_CARD_DIR'] = outro
             codigo, _ = self._aprovado_e_enviado()
         finally:
@@ -78,13 +96,86 @@ class TestMemoryCard(unittest.TestCase):
                 os.environ.pop(k, None)
         self.assertEqual(codigo, 0)
         for nome, texto in raiz.items():
-            with open(os.path.join(outro, nome), encoding='utf-8') as f:
-                self.assertEqual(f.read(), texto, nome)
-        tocados = subprocess.run(['git', '-C', outro, 'log', '--name-only', '--format=', '-n', '2'],
+            if nome != 'CATALOGO.md':
+                with open(os.path.join(outro, nome), encoding='utf-8') as f:
+                    self.assertEqual(f.read(), texto, nome)
+        with open(os.path.join(outro, 'CATALOGO.md'), encoding='utf-8') as f:
+            catalogo = f.read()
+        self.assertIn('## Deidara', catalogo)
+        self.assertIn('## Vegapunk', catalogo)
+        self.assertIn('(saves/vegapunk/recursos-humanos/funcionarios/pessoas-acima-de-75-anos/)', catalogo)
+        tocados = subprocess.run(['git', '-C', outro, 'log', '--name-only', '--format=', '-n', '1'],
                                  capture_output=True, text=True).stdout.split()
-        self.assertTrue(tocados and all(x.startswith('deidara/') for x in tocados), tocados)
+        self.assertTrue(tocados and all(x.startswith('saves/deidara/') or x == 'CATALOGO.md' for x in tocados), tocados)
         status = subprocess.run(['git', '-C', outro, 'status', '--porcelain'], capture_output=True, text=True).stdout
         self.assertIn('pendente.txt', status)                                     # continua só de quem estava fazendo
+
+    def test_catalogo_no_mesmo_formato_do_vegapunk(self):
+        """O CATALOGO.md da raiz sai igual ao que o Vegapunk gera (satelites/memory_card.py, gerar_catalogo_md): quem
+        enviar por último não desfaz o do outro. O texto esperado foi gerado pelo próprio Vegapunk."""
+        fichas = [
+            {'ref': 'vegapunk/rh/func/idosos', 'solucao': 'Vegapunk', 'categoria': 'Recursos Humanos',
+             'secao': 'Funcionários', 'artigo': 'Pessoas acima de 75 anos', 'descricao': 'Idade calculada', 'versao': 2,
+             'status': 'rascunho', 'tabelas': ['PFUNC', 'PPESSOA'], 'conferencia': {'ok': False}},
+            {'ref': 'deidara/indicadores/turnover/turnover', 'solucao': 'Deidara', 'categoria': 'Indicadores',
+             'secao': 'Turnover', 'artigo': 'Turnover', 'versao': 3, 'status': 'oficial',
+             'conferencia': {'situacao': 'ok', 'ok': True}},
+            {'ref': 'deidara/recursos-humanos/turnover/quadro-e-turnover', 'solucao': 'Deidara',
+             'categoria': 'Recursos Humanos', 'secao': 'Turnover', 'artigo': 'Quadro e Turnover', 'descricao': 'Painel',
+             'versao': 1, 'status': 'em-uso'}]
+        fichas.sort(key=lambda x: (x['solucao'].lower(), x['categoria'].lower(), x['secao'].lower(), x['artigo'].lower()))
+        esperado = (
+            '# Catálogo\n\nGerado pelo envio. Não edite à mão.\n\n## Deidara\n\n### Indicadores\n\n#### Turnover\n\n'
+            '- [Turnover](saves/deidara/indicadores/turnover/turnover/) · v3 · oficial\n\n### Recursos Humanos\n\n'
+            '#### Turnover\n\n- [Quadro e Turnover](saves/deidara/recursos-humanos/turnover/quadro-e-turnover/) — Painel '
+            '· v1 · em-uso\n\n## Vegapunk\n\n### Recursos Humanos\n\n#### Funcionários\n\n- [Pessoas acima de 75 anos]'
+            '(saves/vegapunk/rh/func/idosos/) — Idade calculada · v2 · rascunho · **conferir: schema mudou**\n\n'
+            '## Por tabela\n\n- `PFUNC`: [Pessoas acima de 75 anos](saves/vegapunk/rh/func/idosos/)\n'
+            '- `PPESSOA`: [Pessoas acima de 75 anos](saves/vegapunk/rh/func/idosos/)\n\n')
+        self.assertEqual(self.mc.catalogo_md(fichas), esperado)
+
+    def test_secao_antiga_vai_para_saves_deidara(self):
+        self._aprovado_e_enviado()
+        base = os.path.join(self.cartao, 'saves', 'deidara')
+        antiga = os.path.join(self.cartao, 'deidara', 'saves')
+        os.makedirs(os.path.dirname(antiga))
+        shutil.move(base, antiga)                                 # como ficava um cartão de antes do cartão do time
+        arq = os.path.join(antiga, 'recursos-humanos', 'turnover', 'quadro-e-turnover', 'ficha.json')
+        with open(arq, encoding='utf-8') as f:
+            ficha = json.load(f)
+        for k in ('solucao', 'artigo'):
+            ficha.pop(k)
+        with open(arq, 'w', encoding='utf-8') as f:
+            json.dump(ficha, f)
+        msgs = self.mc.atualizar(self.cartao)
+        self.assertTrue(any('movida' in m for m in msgs), msgs)
+        self.assertFalse(os.path.exists(os.path.join(self.cartao, 'deidara')))
+        with open(os.path.join(base, 'recursos-humanos', 'turnover', 'quadro-e-turnover', 'ficha.json'),
+                  encoding='utf-8') as f:
+            ficha = json.load(f)
+        self.assertEqual((ficha['solucao'], ficha['artigo']), ('Deidara', 'Quadro e Turnover'))
+        self.assertEqual(self.mc.atualizar(self.cartao), [])
+
+    def test_lembretes_como_no_vegapunk(self):
+        from tecnicas import comum
+        err = io.StringIO()
+        with redirect_stderr(err):
+            comum.lembrar_salvar_no_cartao('a.json')
+            comum.lembrar_buscar_no_cartao('turnover')
+        self.assertIn('ofereça salvar no Memory Card', err.getvalue())
+        self.assertIn('memory-card buscar turnover', err.getvalue())
+        os.environ['DEIDARA_MEMORY_CARD_DIR'] = os.path.join(self.dir, 'nao-existe')   # cartão de outra máquina
+        err = io.StringIO()
+        with redirect_stderr(err):
+            comum.lembrar_salvar_no_cartao('a.json')
+            comum.lembrar_buscar_no_cartao('turnover')
+        self.assertIn('não funciona aqui', err.getvalue())
+        self.assertNotIn('buscar', err.getvalue())
+        os.environ['DEIDARA_MEMORY_CARD_DIR'] = '-'                                   # sem cartão: nada
+        err = io.StringIO()
+        with redirect_stderr(err):
+            comum.lembrar_salvar_no_cartao('a.json')
+        self.assertEqual(err.getvalue(), '')
 
     def test_enviar_pede_aprovacao_e_previa_nao_grava(self):
         codigo, out = self._enviar()
@@ -93,14 +184,14 @@ class TestMemoryCard(unittest.TestCase):
         _calado(_aprovar_com_prototipo, ['aprovar', self.argila, '--por', 'Ana'])
         codigo, out = self._enviar()
         self.assertEqual(codigo, 0)
-        self.assertIn('saves/recursos-humanos/turnover/quadro-e-turnover', out)
+        self.assertIn('saves/deidara/recursos-humanos/turnover/quadro-e-turnover', out)
         self.assertEqual(self.mc.saves(self.cartao), [])
 
     def test_confirmar_grava_painel_indicadores_e_nunca_os_catalogos(self):
         codigo, _ = self._aprovado_e_enviado()
         self.assertEqual(codigo, 0)
         ref = 'recursos-humanos/turnover/quadro-e-turnover'
-        save = os.path.join(self.cartao, 'deidara', 'saves', *ref.split('/'))
+        save = os.path.join(self.cartao, 'saves', 'deidara', *ref.split('/'))
         for x in ('README.md', 'ficha.json', 'argila.json', 'dicionario_indicadores.md', 'prototipo.html'):
             self.assertTrue(os.path.exists(os.path.join(save, x)), x)
         with open(os.path.join(save, 'README.md'), encoding='utf-8') as f:
@@ -172,7 +263,7 @@ class TestCartaoNoEsboco(unittest.TestCase):
 
     def _cartao(self, status):
         d = tempfile.mkdtemp(prefix='ddmc')
-        pasta = os.path.join(d, 'deidara', 'saves', 'indicadores', 'turnover', 'turnover')
+        pasta = os.path.join(d, 'saves', 'deidara', 'indicadores', 'turnover', 'turnover')
         os.makedirs(pasta)
         esp = {'nome': 'Turnover', 'tipo': 'divisao', 'numerador': 'Desligamentos', 'denominador': 'Headcount',
                'formato': 'percentual', 'polaridade': 'menor_melhor', 'descricao': 'Definição oficial do time.'}

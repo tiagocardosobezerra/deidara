@@ -96,7 +96,7 @@ def cmd_memory_card(a):
             texto = f.read()
     plano = memory_card.planejar(pasta, argila, modelo, aprov, a.categoria, a.secao, a.artigo, a.motivo, texto,
                                  a.relacionado, a.status)
-    print(f'Destino: {memory_card.SECAO}/saves/{plano["ref"]}  (v{plano["versao"]}, {"novo" if plano["novo"] else "versão nova" if plano["mudancas"] else "sem mudança no painel"}, status {plano["status"]})')
+    print(f'Destino: {memory_card.SAVES}/{memory_card.SECAO}/{plano["ref"]}  (v{plano["versao"]}, {"novo" if plano["novo"] else "versão nova" if plano["mudancas"] else "sem mudança no painel"}, status {plano["status"]})')
     for m in plano['mudancas']:
         print(f'  MUDOU  {m}')
     for i in plano['indicadores']:
@@ -125,7 +125,7 @@ def cmd_memory_card(a):
         return 1
     finally:
         shutil.rmtree(tmp, ignore_errors=True)
-    print(f'Salvo em {memory_card.SECAO}/saves/{plano["ref"]}: {resultado}')
+    print(f'Salvo em {memory_card.SAVES}/{memory_card.SECAO}/{plano["ref"]}: {resultado}')
     return 0
 
 

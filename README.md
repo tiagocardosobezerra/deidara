@@ -144,7 +144,7 @@ O que a comunidade de Power BI abriu com licença MIT, dentro do Deidara em [`te
 
 ### Memory Card: os painéis do time
 
-O cartão é um repositório privado do time (`memory-card`), e o Deidara usa a seção `deidara/`. Antes de criar um indicador, procure (`memory-card buscar`); depois de aprovar, salve (`memory-card enviar`, com prévia e só com o seu "sim"). Uma definição marcada como **oficial** não é reescrita por um painel, e `memory-card conferir` avisa quando uma fonte muda. A estrutura das fontes nunca vai para o cartão. Guia completo em [`referencias/memory-card.md`](referencias/memory-card.md).
+O cartão é um repositório privado do time (`memory-card`), o mesmo do Vegapunk: cada solução grava em `saves/<solucao>/`, e o Deidara em `saves/deidara/`, com o `CATALOGO.md` da raiz no mesmo formato. Antes de criar um indicador, procure (`memory-card buscar`); depois do `gerar`, o Deidara lembra de salvar (`memory-card enviar`, com prévia e só com o seu "sim"). Uma definição marcada como **oficial** não é reescrita por um painel, e `memory-card conferir` avisa quando uma fonte muda. A estrutura das fontes nunca vai para o cartão. Guia completo em [`referencias/memory-card.md`](referencias/memory-card.md).
 
 ## Como funciona por dentro
 

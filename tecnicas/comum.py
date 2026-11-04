@@ -144,11 +144,40 @@ def cartao_ativo():
     cfg = memory_card.configuracao()
     if not cfg.get('pasta') or not os.path.isdir(cfg['pasta']):
         raise SystemExit('Memory Card não configurado nesta máquina: rode `deidara.py memory-card iniciar --repo '
-                         f'DONO/{memory_card.NOME_PADRAO}` (o cartão do time; o Deidara usa a seção '
-                         f'{memory_card.SECAO}/; precisa do `gh` autenticado e do `git`). Numa sandbox sem '
-                         'o `gh` (como o claude.ai), o cartão não funciona: diga isso ao usuário.')
-    memory_card.atualizar(cfg['pasta'])
+                         f'DONO/{memory_card.NOME_PADRAO}` (o cartão do time, o mesmo do Vegapunk; o Deidara grava em '
+                         f'{memory_card.SAVES}/{memory_card.SECAO}/; precisa do `gh` autenticado e do `git`). Numa '
+                         'sandbox sem o `gh` (como o claude.ai), o cartão não funciona: diga isso ao usuário.')
+    for m in memory_card.atualizar(cfg['pasta']):
+        print(m)
     return cfg['pasta']
+
+
+# ---------------------------------------------- lembretes do Memory Card (os mesmos do Vegapunk)
+def lembrar_salvar_no_cartao(argila):
+    """Fim do fluxo (o `gerar`): o painel aprovado vai para o cartão, com o "sim" do usuário."""
+    cfg = memory_card.configuracao()
+    if memory_card.funciona_aqui(cfg):
+        lembrete(f'painel gerado e aprovado: ofereça salvar no Memory Card do time (`deidara.py memory-card enviar '
+                 f'{argila} --categoria "<área>" --secao "<assunto>"`: prévia primeiro, `--confirmar` só com o "sim"; '
+                 'com o painel publicado, `--status em-uso`).')
+    elif cfg:
+        lembrete('o Memory Card configurado não funciona aqui (falta a pasta do cartão ou o `gh`: é outra máquina, '
+                 'como o claude.ai). Não tente enviar nem configurar (`iniciar`): entregue o argila.json e o projeto, e '
+                 'diga que salvar no cartão é pelo Claude Code na máquina do cartão.')
+
+
+def lembrar_buscar_no_cartao(pedido):
+    """Começo do fluxo (o `esbocar`): o cartão pode já ter o painel ou os indicadores."""
+    if memory_card.funciona_aqui():
+        lembrete('antes de seguir com um painel novo, veja se o Memory Card já tem um parecido: '
+                 f'`deidara.py memory-card buscar {pedido or "<assunto>"}` (se servir, ofereça reaproveitar).')
+
+
+def lembrar_conferir_cartao(catalogo):
+    """A fonte mudou (o `catalogar`): os painéis salvos podem usar coluna que sumiu."""
+    if memory_card.funciona_aqui():
+        lembrete(f'catálogo atualizado: rode `deidara.py memory-card conferir --catalogos {catalogo} <os outros>` para '
+                 'ver se algum painel salvo usa tabela, coluna ou ligação que sumiu.')
 
 
 def resumo_do_modelo(m):

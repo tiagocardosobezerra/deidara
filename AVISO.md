@@ -35,8 +35,8 @@ de nascimento, nome numa tabela de pessoas) com cuidado:
 - o esboço nunca usa uma delas como rótulo de um gráfico;
 - o `validar` avisa quando uma delas entra no modelo sem ser usada em nenhum
   visual (LGPD: só o necessário);
-- o Memory Card mostra uma prévia antes de gravar, só versiona a seção
-  `deidara/`, não envia para um cartão que não esteja privado, e os catálogos
+- o Memory Card mostra uma prévia antes de gravar, só versiona
+  `saves/deidara/` e o `CATALOGO.md` da raiz, não envia para um cartão que não esteja privado, e os catálogos
   das fontes nunca vão para ele.
 
 Mesmo assim, quem decide o que o painel mostra e para quem é o time, com a
