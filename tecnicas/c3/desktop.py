@@ -123,7 +123,7 @@ def conferir(medidas, calendario=None, porta=None, atualizar=False, pasta_tmp=No
     inst = [i for i in base['instancias'] if not porta or str(i['porta']) == str(porta)]
     if len(inst) > 1 and pasta_tmp:                  # o Desktop aberto num projeto dentro da pasta do argila.json
         dentro = [i for i in inst if i.get('arquivo') and
-                  os.path.normcase(os.path.abspath(i['arquivo'])).startswith(os.path.normcase(pasta_tmp) + os.sep)]
+                  os.path.normcase(os.path.abspath(i['arquivo'])).startswith(os.path.normcase(os.path.abspath(pasta_tmp)) + os.sep)]
         inst = dentro if len(dentro) == 1 else inst
     if not inst:
         return {'erro': 'nenhum Power BI Desktop aberto' if not base['instancias'] else
