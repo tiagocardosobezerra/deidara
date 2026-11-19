@@ -1,20 +1,43 @@
-# Deidara
+<a href="https://tiagocardosobezerra.github.io/deidara/"><img width="100%" alt="Deidara: first the sculpture, then the explosion. Describe the dashboard in plain words; the manager approves the prototype and, after the yes, the full Power BI project comes out: Painel.pbip, TMDL, PBIR, SQL views and HOMOLOGACAO.md." src="assets/readme/hero.en.svg" /></a>
 
-[Português](README.md) | **English**
+<p align="center">
+  <a href="https://tiagocardosobezerra.github.io/deidara/"><strong>Project site</strong> (pt-BR)</a> ·
+  <a href="https://tiagocardosobezerra.github.io/deidara/prototipos/faixa-de-kpis.html"><strong>Open a prototype</strong></a> ·
+  <a href="#get-started-in-3-steps"><strong>Install</strong></a> ·
+  <a href="#results"><strong>Results</strong></a>
+</p>
 
-**Describe the report in plain language. Get a prototype for the manager to approve and, after the "yes", the complete Power BI project.**
+<p align="center">
+  <a href="README.md">Português</a> · <strong>English</strong>
+</p>
 
-![Python 3.8+](https://img.shields.io/badge/python-3.8%2B-3776AB?style=flat-square&logo=python&logoColor=white)
-![No dependencies](https://img.shields.io/badge/dependencies-none-2ea44f?style=flat-square)
-![Power BI .pbip](https://img.shields.io/badge/Power%20BI-.pbip%20(TMDL%20%2B%20PBIR)-F2C811?style=flat-square&logo=powerbi&logoColor=black)
-[![Tests](https://github.com/tiagocardosobezerra/deidara/actions/workflows/testes.yml/badge.svg)](https://github.com/tiagocardosobezerra/deidara/actions/workflows/testes.yml)
-![MIT](https://img.shields.io/badge/license-MIT-blue?style=flat-square)
+<p align="center">
+  <img alt="Version 0.33.0" src="https://img.shields.io/badge/version-0.33.0-F59E0B?style=flat-square" />
+  <img alt="Claude Code skill" src="https://img.shields.io/badge/Claude%20Code-skill-d97757?style=flat-square" />
+  <img alt="Power BI .pbip" src="https://img.shields.io/badge/Power%20BI-.pbip%20(TMDL%20%2B%20PBIR)-F2C811?style=flat-square&logo=powerbi&logoColor=black" />
+  <img alt="Python 3.8+" src="https://img.shields.io/badge/python-3.8%2B-3776AB?style=flat-square&logo=python&logoColor=white" />
+  <img alt="No dependencies" src="https://img.shields.io/badge/dependencies-none-2ea44f?style=flat-square" />
+  <a href="https://github.com/tiagocardosobezerra/deidara/actions/workflows/testes.yml"><img alt="Tests" src="https://github.com/tiagocardosobezerra/deidara/actions/workflows/testes.yml/badge.svg" /></a>
+  <img alt="MIT license" src="https://img.shields.io/badge/license-MIT-blue?style=flat-square" />
+</p>
 
-<img width="100%" alt="Deidara: from request to Power BI report, with an approved prototype before the project" src="assets/deidara-banner-en-animado.svg" />
-
-Deidara is a Claude Code skill for KPI and reporting teams. It turns a request ("turnover by reason and role, with a target per company") into a real Power BI report without connecting to any source and without guessing any name: someone with access to the data runs a **recipe** (a SQL, DAX or Power Query query), pastes the result, and only the **structure** comes back. The manager approves a prototype with fictional numbers before anything goes to production.
+**Deidara** is a free [Claude Code](https://claude.com/claude-code) skill for KPI and reporting teams. It turns a request ("turnover by reason and role, with a target per company") into a real Power BI report without connecting to any source and without guessing any name: someone with access to the data runs a **recipe** (a SQL, DAX or Power Query query), pastes the result, and only the **structure** comes back. The manager approves a prototype with fictional numbers before anything goes to production.
 
 > Deidara speaks Brazilian Portuguese: commands, messages, the prototype and the generated documentation are in pt-BR (`dd/MM/yyyy`, `1.234.567,89`). The command names below are the real ones.
+
+<table>
+  <tr>
+    <td align="center" width="20%"><h3>0</h3><sub>data rows in the recipes: only the structure comes back</sub></td>
+    <td align="center" width="20%"><h3>11</h3><sub>layout templates, from prototype to <code>.pbip</code></sub></td>
+    <td align="center" width="20%"><h3>1,134</h3><sub>DAX and Power Query functions in the dictionary</sub></td>
+    <td align="center" width="20%"><h3>143 of 143</h3><sub>project files checked against Microsoft's official format</sub></td>
+    <td align="center" width="20%"><h3>289</h3><sub>automated tests passing</sub></td>
+  </tr>
+</table>
+
+## In 48 seconds
+
+<img width="100%" alt="Deidara: from request to Power BI report, with an approved prototype before the project" src="assets/deidara-banner-en-animado.svg" />
 
 ## What it does for you
 
@@ -23,8 +46,8 @@ Deidara is a Claude Code skill for KPI and reporting teams. It turns a request (
 * **Suggests relationships, never creates them on its own.** When tables are not related, it suggests a link with the evidence (name, key, type, synonyms) and measures the candidate at the source with a proof recipe that only returns percentages. A person confirms it.
 * **Never guesses names or functions.** Every name comes from the source catalog; every DAX function, from the dictionary. `validar` rejects anything else and says what exists: similar measures, catalog columns missing from the model and the exact snippet to add.
 * **Understands real KPIs.** Headcount is a stock at a date, not a count of records; turnover uses the average headcount; targets have polarity and color. It warns when a slicer does not filter a measure or shows the current value instead of the historical one.
-* **Eleven layout templates from award-winning dashboards, with their formatting.** Page rail, KPI strip or column, scrolling sections, clickable KPIs, a long story page, executive, central map, root cause, side table and teams: Deidara draws each page's background (panels, title, navigation) and places native visuals on top, in the prototype and in the `.pbip` (`deidara.py modelos`).
-* **Designs with intent.** Layouts that start from the decision, color with meaning and checked contrast, native visual techniques (`deidara.py visuais`) and the bar-versus-target inside the table, generated as an SVG measure that follows every rule.
+* **Eleven layout templates from the Power BI Design Files dashboards, with their formatting.** Page rail, KPI strip or column, scrolling sections, clickable KPIs, a long story page, executive, central map, root cause, side table and teams: Deidara draws each page's background (panels, title, navigation) and places native visuals on top, in the prototype and in the `.pbip` (`deidara.py modelos`).
+* **Designs with intent.** Layouts that start from the decision, color with meaning and checked contrast, native visual techniques (`deidara.py visuais`) and the bar-versus-target inside the table, generated as an SVG measure that follows every rule. 53 techniques are cataloged, 44 with native visuals.
 * **Shows before it builds.** The HTML prototype has consistent fictional numbers, an ⓘ on every visual explaining the number and a "Para aprovar" (for approval) tab with a checklist, comments and an approval summary with a code.
 * **Delivers ready for sign-off.** A `.pbip` project (opens in Power BI Desktop, which saves it as `.pbix`), SQL views, total reconciliation (including headcount at each month end), data quality checks, a sign-off sheet and a KPI dictionary.
 * **Keeps what the team approves on the Memory Card.** Each report and KPI is saved with a version, the reason for each change and the official definition, in a team repository.
@@ -41,24 +64,37 @@ Deidara is a Claude Code skill for KPI and reporting teams. It turns a request (
 
 No "I think the column is called HIRE_DATE". If the name did not come from the catalog, it does not go into the report.
 
+## Eleven layout templates
+
+<a href="https://tiagocardosobezerra.github.io/deidara/#modelos"><img width="100%" alt="Deidara's eleven layout templates, one by one: faixa-de-kpis, coluna-de-kpis, secoes-com-rolagem, trilho-escuro, kpis-clicaveis, historia-longa, executivo, mapa-central, causa-raiz, tabela-lateral and equipes." src="assets/readme/modelos.en.svg" /></a>
+
+One line in `argila.json` (`"modelo": "executivo"`) switches the template, in the prototype and in the `.pbip`. On the [project site](https://tiagocardosobezerra.github.io/deidara/#modelos) you can open and click through each one.
+
 ## Results
 
-Measured on the repository example (a fictional ERP on SQL Server and a targets spreadsheet in Excel).
+<img width="100%" alt="Measured, not promised: 289 tests passing; 143 of 143 project JSON files checked against Microsoft's schemas; 467 DAX and 667 Power Query functions; 30 KPI patterns; 53 visual techniques, 44 native; 11 layout templates; 158 Deneb templates and 66 daxlib packages in the gallery; 0 data rows in the recipes." src="assets/readme/resultados.en.svg" />
+
+<details>
+<summary><strong>The results as text</strong></summary>
+
+Measured on version 0.33.0, on the repository example and showcase (a fictional ERP on SQL Server and a targets spreadsheet in Excel).
 
 | What | Result |
 |---|---|
-| Automated tests | **117 passing** |
-| JSON files of the generated project checked against Microsoft's official schemas | **24 of 24** |
-| Tutorial, from scratch to project, run command by command | **15 minutes** |
-| Functions in the dictionary (DAX / Power Query) | **462 / 667** |
-| Ready-made KPI patterns (rate, stock, year-to-date, full turnover...) | **17** |
-| Cataloged visual techniques (target in a table, ranking, root cause, status...) | **46**: 41 generated ready to use (3 with an AppSource visual) and 5 custom visuals described (Chord, Word Cloud, Violin Plot, Gantt, Play Axis) |
+| Automated tests | **289 passing** |
+| JSON files of the generated project (showcase) checked against Microsoft's official schemas | **143 of 143** |
+| Functions in the dictionary (DAX / Power Query) | **467 / 667** |
+| Ready-made KPI patterns (rate, stock, year-to-date, full turnover...) | **30** |
+| Cataloged visual techniques (target in a table, ranking, root cause, status...) | **53**, 44 with native visuals and 9 with a described custom visual |
 | Layout templates, from prototype to `.pbip` | **11** |
+| Community gallery (MIT) | **158** Deneb templates and **66** daxlib packages |
 | Data rows returned by the recipes | **0** |
+
+</details>
 
 ## Get started in 3 steps
 
-You need Python 3.8+ (standard library only, nothing to install) and Power BI Desktop to open the generated project. Commands run **from the skill folder**; on Windows, use `python` (or `py`) instead of `python3` if that is your setup.
+You need Claude Code (with a Claude account that includes it), Python 3.8+ (standard library only, nothing to install) and Power BI Desktop to open the generated project. Commands run **from the skill folder**; on Windows, use `python` (or `py`) instead of `python3` if that is your setup.
 
 ### 1. Install
 
@@ -110,7 +146,7 @@ With no arguments, `python3 deidara.py` shows the full walkthrough.
 
 | Output | What for |
 |---|---|
-| `Report.pbip` + `.SemanticModel` (TMDL) + `.Report` (PBIR) | opens in Power BI Desktop, which saves it as `.pbix` |
+| `Painel.pbip` + `.SemanticModel` (TMDL) + `.Report` (PBIR) | opens in Power BI Desktop, which saves it as `.pbix` |
 | `sql/<source>/01_views.sql` | a view layer (`bi.vw_*`) for SQL Server sources |
 | `sql/<source>/02_conferencia.sql` | each KPI's total in the database (overall, per year and stock per month end) |
 | `sql/<source>/03_qualidade.sql` | duplicate keys, orphans and dates outside the calendar (all must be zero) |
@@ -126,7 +162,7 @@ Sources other than SQL Server (Excel, SharePoint, APIs...) come in through **the
 
 ### Function dictionary and KPI patterns
 
-462 DAX and 667 Power Query functions, with category, signature and a link to the official documentation; the most used ones with a description and KPI usage in Portuguese (`deidara.py funcoes buscar "ano anterior"`). Patterns say how and where to build each KPI: measure, visual calculation, calculation group, Power Query or SQL view (`deidara.py padroes`). Guide in [`referencias/metricas.md`](referencias/metricas.md).
+467 DAX and 667 Power Query functions, with category, signature and a link to the official documentation; the most used ones with a description and KPI usage in Portuguese (`deidara.py funcoes buscar "ano anterior"`). Patterns say how and where to build each KPI: measure, visual calculation, calculation group, Power Query or SQL view (`deidara.py padroes`). Guide in [`referencias/metricas.md`](referencias/metricas.md).
 
 ### Design and visuals
 
@@ -205,9 +241,10 @@ deidara/
 ├── referencias/           # Guides: flow, sources, discovery, argila.json, metrics, design, SVG, Memory Card, Power BI and tutorial
 ├── exemplos/aurora/       # Complete fictional example, from pasted result to generated project
 ├── exemplos/legado/       # Old report with deliberate flaws, for C0
-├── terceiros/             # Community MIT sources (Deneb, daxlib, Bravo), with license and origin
+├── terceiros/             # Community MIT sources (Deneb, daxlib, Bravo, Power BI Design Files), with license and origin
 ├── ferramentas/           # .pbip validator, skill packager and free-text topic grouper
-├── assets/                # README images
+├── assets/                # README images (the assets/readme/ animations come from ferramentas/gerar_svgs_readme.py)
+├── docs/                  # Project site (GitHub Pages), with the example prototypes
 └── testes/                # Test suite
 ```
 
@@ -215,7 +252,7 @@ deidara/
 
 **Creator:** Tiago Cardoso Bezerra | [tiagocardosobezerra](https://github.com/tiagocardosobezerra)
 
-Named after Deidara, the Naruto artist who shapes clay and makes it explode: here, the clay is the report specification, the sculpture is the prototype and the explosion is the complete project, only after the "yes".
+Named after Deidara, the Naruto artist who shapes clay and makes it explode: here, the clay is the report specification, the sculpture is the prototype and the explosion is the complete project, only after the "yes". Naruto and its character names belong to Masashi Kishimoto and Shueisha; Deidara is a fan project with no affiliation. Power BI is a Microsoft trademark; this project is not affiliated with Microsoft.
 
 Function names, categories, signatures and links in the dictionary come from Microsoft's official reference (Microsoft Learn); the Portuguese descriptions and usage notes were written for Deidara.
 
@@ -228,7 +265,7 @@ Function names, categories, signatures and links in the dictionary come from Mic
 
 ## Third-party data notice
 
-This repository ships only the engine and a fictional example: no metadata from any real system. By cataloging your sources, you confirm you have legitimate access to them and agree to keep catalogs and approvals out of public repositories. Details in [`AVISO.md`](AVISO.md).
+This repository ships only the engine and a fictional example: no metadata from any real system. By cataloging your sources, you confirm you have legitimate access to them and agree to keep catalogs and approvals out of public repositories. The table, column and measure names you paste go into the conversation with Claude: if those names are sensitive, follow your company's AI usage policy. Details in [`AVISO.md`](AVISO.md).
 
 ## License
 
@@ -236,4 +273,4 @@ MIT License, see [LICENSE](LICENSE) for details.
 
 ---
 
-<p align="center"><strong>Deidara</strong>, sculpture first. then, the explosion.</p>
+<p align="center"><strong>Deidara</strong>, sculpture first, then the explosion. · <a href="https://tiagocardosobezerra.github.io/deidara/">Project site</a></p>

@@ -20,7 +20,7 @@ import sys
 import zipfile
 
 RAIZ = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-PASTAS_FORA = {'.git', '.github', '__pycache__', 'local', 'saida', '.pbi', 'assets', '.claude', 'schemas', 'roteiros'}
+PASTAS_FORA = {'.git', '.github', '__pycache__', 'local', 'saida', '.pbi', 'assets', '.claude', 'schemas', 'roteiros', 'docs'}
 ARQUIVOS_FORA = {'.gitignore', '.gitattributes', 'README.en.md', 'ruff.toml'}
 # vitrines grandes da galeria ficam no repositório (a galeria mostra só o que está instalado); no pacote vão as
 # funções DAX, os modelos Deneb prontos e o calendário

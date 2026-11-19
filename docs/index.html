@@ -1,0 +1,926 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Deidara · do pedido ao painel Power BI, com protótipo aprovado antes</title>
+<meta name="description" content="Skill do Claude Code para times de indicadores: descreva o painel em português, o gestor aprova um protótipo com números fictícios e, depois do sim, sai o projeto Power BI (.pbip) completo. Sem acessar dados e sem adivinhar nomes.">
+<meta property="og:title" content="Deidara · primeiro a escultura, depois a explosão">
+<meta property="og:description" content="Descreva o painel em português. O gestor aprova o protótipo e, depois do sim, sai o projeto Power BI completo: modelo, medidas DAX, views SQL e homologação.">
+<meta property="og:image" content="https://tiagocardosobezerra.github.io/deidara/img/og.png">
+<meta property="og:url" content="https://tiagocardosobezerra.github.io/deidara/">
+<meta property="og:type" content="website">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="theme-color" content="#0B1220">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='8' fill='%230B1220'/%3E%3Cpath d='M16 4l2.6 8.2L27 9.5l-6 6.5 6 6.5-8.4-2.7L16 28l-2.6-8.2L5 22.5l6-6.5-6-6.5 8.4 2.7z' fill='%23F59E0B'/%3E%3Ccircle cx='16' cy='16' r='3.4' fill='%230B1220'/%3E%3C/svg%3E">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;700&family=Poppins:wght@600;700;800&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#0B1220; --bg2:#0E1729; --panel:#111A2E; --surface:#16213A; --surface2:#1E2A44; --line:#243049; --line2:#334155;
+  --ink:#F1F5F9; --ink2:#E2E8F0; --muted:#A7B3C6; --faint:#7B889E;
+  --amber:#F59E0B; --amber2:#B45309; --orange:#FB923C; --red:#F87171; --green:#34D399; --blue:#60A5FA;
+  --hd:'Poppins',system-ui,sans-serif; --tx:'Inter',system-ui,-apple-system,'Segoe UI',Roboto,sans-serif; --mono:'JetBrains Mono',ui-monospace,Consolas,monospace;
+  --w:1180px; --g:24px;
+}
+*{box-sizing:border-box}
+html{scroll-behavior:smooth;scroll-padding-top:76px}
+body{margin:0;background:var(--bg);color:var(--ink);font:16px/1.6 var(--tx);-webkit-font-smoothing:antialiased;overflow-x:hidden}
+body::before{content:"";position:fixed;inset:0;z-index:-1;pointer-events:none;
+  background-image:linear-gradient(rgba(148,163,184,.045) 1px,transparent 1px),linear-gradient(90deg,rgba(148,163,184,.045) 1px,transparent 1px);
+  background-size:40px 40px;mask-image:radial-gradient(ellipse at 50% 0%,#000 30%,transparent 80%);-webkit-mask-image:radial-gradient(ellipse at 50% 0%,#000 30%,transparent 80%)}
+img{max-width:100%;display:block}
+a{color:var(--amber);text-decoration:none}
+a:hover{text-decoration:underline;text-underline-offset:3px}
+:focus-visible{outline:2px solid var(--amber);outline-offset:3px;border-radius:6px}
+code,kbd,pre{font-family:var(--mono);font-variant-ligatures:none}
+.wrap{max-width:var(--w);margin:0 auto;padding:0 var(--g)}
+.kicker{display:inline-flex;align-items:center;gap:8px;font:600 12px/1 var(--mono);letter-spacing:1.4px;text-transform:uppercase;color:var(--amber)}
+.kicker::before{content:"";width:18px;height:2px;background:currentColor;border-radius:2px}
+h1,h2,h3{margin:0;line-height:1.12}
+h2{font:700 clamp(30px,4vw,46px)/1.1 var(--hd);letter-spacing:-.6px;margin:14px 0 16px}
+h3{font:600 18px/1.3 var(--tx)}
+p{margin:0}
+.lead{font-size:clamp(17px,1.6vw,19px);color:var(--muted);max-width:700px}
+section{padding:110px 0;position:relative}
+.sec-head{margin-bottom:46px}
+.hl{color:var(--amber)}
+.btn{display:inline-flex;align-items:center;gap:10px;font:600 15px/1 var(--tx);padding:15px 22px;border-radius:12px;border:1px solid transparent;cursor:pointer;transition:transform .15s,background .15s,border-color .15s,box-shadow .15s;white-space:nowrap}
+.btn:hover{text-decoration:none;transform:translateY(-1px)}
+.btn-amber{background:var(--amber);color:#1A1203;box-shadow:0 8px 28px -10px rgba(245,158,11,.7)}
+.btn-amber:hover{background:#FBB43A}
+.btn-ghost{background:rgba(255,255,255,.02);color:var(--ink);border-color:var(--line2)}
+.btn-ghost:hover{border-color:var(--faint);background:var(--surface)}
+.btn svg{width:18px;height:18px}
+
+/* barra */
+.nav{position:sticky;top:0;z-index:60;background:rgba(11,18,32,.78);backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px);border-bottom:1px solid transparent;transition:border-color .2s}
+.nav.sc{border-bottom-color:var(--line)}
+.nav .wrap{display:flex;align-items:center;gap:28px;height:66px}
+.logo{display:flex;align-items:center;gap:10px;font:700 21px/1 var(--hd);color:var(--ink);letter-spacing:-.3px}
+.logo:hover{text-decoration:none}
+.logo svg{width:28px;height:28px}
+.nav ul{display:flex;gap:24px;list-style:none;margin:0 0 0 auto;padding:0}
+.nav ul a{color:var(--muted);font-size:14px;font-weight:500}
+.nav ul a:hover{color:var(--ink);text-decoration:none}
+.nav .gh{display:inline-flex;align-items:center;gap:8px;font:600 14px/1 var(--tx);color:var(--ink);border:1px solid var(--line2);padding:9px 14px;border-radius:10px}
+.nav .gh:hover{text-decoration:none;border-color:var(--faint)}
+.nav .gh svg{width:16px;height:16px}
+@media (max-width:980px){.nav ul{display:none}.nav .gh{margin-left:auto}}
+
+/* hero */
+.hero{padding:72px 0 40px;overflow:hidden}
+.hero .hgrid{display:grid;grid-template-columns:minmax(0,.92fr) minmax(0,1.08fr);gap:52px;align-items:center}
+.badge{display:inline-flex;align-items:center;gap:8px;font:500 13px/1 var(--tx);color:var(--ink2);background:var(--panel);border:1px solid var(--line2);padding:8px 13px;border-radius:999px}
+.badge i{width:7px;height:7px;border-radius:50%;background:var(--green);box-shadow:0 0 0 4px rgba(52,211,153,.15)}
+.hero h1{font:800 clamp(40px,5.4vw,66px)/1.02 var(--hd);letter-spacing:-1.6px;margin:22px 0 22px}
+.hero h1 .boom{background:linear-gradient(92deg,var(--amber),var(--orange) 60%,#F87171);-webkit-background-clip:text;background-clip:text;color:transparent}
+.hero .lead{margin-bottom:30px}
+.cta{display:flex;gap:12px;flex-wrap:wrap}
+.hero-note{margin-top:22px;font-size:13.5px;color:var(--faint)}
+.hero-note code{color:var(--muted);background:var(--panel);border:1px solid var(--line);padding:2px 7px;border-radius:6px;font-size:12.5px}
+
+.stage{position:relative}
+.frame{position:relative;background:var(--panel);border:1px solid var(--line2);border-radius:16px;box-shadow:0 40px 90px -30px rgba(0,0,0,.75),0 0 0 1px rgba(255,255,255,.02) inset;overflow:hidden}
+.frame-bar{display:flex;align-items:center;gap:8px;padding:10px 14px;border-bottom:1px solid var(--line);background:var(--bg2)}
+.frame-bar i{width:10px;height:10px;border-radius:50%;background:#2A3650}
+.frame-bar span{margin-left:10px;font:500 12px/1 var(--mono);color:var(--faint);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.frame-bar .tag{margin-left:auto;white-space:nowrap;font:600 11px/1 var(--mono);color:var(--amber);background:rgba(245,158,11,.1);border:1px solid rgba(245,158,11,.3);padding:5px 8px;border-radius:6px}
+.viewport{position:relative;width:100%;aspect-ratio:1280/760;overflow:hidden;background:#fff}
+.viewport iframe{position:absolute;top:0;left:0;width:1280px;height:760px;border:0;transform-origin:0 0}
+.approve{display:flex;align-items:center;gap:14px;padding:14px 16px;border-top:1px solid var(--line);background:var(--bg2)}
+.approve p{font-size:14px;color:var(--ink2);flex:1;line-height:1.4}
+.approve p small{display:block;color:var(--faint);font-size:12.5px}
+.katsu{position:relative;font:700 14px/1 var(--tx);background:var(--amber);color:#1A1203;border:0;border-radius:10px;padding:12px 16px;cursor:pointer;white-space:nowrap;transition:transform .12s}
+.katsu:hover{background:#FBB43A}
+.katsu:active{transform:scale(.97)}
+.katsu[disabled]{background:var(--green);color:#052E1F;cursor:default}
+.out{position:absolute;right:-14px;bottom:78px;width:300px;background:rgba(17,26,46,.96);border:1px solid var(--line2);border-radius:14px;padding:14px 14px 12px;box-shadow:0 30px 60px -20px rgba(0,0,0,.8);opacity:0;transform:translateY(14px) scale(.98);pointer-events:none;transition:opacity .35s,transform .35s;backdrop-filter:blur(6px)}
+.out.on{opacity:1;transform:none;pointer-events:auto}
+.out h4{margin:0 0 8px;font:600 12px/1 var(--mono);color:var(--amber);letter-spacing:.6px}
+.out ul{list-style:none;margin:0;padding:0;font:500 12.5px/1.35 var(--mono);color:var(--ink2)}
+.out li{display:flex;gap:8px;align-items:center;padding:5px 0;border-top:1px dashed rgba(51,65,85,.6);opacity:0;transform:translateX(8px);transition:opacity .3s,transform .3s}
+.out.on li{opacity:1;transform:none}
+.out li b{font-weight:500;color:var(--green)}
+.out li em{font-style:normal;color:var(--faint);margin-left:auto;font-size:11px}
+#boom{position:absolute;inset:-60px;pointer-events:none;z-index:5}
+@media (max-width:1060px){.hero .hgrid{grid-template-columns:1fr}.out{right:10px}}
+@media (max-width:560px){.out{position:static;width:auto;margin-top:12px;display:none}.out.on{display:block}.approve{flex-direction:column;align-items:stretch}}
+
+/* números */
+.stats{padding:28px 0 0}
+.stats .grid{display:grid;grid-template-columns:repeat(5,1fr);border:1px solid var(--line);border-radius:16px;background:rgba(17,26,46,.6)}
+.stat{padding:22px 20px;border-left:1px solid var(--line)}
+.stat:first-child{border-left:0}
+.stat b{display:block;font:700 30px/1 var(--hd);color:var(--ink);letter-spacing:-.6px}
+.stat b small{font-size:18px;color:var(--amber)}
+.stat span{display:block;margin-top:8px;font-size:13.5px;color:var(--muted);line-height:1.4}
+@media (max-width:900px){.stats .grid{grid-template-columns:repeat(2,1fr)}.stat{border-left:0;border-top:1px solid var(--line)}.stat:nth-child(-n+2){border-top:0}.stat:nth-child(even){border-left:1px solid var(--line)}.stat:last-child{grid-column:1/-1;border-left:0}}
+
+/* problema */
+.pains{display:grid;grid-template-columns:repeat(3,1fr);gap:18px}
+.pain{background:var(--panel);border:1px solid var(--line);border-radius:16px;padding:22px;display:flex;flex-direction:column;gap:14px}
+.pain .code{font:500 13px/1.6 var(--mono);background:var(--bg);border:1px solid var(--line);border-radius:10px;padding:12px 14px;color:var(--ink2);overflow-x:auto;white-space:pre}
+.pain .code .err{color:var(--red);text-decoration:underline wavy rgba(248,113,113,.6);text-underline-offset:4px}
+.pain .code .c{color:var(--faint)}
+.pain .flag{display:inline-flex;gap:8px;align-items:flex-start;font-size:13px;color:#FECACA;background:rgba(248,113,113,.08);border:1px solid rgba(248,113,113,.28);padding:8px 10px;border-radius:9px;line-height:1.4}
+.pain .fix{font-size:14.5px;color:var(--muted)}
+.pain .fix b{color:var(--green);font-weight:600}
+@media (max-width:900px){.pains{grid-template-columns:1fr}}
+
+/* conversa */
+.chat-wrap{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:48px;align-items:center}
+.chat{display:flex;flex-direction:column;gap:12px}
+.msg{max-width:92%;padding:14px 16px;border-radius:16px;font-size:15px;line-height:1.5;transition:opacity .5s,transform .5s}
+.js .msg{opacity:0;transform:translateY(10px)}
+.msg.in{opacity:1;transform:none}
+.msg .who{display:block;font:600 11.5px/1 var(--mono);letter-spacing:.8px;text-transform:uppercase;margin-bottom:7px}
+.msg.you{align-self:flex-end;background:#1C2B4A;border:1px solid #2B3E66;border-bottom-right-radius:4px}
+.msg.you .who{color:var(--blue)}
+.msg.cl{background:var(--panel);border:1px solid var(--line);border-bottom-left-radius:4px}
+.msg.cl .who{color:var(--amber)}
+.msg.gs{align-self:flex-end;background:rgba(52,211,153,.09);border:1px solid rgba(52,211,153,.35);border-bottom-right-radius:4px}
+.msg.gs .who{color:var(--green)}
+.msg q{color:var(--ink);font-style:italic}
+.quote{font:600 clamp(22px,2.6vw,30px)/1.3 var(--hd);letter-spacing:-.3px;color:var(--ink)}
+.quote span{color:var(--red);font-family:var(--mono);font-size:.78em;font-weight:500}
+@media (max-width:900px){.chat-wrap{grid-template-columns:1fr}}
+
+/* fluxo */
+.flow{display:grid;grid-template-columns:330px minmax(0,1fr);gap:24px;align-items:start}
+.steps{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:6px;counter-reset:s}
+.steps button{all:unset;box-sizing:border-box;display:grid;grid-template-columns:34px 1fr;gap:12px;align-items:center;width:100%;padding:12px 14px;border-radius:12px;border:1px solid transparent;cursor:pointer;color:var(--muted);transition:background .15s,border-color .15s,color .15s}
+.steps button:hover{background:var(--panel);color:var(--ink)}
+.steps button[aria-selected="true"]{background:var(--panel);border-color:var(--line2);color:var(--ink)}
+.steps .n{display:grid;place-items:center;width:34px;height:34px;border-radius:10px;border:1px solid var(--line2);font:700 14px/1 var(--mono);color:var(--muted)}
+.steps button[aria-selected="true"] .n{background:var(--amber);border-color:var(--amber);color:#1A1203}
+.steps .t{font:600 15px/1.25 var(--tx)}
+.steps .t small{display:block;font:400 13px/1.35 var(--tx);color:var(--faint);margin-top:3px}
+.term{background:#070C17;border:1px solid var(--line2);border-radius:16px;overflow:hidden;box-shadow:0 30px 80px -40px rgba(0,0,0,.9);position:sticky;top:90px}
+.term-bar{display:flex;align-items:center;gap:8px;padding:11px 14px;border-bottom:1px solid var(--line);background:var(--bg2)}
+.term-bar i{width:10px;height:10px;border-radius:50%;background:#2A3650}
+.term-bar span{margin-left:8px;font:500 12px/1 var(--mono);color:var(--faint)}
+.term-body{padding:20px 22px 22px;min-height:360px}
+.term-body p.desc{font:400 15px/1.55 var(--tx);color:var(--ink2);margin-bottom:16px}
+.term pre{margin:0;font:400 13px/1.7 var(--mono);color:var(--ink2);white-space:pre-wrap;word-break:break-word}
+.term .p{color:var(--amber)}
+.term .k{color:var(--green)}
+.term .w{color:#FCD34D}
+.term .d{color:var(--faint)}
+.term .b{color:var(--blue)}
+.term .r{color:var(--red)}
+@media (max-width:900px){.flow{grid-template-columns:1fr}.term{position:static}.steps{flex-direction:row;overflow-x:auto;padding-bottom:6px}.steps button{grid-template-columns:28px auto;white-space:nowrap}.steps .t small{display:none}}
+
+/* receita */
+.recipe{display:grid;grid-template-columns:minmax(0,1fr) 120px minmax(0,1fr);gap:0;align-items:stretch}
+.card{background:var(--panel);border:1px solid var(--line);border-radius:16px;overflow:hidden;display:flex;flex-direction:column}
+.card-h{display:flex;align-items:center;gap:10px;padding:13px 16px;border-bottom:1px solid var(--line);font:600 12px/1 var(--mono);letter-spacing:.6px;text-transform:uppercase;color:var(--muted)}
+.card-h .dot{width:8px;height:8px;border-radius:50%}
+.card pre{margin:0;padding:16px;font:400 12.5px/1.65 var(--mono);color:var(--ink2);overflow:auto;flex:1}
+.card pre .c{color:var(--faint)}
+.card pre .kw{color:var(--blue)}
+.card pre .s{color:var(--green)}
+.arrow{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:10px;font:600 11.5px/1.3 var(--mono);color:var(--faint);text-align:center;padding:0 8px}
+.arrow svg{width:60px;height:24px}
+.arrow .z{font:700 30px/1 var(--hd);color:var(--green)}
+.cat{width:100%;border-collapse:collapse;font:400 12.5px/1.4 var(--mono)}
+.cat th{text-align:left;color:var(--faint);font-weight:500;padding:10px 14px;border-bottom:1px solid var(--line)}
+.cat td{padding:8px 14px;border-bottom:1px solid rgba(36,48,73,.7);color:var(--ink2)}
+.cat td:first-child{color:var(--blue)}
+.cat td.to{color:var(--amber)}
+.cat tr:last-child td{border-bottom:0}
+.card .foot{padding:12px 16px;border-top:1px solid var(--line);font-size:13px;color:var(--muted);display:flex;gap:10px;align-items:center;flex-wrap:wrap}
+.pill{display:inline-flex;align-items:center;gap:6px;font:600 12px/1 var(--mono);padding:6px 9px;border-radius:999px;border:1px solid}
+.pill.ok{color:var(--green);border-color:rgba(52,211,153,.4);background:rgba(52,211,153,.08)}
+.pill.am{color:var(--amber);border-color:rgba(245,158,11,.4);background:rgba(245,158,11,.08)}
+.pill.bl{color:var(--blue);border-color:rgba(96,165,250,.4);background:rgba(96,165,250,.08)}
+@media (max-width:900px){.recipe{grid-template-columns:1fr}.arrow{flex-direction:row;padding:18px 0}.arrow svg{transform:rotate(90deg)}}
+
+/* modelos */
+.models{display:grid;grid-template-columns:270px minmax(0,1fr);gap:24px;align-items:start}
+.mlist{display:flex;flex-direction:column;gap:4px;list-style:none;margin:0;padding:0}
+.mlist button{all:unset;box-sizing:border-box;width:100%;padding:11px 14px;border-radius:11px;cursor:pointer;border:1px solid transparent;display:flex;gap:10px;align-items:center;font:500 14px/1.2 var(--mono);color:var(--muted)}
+.mlist button i{font-style:normal;font-size:11px;color:var(--faint);width:20px}
+.mlist button:hover{background:var(--panel);color:var(--ink)}
+.mlist button[aria-selected="true"]{background:var(--panel);border-color:var(--line2);color:var(--amber)}
+.mdesc{margin:14px 2px 0;font-size:15px;color:var(--ink2);min-height:48px}
+.mdesc code{color:var(--amber)}
+.models .frame .viewport{aspect-ratio:1280/800}
+.models .frame .viewport iframe{height:800px}
+.mnote{margin-top:12px;font-size:13px;color:var(--faint)}
+@media (max-width:900px){.models{grid-template-columns:1fr}.mlist{flex-direction:row;overflow-x:auto;padding-bottom:6px}.mlist button{white-space:nowrap}}
+
+/* indicador */
+.duel{display:grid;grid-template-columns:1fr 1fr;gap:18px}
+.duel .card pre{font-size:12.5px}
+.duel .bad .card-h{color:#FCA5A5}
+.duel .good .card-h{color:var(--green)}
+.duel .why{padding:14px 16px;border-top:1px solid var(--line);font-size:14px;color:var(--muted);line-height:1.5}
+.toggle{display:inline-flex;background:var(--panel);border:1px solid var(--line2);border-radius:12px;padding:4px;margin-bottom:20px}
+.toggle button{all:unset;cursor:pointer;padding:9px 14px;border-radius:9px;font:600 14px/1 var(--tx);color:var(--muted)}
+.toggle button[aria-selected="true"]{background:var(--surface2);color:var(--ink)}
+.rules{display:grid;grid-template-columns:repeat(3,1fr);gap:14px;margin-top:22px}
+.rule{border:1px solid var(--line);border-radius:14px;padding:16px;background:rgba(17,26,46,.5)}
+.rule b{display:block;font-size:15px;margin-bottom:6px}
+.rule p{font-size:14px;color:var(--muted)}
+@media (max-width:900px){.duel,.rules{grid-template-columns:1fr}}
+
+/* C0 */
+.c0{display:grid;grid-template-columns:300px minmax(0,1fr);gap:24px;align-items:stretch}
+.grade{background:var(--panel);border:1px solid var(--line);border-radius:16px;padding:26px;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;gap:14px}
+.ring{position:relative;width:170px;height:170px}
+.ring svg{width:100%;height:100%;transform:rotate(-90deg)}
+.ring circle{fill:none;stroke-width:12}
+.ring .bg{stroke:var(--surface2)}
+.ring .fg{stroke:var(--red);stroke-linecap:round;stroke-dasharray:440;stroke-dashoffset:440;transition:stroke-dashoffset 1.6s cubic-bezier(.2,.8,.2,1)}
+.ring.in .fg{stroke-dashoffset:242}
+.ring b{position:absolute;inset:0;display:grid;place-items:center;font:800 46px/1 var(--hd);letter-spacing:-1px}
+.ring b small{display:block;font:500 13px/1 var(--tx);color:var(--faint);margin-top:6px;letter-spacing:0}
+.sev{display:flex;gap:8px;flex-wrap:wrap;justify-content:center}
+.sev span{font:600 12px/1 var(--mono);padding:6px 9px;border-radius:7px;border:1px solid var(--line2);color:var(--muted)}
+.sev .cr{color:var(--red);border-color:rgba(248,113,113,.4)}
+.sev .al{color:var(--orange);border-color:rgba(251,146,60,.4)}
+.sev .me{color:#FCD34D;border-color:rgba(252,211,77,.35)}
+.findings{background:var(--panel);border:1px solid var(--line);border-radius:16px;overflow:hidden}
+.finding{display:grid;grid-template-columns:150px 1fr;gap:16px;padding:16px 20px;border-top:1px solid var(--line)}
+.finding:first-of-type{border-top:0}
+.finding .m{font:600 13px/1.4 var(--mono);color:var(--amber)}
+.finding p{font-size:14.5px;color:var(--ink2)}
+.finding p b{color:var(--red);font:600 11px/1 var(--mono);letter-spacing:.6px;margin-right:6px;border:1px solid rgba(248,113,113,.4);padding:3px 6px;border-radius:5px;vertical-align:2px}
+.findings .h{padding:14px 20px;border-bottom:1px solid var(--line);font:600 12px/1 var(--mono);letter-spacing:.6px;text-transform:uppercase;color:var(--muted);display:flex;gap:8px;align-items:center}
+@media (max-width:900px){.c0{grid-template-columns:1fr}.finding{grid-template-columns:1fr;gap:6px}}
+
+/* entrega */
+.deliv{display:grid;grid-template-columns:minmax(0,.9fr) minmax(0,1.1fr);gap:24px}
+.tree{background:#070C17;border:1px solid var(--line2);border-radius:16px;padding:20px 22px;font:400 13.5px/1.9 var(--mono);color:var(--ink2);white-space:pre;overflow-x:auto}
+.tree .f{color:var(--blue)}
+.tree .a{color:var(--amber)}
+.tree .c{color:var(--faint)}
+.dl{display:grid;gap:10px}
+.dl div{display:grid;grid-template-columns:44px 1fr;gap:14px;align-items:start;padding:14px 16px;border:1px solid var(--line);border-radius:14px;background:rgba(17,26,46,.55)}
+.dl svg{width:44px;height:44px;padding:10px;border-radius:11px;background:var(--surface);color:var(--amber)}
+.dl b{display:block;font-size:15px}
+.dl p{font-size:14px;color:var(--muted)}
+@media (max-width:900px){.deliv{grid-template-columns:1fr}}
+
+/* resultados */
+.res{display:grid;grid-template-columns:repeat(4,1fr);gap:14px}
+.res div{background:var(--panel);border:1px solid var(--line);border-radius:16px;padding:22px 20px}
+.res b{display:block;font:700 38px/1 var(--hd);letter-spacing:-1px}
+.res b small{font-size:20px;color:var(--faint);font-weight:600}
+.res span{display:block;margin-top:10px;font-size:14px;color:var(--muted);line-height:1.45}
+.res .wide{grid-column:span 2}
+.res .zero b{color:var(--green)}
+.res-note{margin-top:16px;font-size:13.5px;color:var(--faint)}
+@media (max-width:900px){.res{grid-template-columns:1fr 1fr}.res .wide{grid-column:1/-1}}
+
+/* técnicas */
+.jutsu{display:grid;grid-template-columns:repeat(4,1fr);gap:12px}
+.jutsu div{border:1px solid var(--line);border-radius:14px;padding:16px;background:rgba(17,26,46,.5);transition:border-color .15s,transform .15s}
+.jutsu div:hover{border-color:var(--amber2);transform:translateY(-2px)}
+.jutsu b{display:block;font:700 15px/1.2 var(--mono);color:var(--amber);margin-bottom:6px}
+.jutsu span{font-size:13.5px;color:var(--muted);line-height:1.45;display:block}
+@media (max-width:900px){.jutsu{grid-template-columns:1fr 1fr}}
+
+/* instalar */
+.install{display:grid;grid-template-columns:repeat(3,1fr);gap:16px}
+.istep{background:var(--panel);border:1px solid var(--line);border-radius:16px;padding:22px;display:flex;flex-direction:column;gap:12px}
+.istep .n{font:700 13px/1 var(--mono);color:var(--amber)}
+.istep p{font-size:14.5px;color:var(--muted)}
+.cmd{position:relative;background:#070C17;border:1px solid var(--line2);border-radius:11px;padding:12px 44px 12px 14px;font:400 12.5px/1.55 var(--mono);color:var(--ink2);word-break:break-all}
+.cmd button{position:absolute;top:8px;right:8px;all:unset;cursor:pointer;width:28px;height:28px;display:grid;place-items:center;border-radius:7px;color:var(--faint)}
+.cmd button{position:absolute;top:7px;right:7px}
+.cmd button:hover{background:var(--surface2);color:var(--ink)}
+.cmd button svg{width:15px;height:15px}
+.os{display:inline-flex;gap:4px;background:var(--bg);border:1px solid var(--line);border-radius:9px;padding:3px;align-self:flex-start}
+.os button{all:unset;cursor:pointer;font:600 12px/1 var(--tx);color:var(--faint);padding:7px 10px;border-radius:7px}
+.os button[aria-selected="true"]{background:var(--surface2);color:var(--ink)}
+.req{margin-top:18px;font-size:14px;color:var(--faint)}
+@media (max-width:900px){.install{grid-template-columns:1fr}}
+
+/* limites */
+.limits{display:grid;grid-template-columns:repeat(2,1fr);gap:14px}
+.limits div{display:grid;grid-template-columns:28px 1fr;gap:12px;padding:18px;border:1px solid var(--line);border-radius:14px}
+.limits svg{width:22px;height:22px;color:var(--faint);margin-top:2px}
+.limits b{display:block;font-size:15px;margin-bottom:4px}
+.limits p{font-size:14px;color:var(--muted)}
+@media (max-width:900px){.limits{grid-template-columns:1fr}}
+
+/* final */
+.final{text-align:center;padding:120px 0 110px;overflow:hidden}
+.final h2{font-size:clamp(34px,5vw,58px);max-width:860px;margin:16px auto 18px}
+.final .lead{margin:0 auto 32px}
+.final .cta{justify-content:center}
+footer{border-top:1px solid var(--line);padding:36px 0 50px;color:var(--faint);font-size:14px}
+footer .wrap{display:flex;gap:24px;justify-content:space-between;flex-wrap:wrap}
+footer a{color:var(--muted)}
+footer p{max-width:620px}
+
+.js .reveal{opacity:0;transform:translateY(16px);transition:opacity .7s,transform .7s}
+.js .reveal.in{opacity:1;transform:none}
+.hgrid>*,.chat-wrap>*,.flow>*,.recipe>*,.models>*,.duel>*,.c0>*,.deliv>*,.install>*,.limits>*{min-width:0}
+.cmd{overflow-wrap:anywhere;word-break:normal}
+@media (prefers-reduced-motion:reduce){
+  html{scroll-behavior:auto}
+  .reveal,.msg{opacity:1;transform:none;transition:none}
+  .ring .fg{transition:none}
+  .out,.out li{transition:none}
+}
+</style>
+</head>
+<body>
+
+<nav class="nav" id="nav">
+  <div class="wrap">
+    <a class="logo" href="#topo" aria-label="Deidara, início">
+      <svg viewBox="0 0 32 32" aria-hidden="true"><rect width="32" height="32" rx="8" fill="#16213A"/><path d="M16 4l2.6 8.2L27 9.5l-6 6.5 6 6.5-8.4-2.7L16 28l-2.6-8.2L5 22.5l6-6.5-6-6.5 8.4 2.7z" fill="#F59E0B"/><circle cx="16" cy="16" r="3.4" fill="#16213A"/></svg>
+      Deidara
+    </a>
+    <ul>
+      <li><a href="#como">Como funciona</a></li>
+      <li><a href="#modelos">Modelos</a></li>
+      <li><a href="#c0">Painel antigo</a></li>
+      <li><a href="#resultados">Resultados</a></li>
+      <li><a href="#instalar">Instalar</a></li>
+    </ul>
+    <a class="gh" href="https://github.com/tiagocardosobezerra/deidara">
+      <svg viewBox="0 0 16 16" fill="currentColor" aria-hidden="true"><path d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.013 8.013 0 0016 8c0-4.42-3.58-8-8-8z"/></svg>
+      GitHub
+    </a>
+  </div>
+</nav>
+
+<header class="hero" id="topo">
+  <div class="wrap hgrid">
+    <div>
+      <span class="badge"><i></i>Skill do Claude Code · open source (MIT) · v0.33.0</span>
+      <h1>Primeiro a escultura.<br><span class="boom">Depois, a explosão.</span></h1>
+      <p class="lead">Descreva o painel em português. O gestor aprova um protótipo com números fictícios e, só depois do “sim”, o Deidara gera o projeto Power BI completo: modelo, medidas DAX, views SQL e a folha de homologação. Sem acessar os seus dados e sem adivinhar o nome de uma coluna.</p>
+      <div class="cta">
+        <a class="btn btn-amber" href="#instalar">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3v12m0 0l-5-5m5 5l5-5M4 21h16"/></svg>
+          Instalar a skill
+        </a>
+        <a class="btn btn-ghost" href="#modelos">Ver os 11 modelos de layout</a>
+      </div>
+      <p class="hero-note">Este protótipo é de verdade: saiu do comando <code>deidara.py prototipar</code>. Clique nos visuais, troque de página, abra o ⓘ.</p>
+    </div>
+
+    <div class="stage">
+      <canvas id="boom" aria-hidden="true"></canvas>
+      <div class="frame">
+        <div class="frame-bar"><i></i><i></i><i></i><span>argila.prototipo.html · Vitrine de RH</span><b class="tag">números fictícios</b></div>
+        <div class="viewport" data-scale><iframe src="prototipos/faixa-de-kpis.html" title="Protótipo gerado pelo Deidara no modelo faixa-de-kpis" loading="eager"></iframe></div>
+        <div class="approve">
+          <p>“Aprova este protótipo para eu gerar o projeto Power BI?”<small>A pergunta que o Claude faz antes de qualquer arquivo de produção.</small></p>
+          <button class="katsu" id="katsu" type="button">Aprovar · Katsu!</button>
+        </div>
+      </div>
+      <div class="out" id="out" aria-live="polite">
+        <h4>C3! PROJETO GERADO</h4>
+        <ul>
+          <li><b>✓</b>Painel.pbip<em>Desktop</em></li>
+          <li><b>✓</b>.SemanticModel/ (TMDL)<em>modelo</em></li>
+          <li><b>✓</b>.Report/ (PBIR)<em>páginas</em></li>
+          <li><b>✓</b>sql/erp/01_views.sql<em>DBA</em></li>
+          <li><b>✓</b>HOMOLOGACAO.md<em>conferir</em></li>
+          <li><b>✓</b>LEIA-ME.md<em>quem faz o quê</em></li>
+        </ul>
+      </div>
+    </div>
+  </div>
+
+  <div class="stats wrap">
+    <div class="grid">
+      <div class="stat"><b>0</b><span>linhas de dado nas receitas: só a estrutura volta</span></div>
+      <div class="stat"><b>11</b><span>modelos de layout, do protótipo ao <code>.pbip</code></span></div>
+      <div class="stat"><b>1.134</b><span>funções DAX e Power Query no dicionário</span></div>
+      <div class="stat"><b>143<small>/143</small></b><span>arquivos do projeto conferidos contra o formato oficial da Microsoft</span></div>
+      <div class="stat"><b>289</b><span>testes automatizados passando</span></div>
+    </div>
+  </div>
+</header>
+
+<section id="problema">
+  <div class="wrap">
+    <div class="sec-head reveal">
+      <span class="kicker">O problema</span>
+      <h2>Painel errado custa caro.<br>E o erro quase sempre está num destes três lugares.</h2>
+      <p class="lead">Nome de coluna chutado, indicador montado do jeito mais fácil e um gestor que só vê o resultado quando já está tudo pronto. O Deidara fecha as três portas.</p>
+    </div>
+    <div class="pains">
+      <article class="pain reveal">
+        <h3>O nome adivinhado</h3>
+        <div class="code"><span class="c">-- "acho que a coluna se chama assim"</span>
+SELECT <span class="err">DATA_ADMISSAO</span>
+FROM F_FUNCIONARIO</div>
+        <span class="flag">✕ a coluna real é DATAADMISSAO</span>
+        <p class="fix"><b>Deidara:</b> todo nome vem do catálogo da fonte e toda função, do dicionário. O <code>validar</code> recusa o resto e diz o que existe.</p>
+      </article>
+      <article class="pain reveal">
+        <h3>O indicador do jeito fácil</h3>
+        <div class="code">Headcount =
+  <span class="err">COUNTROWS(Funcionarios)</span></div>
+        <span class="flag">✕ conta ativos e desligados de todos os tempos; não muda com o período</span>
+        <p class="fix"><b>Deidara:</b> headcount é estoque na data, turnover usa o headcount médio, meta tem polaridade. Ele avisa quando um corte não filtra o número.</p>
+      </article>
+      <article class="pain reveal">
+        <h3>O gestor só vê no fim</h3>
+        <div class="code"><span class="c">semana 1</span>  modelagem
+<span class="c">semana 2</span>  medidas e visuais
+<span class="c">semana 3</span>  <span class="err">"não era isso que eu queria"</span></div>
+        <span class="flag">✕ retrabalho depois de tudo construído</span>
+        <p class="fix"><b>Deidara:</b> o gestor aprova um protótipo HTML primeiro, com checklist e comentários. Mudou algo depois? Novo protótipo, novo aceite.</p>
+      </article>
+    </div>
+  </div>
+</section>
+
+<section id="pratica" style="padding-top:40px">
+  <div class="wrap chat-wrap">
+    <div class="reveal">
+      <span class="kicker">Como fica na prática</span>
+      <h2>Você pede em português. Ele pergunta só o que muda o painel.</h2>
+      <p class="lead" style="margin-bottom:28px">Quem tem acesso aos dados roda uma receita e cola o resultado. O Claude, com o Deidara, monta o esboço, valida e mostra o protótipo. O projeto só sai com o “sim”.</p>
+      <p class="quote">Nada de “acho que a coluna se chama <span>DATA_ADMISSAO</span>”.<br>Se o nome não veio do catálogo, não entra no painel.</p>
+    </div>
+    <div class="chat" id="chat">
+      <div class="msg you"><span class="who">Você</span>quero um painel de desligamentos por motivo e cargo, com a meta de turnover por empresa</div>
+      <div class="msg cl"><span class="who">Claude + Deidara</span>Criei a pasta do painel e a receita de cada fonte. Com o resultado colado, uma pergunta: <q>a meta vem da planilha do RH e usa o mesmo código de empresa do ERP?</q></div>
+      <div class="msg you"><span class="who">Você</span>usa, sim. A Ana, do RH, confirmou.</div>
+      <div class="msg cl"><span class="who">Claude + Deidara</span>Protótipo pronto, com um ⓘ em cada visual e a aba “Para aprovar”. <q>Aprova este protótipo para eu gerar o projeto Power BI?</q></div>
+      <div class="msg gs"><span class="who">Gestor</span>aprovo.</div>
+      <div class="msg cl"><span class="who">Claude + Deidara</span>Projeto gerado, com o LEIA-ME de quem faz o quê e a folha de homologação. <q>Depois da primeira atualização, confira estes cinco números com a fonte.</q></div>
+    </div>
+  </div>
+</section>
+
+<section id="como">
+  <div class="wrap">
+    <div class="sec-head reveal">
+      <span class="kicker">Como funciona</span>
+      <h2>Oito passos, do pedido ao <span class="hl">.pbip</span>.</h2>
+      <p class="lead">No dia a dia, quem roda os comandos é o Claude. Eles também funcionam direto no terminal. As saídas abaixo são reais, do exemplo de RH do repositório.</p>
+    </div>
+    <div class="flow reveal">
+      <ol class="steps" role="tablist" aria-label="Passos do fluxo" id="steps"></ol>
+      <div class="term" role="tabpanel" id="term">
+        <div class="term-bar"><i></i><i></i><i></i><span id="term-title">deidara.py</span></div>
+        <div class="term-body"><p class="desc" id="term-desc"></p><pre id="term-pre"></pre></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section id="receita" style="padding-top:30px">
+  <div class="wrap">
+    <div class="sec-head reveal">
+      <span class="kicker">Privacidade por construção</span>
+      <h2>A receita vai. Só a estrutura volta.</h2>
+      <p class="lead">O Deidara não se conecta a nenhuma fonte. Ele entrega uma consulta SQL, DAX ou Power Query que lê só o catálogo. Quem tem acesso roda onde os dados estão e cola o resultado: tabelas, colunas, tipos, chaves e ligações.</p>
+    </div>
+    <div class="recipe reveal">
+      <div class="card">
+        <div class="card-h"><span class="dot" style="background:var(--blue)"></span>receitas/sql.sql · SQL Server</div>
+<pre><span class="c">/*
+  Deidara — receita SQL: estrutura das tabelas
+  Lê SOMENTE o catálogo (sys.*):
+  nenhuma linha de dado sai daqui.
+*/</span>
+<span class="kw">SET NOCOUNT ON</span>;
+<span class="kw">DECLARE</span> @esquema sysname = <span class="s">N'dbo'</span>;
+
+<span class="kw">WITH</span> alvo <span class="kw">AS</span> (
+  <span class="kw">SELECT</span> t.object_id, t.name
+  <span class="kw">FROM</span> sys.tables <span class="kw">AS</span> t
+  <span class="kw">JOIN</span> sys.schemas <span class="kw">AS</span> s ...
+)</pre>
+        <div class="foot"><span class="pill bl">SQL Server</span><span class="pill bl">modelo Power BI</span><span class="pill bl">Excel · SharePoint · CSV · API</span></div>
+      </div>
+      <div class="arrow" aria-hidden="true">
+        <svg viewBox="0 0 60 24" fill="none" stroke="#475569" stroke-width="2" stroke-linecap="round"><path d="M2 12h54M46 4l10 8-10 8"/></svg>
+        <span>linhas de dado</span><span class="z">0</span>
+      </div>
+      <div class="card">
+        <div class="card-h"><span class="dot" style="background:var(--amber)"></span>catalogos/erp.json → nomes amigáveis</div>
+        <table class="cat">
+          <thead><tr><th>Na fonte</th><th>No painel</th></tr></thead>
+          <tbody>
+            <tr><td>F_DESLIGAMENTO</td><td class="to">fDesligamento</td></tr>
+            <tr><td>DATADESLIGAMENTO</td><td class="to">Data do Desligamento</td></tr>
+            <tr><td>F_FUNCIONARIO</td><td class="to">dColaborador</td></tr>
+            <tr><td>DATAADMISSAO</td><td class="to">Data de Admissão</td></tr>
+            <tr><td>CODCARGO</td><td class="to">Cód. Cargo</td></tr>
+          </tbody>
+        </table>
+        <div class="foot"><span class="pill ok">5 tabelas · 17 colunas · 4 ligações</span><span>do resultado colado ao catálogo, em um comando</span></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section id="modelos">
+  <div class="wrap">
+    <div class="sec-head reveal">
+      <span class="kicker">O protótipo</span>
+      <h2>Onze modelos de layout.<br>Clique e use de verdade.</h2>
+      <p class="lead">Cada modelo vem da estrutura dos dashboards do Power BI Design Files, de Sajjad Ahmadi: o Deidara desenha o fundo da página (painéis, título, navegação) e encaixa os visuais nativos por cima, no protótipo e no <code>.pbip</code>. Uma linha no <code>argila.json</code> troca o modelo.</p>
+    </div>
+    <div class="models reveal">
+      <div>
+        <ul class="mlist" role="tablist" aria-label="Modelos de layout" id="mlist"></ul>
+      </div>
+      <div>
+        <div class="frame">
+          <div class="frame-bar"><i></i><i></i><i></i><span id="mbar">"modelo": "faixa-de-kpis"</span><b class="tag">ao vivo</b></div>
+          <div class="viewport" data-scale><iframe id="mframe" src="about:blank" title="Protótipo no modelo de layout escolhido" loading="lazy"></iframe></div>
+        </div>
+        <p class="mdesc" id="mdesc"></p>
+        <p class="mnote">Protótipos gerados com a vitrine do repositório (<code>ferramentas/vitrine.py</code>), um painel de RH de teste com todo tipo de visual. Números fictícios; a aba “Pendências do analista” mostra o que ainda falta confirmar.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section id="indicador" style="padding-top:30px">
+  <div class="wrap">
+    <div class="sec-head reveal">
+      <span class="kicker">Entende indicador</span>
+      <h2>Headcount não é contagem de cadastro.</h2>
+      <p class="lead">Os padrões de indicador dizem como criar cada número e onde: medida, cálculo visual, grupo de cálculo, Power Query ou view SQL. Turnover entra com a cadeia inteira: desligamentos, headcount na data, headcount médio e a taxa.</p>
+    </div>
+    <div class="duel reveal">
+      <div class="card bad">
+        <div class="card-h">✕ Como costuma aparecer</div>
+<pre>Headcount = COUNTROWS(Funcionarios)
+
+Turnover % = [Qtd Desligamentos] / [Headcount]</pre>
+        <p class="why">O denominador conta ativos e desligados de todos os tempos e não muda com o período: a taxa sai menor do que é e não compara meses. A divisão com “/” quebra quando o denominador é zero.</p>
+      </div>
+      <div class="card good">
+        <div class="card-h">✓ O que o Deidara gera (TMDL)</div>
+<pre>measure Headcount =
+  VAR _fim = MIN(MAX(dCalendario[Data]), [Data de Corte])
+  VAR _entradas =
+    CALCULATE(COUNTROWS(dColaborador),
+      dColaborador[Data de Admissão] &lt;= _fim,
+      REMOVEFILTERS(dCalendario))
+  VAR _saidas =
+    CALCULATE(COUNTROWS(fDesligamento),
+      fDesligamento[Data do Desligamento] &lt;= _fim,
+      REMOVEFILTERS(dCalendario))
+  ...
+
+measure 'HC Médio' =
+  ... AVERAGEX(VALUES(dCalendario[Ano-Mês]), [Headcount])
+
+measure Turnover = DIVIDE([Desligamentos] + 0, [HC Médio])</pre>
+        <p class="why">Quem estava dentro no fim de cada mês, a média desses fins de mês e a taxa sobre ela. A meta anual é comparada na proporção dos meses do filtro.</p>
+      </div>
+    </div>
+    <div class="rules reveal">
+      <div class="rule"><b>30 padrões de indicador</b><p>Taxa, estoque, acumulado, turnover completo, dias úteis, ranking… cada um com o DAX, a alternativa e os cuidados.</p></div>
+      <div class="rule"><b>Corte que não filtra</b><p>Quando um segmentador filtra só parte de uma taxa, o esboço tira o corte do visual e diz por quê.</p></div>
+      <div class="rule"><b>Sinal ou ruído</b><p>Gráfico de controle, fora da curva, meta contra faixa normal e sazonalidade, para o gestor não reagir a ruído.</p></div>
+    </div>
+  </div>
+</section>
+
+<section id="c0">
+  <div class="wrap">
+    <div class="sec-head reveal">
+      <span class="kicker">C0 · engenharia reversa</span>
+      <h2>Já tem um painel? Ele desmonta, dá nota e refaz.</h2>
+      <p class="lead">Traga uma medida colada, a pasta do <code>.pbip</code> ou o resultado da receita DAX de um <code>.pbix</code>. O C0 mostra o que cada fórmula faz de verdade, o efeito de cada problema no número e a versão corrigida. Abaixo, a saída real de <code>c0 estudar</code> no painel antigo de exemplo.</p>
+    </div>
+    <div class="c0 reveal">
+      <div class="grade">
+        <div class="ring" id="ring">
+          <svg viewBox="0 0 160 160" aria-hidden="true"><circle class="bg" cx="80" cy="80" r="70"/><circle class="fg" cx="80" cy="80" r="70"/></svg>
+          <b><span>4,5<small>de 10 · reprovado</small></span></b>
+        </div>
+        <div class="sev"><span class="cr">3 crítico</span><span class="al">8 alto</span><span class="me">9 médio</span><span>1 baixo</span></div>
+        <p style="font-size:13.5px;color:var(--faint)">5 tabelas · 13 medidas · 1 página</p>
+      </div>
+      <div class="findings">
+        <div class="h">No painel, 4 indicadores com número errado ou em risco</div>
+        <div class="finding"><span class="m">Turnover %</span><p><b>CRÍTICO</b>O denominador conta ativos e desligados de todos os tempos e não muda com o período: a taxa sai menor do que é e não compara meses.</p></div>
+        <div class="finding"><span class="m">Headcount</span><p>Entram também os desligados (e quem ainda não entrou): o número não é quem está ativo, e não muda com o período.</p></div>
+        <div class="finding"><span class="m">Turnover Médio</span><p><b>CRÍTICO</b>Média de taxas: dá o mesmo peso à área de 10 pessoas e à de 5.000. O total não é a taxa do grupo.</p></div>
+        <div class="finding"><span class="m">Status Turnover</span><p>Meta escrita dentro da fórmula: quando a meta mudar, alguém precisa achar e editar o DAX, e o gestor não vê a meta no painel.</p></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section id="entrega" style="padding-top:30px">
+  <div class="wrap">
+    <div class="sec-head reveal">
+      <span class="kicker">O que você recebe</span>
+      <h2>Pronto para homologar.</h2>
+      <p class="lead">O <code>.pbip</code> é o formato texto oficial da Microsoft para o mesmo conteúdo do <code>.pbix</code>: abre no Power BI Desktop, que salva como <code>.pbix</code> em um clique, e fica versionável no git.</p>
+    </div>
+    <div class="deliv reveal">
+<div class="tree"><span class="f">pbi/</span>
+├── <span class="a">Quadro_e_Turnover.pbip</span>       <span class="c"># abre no Desktop</span>
+├── <span class="f">Quadro_e_Turnover.SemanticModel/</span>  <span class="c"># TMDL</span>
+├── <span class="f">Quadro_e_Turnover.Report/</span>         <span class="c"># PBIR</span>
+├── <span class="f">sql/erp/</span>
+│   ├── 01_views.sql              <span class="c"># bi.vw_*</span>
+│   ├── 02_conferencia.sql        <span class="c"># totais no banco</span>
+│   └── 03_qualidade.sql          <span class="c"># tudo tem que dar 0</span>
+├── <span class="f">docs/</span>
+│   └── dicionario_indicadores.md
+├── HOMOLOGACAO.md
+└── LEIA-ME.md</div>
+      <div class="dl">
+        <div><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 3v18h18"/><path d="M7 15l4-4 3 3 5-6"/></svg><span><b>Projeto Power BI</b><p>Modelo dimensional com calendário, medidas DAX com descrição, páginas no modelo de layout escolhido e o tema.</p></span></div>
+        <div><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><ellipse cx="12" cy="5" rx="8" ry="3"/><path d="M4 5v14c0 1.7 3.6 3 8 3s8-1.3 8-3V5"/><path d="M4 12c0 1.7 3.6 3 8 3s8-1.3 8-3"/></svg><span><b>Views, conferência e qualidade em SQL</b><p>A camada <code>bi.vw_*</code>, o total de cada indicador no banco (inclusive o headcount de cada fim de mês) e a checagem de chave repetida, órfãos e datas fora do calendário.</p></span></div>
+        <div><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 11l3 3 8-8"/><path d="M20 12v7a2 2 0 01-2 2H6a2 2 0 01-2-2V5a2 2 0 012-2h9"/></svg><span><b>Homologação e LEIA-ME</b><p>O que conferir antes de publicar, com onde ler cada número no painel, e quem faz o quê: DBA, analista e dono do indicador.</p></span></div>
+        <div><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 19.5A2.5 2.5 0 016.5 17H20V3H6.5A2.5 2.5 0 004 5.5z"/><path d="M4 19.5A2.5 2.5 0 006.5 22H20v-5"/></svg><span><b>Dicionário de indicadores e Memory Card</b><p>Definição, fórmula, origem e prova de cada ligação. Com o “sim”, o painel vai para o repositório do time, com versão e motivo de cada mudança.</p></span></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section id="resultados">
+  <div class="wrap">
+    <div class="sec-head reveal">
+      <span class="kicker">Resultados</span>
+      <h2>Medido, não prometido.</h2>
+      <p class="lead">Números conferidos na versão 0.33.0, no exemplo e na vitrine do repositório (um ERP fictício em SQL Server e uma planilha de metas no Excel).</p>
+    </div>
+    <div class="res reveal">
+      <div><b>289</b><span>testes automatizados passando</span></div>
+      <div><b>143<small>/143</small></b><span>arquivos JSON do projeto gerado conferidos contra os schemas oficiais da Microsoft</span></div>
+      <div><b>467</b><span>funções DAX no dicionário, com assinatura e link da documentação</span></div>
+      <div><b>667</b><span>funções de Power Query no dicionário</span></div>
+      <div><b>53</b><span>técnicas de visual catalogadas, 44 com visual nativo</span></div>
+      <div><b>30</b><span>padrões de indicador prontos</span></div>
+      <div class="wide"><b>158 <small>+</small> 66</b><span>modelos Deneb e pacotes de funções DAX do daxlib na galeria da comunidade, com licença MIT e origem de cada um</span></div>
+      <div class="wide zero" style="grid-column:1/-1"><b>0</b><span>linhas de dado que as receitas devolvem. A estrutura das fontes nunca vai para o Memory Card.</span></div>
+    </div>
+    <p class="res-note">Para conferir na sua máquina: <code>python -m unittest discover -s testes</code> e <code>python ferramentas/validar_pbip.py &lt;pasta do projeto&gt;</code>.</p>
+  </div>
+</section>
+
+<section id="tecnicas" style="padding-top:30px">
+  <div class="wrap">
+    <div class="sec-head reveal">
+      <span class="kicker">“A arte é uma explosão!”</span>
+      <h2>Cada etapa é uma técnica.</h2>
+      <p class="lead">Batizado em homenagem ao artista de Naruto que molda a argila e a faz explodir: a argila é a especificação do painel, a escultura é o protótipo e a explosão é o projeto completo. Os nomes só ajudam a se situar no código; com o gestor, o Claude fala da etapa.</p>
+    </div>
+    <div class="jutsu reveal">
+      <div><b>Luneta</b><span>receitas e descoberta: vê a fonte sem tocar nela</span></div>
+      <div><b>Te no Kuchi</b><span>o esboço do <code>argila.json</code> a partir do pedido</span></div>
+      <div><b>C1</b><span>o protótipo HTML e o tour guiado</span></div>
+      <div><b>C2</b><span>escolhe os visuais pela pergunta do painel</span></div>
+      <div><b>Katsu!</b><span>o “sim” do gestor, que libera a detonação</span></div>
+      <div><b>C3</b><span>o projeto Power BI, as views SQL e a documentação</span></div>
+      <div><b>C4 Karura</b><span>a estatística: sinal ou ruído, fora da curva, tendência</span></div>
+      <div><b>C0</b><span>desmonta o painel que já existe, dá nota e o refaz</span></div>
+      <div><b>Tobi</b><span>a frase de leitura: o que o número fez e quem puxou</span></div>
+      <div><b>Bunshin</b><span>os números fictícios e o projeto de demonstração</span></div>
+      <div><b>Sasori</b><span>dicionário de funções e padrões conferidos</span></div>
+      <div><b>Akatsuki</b><span>a galeria: modelos e funções MIT da comunidade</span></div>
+    </div>
+  </div>
+</section>
+
+<section id="instalar">
+  <div class="wrap">
+    <div class="sec-head reveal">
+      <span class="kicker">Comece em 3 passos</span>
+      <h2>Um clone. Nada de pip.</h2>
+      <p class="lead">Você precisa do Claude Code (com uma conta do Claude que inclua o Claude Code), de Python 3.8+ com a biblioteca padrão e do Power BI Desktop para abrir o projeto gerado. Os comandos rodam da pasta da skill.</p>
+    </div>
+    <div class="install reveal">
+      <div class="istep">
+        <span class="n">01 · INSTALE</span>
+        <div class="os" role="tablist" aria-label="Sistema"><button type="button" role="tab" aria-selected="true" data-os="win">Windows</button><button type="button" role="tab" aria-selected="false" data-os="nix">macOS / Linux</button></div>
+        <div class="cmd" data-os-cmd="win"><span>git clone https://github.com/tiagocardosobezerra/deidara.git "$env:USERPROFILE\.claude\skills\deidara"</span><button type="button" aria-label="Copiar comando"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><rect x="9" y="9" width="11" height="11" rx="2"/><path d="M5 15V5a2 2 0 012-2h10"/></svg></button></div>
+        <div class="cmd" data-os-cmd="nix" hidden><span>git clone https://github.com/tiagocardosobezerra/deidara.git ~/.claude/skills/deidara</span><button type="button" aria-label="Copiar comando"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><rect x="9" y="9" width="11" height="11" rx="2"/><path d="M5 15V5a2 2 0 012-2h10"/></svg></button></div>
+        <p>No claude.ai, suba o zip da skill (veja o <a href="https://github.com/tiagocardosobezerra/deidara/blob/main/COMO-INSTALAR.md">COMO-INSTALAR.md</a>).</p>
+      </div>
+      <div class="istep">
+        <span class="n">02 · PEÇA O PAINEL</span>
+        <p>Abra o Claude Code e descreva: para quem é, que decisão apoia, quais indicadores e de onde vem cada dado. Ele cria a pasta do painel e entrega uma receita por fonte, com o passo a passo no cabeçalho.</p>
+        <div class="cmd"><span>quero um painel de turnover por motivo e cargo, com meta por empresa</span><button type="button" aria-label="Copiar pedido"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><rect x="9" y="9" width="11" height="11" rx="2"/><path d="M5 15V5a2 2 0 012-2h10"/></svg></button></div>
+      </div>
+      <div class="istep">
+        <span class="n">03 · APROVE E GERE</span>
+        <p>Cole os resultados, veja o protótipo e, com o “sim” do gestor, receba o <code>.pbip</code>. Abra no Power BI Desktop, atualize, preencha o <code>HOMOLOGACAO.md</code> e salve como <code>.pbix</code>.</p>
+        <div class="cmd"><span>python deidara.py situacao meu/argila.json</span><button type="button" aria-label="Copiar comando"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><rect x="9" y="9" width="11" height="11" rx="2"/><path d="M5 15V5a2 2 0 012-2h10"/></svg></button></div>
+      </div>
+    </div>
+    <p class="req">Quer ver tudo por dentro antes? Faça o <a href="https://github.com/tiagocardosobezerra/deidara/blob/main/referencias/tutorial.md">tutorial de 15 minutos</a> com o exemplo do repositório.</p>
+  </div>
+</section>
+
+<section id="limites" style="padding-top:30px">
+  <div class="wrap">
+    <div class="sec-head reveal">
+      <span class="kicker">Sem letra miúda</span>
+      <h2>O que o Deidara não faz.</h2>
+    </div>
+    <div class="limits reveal">
+      <div><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M5.6 5.6l12.8 12.8"/></svg><span><b>Não se conecta às suas fontes</b><p>Quem tem acesso roda a receita e cola o resultado. Guarde os catálogos e as aprovações fora de repositórios públicos.</p></span></div>
+      <div><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M12 8v5M12 16h.01"/></svg><span><b>A estrutura passa pelo Claude</b><p>Os nomes de tabelas, colunas e medidas que você cola vão para a conversa com o Claude. Se esses nomes forem sensíveis, siga a política de uso de IA da sua empresa.</p></span></div>
+      <div><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M5.6 5.6l12.8 12.8"/></svg><span><b>Não gera o .pbix direto</b><p>O <code>.pbix</code> é binário e fechado. O Deidara entrega o <code>.pbip</code>, e o Power BI Desktop salva como <code>.pbix</code>.</p></span></div>
+      <div><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M5.6 5.6l12.8 12.8"/></svg><span><b>O protótipo não mostra números reais</b><p>Os números são fictícios e coerentes: servem para aprovar layout, indicadores e navegação. Os valores de verdade só o Power BI calcula.</p></span></div>
+      <div><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M5.6 5.6l12.8 12.8"/></svg><span><b>Não cria ligação sozinho</b><p>Ele sugere com evidência e mede na fonte com uma receita de prova. Quem confirma é uma pessoa, com o nome registrado.</p></span></div>
+      <div><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M5.6 5.6l12.8 12.8"/></svg><span><b>Não escolhe o indicador por você</b><p>A nota do C0 mede a construção da fórmula, não se aquele é o número certo para a decisão. Indicador sem definição não vai ao gestor.</p></span></div>
+      <div><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M5.6 5.6l12.8 12.8"/></svg><span><b>Nem toda técnica é nativa</b><p>9 das 53 técnicas de visual pedem um visual personalizado (como Gantt ou nuvem de palavras); o Deidara avisa quais.</p></span></div>
+    </div>
+  </div>
+</section>
+
+<section class="final">
+  <div class="wrap">
+    <span class="kicker">Katsu!</span>
+    <h2>Qual painel o seu gestor vai aprovar primeiro?</h2>
+    <p class="lead">Descreva em português, mostre a escultura e só depois gere o projeto.</p>
+    <div class="cta">
+      <a class="btn btn-amber" href="#instalar">Instalar a skill</a>
+      <a class="btn btn-ghost" href="https://github.com/tiagocardosobezerra/deidara">Ver no GitHub</a>
+    </div>
+  </div>
+</section>
+
+<footer>
+  <div class="wrap">
+    <p><b style="color:var(--ink)">Deidara</b>, primeiro a escultura, depois a explosão. Criado por <a href="https://github.com/tiagocardosobezerra">Tiago Cardoso Bezerra</a>. Licença MIT. Modelos de layout a partir do <a href="https://github.com/Dashboard-Design/Power-BI-Design-Files">Power BI Design Files</a>, de Sajjad Ahmadi (MIT). Power BI é marca da Microsoft; este projeto não é afiliado à Microsoft. Naruto e os nomes dos personagens pertencem a Masashi Kishimoto e à Shueisha; o Deidara é um projeto de fã, sem afiliação.</p>
+    <p><a href="https://github.com/tiagocardosobezerra/deidara">GitHub</a> · <a href="https://github.com/tiagocardosobezerra/deidara/blob/main/README.en.md">English</a> · <a href="https://github.com/tiagocardosobezerra/deidara/blob/main/LICENCAS-DE-TERCEIROS.md">Licenças de terceiros</a></p>
+  </div>
+</footer>
+
+<script>
+document.documentElement.classList.add('js');
+(function(){
+  var reduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+  // barra
+  var nav = document.getElementById('nav');
+  addEventListener('scroll', function(){ nav.classList.toggle('sc', scrollY > 8); }, {passive:true});
+
+  // iframes em escala
+  function fit(){
+    document.querySelectorAll('[data-scale]').forEach(function(v){
+      var f = v.querySelector('iframe'); if(!f) return;
+      f.style.transform = 'scale(' + (v.clientWidth / 1280) + ')';
+    });
+  }
+  addEventListener('resize', fit); fit();
+  if (window.ResizeObserver) document.querySelectorAll('[data-scale]').forEach(function(v){ new ResizeObserver(fit).observe(v); });
+
+  // aparecer ao rolar
+  var io = new IntersectionObserver(function(es){
+    es.forEach(function(e){ if(e.isIntersecting){ e.target.classList.add('in'); io.unobserve(e.target); } });
+  }, {threshold:.12});
+  document.querySelectorAll('.reveal,#ring').forEach(function(el){ io.observe(el); });
+  // garantia: nada fica escondido se o observador falhar
+  setTimeout(function(){ document.querySelectorAll('.reveal').forEach(function(el){ var r = el.getBoundingClientRect(); if (r.top < innerHeight) el.classList.add('in'); }); }, 1500);
+
+  // conversa
+  var chat = document.getElementById('chat');
+  var msgs = chat.querySelectorAll('.msg');
+  var cio = new IntersectionObserver(function(es){
+    if(!es[0].isIntersecting) return; cio.disconnect();
+    msgs.forEach(function(m,i){ setTimeout(function(){ m.classList.add('in'); }, reduce ? 0 : i*650); });
+  }, {threshold:.25});
+  cio.observe(chat);
+
+  // passos (saídas reais do exemplo do repositório, encurtadas nos caminhos)
+  var S = [
+    {t:'Briefing', s:'a pasta do painel e as perguntas', c:'novo meu --projeto "Turnover RH"',
+     d:'Poucas perguntas, com as palavras do gestor: a decisão, o público, os indicadores (definição, polaridade, meta), os cortes e de onde vem cada dado.',
+     o:'<span class="k">Pasta do painel criada:</span> meu\n  receitas/   as três receitas, prontas para mandar a quem tem acesso às fontes\n  colado/     onde vão os resultados colados\n  catalogos/  onde o `catalogar` grava\n  ROTEIRO.md  o passo a passo deste painel\n  painel.json o briefing: as respostas do gestor (indicadores, definição, meta, cortes)\n<span class="p">Próximo passo:</span> preencha o briefing e mande a receita de cada fonte.'},
+    {t:'Fontes', s:'receita, resultado colado, catálogo', c:'catalogar --de meu/colado/erp.txt --fonte erp',
+     d:'Quem tem acesso roda a receita onde os dados estão e cola o resultado. Volta só a estrutura: tabelas, colunas, tipos, chaves e ligações.',
+     o:'Fonte erp (sqlserver, receita sql): <span class="k">5 tabela(s), 17 coluna(s), 4 ligação(ões)</span>, 0 expressão(ões) auxiliar(es)\nCatálogo: meu/catalogos/erp.json\n<span class="p">Próximo passo:</span> `deidara.py esbocar meu --pedido "..."`'},
+    {t:'Esboçar', s:'o primeiro argila.json', c:'esbocar meu --pedido "desligamentos por motivo e cargo, com turnover por empresa"',
+     d:'A partir do pedido, ele escolhe as tabelas, separa fatos e dimensões, cria o calendário e traz o indicador com a cadeia inteira. E avisa o que não daria certo.',
+     o:'Esboço em meu/argila.json: <span class="k">5 tabela(s) + calendário, 4 ligação(ões), 6 medida(s), 1 página</span>\n  · padrão "turnover": a cadeia inteira entrou (Desligamentos, Headcount, HC Médio, Turnover)\n  · <span class="w">segmentador dMotivoDesligamento[Motivo] fora do esboço: ele filtra só parte de\n    HC Médio, Headcount, Turnover (o número ficaria distorcido)</span>\n  · gráfico por dMotivoDesligamento[Motivo] mostra "Desligamentos" em vez de "Turnover"\n  · C2 escolheu pela pergunta: a frase do Tobi (o que o indicador fez e quem puxou)'},
+    {t:'Validar', s:'nomes, funções e filtros', c:'validar meu/argila.json',
+     d:'Até zerar os erros. Os avisos são decisões do usuário, ditas em linguagem de negócio, por tema.',
+     o:'Turnover RH · 6 tabelas · 5 relações · 6 medidas · 1 página · 12 visuais\n\n<span class="w">! 4 aviso(s) para decidir com o usuário:</span>\n  [Definições] painel publico: definição pendente: escreva para quem é o painel\n    (aparece no protótipo e no Memory Card); o aprovar recusa sem ela\n  [Fontes] fonte erp: servidor/banco ainda de exemplo (SEU_SERVIDOR/SEU_BANCO)\n  [Modelagem] dCargo e dEmpresa chegam em fDesligamento através de dColaborador:\n    o corte mostra o valor ATUAL do cadastro de dColaborador, não o da data do\n    evento. Se a fato tiver o código histórico, ligue direto nela'},
+    {t:'Protótipo', s:'a escultura, para o gestor', c:'prototipar meu/argila.json',
+     d:'Um HTML com números fictícios coerentes, um ⓘ em cada visual explicando o número e a aba “Para aprovar”, com checklist, comentários e o resumo do aceite.',
+     o:'<span class="k">Protótipo:</span> meu/argila.prototipo.html\n<span class="d">LEMBRETE: mostre o protótipo ao usuário e peça o aceite explícito; só com o "sim"\nrode `deidara.py aprovar argila.json --por NOME`.</span>'},
+    {t:'Aceite', s:'o “sim”, registrado', c:'aprovar meu/argila.json --por "Gestor de RH"',
+     d:'Sem protótipo, não há aceite. Mudou algo depois da aprovação? Novo protótipo, novo aceite: o gerar recusa.',
+     o:'<span class="r">Não dá para aprovar:</span> o protótipo não existe ou é anterior a esta versão do argila.json,\ne o gestor estaria aprovando algo que não viu.\n\n<span class="d">(depois do protótipo mostrado)</span>\n<span class="p">Katsu!</span> <span class="k">Aprovado por Gestor de RH</span> (4 aviso(s) aceito(s)). A geração (`gerar`) está liberada.'},
+    {t:'Gerar', s:'o projeto Power BI completo', c:'gerar meu/argila.json -o C:/paineis/turnover',
+     d:'O .pbip com TMDL e PBIR, as views SQL, a conferência, a qualidade, o LEIA-ME e a folha de homologação, com quem faz o quê. Saída do exemplo Aurora do repositório.',
+     o:'<span class="p">C3!</span> <span class="k">Projeto gerado</span> em C:/paineis/turnover\n  Quadro_e_Turnover.pbip  ·  LEIA-ME.md  ·  HOMOLOGACAO.md  ·  sql/erp/\nAgora:\n  1. [DBA] rodar sql/erp/01_views.sql no banco AURORA\n  2. [Analista] abrir Quadro_e_Turnover.pbip no Power BI Desktop, Atualizar\n  3. [Analista + dono do indicador] preencher HOMOLOGACAO.md\n  4. [Analista] Salvar como .pbix e publicar'},
+    {t:'Memory Card', s:'o painel guardado pelo time', c:'memory-card enviar meu/argila.json --categoria RH',
+     d:'Cada painel e indicador aprovado fica num repositório privado do time, com versão, motivo de cada mudança e definição oficial. Prévia primeiro; envio só com o “sim”.',
+     o:'<span class="d">Antes de um indicador novo:</span>  memory-card buscar turnover\n<span class="d">Depois do gerar:</span>            memory-card enviar ... <span class="d">(prévia; --confirmar só com o "sim")</span>\n<span class="d">Quando a fonte muda:</span>         memory-card conferir\n\n<span class="b">Indicador oficial não é reescrito por um painel.</span>'}
+  ];
+  var ol = document.getElementById('steps'), tt = document.getElementById('term-title'),
+      td = document.getElementById('term-desc'), tp = document.getElementById('term-pre');
+  S.forEach(function(s,i){
+    var li = document.createElement('li'), b = document.createElement('button');
+    b.type='button'; b.setAttribute('role','tab'); b.setAttribute('aria-selected', i===0?'true':'false');
+    b.innerHTML = '<span class="n">'+(i+1)+'</span><span class="t">'+s.t+'<small>'+s.s+'</small></span>';
+    b.addEventListener('click', function(){ show(i); });
+    li.appendChild(b); ol.appendChild(li);
+  });
+  function show(i){
+    ol.querySelectorAll('button').forEach(function(b,j){ b.setAttribute('aria-selected', j===i?'true':'false'); });
+    var s = S[i];
+    tt.textContent = 'passo ' + (i+1) + ' de 8 · ' + s.t.toLowerCase();
+    td.textContent = s.d;
+    tp.innerHTML = '<span class="p">$</span> python deidara.py ' + s.c.replace(/</g,'&lt;') + '\n\n' + s.o;
+  }
+  show(0);
+
+  // modelos
+  var M = [
+    ['faixa-de-kpis','Trilho de ícones, título com filtros no canto, linha de KPIs, gráficos ao lado da tabela.'],
+    ['coluna-de-kpis','Barra de filtros, coluna de KPIs à esquerda, grade de gráficos e abas no rodapé.'],
+    ['secoes-com-rolagem','Barra lateral com KPIs e filtros; resumo e seções com rolagem.'],
+    ['trilho-escuro','Trilho escuro de páginas, faixa única de KPIs, dois painéis e tabela larga.'],
+    ['kpis-clicaveis','Menu lateral e KPIs clicáveis: o KPI escolhido muda o gráfico e a tabela.'],
+    ['historia-longa','Uma página longa, lida como história, seção por seção.'],
+    ['executivo','Linha de até cinco KPIs e um gráfico principal em largura total, o resto embaixo.'],
+    ['mapa-central','O mapa (ou o gráfico principal) no centro, KPIs à esquerda, minigráficos à direita, tabelas embaixo.'],
+    ['causa-raiz','Coluna de filtros, linha de KPIs e a árvore de decomposição em destaque, com o detalhe embaixo.'],
+    ['tabela-lateral','Faixa de KPIs, gráficos à esquerda e uma tabela alta à direita.'],
+    ['equipes','Painel lateral com KPIs, filtros e páginas; minigráficos no topo e um gráfico principal grande.']
+  ];
+  var ml = document.getElementById('mlist'), mf = document.getElementById('mframe'),
+      mb = document.getElementById('mbar'), md = document.getElementById('mdesc');
+  M.forEach(function(m,i){
+    var li = document.createElement('li'), b = document.createElement('button');
+    b.type='button'; b.setAttribute('role','tab'); b.setAttribute('aria-selected', i===0?'true':'false');
+    b.innerHTML = '<i>'+String(i+1).padStart(2,'0')+'</i>'+m[0];
+    b.addEventListener('click', function(){ pick(i); });
+    li.appendChild(b); ml.appendChild(li);
+  });
+  function pick(i){
+    ml.querySelectorAll('button').forEach(function(b,j){ b.setAttribute('aria-selected', j===i?'true':'false'); });
+    mf.src = 'prototipos/' + M[i][0] + '.html';
+    mb.textContent = '"modelo": "' + M[i][0] + '"';
+    md.innerHTML = '<code>' + M[i][0] + '</code>: ' + M[i][1];
+    fit();
+  }
+  var mio = new IntersectionObserver(function(es){ if(es[0].isIntersecting){ mio.disconnect(); pick(0); } }, {rootMargin:'300px'});
+  mio.observe(document.getElementById('modelos'));
+
+  // sistema na instalação
+  document.querySelectorAll('.os button').forEach(function(b){
+    b.addEventListener('click', function(){
+      document.querySelectorAll('.os button').forEach(function(x){ x.setAttribute('aria-selected', x===b?'true':'false'); });
+      document.querySelectorAll('[data-os-cmd]').forEach(function(c){ c.hidden = c.getAttribute('data-os-cmd') !== b.dataset.os; });
+    });
+  });
+  if (!/Win/i.test(navigator.platform || navigator.userAgent)) { var nx = document.querySelector('.os [data-os="nix"]'); if (nx) nx.click(); }
+
+  // copiar
+  document.querySelectorAll('.cmd button').forEach(function(b){
+    b.addEventListener('click', function(){
+      var t = b.parentElement.querySelector('span').textContent;
+      var done = function(){ b.style.color='var(--green)'; setTimeout(function(){ b.style.color=''; }, 1200); };
+      if (navigator.clipboard) navigator.clipboard.writeText(t).then(done, function(){});
+    });
+  });
+
+  // Katsu!
+  var btn = document.getElementById('katsu'), out = document.getElementById('out'), cv = document.getElementById('boom');
+  btn.addEventListener('click', function(){
+    btn.disabled = true; btn.textContent = '✓ Aprovado';
+    burst();
+    setTimeout(function(){
+      out.classList.add('on');
+      out.querySelectorAll('li').forEach(function(li,i){ li.style.transitionDelay = (reduce?0:(.1 + i*.12)) + 's'; });
+    }, reduce ? 0 : 350);
+  });
+  function burst(){
+    if (reduce || !cv.getContext) return;
+    var r = cv.getBoundingClientRect(), dpr = Math.min(devicePixelRatio||1, 2);
+    cv.width = r.width*dpr; cv.height = r.height*dpr;
+    var ctx = cv.getContext('2d'); ctx.scale(dpr,dpr);
+    var br = btn.getBoundingClientRect(), x0 = br.left - r.left + br.width/2, y0 = br.top - r.top + br.height/2;
+    var cols = ['#F59E0B','#FB923C','#FCD34D','#F87171','#FDE68A'], P = [];
+    for (var i=0;i<120;i++){ var a = Math.random()*Math.PI*2, v = 2 + Math.random()*7;
+      P.push({x:x0,y:y0,vx:Math.cos(a)*v,vy:Math.sin(a)*v - 2,s:2 + Math.random()*4,c:cols[i%cols.length],l:1}); }
+    var ring = 0;
+    (function step(){
+      ctx.clearRect(0,0,r.width,r.height);
+      ring += 9;
+      if (ring < 260){ ctx.beginPath(); ctx.arc(x0,y0,ring,0,Math.PI*2); ctx.strokeStyle='rgba(245,158,11,'+(1-ring/260)*.6+')'; ctx.lineWidth=3; ctx.stroke(); }
+      var alive = false;
+      P.forEach(function(p){ if(p.l<=0) return; alive = true;
+        p.x+=p.vx; p.y+=p.vy; p.vy+=.16; p.vx*=.985; p.l-=.016;
+        ctx.globalAlpha = Math.max(p.l,0); ctx.fillStyle = p.c; ctx.fillRect(p.x,p.y,p.s,p.s); });
+      ctx.globalAlpha = 1;
+      if (alive || ring < 260) requestAnimationFrame(step); else ctx.clearRect(0,0,r.width,r.height);
+    })();
+  }
+})();
+</script>
+</body>
+</html>
