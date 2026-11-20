@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Deidara · do pedido ao painel Power BI, com protótipo aprovado antes</title>
+<title>Deidara · primeiro a escultura, depois a explosão</title>
 <meta name="description" content="Skill do Claude Code para times de indicadores: descreva o painel em português, o gestor aprova um protótipo com números fictícios e, depois do sim, sai o projeto Power BI (.pbip) completo. Sem acessar dados e sem adivinhar nomes.">
 <meta property="og:title" content="Deidara · primeiro a escultura, depois a explosão">
 <meta property="og:description" content="Descreva o painel em português. O gestor aprova o protótipo e, depois do sim, sai o projeto Power BI completo: modelo, medidas DAX, views SQL e homologação.">
@@ -11,915 +11,1028 @@
 <meta property="og:url" content="https://tiagocardosobezerra.github.io/deidara/">
 <meta property="og:type" content="website">
 <meta name="twitter:card" content="summary_large_image">
-<meta name="theme-color" content="#0B1220">
-<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='8' fill='%230B1220'/%3E%3Cpath d='M16 4l2.6 8.2L27 9.5l-6 6.5 6 6.5-8.4-2.7L16 28l-2.6-8.2L5 22.5l6-6.5-6-6.5 8.4 2.7z' fill='%23F59E0B'/%3E%3Ccircle cx='16' cy='16' r='3.4' fill='%230B1220'/%3E%3C/svg%3E">
+<meta name="theme-color" content="#0A1122">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Ccircle cx='16' cy='16' r='15' fill='%23C8693E'/%3E%3Cpath d='M16 6l2 7 7-2-5 5 5 5-7-2-2 7-2-7-7 2 5-5-5-5 7 2z' fill='%23FFB020'/%3E%3C/svg%3E">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;700&family=Poppins:wght@600;700;800&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,400;12..96,600;12..96,800&family=Dela+Gothic+One&family=Instrument+Serif:ital@0;1&family=JetBrains+Mono:wght@400;600;800&display=swap" rel="stylesheet">
 <style>
 :root{
-  --bg:#0B1220; --bg2:#0E1729; --panel:#111A2E; --surface:#16213A; --surface2:#1E2A44; --line:#243049; --line2:#334155;
-  --ink:#F1F5F9; --ink2:#E2E8F0; --muted:#A7B3C6; --faint:#7B889E;
-  --amber:#F59E0B; --amber2:#B45309; --orange:#FB923C; --red:#F87171; --green:#34D399; --blue:#60A5FA;
-  --hd:'Poppins',system-ui,sans-serif; --tx:'Inter',system-ui,-apple-system,'Segoe UI',Roboto,sans-serif; --mono:'JetBrains Mono',ui-monospace,Consolas,monospace;
-  --w:1180px; --g:24px;
+  --night:#0A1122; --night2:#111B33; --night3:#1A2745; --line:#26355A;
+  --bone:#F3E9DC; --bone2:#E9DCC9; --paper:#FBF5EC; --ink:#15110E; --ink2:#4A3F36;
+  --clay:#C8693E; --clay2:#E8B48A; --clay3:#8E4424; --amber:#FFB020; --ember:#FF5A1F; --green:#2BB673; --blue:#5B8DEF;
+  --muted:#A9B4CB; --faint:#6F7C98;
+  --hd:'Bricolage Grotesque',system-ui,sans-serif; --sf:'Instrument Serif',Georgia,serif; --mono:'JetBrains Mono',ui-monospace,Consolas,monospace; --jp:'Dela Gothic One','Bricolage Grotesque',sans-serif;
+  --w:1240px; --g:28px; --ease:cubic-bezier(.2,.8,.2,1);
 }
 *{box-sizing:border-box}
-html{scroll-behavior:smooth;scroll-padding-top:76px}
-body{margin:0;background:var(--bg);color:var(--ink);font:16px/1.6 var(--tx);-webkit-font-smoothing:antialiased;overflow-x:hidden}
-body::before{content:"";position:fixed;inset:0;z-index:-1;pointer-events:none;
-  background-image:linear-gradient(rgba(148,163,184,.045) 1px,transparent 1px),linear-gradient(90deg,rgba(148,163,184,.045) 1px,transparent 1px);
-  background-size:40px 40px;mask-image:radial-gradient(ellipse at 50% 0%,#000 30%,transparent 80%);-webkit-mask-image:radial-gradient(ellipse at 50% 0%,#000 30%,transparent 80%)}
+html{scroll-behavior:smooth}
+body{margin:0;background:var(--night);color:var(--bone);font:17px/1.6 var(--hd);-webkit-font-smoothing:antialiased;overflow-x:hidden}
 img{max-width:100%;display:block}
-a{color:var(--amber);text-decoration:none}
-a:hover{text-decoration:underline;text-underline-offset:3px}
-:focus-visible{outline:2px solid var(--amber);outline-offset:3px;border-radius:6px}
-code,kbd,pre{font-family:var(--mono);font-variant-ligatures:none}
+a{color:inherit}
+code,pre,kbd{font-family:var(--mono);font-variant-ligatures:none;font-feature-settings:"calt" 0,"liga" 0}
+:focus-visible{outline:3px solid var(--amber);outline-offset:3px}
 .wrap{max-width:var(--w);margin:0 auto;padding:0 var(--g)}
-.kicker{display:inline-flex;align-items:center;gap:8px;font:600 12px/1 var(--mono);letter-spacing:1.4px;text-transform:uppercase;color:var(--amber)}
-.kicker::before{content:"";width:18px;height:2px;background:currentColor;border-radius:2px}
-h1,h2,h3{margin:0;line-height:1.12}
-h2{font:700 clamp(30px,4vw,46px)/1.1 var(--hd);letter-spacing:-.6px;margin:14px 0 16px}
-h3{font:600 18px/1.3 var(--tx)}
-p{margin:0}
-.lead{font-size:clamp(17px,1.6vw,19px);color:var(--muted);max-width:700px}
-section{padding:110px 0;position:relative}
-.sec-head{margin-bottom:46px}
-.hl{color:var(--amber)}
-.btn{display:inline-flex;align-items:center;gap:10px;font:600 15px/1 var(--tx);padding:15px 22px;border-radius:12px;border:1px solid transparent;cursor:pointer;transition:transform .15s,background .15s,border-color .15s,box-shadow .15s;white-space:nowrap}
-.btn:hover{text-decoration:none;transform:translateY(-1px)}
-.btn-amber{background:var(--amber);color:#1A1203;box-shadow:0 8px 28px -10px rgba(245,158,11,.7)}
-.btn-amber:hover{background:#FBB43A}
-.btn-ghost{background:rgba(255,255,255,.02);color:var(--ink);border-color:var(--line2)}
-.btn-ghost:hover{border-color:var(--faint);background:var(--surface)}
-.btn svg{width:18px;height:18px}
+.sr{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0)}
+::selection{background:var(--amber);color:var(--ink)}
+
+/* grão de papel em toda a página */
+body::after{content:"";position:fixed;inset:0;pointer-events:none;z-index:200;opacity:.07;mix-blend-mode:overlay;
+  background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.9' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E")}
+
+/* carregando */
+#load{position:fixed;inset:0;z-index:300;background:var(--night);display:grid;place-items:center;transition:opacity .6s var(--ease),visibility .6s}
+#load.off{opacity:0;visibility:hidden}
+#load .k{font:400 clamp(70px,14vw,180px)/1 var(--jp);color:var(--clay);letter-spacing:.04em;display:flex;gap:.1em}
+#load .k span{display:inline-block;animation:knead 1.1s var(--ease) infinite}
+#load .k span:nth-child(2){animation-delay:.12s;color:var(--amber)}
+#load p{font:600 12px/1 var(--mono);letter-spacing:.3em;color:var(--faint);text-align:center;margin-top:18px}
+@keyframes knead{0%,100%{transform:scale(1,1)}40%{transform:scale(1.18,.82)}70%{transform:scale(.92,1.08)}}
 
 /* barra */
-.nav{position:sticky;top:0;z-index:60;background:rgba(11,18,32,.78);backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px);border-bottom:1px solid transparent;transition:border-color .2s}
-.nav.sc{border-bottom-color:var(--line)}
-.nav .wrap{display:flex;align-items:center;gap:28px;height:66px}
-.logo{display:flex;align-items:center;gap:10px;font:700 21px/1 var(--hd);color:var(--ink);letter-spacing:-.3px}
-.logo:hover{text-decoration:none}
-.logo svg{width:28px;height:28px}
-.nav ul{display:flex;gap:24px;list-style:none;margin:0 0 0 auto;padding:0}
-.nav ul a{color:var(--muted);font-size:14px;font-weight:500}
-.nav ul a:hover{color:var(--ink);text-decoration:none}
-.nav .gh{display:inline-flex;align-items:center;gap:8px;font:600 14px/1 var(--tx);color:var(--ink);border:1px solid var(--line2);padding:9px 14px;border-radius:10px}
-.nav .gh:hover{text-decoration:none;border-color:var(--faint)}
-.nav .gh svg{width:16px;height:16px}
+.nav{position:fixed;top:0;left:0;right:0;z-index:100;mix-blend-mode:difference;color:#fff}
+.nav .wrap{display:flex;align-items:center;gap:26px;height:72px;max-width:none;padding:0 32px}
+.brand{display:flex;align-items:center;gap:10px;font:800 20px/1 var(--hd);text-decoration:none;letter-spacing:-.02em}
+.brand i{width:22px;height:22px;border-radius:50%;background:#fff;display:inline-block;animation:blob 6s ease-in-out infinite}
+@keyframes blob{0%,100%{border-radius:50% 46% 54% 48%/52% 50% 48% 50%}33%{border-radius:42% 58% 46% 54%/58% 42% 56% 44%}66%{border-radius:56% 44% 52% 48%/44% 58% 42% 56%}}
+.nav ul{display:flex;gap:22px;list-style:none;margin:0 0 0 auto;padding:0}
+.nav ul a{font:600 13px/1 var(--mono);letter-spacing:.06em;text-transform:uppercase;text-decoration:none;opacity:.85}
+.nav ul a:hover{opacity:1;text-decoration:underline;text-underline-offset:4px}
+.nav .gh{font:800 13px/1 var(--mono);letter-spacing:.06em;text-transform:uppercase;text-decoration:none;border:2px solid #fff;padding:10px 14px;border-radius:999px}
 @media (max-width:980px){.nav ul{display:none}.nav .gh{margin-left:auto}}
 
 /* hero */
-.hero{padding:72px 0 40px;overflow:hidden}
-.hero .hgrid{display:grid;grid-template-columns:minmax(0,.92fr) minmax(0,1.08fr);gap:52px;align-items:center}
-.badge{display:inline-flex;align-items:center;gap:8px;font:500 13px/1 var(--tx);color:var(--ink2);background:var(--panel);border:1px solid var(--line2);padding:8px 13px;border-radius:999px}
-.badge i{width:7px;height:7px;border-radius:50%;background:var(--green);box-shadow:0 0 0 4px rgba(52,211,153,.15)}
-.hero h1{font:800 clamp(40px,5.4vw,66px)/1.02 var(--hd);letter-spacing:-1.6px;margin:22px 0 22px}
-.hero h1 .boom{background:linear-gradient(92deg,var(--amber),var(--orange) 60%,#F87171);-webkit-background-clip:text;background-clip:text;color:transparent}
-.hero .lead{margin-bottom:30px}
-.cta{display:flex;gap:12px;flex-wrap:wrap}
-.hero-note{margin-top:22px;font-size:13.5px;color:var(--faint)}
-.hero-note code{color:var(--muted);background:var(--panel);border:1px solid var(--line);padding:2px 7px;border-radius:6px;font-size:12.5px}
+.hero{position:relative;height:100svh;min-height:680px;overflow:hidden;background:radial-gradient(ellipse 70% 60% at 50% 55%,#1B2A4D 0%,var(--night) 70%)}
+#clay{position:absolute;inset:0;width:100%;height:100%;display:block;touch-action:pan-y}
+.hero .cssblob{position:absolute;left:50%;top:52%;width:min(46vw,460px);aspect-ratio:1;transform:translate(-50%,-50%);display:none;
+  background:radial-gradient(circle at 34% 30%,#F0B58C 0%,#C8693E 38%,#7A3518 100%);animation:blob 7s ease-in-out infinite;box-shadow:0 60px 120px -30px rgba(0,0,0,.7),inset -30px -40px 80px rgba(60,20,5,.5)}
+.no3d .hero .cssblob{display:block}
+.hero-type{position:absolute;inset:0;pointer-events:none;display:flex;flex-direction:column;justify-content:space-between;padding:120px 32px 40px}
+.hero h1{margin:0;font-weight:800;letter-spacing:-.045em;line-height:.86;font-size:clamp(54px,10.4vw,176px)}
+.hero h1 .l1{display:block}
+.hero h1 .l2{display:block;text-align:right;color:var(--amber)}
+.hero h1 em{font:400 italic .62em/1 var(--sf);letter-spacing:-.01em;color:var(--paper);vertical-align:.06em;text-shadow:0 2px 18px rgba(10,17,34,.85)}
+.hero h1{transition:opacity .8s var(--ease),filter .8s}
+.hero.boomed h1{opacity:.1;filter:blur(2px)}
+.hero.boomed .hero-bottom p{opacity:.15;transition:opacity .8s}
+.hero h1 .w{display:inline-block;transform:translateY(110%);opacity:0;transition:transform 1s var(--ease),opacity 1s}
+.ready .hero h1 .w{transform:none;opacity:1}
+.hero-bottom{display:flex;align-items:flex-end;justify-content:space-between;gap:24px;pointer-events:auto}
+.hero-bottom p{max-width:430px;color:var(--muted);font-size:16px;line-height:1.55;margin:0;text-shadow:0 2px 12px rgba(10,17,34,.9)}
+.hero-bottom p b{color:var(--bone)}
+.jp-side{position:absolute;right:34px;bottom:210px;writing-mode:vertical-rl;font:400 22px/1 var(--jp);letter-spacing:.35em;color:rgba(243,233,220,.22);pointer-events:none}
+.katsu{position:relative;pointer-events:auto;width:150px;height:150px;border-radius:50%;border:0;cursor:pointer;flex:none;background:var(--ember);color:var(--paper);
+  font:400 26px/1 var(--jp);box-shadow:0 0 0 6px rgba(255,90,31,.18),0 20px 50px -10px rgba(255,90,31,.6);transition:transform .2s var(--ease)}
+.katsu small{display:block;font:700 10px/1.3 var(--mono);letter-spacing:.14em;margin-top:8px;text-transform:uppercase}
+.katsu::before{content:"";position:absolute;inset:-14px;border-radius:50%;border:1.5px dashed rgba(255,176,32,.55);animation:spin 18s linear infinite}
+.katsu:hover{transform:scale(1.06) rotate(-4deg)}
+.katsu:active{transform:scale(.94)}
+@keyframes spin{to{transform:rotate(360deg)}}
+.hint{position:absolute;left:50%;bottom:26px;transform:translateX(-50%);font:600 11px/1 var(--mono);letter-spacing:.3em;color:var(--faint);text-transform:uppercase;pointer-events:none;transition:opacity .4s}
+.files{position:absolute;inset:0;pointer-events:none}
+.files span{position:absolute;font:800 13px/1 var(--mono);color:var(--ink);background:var(--amber);padding:9px 12px;border-radius:6px;white-space:nowrap;opacity:0;transform:translate(-50%,-50%) scale(.4);transition:opacity .5s,transform .9s var(--ease);box-shadow:0 10px 30px -8px rgba(0,0,0,.6)}
+.files.on span{opacity:1}
+.files span.ok{background:var(--paper)}
+.status{position:absolute;left:32px;top:96px;font:600 12px/1.6 var(--mono);letter-spacing:.08em;color:var(--clay2);text-transform:uppercase;pointer-events:none}
+.status b{color:var(--amber)}
+@media (max-width:760px){.hero-type{padding:100px 20px 28px}.hero-bottom{flex-direction:column;align-items:flex-start}.katsu{width:118px;height:118px;font-size:21px;align-self:flex-end;margin-top:-90px}.jp-side{display:none}.status{left:20px;top:82px}}
 
-.stage{position:relative}
-.frame{position:relative;background:var(--panel);border:1px solid var(--line2);border-radius:16px;box-shadow:0 40px 90px -30px rgba(0,0,0,.75),0 0 0 1px rgba(255,255,255,.02) inset;overflow:hidden}
-.frame-bar{display:flex;align-items:center;gap:8px;padding:10px 14px;border-bottom:1px solid var(--line);background:var(--bg2)}
-.frame-bar i{width:10px;height:10px;border-radius:50%;background:#2A3650}
-.frame-bar span{margin-left:10px;font:500 12px/1 var(--mono);color:var(--faint);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.frame-bar .tag{margin-left:auto;white-space:nowrap;font:600 11px/1 var(--mono);color:var(--amber);background:rgba(245,158,11,.1);border:1px solid rgba(245,158,11,.3);padding:5px 8px;border-radius:6px}
-.viewport{position:relative;width:100%;aspect-ratio:1280/760;overflow:hidden;background:#fff}
-.viewport iframe{position:absolute;top:0;left:0;width:1280px;height:760px;border:0;transform-origin:0 0}
-.approve{display:flex;align-items:center;gap:14px;padding:14px 16px;border-top:1px solid var(--line);background:var(--bg2)}
-.approve p{font-size:14px;color:var(--ink2);flex:1;line-height:1.4}
-.approve p small{display:block;color:var(--faint);font-size:12.5px}
-.katsu{position:relative;font:700 14px/1 var(--tx);background:var(--amber);color:#1A1203;border:0;border-radius:10px;padding:12px 16px;cursor:pointer;white-space:nowrap;transition:transform .12s}
-.katsu:hover{background:#FBB43A}
-.katsu:active{transform:scale(.97)}
-.katsu[disabled]{background:var(--green);color:#052E1F;cursor:default}
-.out{position:absolute;right:-14px;bottom:78px;width:300px;background:rgba(17,26,46,.96);border:1px solid var(--line2);border-radius:14px;padding:14px 14px 12px;box-shadow:0 30px 60px -20px rgba(0,0,0,.8);opacity:0;transform:translateY(14px) scale(.98);pointer-events:none;transition:opacity .35s,transform .35s;backdrop-filter:blur(6px)}
-.out.on{opacity:1;transform:none;pointer-events:auto}
-.out h4{margin:0 0 8px;font:600 12px/1 var(--mono);color:var(--amber);letter-spacing:.6px}
-.out ul{list-style:none;margin:0;padding:0;font:500 12.5px/1.35 var(--mono);color:var(--ink2)}
-.out li{display:flex;gap:8px;align-items:center;padding:5px 0;border-top:1px dashed rgba(51,65,85,.6);opacity:0;transform:translateX(8px);transition:opacity .3s,transform .3s}
-.out.on li{opacity:1;transform:none}
-.out li b{font-weight:500;color:var(--green)}
-.out li em{font-style:normal;color:var(--faint);margin-left:auto;font-size:11px}
-#boom{position:absolute;inset:-60px;pointer-events:none;z-index:5}
-@media (max-width:1060px){.hero .hgrid{grid-template-columns:1fr}.out{right:10px}}
-@media (max-width:560px){.out{position:static;width:auto;margin-top:12px;display:none}.out.on{display:block}.approve{flex-direction:column;align-items:stretch}}
+/* faixa */
+.tape{background:var(--amber);color:var(--ink);transform:rotate(-2deg);margin:-26px -20px 0;position:relative;z-index:5;overflow:hidden;border-block:3px solid var(--ink)}
+.tape.alt{background:var(--ink);color:var(--amber);transform:rotate(1.4deg);margin-top:-14px;border-color:var(--amber)}
+.tape div{display:flex;gap:44px;white-space:nowrap;padding:14px 0;font:400 26px/1 var(--jp);animation:tape 28s linear infinite;width:max-content}
+.tape.alt div{animation-direction:reverse;font:800 20px/1 var(--mono);letter-spacing:.05em}
+.tape i{font-style:normal;color:var(--ember)}
+@keyframes tape{to{transform:translateX(-50%)}}
 
-/* números */
-.stats{padding:28px 0 0}
-.stats .grid{display:grid;grid-template-columns:repeat(5,1fr);border:1px solid var(--line);border-radius:16px;background:rgba(17,26,46,.6)}
-.stat{padding:22px 20px;border-left:1px solid var(--line)}
-.stat:first-child{border-left:0}
-.stat b{display:block;font:700 30px/1 var(--hd);color:var(--ink);letter-spacing:-.6px}
-.stat b small{font-size:18px;color:var(--amber)}
-.stat span{display:block;margin-top:8px;font-size:13.5px;color:var(--muted);line-height:1.4}
-@media (max-width:900px){.stats .grid{grid-template-columns:repeat(2,1fr)}.stat{border-left:0;border-top:1px solid var(--line)}.stat:nth-child(-n+2){border-top:0}.stat:nth-child(even){border-left:1px solid var(--line)}.stat:last-child{grid-column:1/-1;border-left:0}}
+/* blocos */
+.sec{position:relative;padding:150px 0}
+.paper{background:var(--paper);color:var(--ink)}
+.paper.tone{background-color:var(--bone);background-image:radial-gradient(rgba(21,17,14,.10) 1px,transparent 1.2px);background-size:7px 7px}
+.eyebrow{display:flex;align-items:center;gap:14px;font:800 12px/1 var(--mono);letter-spacing:.22em;text-transform:uppercase}
+.eyebrow b{font:400 15px/1 var(--jp);letter-spacing:.1em;padding:7px 9px;border:2px solid currentColor;border-radius:4px}
+.big{font:800 clamp(44px,7vw,112px)/.9 var(--hd);letter-spacing:-.045em;margin:22px 0 26px}
+.big em{font:400 italic 1.02em/1 var(--sf);letter-spacing:-.02em}
+.paper .big em{color:var(--clay)}
+.night .big em{color:var(--clay2)}
+.lede{font-size:clamp(18px,1.6vw,21px);line-height:1.55;max-width:690px}
+.paper .lede{color:var(--ink2)}
+.night .lede{color:var(--muted)}
+.reveal{opacity:0;transform:translateY(40px);transition:opacity 1s var(--ease),transform 1s var(--ease)}
+.reveal.in{opacity:1;transform:none}
 
-/* problema */
-.pains{display:grid;grid-template-columns:repeat(3,1fr);gap:18px}
-.pain{background:var(--panel);border:1px solid var(--line);border-radius:16px;padding:22px;display:flex;flex-direction:column;gap:14px}
-.pain .code{font:500 13px/1.6 var(--mono);background:var(--bg);border:1px solid var(--line);border-radius:10px;padding:12px 14px;color:var(--ink2);overflow-x:auto;white-space:pre}
-.pain .code .err{color:var(--red);text-decoration:underline wavy rgba(248,113,113,.6);text-underline-offset:4px}
-.pain .code .c{color:var(--faint)}
-.pain .flag{display:inline-flex;gap:8px;align-items:flex-start;font-size:13px;color:#FECACA;background:rgba(248,113,113,.08);border:1px solid rgba(248,113,113,.28);padding:8px 10px;border-radius:9px;line-height:1.4}
-.pain .fix{font-size:14.5px;color:var(--muted)}
-.pain .fix b{color:var(--green);font-weight:600}
-@media (max-width:900px){.pains{grid-template-columns:1fr}}
+/* o problema: três rachaduras */
+.cracks{display:grid;grid-template-columns:repeat(3,1fr);gap:0;border:3px solid var(--ink);margin-top:70px;background:var(--paper)}
+.crack{padding:34px 30px 30px;border-left:3px solid var(--ink);position:relative;min-height:380px;display:flex;flex-direction:column}
+.crack:first-child{border-left:0}
+.crack .n{font:400 72px/1 var(--jp);color:var(--clay);opacity:.9}
+.crack h3{font:800 28px/1.05 var(--hd);letter-spacing:-.02em;margin:14px 0 18px}
+.crack pre{margin:0 0 18px;font:600 13px/1.6 var(--mono);background:var(--ink);color:var(--bone);padding:14px 16px;border-radius:4px;white-space:pre-wrap}
+.crack pre s{color:#FF8A6B;text-decoration:line-through wavy rgba(255,138,107,.8)}
+.crack p{margin:auto 0 0;font-size:16px;color:var(--ink2)}
+.crack p b{color:var(--ink)}
+.crack svg.rach{position:absolute;right:16px;top:18px;width:58px;height:58px;color:var(--ink);opacity:.8}
+@media (max-width:900px){.cracks{grid-template-columns:1fr}.crack{border-left:0;border-top:3px solid var(--ink);min-height:0}.crack:first-child{border-top:0}}
 
-/* conversa */
-.chat-wrap{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:48px;align-items:center}
-.chat{display:flex;flex-direction:column;gap:12px}
-.msg{max-width:92%;padding:14px 16px;border-radius:16px;font-size:15px;line-height:1.5;transition:opacity .5s,transform .5s}
-.js .msg{opacity:0;transform:translateY(10px)}
-.msg.in{opacity:1;transform:none}
-.msg .who{display:block;font:600 11.5px/1 var(--mono);letter-spacing:.8px;text-transform:uppercase;margin-bottom:7px}
-.msg.you{align-self:flex-end;background:#1C2B4A;border:1px solid #2B3E66;border-bottom-right-radius:4px}
-.msg.you .who{color:var(--blue)}
-.msg.cl{background:var(--panel);border:1px solid var(--line);border-bottom-left-radius:4px}
-.msg.cl .who{color:var(--amber)}
-.msg.gs{align-self:flex-end;background:rgba(52,211,153,.09);border:1px solid rgba(52,211,153,.35);border-bottom-right-radius:4px}
-.msg.gs .who{color:var(--green)}
-.msg q{color:var(--ink);font-style:italic}
-.quote{font:600 clamp(22px,2.6vw,30px)/1.3 var(--hd);letter-spacing:-.3px;color:var(--ink)}
-.quote span{color:var(--red);font-family:var(--mono);font-size:.78em;font-weight:500}
-@media (max-width:900px){.chat-wrap{grid-template-columns:1fr}}
-
-/* fluxo */
-.flow{display:grid;grid-template-columns:330px minmax(0,1fr);gap:24px;align-items:start}
-.steps{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:6px;counter-reset:s}
-.steps button{all:unset;box-sizing:border-box;display:grid;grid-template-columns:34px 1fr;gap:12px;align-items:center;width:100%;padding:12px 14px;border-radius:12px;border:1px solid transparent;cursor:pointer;color:var(--muted);transition:background .15s,border-color .15s,color .15s}
-.steps button:hover{background:var(--panel);color:var(--ink)}
-.steps button[aria-selected="true"]{background:var(--panel);border-color:var(--line2);color:var(--ink)}
-.steps .n{display:grid;place-items:center;width:34px;height:34px;border-radius:10px;border:1px solid var(--line2);font:700 14px/1 var(--mono);color:var(--muted)}
-.steps button[aria-selected="true"] .n{background:var(--amber);border-color:var(--amber);color:#1A1203}
-.steps .t{font:600 15px/1.25 var(--tx)}
-.steps .t small{display:block;font:400 13px/1.35 var(--tx);color:var(--faint);margin-top:3px}
-.term{background:#070C17;border:1px solid var(--line2);border-radius:16px;overflow:hidden;box-shadow:0 30px 80px -40px rgba(0,0,0,.9);position:sticky;top:90px}
-.term-bar{display:flex;align-items:center;gap:8px;padding:11px 14px;border-bottom:1px solid var(--line);background:var(--bg2)}
-.term-bar i{width:10px;height:10px;border-radius:50%;background:#2A3650}
-.term-bar span{margin-left:8px;font:500 12px/1 var(--mono);color:var(--faint)}
-.term-body{padding:20px 22px 22px;min-height:360px}
-.term-body p.desc{font:400 15px/1.55 var(--tx);color:var(--ink2);margin-bottom:16px}
-.term pre{margin:0;font:400 13px/1.7 var(--mono);color:var(--ink2);white-space:pre-wrap;word-break:break-word}
-.term .p{color:var(--amber)}
-.term .k{color:var(--green)}
-.term .w{color:#FCD34D}
-.term .d{color:var(--faint)}
-.term .b{color:var(--blue)}
-.term .r{color:var(--red)}
-@media (max-width:900px){.flow{grid-template-columns:1fr}.term{position:static}.steps{flex-direction:row;overflow-x:auto;padding-bottom:6px}.steps button{grid-template-columns:28px auto;white-space:nowrap}.steps .t small{display:none}}
+/* mangá */
+.manga-head{display:flex;justify-content:space-between;align-items:flex-end;gap:30px;flex-wrap:wrap}
+.manga{display:grid;grid-template-columns:repeat(12,1fr);grid-auto-rows:120px;gap:14px;margin-top:60px}
+.panel{position:relative;background:var(--paper);border:4px solid var(--ink);overflow:hidden;padding:18px 20px;display:flex;flex-direction:column;box-shadow:8px 8px 0 var(--ink);opacity:0;transform:scale(.92) rotate(-1deg);transition:opacity .6s var(--ease),transform .7s var(--ease)}
+.panel.in{opacity:1;transform:none}
+.panel .no{position:absolute;top:0;left:0;background:var(--ink);color:var(--paper);font:800 13px/1 var(--mono);padding:8px 10px;z-index:2}
+.panel h4{margin:30px 0 8px;font:800 24px/1.05 var(--hd);letter-spacing:-.02em;position:relative;z-index:2}
+.panel p{margin:0;font-size:15px;line-height:1.45;color:var(--ink2);position:relative;z-index:2;max-width:46ch}
+.panel .cmd{margin-top:auto;position:relative;z-index:2;font:600 12px/1.5 var(--mono);background:var(--ink);color:var(--amber);padding:10px 12px;border-radius:3px;white-space:pre-wrap;word-break:break-word}
+.panel .cmd span{color:var(--bone)}
+.panel .cmd i{font-style:normal;color:#7CE0A8}
+.speed{position:absolute;inset:-40%;background:repeating-conic-gradient(from 0deg at 50% 50%,rgba(21,17,14,.13) 0deg 1.2deg,transparent 1.2deg 7deg);z-index:0}
+.tone2{position:absolute;inset:0;background-image:radial-gradient(rgba(21,17,14,.16) 1.4px,transparent 1.6px);background-size:9px 9px;z-index:0;-webkit-mask-image:linear-gradient(135deg,transparent 30%,#000);mask-image:linear-gradient(135deg,transparent 30%,#000)}
+.bubble{position:relative;z-index:2;background:#fff;border:3px solid var(--ink);border-radius:22px;padding:12px 16px;font:600 15px/1.4 var(--hd);margin-top:10px;max-width:92%}
+.bubble::after{content:"";position:absolute;left:28px;bottom:-16px;border:9px solid transparent;border-top-color:var(--ink);border-left-color:var(--ink)}
+.bubble.r{align-self:flex-end}
+.bubble.r::after{left:auto;right:28px;border-left-color:transparent;border-right-color:var(--ink)}
+.sfx{position:absolute;z-index:1;font:400 clamp(60px,8vw,120px)/.9 var(--jp);color:var(--ember);-webkit-text-stroke:3px var(--ink);paint-order:stroke fill;transform:rotate(-8deg);letter-spacing:-.02em}
+.p1{grid-column:span 5;grid-row:span 3}
+.p2{grid-column:span 4;grid-row:span 3}
+.p3{grid-column:span 3;grid-row:span 3}
+.p4{grid-column:span 3;grid-row:span 3}
+.p5{grid-column:span 5;grid-row:span 3}
+.p6{grid-column:span 4;grid-row:span 3;background:var(--ink);color:var(--paper)}
+.p6 p{color:#CFC3B3}.p6 h4{color:var(--amber)}
+.p6 .speed{background:repeating-conic-gradient(from 0deg at 50% 50%,rgba(255,176,32,.16) 0deg 1.2deg,transparent 1.2deg 6deg)}
+.p7{grid-column:span 7;grid-row:span 3;background:var(--amber)}
+.p7 .speed{background:repeating-conic-gradient(from 0deg at 70% 40%,rgba(21,17,14,.16) 0deg 1.4deg,transparent 1.4deg 6deg)}
+.p7 p{color:var(--ink);max-width:40ch}
+.p8{grid-column:span 5;grid-row:span 3}
+.stamp{position:absolute;z-index:3;right:22px;bottom:78px;width:96px;height:96px;border:4px solid var(--ember);border-radius:50%;display:grid;place-items:center;color:var(--ember);font:400 26px/1 var(--jp);transform:rotate(12deg);text-align:center}
+.stamp small{display:block;font:800 9px/1 var(--mono);letter-spacing:.14em;margin-top:4px}
+@media (max-width:1000px){.manga{grid-template-columns:repeat(2,1fr);grid-auto-rows:auto}.manga .panel{grid-column:span 1!important;grid-row:auto!important;min-height:300px}.p7,.p1{grid-column:1/-1!important}}
+@media (max-width:620px){.manga{grid-template-columns:1fr}.manga .panel{grid-column:1/-1!important}}
 
 /* receita */
-.recipe{display:grid;grid-template-columns:minmax(0,1fr) 120px minmax(0,1fr);gap:0;align-items:stretch}
-.card{background:var(--panel);border:1px solid var(--line);border-radius:16px;overflow:hidden;display:flex;flex-direction:column}
-.card-h{display:flex;align-items:center;gap:10px;padding:13px 16px;border-bottom:1px solid var(--line);font:600 12px/1 var(--mono);letter-spacing:.6px;text-transform:uppercase;color:var(--muted)}
-.card-h .dot{width:8px;height:8px;border-radius:50%}
-.card pre{margin:0;padding:16px;font:400 12.5px/1.65 var(--mono);color:var(--ink2);overflow:auto;flex:1}
-.card pre .c{color:var(--faint)}
-.card pre .kw{color:var(--blue)}
-.card pre .s{color:var(--green)}
-.arrow{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:10px;font:600 11.5px/1.3 var(--mono);color:var(--faint);text-align:center;padding:0 8px}
-.arrow svg{width:60px;height:24px}
-.arrow .z{font:700 30px/1 var(--hd);color:var(--green)}
-.cat{width:100%;border-collapse:collapse;font:400 12.5px/1.4 var(--mono)}
-.cat th{text-align:left;color:var(--faint);font-weight:500;padding:10px 14px;border-bottom:1px solid var(--line)}
-.cat td{padding:8px 14px;border-bottom:1px solid rgba(36,48,73,.7);color:var(--ink2)}
-.cat td:first-child{color:var(--blue)}
-.cat td.to{color:var(--amber)}
-.cat tr:last-child td{border-bottom:0}
-.card .foot{padding:12px 16px;border-top:1px solid var(--line);font-size:13px;color:var(--muted);display:flex;gap:10px;align-items:center;flex-wrap:wrap}
-.pill{display:inline-flex;align-items:center;gap:6px;font:600 12px/1 var(--mono);padding:6px 9px;border-radius:999px;border:1px solid}
-.pill.ok{color:var(--green);border-color:rgba(52,211,153,.4);background:rgba(52,211,153,.08)}
-.pill.am{color:var(--amber);border-color:rgba(245,158,11,.4);background:rgba(245,158,11,.08)}
-.pill.bl{color:var(--blue);border-color:rgba(96,165,250,.4);background:rgba(96,165,250,.08)}
-@media (max-width:900px){.recipe{grid-template-columns:1fr}.arrow{flex-direction:row;padding:18px 0}.arrow svg{transform:rotate(90deg)}}
+.recipe{display:grid;grid-template-columns:1fr auto 1fr;gap:40px;align-items:center;margin-top:70px}
+.ticket{background:var(--paper);color:var(--ink);padding:26px 24px 30px;position:relative;font:600 12.5px/1.65 var(--mono);transform:rotate(-1.6deg);box-shadow:0 30px 60px -20px rgba(0,0,0,.6);
+  -webkit-mask:radial-gradient(circle 7px at 50% 100%,transparent 98%,#000) 0 0/18px 100% repeat-x;mask:conic-gradient(from 135deg at bottom,transparent 90deg,#000 0) 0 100%/16px 100% repeat-x}
+.ticket h5{margin:0 0 12px;font:800 13px/1 var(--mono);letter-spacing:.14em;text-transform:uppercase;border-bottom:2px dashed var(--ink);padding-bottom:12px}
+.ticket pre{margin:0;white-space:pre-wrap;font:inherit}
+.ticket .c{color:#8A7A69}
+.ticket .kw{color:#2F5DC8}
+.ticket.cat{transform:rotate(1.4deg)}
+.ticket table{width:100%;border-collapse:collapse}
+.ticket td{padding:5px 0;border-bottom:1px dotted rgba(21,17,14,.3)}
+.ticket td:last-child{text-align:right;color:var(--clay3)}
+.ticket .hk{position:absolute;right:-16px;bottom:-14px;width:118px;height:118px;border:4px solid var(--ember);border-radius:50%;display:grid;place-items:center;text-align:center;color:var(--ember);transform:rotate(-14deg);background:rgba(251,245,236,.85);font:800 11px/1.25 var(--mono);letter-spacing:.06em}
+.ticket .hk b{display:block;font:400 34px/1 var(--jp)}
+.arrow{display:flex;flex-direction:column;align-items:center;gap:12px;font:800 11px/1.3 var(--mono);letter-spacing:.18em;text-transform:uppercase;color:var(--faint);text-align:center}
+.arrow .z{font:400 120px/.8 var(--jp);color:var(--amber)}
+@media (max-width:900px){.recipe{grid-template-columns:1fr}.arrow{flex-direction:row}.arrow .z{font-size:80px}}
 
-/* modelos */
-.models{display:grid;grid-template-columns:270px minmax(0,1fr);gap:24px;align-items:start}
-.mlist{display:flex;flex-direction:column;gap:4px;list-style:none;margin:0;padding:0}
-.mlist button{all:unset;box-sizing:border-box;width:100%;padding:11px 14px;border-radius:11px;cursor:pointer;border:1px solid transparent;display:flex;gap:10px;align-items:center;font:500 14px/1.2 var(--mono);color:var(--muted)}
-.mlist button i{font-style:normal;font-size:11px;color:var(--faint);width:20px}
-.mlist button:hover{background:var(--panel);color:var(--ink)}
-.mlist button[aria-selected="true"]{background:var(--panel);border-color:var(--line2);color:var(--amber)}
-.mdesc{margin:14px 2px 0;font-size:15px;color:var(--ink2);min-height:48px}
-.mdesc code{color:var(--amber)}
-.models .frame .viewport{aspect-ratio:1280/800}
-.models .frame .viewport iframe{height:800px}
-.mnote{margin-top:12px;font-size:13px;color:var(--faint)}
-@media (max-width:900px){.models{grid-template-columns:1fr}.mlist{flex-direction:row;overflow-x:auto;padding-bottom:6px}.mlist button{white-space:nowrap}}
+/* galeria */
+.gallery{background:#05080F;position:relative;overflow:hidden}
+.gallery::before{content:"";position:absolute;left:50%;top:-10%;width:900px;height:900px;transform:translateX(-50%);background:radial-gradient(circle,rgba(255,176,32,.13),transparent 60%);pointer-events:none}
+.stage{position:relative;margin-top:60px}
+.easel{position:relative;background:#0F1628;border:1px solid var(--line);padding:14px;box-shadow:0 70px 120px -40px rgba(0,0,0,.9)}
+.easel .vp{position:relative;width:100%;aspect-ratio:1280/780;overflow:hidden;background:#fff}
+.easel iframe{position:absolute;left:0;top:0;width:1280px;height:780px;border:0;transform-origin:0 0}
+.plaque{display:flex;gap:26px;align-items:flex-start;justify-content:space-between;margin-top:22px;flex-wrap:wrap}
+.plaque .t{font:400 italic 40px/1 var(--sf);color:var(--bone)}
+.plaque .t code{font:800 15px/1 var(--mono);font-style:normal;color:var(--amber);display:block;margin-bottom:10px;letter-spacing:.04em}
+.plaque p{max-width:520px;color:var(--muted);font-size:16px;margin:0}
+.plaque .live{font:800 11px/1 var(--mono);letter-spacing:.2em;color:var(--ember);text-transform:uppercase;display:flex;gap:8px;align-items:center}
+.plaque .live i{width:8px;height:8px;border-radius:50%;background:var(--ember);animation:pulse 1.4s infinite}
+@keyframes pulse{50%{opacity:.25}}
+.strip{display:flex;gap:14px;overflow-x:auto;padding:30px 2px 12px;scroll-snap-type:x mandatory;scrollbar-width:thin;scrollbar-color:var(--line) transparent}
+.strip button{all:unset;cursor:pointer;flex:none;width:210px;scroll-snap-align:start;transition:transform .3s var(--ease)}
+.strip button img{width:100%;height:auto;aspect-ratio:2/1;object-fit:cover;object-position:top;border:2px solid transparent;filter:grayscale(.85) brightness(.7);transition:filter .3s,border-color .3s}
+.strip button span{display:flex;gap:8px;margin-top:10px;font:600 12px/1.2 var(--mono);color:var(--faint)}
+.strip button span b{color:var(--muted);font-weight:600}
+.strip button:hover{transform:translateY(-4px)}
+.strip button:hover img,.strip button[aria-selected="true"] img{filter:none}
+.strip button[aria-selected="true"] img{border-color:var(--amber)}
+.strip button[aria-selected="true"] span b{color:var(--amber)}
+.gnote{margin-top:16px;font-size:13.5px;color:var(--faint)}
 
 /* indicador */
-.duel{display:grid;grid-template-columns:1fr 1fr;gap:18px}
-.duel .card pre{font-size:12.5px}
-.duel .bad .card-h{color:#FCA5A5}
-.duel .good .card-h{color:var(--green)}
-.duel .why{padding:14px 16px;border-top:1px solid var(--line);font-size:14px;color:var(--muted);line-height:1.5}
-.toggle{display:inline-flex;background:var(--panel);border:1px solid var(--line2);border-radius:12px;padding:4px;margin-bottom:20px}
-.toggle button{all:unset;cursor:pointer;padding:9px 14px;border-radius:9px;font:600 14px/1 var(--tx);color:var(--muted)}
-.toggle button[aria-selected="true"]{background:var(--surface2);color:var(--ink)}
-.rules{display:grid;grid-template-columns:repeat(3,1fr);gap:14px;margin-top:22px}
-.rule{border:1px solid var(--line);border-radius:14px;padding:16px;background:rgba(17,26,46,.5)}
-.rule b{display:block;font-size:15px;margin-bottom:6px}
-.rule p{font-size:14px;color:var(--muted)}
+.duel{display:grid;grid-template-columns:1fr 1fr;margin-top:60px;border:3px solid var(--ink)}
+.duel > div{padding:30px}
+.duel .bad{background:var(--bone2);position:relative}
+.duel .good{background:var(--ink);color:var(--bone)}
+.duel h4{margin:0 0 16px;font:800 13px/1 var(--mono);letter-spacing:.18em;text-transform:uppercase}
+.duel .bad h4{color:#B23A1C}.duel .good h4{color:#7CE0A8}
+.duel pre{margin:0;font:600 13px/1.65 var(--mono);white-space:pre;overflow-x:auto}
+.duel .bad pre{color:var(--ink)}
+.duel p{margin:20px 0 0;font-size:15.5px;line-height:1.55}
+.duel .bad p{color:var(--ink2)}.duel .good p{color:#C9BFB2}
+.duel .x{position:absolute;inset:0;pointer-events:none;background:linear-gradient(to top right,transparent calc(50% - 2px),rgba(178,58,28,.35) calc(50% - 2px) calc(50% + 2px),transparent calc(50% + 2px))}
+.rules{display:grid;grid-template-columns:repeat(3,1fr);gap:22px;margin-top:40px}
+.rules div{border-top:3px solid var(--ink);padding-top:16px}
+.rules b{display:block;font:800 22px/1.1 var(--hd);letter-spacing:-.02em;margin-bottom:8px}
+.rules p{margin:0;font-size:15.5px;color:var(--ink2)}
 @media (max-width:900px){.duel,.rules{grid-template-columns:1fr}}
 
 /* C0 */
-.c0{display:grid;grid-template-columns:300px minmax(0,1fr);gap:24px;align-items:stretch}
-.grade{background:var(--panel);border:1px solid var(--line);border-radius:16px;padding:26px;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;gap:14px}
-.ring{position:relative;width:170px;height:170px}
-.ring svg{width:100%;height:100%;transform:rotate(-90deg)}
-.ring circle{fill:none;stroke-width:12}
-.ring .bg{stroke:var(--surface2)}
-.ring .fg{stroke:var(--red);stroke-linecap:round;stroke-dasharray:440;stroke-dashoffset:440;transition:stroke-dashoffset 1.6s cubic-bezier(.2,.8,.2,1)}
-.ring.in .fg{stroke-dashoffset:242}
-.ring b{position:absolute;inset:0;display:grid;place-items:center;font:800 46px/1 var(--hd);letter-spacing:-1px}
-.ring b small{display:block;font:500 13px/1 var(--tx);color:var(--faint);margin-top:6px;letter-spacing:0}
-.sev{display:flex;gap:8px;flex-wrap:wrap;justify-content:center}
-.sev span{font:600 12px/1 var(--mono);padding:6px 9px;border-radius:7px;border:1px solid var(--line2);color:var(--muted)}
-.sev .cr{color:var(--red);border-color:rgba(248,113,113,.4)}
-.sev .al{color:var(--orange);border-color:rgba(251,146,60,.4)}
-.sev .me{color:#FCD34D;border-color:rgba(252,211,77,.35)}
-.findings{background:var(--panel);border:1px solid var(--line);border-radius:16px;overflow:hidden}
-.finding{display:grid;grid-template-columns:150px 1fr;gap:16px;padding:16px 20px;border-top:1px solid var(--line)}
-.finding:first-of-type{border-top:0}
-.finding .m{font:600 13px/1.4 var(--mono);color:var(--amber)}
-.finding p{font-size:14.5px;color:var(--ink2)}
-.finding p b{color:var(--red);font:600 11px/1 var(--mono);letter-spacing:.6px;margin-right:6px;border:1px solid rgba(248,113,113,.4);padding:3px 6px;border-radius:5px;vertical-align:2px}
-.findings .h{padding:14px 20px;border-bottom:1px solid var(--line);font:600 12px/1 var(--mono);letter-spacing:.6px;text-transform:uppercase;color:var(--muted);display:flex;gap:8px;align-items:center}
-@media (max-width:900px){.c0{grid-template-columns:1fr}.finding{grid-template-columns:1fr;gap:6px}}
+.autopsy{display:grid;grid-template-columns:420px 1fr;gap:60px;align-items:center;margin-top:60px}
+.cracked{position:relative;aspect-ratio:1;max-width:420px}
+.cracked svg{width:100%;height:100%;overflow:visible}
+.cracked .score{position:absolute;inset:0;display:grid;place-items:center;text-align:center;pointer-events:none}
+.cracked .score b{display:block;font:800 120px/.85 var(--hd);letter-spacing:-.06em;color:var(--paper)}
+.cracked .score span{display:block;font:800 12px/1 var(--mono);letter-spacing:.2em;color:var(--ember);margin-top:14px;text-transform:uppercase}
+.crk path{stroke:var(--night);stroke-width:5;fill:none;stroke-linecap:round;stroke-dasharray:400;stroke-dashoffset:400;transition:stroke-dashoffset 1.8s var(--ease)}
+.in .crk path{stroke-dashoffset:0}
+.findings{list-style:none;margin:0;padding:0;border-top:1px solid var(--line)}
+.findings li{display:grid;grid-template-columns:170px 1fr;gap:22px;padding:22px 0;border-bottom:1px solid var(--line)}
+.findings code{font:800 14px/1.4 var(--mono);color:var(--amber)}
+.findings p{margin:0;color:var(--bone);font-size:16.5px;line-height:1.5}
+.findings p b{font:800 10px/1 var(--mono);letter-spacing:.12em;color:var(--ink);background:var(--ember);padding:4px 6px;border-radius:2px;margin-right:8px;vertical-align:2px}
+.sev{display:flex;gap:10px;flex-wrap:wrap;margin-top:22px;font:800 12px/1 var(--mono);letter-spacing:.06em}
+.sev span{border:2px solid var(--line);padding:8px 10px;border-radius:999px;color:var(--muted)}
+.sev .c{border-color:var(--ember);color:var(--ember)}
+@media (max-width:980px){.autopsy{grid-template-columns:1fr}.cracked{margin:0 auto;width:80%}.findings li{grid-template-columns:1fr;gap:6px}}
 
 /* entrega */
-.deliv{display:grid;grid-template-columns:minmax(0,.9fr) minmax(0,1.1fr);gap:24px}
-.tree{background:#070C17;border:1px solid var(--line2);border-radius:16px;padding:20px 22px;font:400 13.5px/1.9 var(--mono);color:var(--ink2);white-space:pre;overflow-x:auto}
-.tree .f{color:var(--blue)}
-.tree .a{color:var(--amber)}
-.tree .c{color:var(--faint)}
-.dl{display:grid;gap:10px}
-.dl div{display:grid;grid-template-columns:44px 1fr;gap:14px;align-items:start;padding:14px 16px;border:1px solid var(--line);border-radius:14px;background:rgba(17,26,46,.55)}
-.dl svg{width:44px;height:44px;padding:10px;border-radius:11px;background:var(--surface);color:var(--amber)}
-.dl b{display:block;font-size:15px}
-.dl p{font-size:14px;color:var(--muted)}
+.deliv{display:grid;grid-template-columns:1fr 1fr;gap:0;margin-top:60px;border:3px solid var(--ink)}
+.tree{background:var(--ink);color:var(--bone);padding:30px;font:600 14px/2 var(--mono);white-space:pre;overflow-x:auto}
+.tree .f{color:#8FB4FF}.tree .a{color:var(--amber)}.tree .c{color:#7E7266}
+.dl{display:grid}
+.dl div{padding:24px 28px;border-bottom:3px solid var(--ink)}
+.dl div:last-child{border-bottom:0}
+.dl b{display:block;font:800 21px/1.15 var(--hd);letter-spacing:-.02em;margin-bottom:6px}
+.dl p{margin:0;font-size:15.5px;color:var(--ink2)}
 @media (max-width:900px){.deliv{grid-template-columns:1fr}}
 
-/* resultados */
-.res{display:grid;grid-template-columns:repeat(4,1fr);gap:14px}
-.res div{background:var(--panel);border:1px solid var(--line);border-radius:16px;padding:22px 20px}
-.res b{display:block;font:700 38px/1 var(--hd);letter-spacing:-1px}
-.res b small{font-size:20px;color:var(--faint);font-weight:600}
-.res span{display:block;margin-top:10px;font-size:14px;color:var(--muted);line-height:1.45}
-.res .wide{grid-column:span 2}
-.res .zero b{color:var(--green)}
-.res-note{margin-top:16px;font-size:13.5px;color:var(--faint)}
-@media (max-width:900px){.res{grid-template-columns:1fr 1fr}.res .wide{grid-column:1/-1}}
+/* números */
+.nums{display:grid;grid-template-columns:repeat(12,1fr);gap:0;margin-top:70px;border-top:3px solid var(--ink)}
+.num{padding:30px 24px 34px 0;border-bottom:3px solid var(--ink)}
+.num b{display:block;font:800 clamp(64px,8vw,132px)/.85 var(--hd);letter-spacing:-.06em}
+.num b small{font-size:.4em;letter-spacing:-.03em;color:var(--clay)}
+.num > span{display:block;margin-top:14px;font-size:15.5px;line-height:1.45;color:var(--ink2);max-width:30ch}
+.n6{grid-column:span 6}.n4{grid-column:span 4}.n3{grid-column:span 3}.n12{grid-column:span 12}
+.num.zero b{color:var(--clay)}
+.numnote{margin-top:22px;font:600 13px/1.6 var(--mono);color:var(--ink2)}
+@media (max-width:900px){.nums .num{grid-column:span 12}}
 
 /* técnicas */
-.jutsu{display:grid;grid-template-columns:repeat(4,1fr);gap:12px}
-.jutsu div{border:1px solid var(--line);border-radius:14px;padding:16px;background:rgba(17,26,46,.5);transition:border-color .15s,transform .15s}
-.jutsu div:hover{border-color:var(--amber2);transform:translateY(-2px)}
-.jutsu b{display:block;font:700 15px/1.2 var(--mono);color:var(--amber);margin-bottom:6px}
-.jutsu span{font-size:13.5px;color:var(--muted);line-height:1.45;display:block}
-@media (max-width:900px){.jutsu{grid-template-columns:1fr 1fr}}
+.jutsu{display:grid;grid-template-columns:repeat(4,1fr);gap:16px;margin-top:60px}
+.card{perspective:900px;height:200px}
+.card .in2{position:relative;width:100%;height:100%;transform-style:preserve-3d;transition:transform .7s var(--ease)}
+.card:hover .in2,.card:focus-within .in2{transform:rotateY(180deg)}
+.card .f,.card .b{position:absolute;inset:0;backface-visibility:hidden;-webkit-backface-visibility:hidden;border:1px solid var(--line);padding:20px;display:flex;flex-direction:column}
+.card .f{background:var(--night2)}
+.card .f b{font:800 26px/1 var(--hd);letter-spacing:-.02em;margin-top:auto}
+.card .f i{font:400 44px/1 var(--jp);font-style:normal;color:var(--clay)}
+.card .b{background:var(--amber);color:var(--ink);transform:rotateY(180deg);justify-content:flex-end}
+.card .b b{font:800 13px/1 var(--mono);letter-spacing:.14em;text-transform:uppercase;margin-bottom:10px}
+.card .b span{font:600 17px/1.35 var(--hd)}
+@media (max-width:900px){.jutsu{grid-template-columns:1fr 1fr}.card{height:180px}}
 
 /* instalar */
-.install{display:grid;grid-template-columns:repeat(3,1fr);gap:16px}
-.istep{background:var(--panel);border:1px solid var(--line);border-radius:16px;padding:22px;display:flex;flex-direction:column;gap:12px}
-.istep .n{font:700 13px/1 var(--mono);color:var(--amber)}
-.istep p{font-size:14.5px;color:var(--muted)}
-.cmd{position:relative;background:#070C17;border:1px solid var(--line2);border-radius:11px;padding:12px 44px 12px 14px;font:400 12.5px/1.55 var(--mono);color:var(--ink2);word-break:break-all}
-.cmd button{position:absolute;top:8px;right:8px;all:unset;cursor:pointer;width:28px;height:28px;display:grid;place-items:center;border-radius:7px;color:var(--faint)}
-.cmd button{position:absolute;top:7px;right:7px}
-.cmd button:hover{background:var(--surface2);color:var(--ink)}
-.cmd button svg{width:15px;height:15px}
-.os{display:inline-flex;gap:4px;background:var(--bg);border:1px solid var(--line);border-radius:9px;padding:3px;align-self:flex-start}
-.os button{all:unset;cursor:pointer;font:600 12px/1 var(--tx);color:var(--faint);padding:7px 10px;border-radius:7px}
-.os button[aria-selected="true"]{background:var(--surface2);color:var(--ink)}
-.req{margin-top:18px;font-size:14px;color:var(--faint)}
-@media (max-width:900px){.install{grid-template-columns:1fr}}
+.term{background:#05080F;border:1px solid var(--line);border-radius:10px;overflow:hidden;margin-top:60px;box-shadow:0 50px 100px -40px rgba(0,0,0,.9)}
+.term .bar{display:flex;gap:8px;align-items:center;padding:12px 16px;border-bottom:1px solid var(--line)}
+.term .bar i{width:11px;height:11px;border-radius:50%;background:#26304A}
+.term .bar i:first-child{background:var(--ember)}.term .bar i:nth-child(2){background:var(--amber)}.term .bar i:nth-child(3){background:var(--green)}
+.term .bar span{margin-left:10px;font:600 12px/1 var(--mono);color:var(--faint)}
+.term pre{margin:0;padding:24px 26px 30px;font:600 14px/1.8 var(--mono);color:var(--bone);min-height:440px;white-space:pre-wrap;word-break:break-word}
+.term .p{color:var(--amber)}.term .k{color:#7CE0A8}.term .d{color:var(--faint)}.term .e{color:var(--ember)}
+.term .cur{display:inline-block;width:9px;height:18px;background:var(--amber);vertical-align:-3px;animation:pulse 1s steps(1) infinite}
+.os{display:flex;gap:10px;margin-top:26px;flex-wrap:wrap;align-items:center}
+.os button{all:unset;cursor:pointer;font:800 12px/1 var(--mono);letter-spacing:.1em;text-transform:uppercase;padding:11px 14px;border:2px solid var(--line);border-radius:999px;color:var(--muted)}
+.os button[aria-selected="true"]{border-color:var(--amber);color:var(--amber)}
+.os .copy{margin-left:auto;background:var(--amber);color:var(--ink);border-color:var(--amber)}
+.req{margin-top:22px;color:var(--muted);font-size:16px}
+.req a{color:var(--amber)}
 
 /* limites */
-.limits{display:grid;grid-template-columns:repeat(2,1fr);gap:14px}
-.limits div{display:grid;grid-template-columns:28px 1fr;gap:12px;padding:18px;border:1px solid var(--line);border-radius:14px}
-.limits svg{width:22px;height:22px;color:var(--faint);margin-top:2px}
-.limits b{display:block;font-size:15px;margin-bottom:4px}
-.limits p{font-size:14px;color:var(--muted)}
+.limits{display:grid;grid-template-columns:repeat(2,1fr);gap:0 50px;margin-top:50px}
+.limits div{padding:22px 0;border-bottom:2px solid var(--ink);display:grid;grid-template-columns:44px 1fr;gap:12px}
+.limits div::before{content:"✕";font:400 26px/1 var(--jp);color:var(--clay)}
+.limits b{display:block;font:800 20px/1.2 var(--hd);letter-spacing:-.01em;margin-bottom:4px}
+.limits p{margin:0;font-size:15.5px;color:var(--ink2)}
 @media (max-width:900px){.limits{grid-template-columns:1fr}}
 
 /* final */
-.final{text-align:center;padding:120px 0 110px;overflow:hidden}
-.final h2{font-size:clamp(34px,5vw,58px);max-width:860px;margin:16px auto 18px}
-.final .lead{margin:0 auto 32px}
-.final .cta{justify-content:center}
-footer{border-top:1px solid var(--line);padding:36px 0 50px;color:var(--faint);font-size:14px}
-footer .wrap{display:flex;gap:24px;justify-content:space-between;flex-wrap:wrap}
-footer a{color:var(--muted)}
-footer p{max-width:620px}
+.final{background:var(--ember);color:var(--ink);text-align:center;padding:140px 0 120px;overflow:hidden;position:relative}
+.final .speed{inset:-60%;background:repeating-conic-gradient(from 0deg at 50% 50%,rgba(21,17,14,.10) 0deg 1.4deg,transparent 1.4deg 6deg);animation:spin 90s linear infinite}
+.boomword{position:relative;font:400 clamp(64px,13vw,210px)/.85 var(--jp);letter-spacing:-.02em;color:var(--paper);-webkit-text-stroke:5px var(--ink);paint-order:stroke fill;display:flex;justify-content:center;cursor:crosshair;user-select:none}
+.boomword span{display:inline-block;transition:transform .5s var(--ease)}
+.final p{position:relative;font:600 clamp(19px,2vw,24px)/1.45 var(--hd);max-width:640px;margin:34px auto 36px}
+.cta{display:flex;gap:14px;justify-content:center;flex-wrap:wrap;position:relative}
+.btn{display:inline-flex;align-items:center;gap:10px;font:800 14px/1 var(--mono);letter-spacing:.08em;text-transform:uppercase;padding:18px 24px;border-radius:999px;text-decoration:none;border:3px solid var(--ink);transition:transform .2s var(--ease),box-shadow .2s}
+.btn.dark{background:var(--ink);color:var(--paper);box-shadow:6px 6px 0 rgba(21,17,14,.35)}
+.btn.light{background:var(--paper);color:var(--ink)}
+.btn:hover{transform:translate(-2px,-2px)}
+footer{background:var(--ink);color:#B5A998;padding:46px 0 60px;font-size:14px}
+footer .wrap{display:flex;justify-content:space-between;gap:30px;flex-wrap:wrap}
+footer p{margin:0;max-width:720px;line-height:1.6}
+footer a{color:var(--amber)}
+footer .mode{all:unset;cursor:pointer;font:800 12px/1 var(--mono);letter-spacing:.12em;text-transform:uppercase;color:var(--ink);background:var(--amber);padding:12px 16px;border-radius:999px;height:fit-content}
+body.katsu-mode .sec,body.katsu-mode .tape{animation:shake .35s}
+@keyframes shake{20%{transform:translate(-4px,2px) rotate(-.4deg)}40%{transform:translate(4px,-3px)}60%{transform:translate(-3px,1px)}80%{transform:translate(2px,2px)}}
+body.og .nav,body.og .status,body.og .hint,body.og .jp-side{display:none}
+body.og .hero-type{padding-top:70px}
+body.og .hero-bottom p{font-size:17px;max-width:520px;color:var(--bone)}
+body.og .hero-type{padding-bottom:34px}
+body.og .hero{min-height:0;height:100vh}
+#fx{position:fixed;inset:0;width:100%;height:100%;pointer-events:none;z-index:150}
 
-.js .reveal{opacity:0;transform:translateY(16px);transition:opacity .7s,transform .7s}
-.js .reveal.in{opacity:1;transform:none}
-.hgrid>*,.chat-wrap>*,.flow>*,.recipe>*,.models>*,.duel>*,.c0>*,.deliv>*,.install>*,.limits>*{min-width:0}
-.cmd{overflow-wrap:anywhere;word-break:normal}
 @media (prefers-reduced-motion:reduce){
   html{scroll-behavior:auto}
-  .reveal,.msg{opacity:1;transform:none;transition:none}
-  .ring .fg{transition:none}
-  .out,.out li{transition:none}
+  *,*::before,*::after{animation:none!important;transition:none!important}
+  .reveal,.panel,.hero h1 .w{opacity:1!important;transform:none!important}
+  .crk path{stroke-dashoffset:0}
 }
 </style>
 </head>
 <body>
 
-<nav class="nav" id="nav">
+<div id="load" aria-hidden="true"><div><div class="k"><span>粘</span><span>土</span></div><p>MOLDANDO A ARGILA</p></div></div>
+<canvas id="fx" aria-hidden="true"></canvas>
+
+<nav class="nav">
   <div class="wrap">
-    <a class="logo" href="#topo" aria-label="Deidara, início">
-      <svg viewBox="0 0 32 32" aria-hidden="true"><rect width="32" height="32" rx="8" fill="#16213A"/><path d="M16 4l2.6 8.2L27 9.5l-6 6.5 6 6.5-8.4-2.7L16 28l-2.6-8.2L5 22.5l6-6.5-6-6.5 8.4 2.7z" fill="#F59E0B"/><circle cx="16" cy="16" r="3.4" fill="#16213A"/></svg>
-      Deidara
-    </a>
+    <a class="brand" href="#topo"><i></i>Deidara</a>
     <ul>
       <li><a href="#como">Como funciona</a></li>
-      <li><a href="#modelos">Modelos</a></li>
+      <li><a href="#galeria">Galeria</a></li>
       <li><a href="#c0">Painel antigo</a></li>
-      <li><a href="#resultados">Resultados</a></li>
+      <li><a href="#numeros">Números</a></li>
       <li><a href="#instalar">Instalar</a></li>
     </ul>
-    <a class="gh" href="https://github.com/tiagocardosobezerra/deidara">
-      <svg viewBox="0 0 16 16" fill="currentColor" aria-hidden="true"><path d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.013 8.013 0 0016 8c0-4.42-3.58-8-8-8z"/></svg>
-      GitHub
-    </a>
+    <a class="gh" href="https://github.com/tiagocardosobezerra/deidara">GitHub ↗</a>
   </div>
 </nav>
 
 <header class="hero" id="topo">
-  <div class="wrap hgrid">
-    <div>
-      <span class="badge"><i></i>Skill do Claude Code · open source (MIT) · v0.33.0</span>
-      <h1>Primeiro a escultura.<br><span class="boom">Depois, a explosão.</span></h1>
-      <p class="lead">Descreva o painel em português. O gestor aprova um protótipo com números fictícios e, só depois do “sim”, o Deidara gera o projeto Power BI completo: modelo, medidas DAX, views SQL e a folha de homologação. Sem acessar os seus dados e sem adivinhar o nome de uma coluna.</p>
-      <div class="cta">
-        <a class="btn btn-amber" href="#instalar">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3v12m0 0l-5-5m5 5l5-5M4 21h16"/></svg>
-          Instalar a skill
-        </a>
-        <a class="btn btn-ghost" href="#modelos">Ver os 11 modelos de layout</a>
-      </div>
-      <p class="hero-note">Este protótipo é de verdade: saiu do comando <code>deidara.py prototipar</code>. Clique nos visuais, troque de página, abra o ⓘ.</p>
-    </div>
-
-    <div class="stage">
-      <canvas id="boom" aria-hidden="true"></canvas>
-      <div class="frame">
-        <div class="frame-bar"><i></i><i></i><i></i><span>argila.prototipo.html · Vitrine de RH</span><b class="tag">números fictícios</b></div>
-        <div class="viewport" data-scale><iframe src="prototipos/faixa-de-kpis.html" title="Protótipo gerado pelo Deidara no modelo faixa-de-kpis" loading="eager"></iframe></div>
-        <div class="approve">
-          <p>“Aprova este protótipo para eu gerar o projeto Power BI?”<small>A pergunta que o Claude faz antes de qualquer arquivo de produção.</small></p>
-          <button class="katsu" id="katsu" type="button">Aprovar · Katsu!</button>
-        </div>
-      </div>
-      <div class="out" id="out" aria-live="polite">
-        <h4>C3! PROJETO GERADO</h4>
-        <ul>
-          <li><b>✓</b>Painel.pbip<em>Desktop</em></li>
-          <li><b>✓</b>.SemanticModel/ (TMDL)<em>modelo</em></li>
-          <li><b>✓</b>.Report/ (PBIR)<em>páginas</em></li>
-          <li><b>✓</b>sql/erp/01_views.sql<em>DBA</em></li>
-          <li><b>✓</b>HOMOLOGACAO.md<em>conferir</em></li>
-          <li><b>✓</b>LEIA-ME.md<em>quem faz o quê</em></li>
-        </ul>
-      </div>
+  <canvas id="clay" aria-label="Uma bola de argila em 3D. Passe o mouse ou o dedo para amassar."></canvas>
+  <div class="cssblob" aria-hidden="true"></div>
+  <div class="files" id="files" aria-hidden="true"></div>
+  <p class="status" id="status">Argila · <b>passe o mouse para amassar</b></p>
+  <div class="jp-side" aria-hidden="true">芸術は爆発だ</div>
+  <div class="hero-type">
+    <h1>
+      <span class="l1"><span class="w">Primeiro</span> <span class="w"><em>a</em></span> <span class="w">escultura.</span></span>
+      <span class="l2"><span class="w">Depois,</span> <span class="w"><em>a</em></span> <span class="w">explosão.</span></span>
+    </h1>
+    <div class="hero-bottom">
+      <p>O <b>Deidara</b> é uma skill do Claude Code para Power BI. Você descreve o painel em português, o gestor aprova um protótipo com números fictícios e, só depois do “sim”, sai o projeto completo. <b>Sem acessar os seus dados. Sem adivinhar o nome de uma coluna.</b></p>
+      <button class="katsu" id="katsu" type="button" aria-describedby="status">喝!<small>Aprovar</small></button>
     </div>
   </div>
-
-  <div class="stats wrap">
-    <div class="grid">
-      <div class="stat"><b>0</b><span>linhas de dado nas receitas: só a estrutura volta</span></div>
-      <div class="stat"><b>11</b><span>modelos de layout, do protótipo ao <code>.pbip</code></span></div>
-      <div class="stat"><b>1.134</b><span>funções DAX e Power Query no dicionário</span></div>
-      <div class="stat"><b>143<small>/143</small></b><span>arquivos do projeto conferidos contra o formato oficial da Microsoft</span></div>
-      <div class="stat"><b>289</b><span>testes automatizados passando</span></div>
-    </div>
-  </div>
+  <span class="hint" id="hint">role ↓</span>
 </header>
 
-<section id="problema">
+<div class="tape" aria-hidden="true"><div>
+  <span>粘土</span><span>ARGILA</span><i>✺</i><span>彫刻</span><span>ESCULTURA</span><i>✺</i><span>承認</span><span>APROVAÇÃO</span><i>✺</i><span>爆発</span><span>EXPLOSÃO</span><i>✺</i>
+  <span>粘土</span><span>ARGILA</span><i>✺</i><span>彫刻</span><span>ESCULTURA</span><i>✺</i><span>承認</span><span>APROVAÇÃO</span><i>✺</i><span>爆発</span><span>EXPLOSÃO</span><i>✺</i>
+</div></div>
+
+<section class="sec paper" id="problema">
   <div class="wrap">
-    <div class="sec-head reveal">
-      <span class="kicker">O problema</span>
-      <h2>Painel errado custa caro.<br>E o erro quase sempre está num destes três lugares.</h2>
-      <p class="lead">Nome de coluna chutado, indicador montado do jeito mais fácil e um gestor que só vê o resultado quando já está tudo pronto. O Deidara fecha as três portas.</p>
-    </div>
-    <div class="pains">
-      <article class="pain reveal">
+    <div class="eyebrow reveal"><b>壱</b>O problema</div>
+    <h2 class="big reveal">Painel errado costuma rachar<br>nos <em>mesmos três</em> lugares.</h2>
+    <p class="lede reveal">Nome de coluna chutado, indicador montado do jeito mais fácil e um gestor que só vê o resultado quando já está tudo pronto. O Deidara fecha as três rachaduras antes de a peça ir ao forno.</p>
+    <div class="cracks reveal">
+      <article class="crack">
+        <svg class="rach" viewBox="0 0 60 60" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" aria-hidden="true"><path d="M30 2l-6 16 10 8-12 14 8 6-6 12"/></svg>
+        <span class="n">01</span>
         <h3>O nome adivinhado</h3>
-        <div class="code"><span class="c">-- "acho que a coluna se chama assim"</span>
-SELECT <span class="err">DATA_ADMISSAO</span>
-FROM F_FUNCIONARIO</div>
-        <span class="flag">✕ a coluna real é DATAADMISSAO</span>
-        <p class="fix"><b>Deidara:</b> todo nome vem do catálogo da fonte e toda função, do dicionário. O <code>validar</code> recusa o resto e diz o que existe.</p>
+        <pre>SELECT <s>DATA_ADMISSAO</s>
+FROM F_FUNCIONARIO
+-- a coluna real é DATAADMISSAO</pre>
+        <p><b>No Deidara,</b> todo nome vem do catálogo da fonte e toda função, do dicionário. O <code>validar</code> recusa o resto e diz o que existe.</p>
       </article>
-      <article class="pain reveal">
+      <article class="crack">
+        <svg class="rach" viewBox="0 0 60 60" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" aria-hidden="true"><path d="M6 10l14 8 4 14 14 4 6 16"/></svg>
+        <span class="n">02</span>
         <h3>O indicador do jeito fácil</h3>
-        <div class="code">Headcount =
-  <span class="err">COUNTROWS(Funcionarios)</span></div>
-        <span class="flag">✕ conta ativos e desligados de todos os tempos; não muda com o período</span>
-        <p class="fix"><b>Deidara:</b> headcount é estoque na data, turnover usa o headcount médio, meta tem polaridade. Ele avisa quando um corte não filtra o número.</p>
+        <pre>Headcount =
+  <s>COUNTROWS(Funcionarios)</s>
+-- conta desligados de todos os tempos</pre>
+        <p><b>No Deidara,</b> headcount é estoque na data, turnover usa o headcount médio e a meta tem polaridade. Ele avisa quando um corte não filtra o número.</p>
       </article>
-      <article class="pain reveal">
+      <article class="crack">
+        <svg class="rach" viewBox="0 0 60 60" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" aria-hidden="true"><path d="M54 4L40 20l6 10-16 8 4 10-14 8"/></svg>
+        <span class="n">03</span>
         <h3>O gestor só vê no fim</h3>
-        <div class="code"><span class="c">semana 1</span>  modelagem
-<span class="c">semana 2</span>  medidas e visuais
-<span class="c">semana 3</span>  <span class="err">"não era isso que eu queria"</span></div>
-        <span class="flag">✕ retrabalho depois de tudo construído</span>
-        <p class="fix"><b>Deidara:</b> o gestor aprova um protótipo HTML primeiro, com checklist e comentários. Mudou algo depois? Novo protótipo, novo aceite.</p>
+        <pre>semana 1  modelagem
+semana 2  medidas e visuais
+semana 3  <s>"não era isso"</s></pre>
+        <p><b>No Deidara,</b> o gestor aprova um protótipo HTML primeiro, com checklist e comentários. Mudou algo? Novo protótipo, novo aceite.</p>
       </article>
     </div>
   </div>
 </section>
 
-<section id="pratica" style="padding-top:40px">
-  <div class="wrap chat-wrap">
-    <div class="reveal">
-      <span class="kicker">Como fica na prática</span>
-      <h2>Você pede em português. Ele pergunta só o que muda o painel.</h2>
-      <p class="lead" style="margin-bottom:28px">Quem tem acesso aos dados roda uma receita e cola o resultado. O Claude, com o Deidara, monta o esboço, valida e mostra o protótipo. O projeto só sai com o “sim”.</p>
-      <p class="quote">Nada de “acho que a coluna se chama <span>DATA_ADMISSAO</span>”.<br>Se o nome não veio do catálogo, não entra no painel.</p>
-    </div>
-    <div class="chat" id="chat">
-      <div class="msg you"><span class="who">Você</span>quero um painel de desligamentos por motivo e cargo, com a meta de turnover por empresa</div>
-      <div class="msg cl"><span class="who">Claude + Deidara</span>Criei a pasta do painel e a receita de cada fonte. Com o resultado colado, uma pergunta: <q>a meta vem da planilha do RH e usa o mesmo código de empresa do ERP?</q></div>
-      <div class="msg you"><span class="who">Você</span>usa, sim. A Ana, do RH, confirmou.</div>
-      <div class="msg cl"><span class="who">Claude + Deidara</span>Protótipo pronto, com um ⓘ em cada visual e a aba “Para aprovar”. <q>Aprova este protótipo para eu gerar o projeto Power BI?</q></div>
-      <div class="msg gs"><span class="who">Gestor</span>aprovo.</div>
-      <div class="msg cl"><span class="who">Claude + Deidara</span>Projeto gerado, com o LEIA-ME de quem faz o quê e a folha de homologação. <q>Depois da primeira atualização, confira estes cinco números com a fonte.</q></div>
-    </div>
-  </div>
-</section>
-
-<section id="como">
+<section class="sec paper tone" id="como">
   <div class="wrap">
-    <div class="sec-head reveal">
-      <span class="kicker">Como funciona</span>
-      <h2>Oito passos, do pedido ao <span class="hl">.pbip</span>.</h2>
-      <p class="lead">No dia a dia, quem roda os comandos é o Claude. Eles também funcionam direto no terminal. As saídas abaixo são reais, do exemplo de RH do repositório.</p>
-    </div>
-    <div class="flow reveal">
-      <ol class="steps" role="tablist" aria-label="Passos do fluxo" id="steps"></ol>
-      <div class="term" role="tabpanel" id="term">
-        <div class="term-bar"><i></i><i></i><i></i><span id="term-title">deidara.py</span></div>
-        <div class="term-body"><p class="desc" id="term-desc"></p><pre id="term-pre"></pre></div>
+    <div class="manga-head">
+      <div>
+        <div class="eyebrow reveal"><b>弐</b>Como funciona</div>
+        <h2 class="big reveal">Oito quadros,<br>do pedido ao <em>.pbip</em>.</h2>
       </div>
+      <p class="lede reveal" style="max-width:440px">No dia a dia, quem roda os comandos é o Claude. As saídas nos quadros são reais, do exemplo de RH do repositório.</p>
+    </div>
+    <div class="manga">
+      <article class="panel p1"><span class="no">01 · BRIEFING</span><div class="tone2"></div>
+        <h4>Você pede em português.</h4>
+        <div class="bubble">quero um painel de desligamentos por motivo e cargo, com a meta de turnover por empresa</div>
+        <div class="bubble r">A meta vem da planilha do RH e usa o mesmo código de empresa do ERP?</div>
+        <div class="cmd">$ <span>deidara.py novo meu --projeto "Turnover RH"</span></div>
+      </article>
+      <article class="panel p2"><span class="no">02 · FONTES</span>
+        <h4>A receita vai. Só a estrutura volta.</h4>
+        <p>Quem tem acesso roda a consulta onde os dados estão e cola o resultado.</p>
+        <div class="cmd">$ <span>catalogar --de colado/erp.txt</span>
+<i>5 tabela(s), 17 coluna(s), 4 ligação(ões)</i></div>
+      </article>
+      <article class="panel p3"><span class="no">03 · ESBOÇO</span><div class="speed"></div>
+        <h4>A argila toma forma.</h4>
+        <p>Tabelas, calendário e o turnover com a cadeia inteira.</p>
+        <div class="cmd"><i>padrão "turnover": a cadeia inteira entrou</i></div>
+      </article>
+      <article class="panel p4"><span class="no">04 · VALIDAR</span>
+        <h4>Nada de nome chutado.</h4>
+        <p>Os avisos viram decisões, em linguagem de negócio.</p>
+        <div class="cmd"><span>! 4 aviso(s) para decidir com o usuário</span></div>
+      </article>
+      <article class="panel p5"><span class="no">05 · PROTÓTIPO</span><div class="tone2"></div>
+        <h4>A escultura, para o gestor.</h4>
+        <p>Um HTML com números fictícios coerentes, um ⓘ em cada visual e a aba “Para aprovar”, com checklist e comentários.</p>
+        <div class="bubble r">Aprova este protótipo para eu gerar o projeto Power BI?</div>
+      </article>
+      <article class="panel p6"><span class="no" style="background:var(--amber);color:var(--ink)">06 · ACEITE</span><div class="speed"></div>
+        <div class="stamp">承認<small>APROVADO</small></div>
+        <h4>O “sim”, registrado.</h4>
+        <p>Sem protótipo, não há aceite. Mudou algo depois? O gerar recusa.</p>
+        <div class="cmd" style="background:var(--paper);color:var(--ink)">Katsu! <span style="color:var(--ink)">Aprovado por Gestor de RH</span></div>
+      </article>
+      <article class="panel p7"><span class="no">07 · GERAR</span><div class="speed"></div>
+        <span class="sfx" style="right:5%;bottom:22%">C3!</span>
+        <h4>A explosão: o projeto inteiro.</h4>
+        <p>O <code>.pbip</code> com TMDL e PBIR, as views SQL, a conferência, a qualidade, o LEIA-ME e a folha de homologação, com quem faz o quê.</p>
+        <div class="cmd">C3! <span>Projeto gerado</span>
+<i>Quadro_e_Turnover.pbip · LEIA-ME.md · HOMOLOGACAO.md · sql/erp/</i></div>
+      </article>
+      <article class="panel p8"><span class="no">08 · MEMORY CARD</span><div class="tone2"></div>
+        <h4>O time guarda o que aprovou.</h4>
+        <p>Cada painel e indicador vai para um repositório privado do time, com versão e o motivo de cada mudança. Indicador oficial não é reescrito por um painel.</p>
+        <div class="cmd">$ <span>memory-card enviar ... (prévia; envio só com o "sim")</span></div>
+      </article>
     </div>
   </div>
 </section>
 
-<section id="receita" style="padding-top:30px">
-  <div class="wrap">
-    <div class="sec-head reveal">
-      <span class="kicker">Privacidade por construção</span>
-      <h2>A receita vai. Só a estrutura volta.</h2>
-      <p class="lead">O Deidara não se conecta a nenhuma fonte. Ele entrega uma consulta SQL, DAX ou Power Query que lê só o catálogo. Quem tem acesso roda onde os dados estão e cola o resultado: tabelas, colunas, tipos, chaves e ligações.</p>
-    </div>
-    <div class="recipe reveal">
-      <div class="card">
-        <div class="card-h"><span class="dot" style="background:var(--blue)"></span>receitas/sql.sql · SQL Server</div>
-<pre><span class="c">/*
-  Deidara — receita SQL: estrutura das tabelas
-  Lê SOMENTE o catálogo (sys.*):
-  nenhuma linha de dado sai daqui.
-*/</span>
-<span class="kw">SET NOCOUNT ON</span>;
-<span class="kw">DECLARE</span> @esquema sysname = <span class="s">N'dbo'</span>;
+<div class="tape alt" aria-hidden="true"><div>
+  <span>.PBIP</span><span>·</span><span>TMDL</span><span>·</span><span>PBIR</span><span>·</span><span>DAX</span><span>·</span><span>POWER QUERY</span><span>·</span><span>VIEWS SQL</span><span>·</span><span>HOMOLOGACAO.MD</span><span>·</span><span>0 LINHAS DE DADO</span><span>·</span>
+  <span>.PBIP</span><span>·</span><span>TMDL</span><span>·</span><span>PBIR</span><span>·</span><span>DAX</span><span>·</span><span>POWER QUERY</span><span>·</span><span>VIEWS SQL</span><span>·</span><span>HOMOLOGACAO.MD</span><span>·</span><span>0 LINHAS DE DADO</span><span>·</span>
+</div></div>
 
+<section class="sec night" id="receita">
+  <div class="wrap">
+    <div class="eyebrow reveal" style="color:var(--clay2)"><b>参</b>Privacidade por construção</div>
+    <h2 class="big reveal">Ele não toca<br>nos seus <em>dados</em>.</h2>
+    <p class="lede reveal">O Deidara não se conecta a nenhuma fonte. Ele entrega uma consulta SQL, DAX ou Power Query que lê só o catálogo. Quem tem acesso roda onde os dados estão e cola o resultado: tabelas, colunas, tipos, chaves e ligações.</p>
+    <div class="recipe reveal">
+      <div class="ticket">
+        <h5>Receita SQL · SQL Server</h5>
+<pre><span class="c">/* Lê SOMENTE o catálogo (sys.*):
+   nenhuma linha de dado sai daqui. */</span>
+<span class="kw">SET NOCOUNT ON</span>;
+<span class="kw">DECLARE</span> @esquema sysname = N'dbo';
 <span class="kw">WITH</span> alvo <span class="kw">AS</span> (
   <span class="kw">SELECT</span> t.object_id, t.name
   <span class="kw">FROM</span> sys.tables <span class="kw">AS</span> t
-  <span class="kw">JOIN</span> sys.schemas <span class="kw">AS</span> s ...
-)</pre>
-        <div class="foot"><span class="pill bl">SQL Server</span><span class="pill bl">modelo Power BI</span><span class="pill bl">Excel · SharePoint · CSV · API</span></div>
+  <span class="kw">JOIN</span> sys.schemas <span class="kw">AS</span> s ...</pre>
       </div>
-      <div class="arrow" aria-hidden="true">
-        <svg viewBox="0 0 60 24" fill="none" stroke="#475569" stroke-width="2" stroke-linecap="round"><path d="M2 12h54M46 4l10 8-10 8"/></svg>
-        <span>linhas de dado</span><span class="z">0</span>
-      </div>
-      <div class="card">
-        <div class="card-h"><span class="dot" style="background:var(--amber)"></span>catalogos/erp.json → nomes amigáveis</div>
-        <table class="cat">
-          <thead><tr><th>Na fonte</th><th>No painel</th></tr></thead>
-          <tbody>
-            <tr><td>F_DESLIGAMENTO</td><td class="to">fDesligamento</td></tr>
-            <tr><td>DATADESLIGAMENTO</td><td class="to">Data do Desligamento</td></tr>
-            <tr><td>F_FUNCIONARIO</td><td class="to">dColaborador</td></tr>
-            <tr><td>DATAADMISSAO</td><td class="to">Data de Admissão</td></tr>
-            <tr><td>CODCARGO</td><td class="to">Cód. Cargo</td></tr>
-          </tbody>
+      <div class="arrow"><span>linhas de dado</span><span class="z">0</span><span>só a estrutura</span></div>
+      <div class="ticket cat">
+        <h5>Catálogo · nomes amigáveis</h5>
+        <table>
+          <tr><td>F_DESLIGAMENTO</td><td>fDesligamento</td></tr>
+          <tr><td>DATADESLIGAMENTO</td><td>Data do Desligamento</td></tr>
+          <tr><td>F_FUNCIONARIO</td><td>dColaborador</td></tr>
+          <tr><td>DATAADMISSAO</td><td>Data de Admissão</td></tr>
+          <tr><td>CODCARGO</td><td>Cód. Cargo</td></tr>
         </table>
-        <div class="foot"><span class="pill ok">5 tabelas · 17 colunas · 4 ligações</span><span>do resultado colado ao catálogo, em um comando</span></div>
+        <div class="hk"><span><b>零</b>0 LINHAS<br>DE DADO</span></div>
       </div>
     </div>
   </div>
 </section>
 
-<section id="modelos">
+<section class="sec gallery night" id="galeria">
   <div class="wrap">
-    <div class="sec-head reveal">
-      <span class="kicker">O protótipo</span>
-      <h2>Onze modelos de layout.<br>Clique e use de verdade.</h2>
-      <p class="lead">Cada modelo vem da estrutura dos dashboards do Power BI Design Files, de Sajjad Ahmadi: o Deidara desenha o fundo da página (painéis, título, navegação) e encaixa os visuais nativos por cima, no protótipo e no <code>.pbip</code>. Uma linha no <code>argila.json</code> troca o modelo.</p>
-    </div>
-    <div class="models reveal">
-      <div>
-        <ul class="mlist" role="tablist" aria-label="Modelos de layout" id="mlist"></ul>
+    <div class="eyebrow reveal" style="color:var(--clay2)"><b>肆</b>A galeria do ateliê</div>
+    <h2 class="big reveal">Onze esculturas.<br><em>Todas</em> clicáveis.</h2>
+    <p class="lede reveal">Cada modelo de layout vem da estrutura dos dashboards do Power BI Design Files, de Sajjad Ahmadi. O Deidara desenha o fundo da página e encaixa os visuais nativos por cima, no protótipo e no <code>.pbip</code>. Clique na peça: é o protótipo de verdade.</p>
+    <div class="stage reveal">
+      <div class="easel"><div class="vp" id="vp"><iframe id="mframe" src="about:blank" title="Protótipo no modelo de layout escolhido" loading="lazy"></iframe></div></div>
+      <div class="plaque">
+        <div class="t" id="mtitle"><code>"modelo": "faixa-de-kpis"</code>Faixa de KPIs</div>
+        <p id="mdesc"></p>
+        <span class="live"><i></i>Interativo · números fictícios</span>
       </div>
-      <div>
-        <div class="frame">
-          <div class="frame-bar"><i></i><i></i><i></i><span id="mbar">"modelo": "faixa-de-kpis"</span><b class="tag">ao vivo</b></div>
-          <div class="viewport" data-scale><iframe id="mframe" src="about:blank" title="Protótipo no modelo de layout escolhido" loading="lazy"></iframe></div>
-        </div>
-        <p class="mdesc" id="mdesc"></p>
-        <p class="mnote">Protótipos gerados com a vitrine do repositório (<code>ferramentas/vitrine.py</code>), um painel de RH de teste com todo tipo de visual. Números fictícios; a aba “Pendências do analista” mostra o que ainda falta confirmar.</p>
-      </div>
+      <div class="strip" id="strip" role="tablist" aria-label="Modelos de layout"></div>
+      <p class="gnote">Protótipos gerados com a vitrine do repositório (<code>ferramentas/vitrine.py</code>), um painel de RH de teste com todo tipo de visual. A aba “Pendências do analista” mostra o que ainda falta confirmar.</p>
     </div>
   </div>
 </section>
 
-<section id="indicador" style="padding-top:30px">
+<section class="sec paper" id="indicador">
   <div class="wrap">
-    <div class="sec-head reveal">
-      <span class="kicker">Entende indicador</span>
-      <h2>Headcount não é contagem de cadastro.</h2>
-      <p class="lead">Os padrões de indicador dizem como criar cada número e onde: medida, cálculo visual, grupo de cálculo, Power Query ou view SQL. Turnover entra com a cadeia inteira: desligamentos, headcount na data, headcount médio e a taxa.</p>
-    </div>
+    <div class="eyebrow reveal"><b>伍</b>Entende indicador</div>
+    <h2 class="big reveal">Headcount não é<br><em>contagem de cadastro</em>.</h2>
+    <p class="lede reveal">Os padrões de indicador dizem como criar cada número e onde: medida, cálculo visual, grupo de cálculo, Power Query ou view SQL. O turnover entra com a cadeia inteira.</p>
     <div class="duel reveal">
-      <div class="card bad">
-        <div class="card-h">✕ Como costuma aparecer</div>
+      <div class="bad"><div class="x"></div>
+        <h4>✕ Como costuma aparecer</h4>
 <pre>Headcount = COUNTROWS(Funcionarios)
 
 Turnover % = [Qtd Desligamentos] / [Headcount]</pre>
-        <p class="why">O denominador conta ativos e desligados de todos os tempos e não muda com o período: a taxa sai menor do que é e não compara meses. A divisão com “/” quebra quando o denominador é zero.</p>
+        <p>O denominador conta ativos e desligados de todos os tempos e não muda com o período: a taxa sai menor do que é e não compara meses. A divisão com “/” quebra quando o denominador é zero.</p>
       </div>
-      <div class="card good">
-        <div class="card-h">✓ O que o Deidara gera (TMDL)</div>
+      <div class="good">
+        <h4>✓ O que o Deidara gera (TMDL)</h4>
 <pre>measure Headcount =
   VAR _fim = MIN(MAX(dCalendario[Data]), [Data de Corte])
   VAR _entradas =
     CALCULATE(COUNTROWS(dColaborador),
       dColaborador[Data de Admissão] &lt;= _fim,
       REMOVEFILTERS(dCalendario))
-  VAR _saidas =
-    CALCULATE(COUNTROWS(fDesligamento),
-      fDesligamento[Data do Desligamento] &lt;= _fim,
-      REMOVEFILTERS(dCalendario))
   ...
-
 measure 'HC Médio' =
   ... AVERAGEX(VALUES(dCalendario[Ano-Mês]), [Headcount])
-
 measure Turnover = DIVIDE([Desligamentos] + 0, [HC Médio])</pre>
-        <p class="why">Quem estava dentro no fim de cada mês, a média desses fins de mês e a taxa sobre ela. A meta anual é comparada na proporção dos meses do filtro.</p>
+        <p>Quem estava dentro no fim de cada mês, a média desses fins de mês e a taxa sobre ela.</p>
       </div>
     </div>
     <div class="rules reveal">
-      <div class="rule"><b>30 padrões de indicador</b><p>Taxa, estoque, acumulado, turnover completo, dias úteis, ranking… cada um com o DAX, a alternativa e os cuidados.</p></div>
-      <div class="rule"><b>Corte que não filtra</b><p>Quando um segmentador filtra só parte de uma taxa, o esboço tira o corte do visual e diz por quê.</p></div>
-      <div class="rule"><b>Sinal ou ruído</b><p>Gráfico de controle, fora da curva, meta contra faixa normal e sazonalidade, para o gestor não reagir a ruído.</p></div>
+      <div><b>30 padrões de indicador</b><p>Taxa, estoque, acumulado, turnover completo, dias úteis… cada um com o DAX, a alternativa e os cuidados.</p></div>
+      <div><b>Corte que não filtra</b><p>Quando um segmentador filtra só parte de uma taxa, o esboço tira o corte do visual e diz por quê.</p></div>
+      <div><b>Sinal ou ruído</b><p>Gráfico de controle, fora da curva, meta contra faixa normal e sazonalidade, para o gestor não reagir a ruído.</p></div>
     </div>
   </div>
 </section>
 
-<section id="c0">
+<section class="sec night" id="c0">
   <div class="wrap">
-    <div class="sec-head reveal">
-      <span class="kicker">C0 · engenharia reversa</span>
-      <h2>Já tem um painel? Ele desmonta, dá nota e refaz.</h2>
-      <p class="lead">Traga uma medida colada, a pasta do <code>.pbip</code> ou o resultado da receita DAX de um <code>.pbix</code>. O C0 mostra o que cada fórmula faz de verdade, o efeito de cada problema no número e a versão corrigida. Abaixo, a saída real de <code>c0 estudar</code> no painel antigo de exemplo.</p>
-    </div>
-    <div class="c0 reveal">
-      <div class="grade">
-        <div class="ring" id="ring">
-          <svg viewBox="0 0 160 160" aria-hidden="true"><circle class="bg" cx="80" cy="80" r="70"/><circle class="fg" cx="80" cy="80" r="70"/></svg>
-          <b><span>4,5<small>de 10 · reprovado</small></span></b>
-        </div>
-        <div class="sev"><span class="cr">3 crítico</span><span class="al">8 alto</span><span class="me">9 médio</span><span>1 baixo</span></div>
-        <p style="font-size:13.5px;color:var(--faint)">5 tabelas · 13 medidas · 1 página</p>
+    <div class="eyebrow reveal" style="color:var(--clay2)"><b>陸</b>C0 · engenharia reversa</div>
+    <h2 class="big reveal">Já tem um painel?<br>Ele <em>quebra</em> e refaz.</h2>
+    <p class="lede reveal">Traga uma medida colada, a pasta do <code>.pbip</code> ou o resultado da receita DAX de um <code>.pbix</code>. O C0 mostra o que cada fórmula faz de verdade, o efeito de cada problema no número e a versão corrigida. Abaixo, a saída real de <code>c0 estudar</code> no painel antigo de exemplo.</p>
+    <div class="autopsy reveal" id="autopsy">
+      <div class="cracked">
+        <svg viewBox="0 0 400 400" aria-hidden="true">
+          <defs><radialGradient id="cg" cx="35%" cy="30%"><stop offset="0" stop-color="#F0B58C"/><stop offset=".45" stop-color="#C8693E"/><stop offset="1" stop-color="#6E2F14"/></radialGradient></defs>
+          <path d="M200 14C306 10 388 92 386 198 384 300 306 388 200 386 92 388 12 306 14 200 16 92 96 18 200 14Z" fill="url(#cg)"/>
+          <g class="crk"><path d="M196 16l-14 70 30 40-26 52 34 30-20 54 18 40"/><path d="M212 126l70-26 40 18 50-8"/><path d="M186 178l-80 10-36 40-52 6"/><path d="M222 248l60 40 10 52 40 30"/></g>
+        </svg>
+        <div class="score"><div><b>4,5</b><span>de 10 · reprovado</span></div></div>
       </div>
-      <div class="findings">
-        <div class="h">No painel, 4 indicadores com número errado ou em risco</div>
-        <div class="finding"><span class="m">Turnover %</span><p><b>CRÍTICO</b>O denominador conta ativos e desligados de todos os tempos e não muda com o período: a taxa sai menor do que é e não compara meses.</p></div>
-        <div class="finding"><span class="m">Headcount</span><p>Entram também os desligados (e quem ainda não entrou): o número não é quem está ativo, e não muda com o período.</p></div>
-        <div class="finding"><span class="m">Turnover Médio</span><p><b>CRÍTICO</b>Média de taxas: dá o mesmo peso à área de 10 pessoas e à de 5.000. O total não é a taxa do grupo.</p></div>
-        <div class="finding"><span class="m">Status Turnover</span><p>Meta escrita dentro da fórmula: quando a meta mudar, alguém precisa achar e editar o DAX, e o gestor não vê a meta no painel.</p></div>
+      <div>
+        <ul class="findings">
+          <li><code>Turnover %</code><p><b>CRÍTICO</b>O denominador conta ativos e desligados de todos os tempos e não muda com o período: a taxa sai menor do que é e não compara meses.</p></li>
+          <li><code>Headcount</code><p>Entram também os desligados (e quem ainda não entrou): o número não é quem está ativo, e não muda com o período.</p></li>
+          <li><code>Turnover Médio</code><p><b>CRÍTICO</b>Média de taxas: dá o mesmo peso à área de 10 pessoas e à de 5.000. O total não é a taxa do grupo.</p></li>
+          <li><code>Status Turnover</code><p>Meta escrita dentro da fórmula: quando a meta mudar, alguém precisa achar e editar o DAX, e o gestor não vê a meta no painel.</p></li>
+        </ul>
+        <div class="sev"><span class="c">3 crítico</span><span>8 alto</span><span>9 médio</span><span>1 baixo</span><span>5 tabelas · 13 medidas</span></div>
       </div>
     </div>
   </div>
 </section>
 
-<section id="entrega" style="padding-top:30px">
+<section class="sec paper" id="entrega">
   <div class="wrap">
-    <div class="sec-head reveal">
-      <span class="kicker">O que você recebe</span>
-      <h2>Pronto para homologar.</h2>
-      <p class="lead">O <code>.pbip</code> é o formato texto oficial da Microsoft para o mesmo conteúdo do <code>.pbix</code>: abre no Power BI Desktop, que salva como <code>.pbix</code> em um clique, e fica versionável no git.</p>
-    </div>
+    <div class="eyebrow reveal"><b>漆</b>O que você recebe</div>
+    <h2 class="big reveal">Pronto para<br><em>homologar</em>.</h2>
+    <p class="lede reveal">O <code>.pbip</code> é o formato texto oficial da Microsoft para o mesmo conteúdo do <code>.pbix</code>: abre no Power BI Desktop, que salva como <code>.pbix</code> em um clique, e fica versionável no git.</p>
     <div class="deliv reveal">
 <div class="tree"><span class="f">pbi/</span>
-├── <span class="a">Quadro_e_Turnover.pbip</span>       <span class="c"># abre no Desktop</span>
-├── <span class="f">Quadro_e_Turnover.SemanticModel/</span>  <span class="c"># TMDL</span>
-├── <span class="f">Quadro_e_Turnover.Report/</span>         <span class="c"># PBIR</span>
+├── <span class="a">Quadro_e_Turnover.pbip</span>     <span class="c"># abre no Desktop</span>
+├── <span class="f">….SemanticModel/</span>           <span class="c"># TMDL</span>
+├── <span class="f">….Report/</span>                  <span class="c"># PBIR</span>
 ├── <span class="f">sql/erp/</span>
-│   ├── 01_views.sql              <span class="c"># bi.vw_*</span>
-│   ├── 02_conferencia.sql        <span class="c"># totais no banco</span>
-│   └── 03_qualidade.sql          <span class="c"># tudo tem que dar 0</span>
-├── <span class="f">docs/</span>
-│   └── dicionario_indicadores.md
+│   ├── 01_views.sql            <span class="c"># bi.vw_*</span>
+│   ├── 02_conferencia.sql      <span class="c"># totais no banco</span>
+│   └── 03_qualidade.sql        <span class="c"># tudo tem que dar 0</span>
+├── <span class="f">docs/</span>dicionario_indicadores.md
 ├── HOMOLOGACAO.md
 └── LEIA-ME.md</div>
       <div class="dl">
-        <div><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 3v18h18"/><path d="M7 15l4-4 3 3 5-6"/></svg><span><b>Projeto Power BI</b><p>Modelo dimensional com calendário, medidas DAX com descrição, páginas no modelo de layout escolhido e o tema.</p></span></div>
-        <div><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><ellipse cx="12" cy="5" rx="8" ry="3"/><path d="M4 5v14c0 1.7 3.6 3 8 3s8-1.3 8-3V5"/><path d="M4 12c0 1.7 3.6 3 8 3s8-1.3 8-3"/></svg><span><b>Views, conferência e qualidade em SQL</b><p>A camada <code>bi.vw_*</code>, o total de cada indicador no banco (inclusive o headcount de cada fim de mês) e a checagem de chave repetida, órfãos e datas fora do calendário.</p></span></div>
-        <div><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 11l3 3 8-8"/><path d="M20 12v7a2 2 0 01-2 2H6a2 2 0 01-2-2V5a2 2 0 012-2h9"/></svg><span><b>Homologação e LEIA-ME</b><p>O que conferir antes de publicar, com onde ler cada número no painel, e quem faz o quê: DBA, analista e dono do indicador.</p></span></div>
-        <div><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 19.5A2.5 2.5 0 016.5 17H20V3H6.5A2.5 2.5 0 004 5.5z"/><path d="M4 19.5A2.5 2.5 0 006.5 22H20v-5"/></svg><span><b>Dicionário de indicadores e Memory Card</b><p>Definição, fórmula, origem e prova de cada ligação. Com o “sim”, o painel vai para o repositório do time, com versão e motivo de cada mudança.</p></span></div>
+        <div><b>Projeto Power BI</b><p>Modelo dimensional com calendário, medidas DAX com descrição, páginas no modelo de layout escolhido e o tema.</p></div>
+        <div><b>Views, conferência e qualidade em SQL</b><p>A camada <code>bi.vw_*</code>, o total de cada indicador no banco (inclusive o headcount de cada fim de mês) e a checagem de chave repetida, órfãos e datas fora do calendário.</p></div>
+        <div><b>Homologação e LEIA-ME</b><p>O que conferir antes de publicar, com onde ler cada número no painel, e quem faz o quê: DBA, analista e dono do indicador.</p></div>
+        <div><b>Dicionário e Memory Card</b><p>Definição, fórmula, origem e prova de cada ligação. Com o “sim”, o painel vai para o repositório do time.</p></div>
       </div>
     </div>
   </div>
 </section>
 
-<section id="resultados">
+<section class="sec paper tone" id="numeros">
   <div class="wrap">
-    <div class="sec-head reveal">
-      <span class="kicker">Resultados</span>
-      <h2>Medido, não prometido.</h2>
-      <p class="lead">Números conferidos na versão 0.33.0, no exemplo e na vitrine do repositório (um ERP fictício em SQL Server e uma planilha de metas no Excel).</p>
+    <div class="eyebrow reveal"><b>捌</b>Resultados</div>
+    <h2 class="big reveal">Medido,<br>não <em>prometido</em>.</h2>
+    <p class="lede reveal">Conferido na versão 0.33.0, no exemplo e na vitrine do repositório (um ERP fictício em SQL Server e uma planilha de metas no Excel).</p>
+    <div class="nums">
+      <div class="num n6 reveal"><b data-count="289">289</b><span>testes automatizados passando</span></div>
+      <div class="num n6 reveal"><b><span data-count="143">143</span><small>/143</small></b><span>arquivos do projeto da vitrine conferidos contra o formato oficial da Microsoft</span></div>
+      <div class="num n4 reveal"><b data-count="467">467</b><span>funções DAX no dicionário, com assinatura e link da documentação</span></div>
+      <div class="num n4 reveal"><b data-count="667">667</b><span>funções de Power Query no dicionário</span></div>
+      <div class="num n4 reveal"><b data-count="53">53</b><span>técnicas de visual catalogadas, 44 com visual nativo</span></div>
+      <div class="num n3 reveal"><b data-count="30">30</b><span>padrões de indicador prontos</span></div>
+      <div class="num n3 reveal"><b data-count="11">11</b><span>modelos de layout, do protótipo ao <code>.pbip</code></span></div>
+      <div class="num n6 reveal"><b><span data-count="158">158</span><small> + </small><span data-count="66">66</span></b><span>modelos Deneb e pacotes de funções DAX do daxlib na galeria da comunidade, com licença MIT</span></div>
+      <div class="num n12 zero reveal"><b>0</b><span>linhas de dado que as receitas devolvem. A estrutura das fontes nunca vai para o Memory Card.</span></div>
     </div>
-    <div class="res reveal">
-      <div><b>289</b><span>testes automatizados passando</span></div>
-      <div><b>143<small>/143</small></b><span>arquivos JSON do projeto gerado conferidos contra os schemas oficiais da Microsoft</span></div>
-      <div><b>467</b><span>funções DAX no dicionário, com assinatura e link da documentação</span></div>
-      <div><b>667</b><span>funções de Power Query no dicionário</span></div>
-      <div><b>53</b><span>técnicas de visual catalogadas, 44 com visual nativo</span></div>
-      <div><b>30</b><span>padrões de indicador prontos</span></div>
-      <div class="wide"><b>158 <small>+</small> 66</b><span>modelos Deneb e pacotes de funções DAX do daxlib na galeria da comunidade, com licença MIT e origem de cada um</span></div>
-      <div class="wide zero" style="grid-column:1/-1"><b>0</b><span>linhas de dado que as receitas devolvem. A estrutura das fontes nunca vai para o Memory Card.</span></div>
-    </div>
-    <p class="res-note">Para conferir na sua máquina: <code>python -m unittest discover -s testes</code> e <code>python ferramentas/validar_pbip.py &lt;pasta do projeto&gt;</code>.</p>
+    <p class="numnote">Para conferir: python -m unittest discover -s testes · python ferramentas/validar_pbip.py &lt;pasta do projeto&gt;</p>
   </div>
 </section>
 
-<section id="tecnicas" style="padding-top:30px">
+<section class="sec night" id="tecnicas">
   <div class="wrap">
-    <div class="sec-head reveal">
-      <span class="kicker">“A arte é uma explosão!”</span>
-      <h2>Cada etapa é uma técnica.</h2>
-      <p class="lead">Batizado em homenagem ao artista de Naruto que molda a argila e a faz explodir: a argila é a especificação do painel, a escultura é o protótipo e a explosão é o projeto completo. Os nomes só ajudam a se situar no código; com o gestor, o Claude fala da etapa.</p>
-    </div>
-    <div class="jutsu reveal">
-      <div><b>Luneta</b><span>receitas e descoberta: vê a fonte sem tocar nela</span></div>
-      <div><b>Te no Kuchi</b><span>o esboço do <code>argila.json</code> a partir do pedido</span></div>
-      <div><b>C1</b><span>o protótipo HTML e o tour guiado</span></div>
-      <div><b>C2</b><span>escolhe os visuais pela pergunta do painel</span></div>
-      <div><b>Katsu!</b><span>o “sim” do gestor, que libera a detonação</span></div>
-      <div><b>C3</b><span>o projeto Power BI, as views SQL e a documentação</span></div>
-      <div><b>C4 Karura</b><span>a estatística: sinal ou ruído, fora da curva, tendência</span></div>
-      <div><b>C0</b><span>desmonta o painel que já existe, dá nota e o refaz</span></div>
-      <div><b>Tobi</b><span>a frase de leitura: o que o número fez e quem puxou</span></div>
-      <div><b>Bunshin</b><span>os números fictícios e o projeto de demonstração</span></div>
-      <div><b>Sasori</b><span>dicionário de funções e padrões conferidos</span></div>
-      <div><b>Akatsuki</b><span>a galeria: modelos e funções MIT da comunidade</span></div>
-    </div>
+    <div class="eyebrow reveal" style="color:var(--clay2)"><b>玖</b>“A arte é uma explosão!”</div>
+    <h2 class="big reveal">Cada etapa<br>é uma <em>técnica</em>.</h2>
+    <p class="lede reveal">Batizado em homenagem ao artista de Naruto que molda a argila e a faz explodir: a argila é a especificação do painel, a escultura é o protótipo e a explosão é o projeto completo. Passe o mouse em cada carta.</p>
+    <div class="jutsu reveal" id="jutsu"></div>
   </div>
 </section>
 
-<section id="instalar">
+<section class="sec night" id="instalar" style="padding-top:40px">
   <div class="wrap">
-    <div class="sec-head reveal">
-      <span class="kicker">Comece em 3 passos</span>
-      <h2>Um clone. Nada de pip.</h2>
-      <p class="lead">Você precisa do Claude Code (com uma conta do Claude que inclua o Claude Code), de Python 3.8+ com a biblioteca padrão e do Power BI Desktop para abrir o projeto gerado. Os comandos rodam da pasta da skill.</p>
+    <div class="eyebrow reveal" style="color:var(--clay2)"><b>拾</b>Comece agora</div>
+    <h2 class="big reveal">Um clone.<br><em>Nada</em> de pip.</h2>
+    <p class="lede reveal">Você precisa do Claude Code (com uma conta do Claude que inclua o Claude Code), de Python 3.8+ com a biblioteca padrão e do Power BI Desktop para abrir o projeto gerado.</p>
+    <div class="os reveal" role="tablist" aria-label="Sistema">
+      <button type="button" role="tab" aria-selected="true" data-os="win">Windows</button>
+      <button type="button" role="tab" aria-selected="false" data-os="nix">macOS / Linux</button>
+      <button type="button" class="copy" id="copy">Copiar comando</button>
     </div>
-    <div class="install reveal">
-      <div class="istep">
-        <span class="n">01 · INSTALE</span>
-        <div class="os" role="tablist" aria-label="Sistema"><button type="button" role="tab" aria-selected="true" data-os="win">Windows</button><button type="button" role="tab" aria-selected="false" data-os="nix">macOS / Linux</button></div>
-        <div class="cmd" data-os-cmd="win"><span>git clone https://github.com/tiagocardosobezerra/deidara.git "$env:USERPROFILE\.claude\skills\deidara"</span><button type="button" aria-label="Copiar comando"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><rect x="9" y="9" width="11" height="11" rx="2"/><path d="M5 15V5a2 2 0 012-2h10"/></svg></button></div>
-        <div class="cmd" data-os-cmd="nix" hidden><span>git clone https://github.com/tiagocardosobezerra/deidara.git ~/.claude/skills/deidara</span><button type="button" aria-label="Copiar comando"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><rect x="9" y="9" width="11" height="11" rx="2"/><path d="M5 15V5a2 2 0 012-2h10"/></svg></button></div>
-        <p>No claude.ai, suba o zip da skill (veja o <a href="https://github.com/tiagocardosobezerra/deidara/blob/main/COMO-INSTALAR.md">COMO-INSTALAR.md</a>).</p>
-      </div>
-      <div class="istep">
-        <span class="n">02 · PEÇA O PAINEL</span>
-        <p>Abra o Claude Code e descreva: para quem é, que decisão apoia, quais indicadores e de onde vem cada dado. Ele cria a pasta do painel e entrega uma receita por fonte, com o passo a passo no cabeçalho.</p>
-        <div class="cmd"><span>quero um painel de turnover por motivo e cargo, com meta por empresa</span><button type="button" aria-label="Copiar pedido"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><rect x="9" y="9" width="11" height="11" rx="2"/><path d="M5 15V5a2 2 0 012-2h10"/></svg></button></div>
-      </div>
-      <div class="istep">
-        <span class="n">03 · APROVE E GERE</span>
-        <p>Cole os resultados, veja o protótipo e, com o “sim” do gestor, receba o <code>.pbip</code>. Abra no Power BI Desktop, atualize, preencha o <code>HOMOLOGACAO.md</code> e salve como <code>.pbix</code>.</p>
-        <div class="cmd"><span>python deidara.py situacao meu/argila.json</span><button type="button" aria-label="Copiar comando"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><rect x="9" y="9" width="11" height="11" rx="2"/><path d="M5 15V5a2 2 0 012-2h10"/></svg></button></div>
-      </div>
-    </div>
-    <p class="req">Quer ver tudo por dentro antes? Faça o <a href="https://github.com/tiagocardosobezerra/deidara/blob/main/referencias/tutorial.md">tutorial de 15 minutos</a> com o exemplo do repositório.</p>
+    <div class="term reveal"><div class="bar"><i></i><i></i><i></i><span>terminal · sequência ilustrativa, saídas encurtadas</span></div><pre id="tpre" aria-live="polite"></pre></div>
+    <p class="req">Prefere o claude.ai? Suba o zip da skill (<a href="https://github.com/tiagocardosobezerra/deidara/blob/main/COMO-INSTALAR.md">COMO-INSTALAR.md</a>). Quer ver tudo por dentro antes? Faça o <a href="https://github.com/tiagocardosobezerra/deidara/blob/main/referencias/tutorial.md">tutorial</a> com o exemplo do repositório.</p>
   </div>
 </section>
 
-<section id="limites" style="padding-top:30px">
+<section class="sec paper" id="limites">
   <div class="wrap">
-    <div class="sec-head reveal">
-      <span class="kicker">Sem letra miúda</span>
-      <h2>O que o Deidara não faz.</h2>
-    </div>
+    <div class="eyebrow reveal"><b>無</b>Sem letra miúda</div>
+    <h2 class="big reveal">O que o Deidara<br><em>não</em> faz.</h2>
     <div class="limits reveal">
-      <div><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M5.6 5.6l12.8 12.8"/></svg><span><b>Não se conecta às suas fontes</b><p>Quem tem acesso roda a receita e cola o resultado. Guarde os catálogos e as aprovações fora de repositórios públicos.</p></span></div>
-      <div><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M12 8v5M12 16h.01"/></svg><span><b>A estrutura passa pelo Claude</b><p>Os nomes de tabelas, colunas e medidas que você cola vão para a conversa com o Claude. Se esses nomes forem sensíveis, siga a política de uso de IA da sua empresa.</p></span></div>
-      <div><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M5.6 5.6l12.8 12.8"/></svg><span><b>Não gera o .pbix direto</b><p>O <code>.pbix</code> é binário e fechado. O Deidara entrega o <code>.pbip</code>, e o Power BI Desktop salva como <code>.pbix</code>.</p></span></div>
-      <div><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M5.6 5.6l12.8 12.8"/></svg><span><b>O protótipo não mostra números reais</b><p>Os números são fictícios e coerentes: servem para aprovar layout, indicadores e navegação. Os valores de verdade só o Power BI calcula.</p></span></div>
-      <div><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M5.6 5.6l12.8 12.8"/></svg><span><b>Não cria ligação sozinho</b><p>Ele sugere com evidência e mede na fonte com uma receita de prova. Quem confirma é uma pessoa, com o nome registrado.</p></span></div>
-      <div><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M5.6 5.6l12.8 12.8"/></svg><span><b>Não escolhe o indicador por você</b><p>A nota do C0 mede a construção da fórmula, não se aquele é o número certo para a decisão. Indicador sem definição não vai ao gestor.</p></span></div>
-      <div><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M5.6 5.6l12.8 12.8"/></svg><span><b>Nem toda técnica é nativa</b><p>9 das 53 técnicas de visual pedem um visual personalizado (como Gantt ou nuvem de palavras); o Deidara avisa quais.</p></span></div>
+      <div><span><b>Não se conecta às suas fontes</b><p>Quem tem acesso roda a receita e cola o resultado. Guarde os catálogos e as aprovações fora de repositórios públicos.</p></span></div>
+      <div><span><b>A estrutura passa pelo Claude</b><p>Os nomes de tabelas, colunas e medidas que você cola vão para a conversa com o Claude. Se forem sensíveis, siga a política de uso de IA da sua empresa.</p></span></div>
+      <div><span><b>Não gera o .pbix direto</b><p>O <code>.pbix</code> é binário e fechado. O Deidara entrega o <code>.pbip</code>, e o Power BI Desktop salva como <code>.pbix</code>.</p></span></div>
+      <div><span><b>O protótipo não mostra números reais</b><p>Os números são fictícios e coerentes: servem para aprovar layout, indicadores e navegação. Os valores de verdade só o Power BI calcula.</p></span></div>
+      <div><span><b>Não cria ligação sozinho</b><p>Ele sugere com evidência e mede na fonte com uma receita de prova. Quem confirma é uma pessoa, com o nome registrado.</p></span></div>
+      <div><span><b>Não escolhe o indicador por você</b><p>A nota do C0 mede a construção da fórmula, não se aquele é o número certo para a decisão. Indicador sem definição não vai ao gestor.</p></span></div>
+      <div><span><b>Nem toda técnica é nativa</b><p>9 das 53 técnicas de visual pedem um visual personalizado (como Gantt ou nuvem de palavras); o Deidara avisa quais.</p></span></div>
     </div>
   </div>
 </section>
 
-<section class="final">
+<section class="final" id="fim">
+  <div class="speed"></div>
   <div class="wrap">
-    <span class="kicker">Katsu!</span>
-    <h2>Qual painel o seu gestor vai aprovar primeiro?</h2>
-    <p class="lead">Descreva em português, mostre a escultura e só depois gere o projeto.</p>
+    <div class="boomword" id="boomword" aria-label="Katsu!"><span>K</span><span>A</span><span>T</span><span>S</span><span>U</span><span>!</span></div>
+    <p>Qual painel o seu gestor vai aprovar primeiro? Descreva em português, mostre a escultura e só depois gere o projeto.</p>
     <div class="cta">
-      <a class="btn btn-amber" href="#instalar">Instalar a skill</a>
-      <a class="btn btn-ghost" href="https://github.com/tiagocardosobezerra/deidara">Ver no GitHub</a>
+      <a class="btn dark" href="#instalar">Instalar a skill</a>
+      <a class="btn light" href="https://github.com/tiagocardosobezerra/deidara">Ver no GitHub ↗</a>
     </div>
   </div>
 </section>
 
 <footer>
   <div class="wrap">
-    <p><b style="color:var(--ink)">Deidara</b>, primeiro a escultura, depois a explosão. Criado por <a href="https://github.com/tiagocardosobezerra">Tiago Cardoso Bezerra</a>. Licença MIT. Modelos de layout a partir do <a href="https://github.com/Dashboard-Design/Power-BI-Design-Files">Power BI Design Files</a>, de Sajjad Ahmadi (MIT). Power BI é marca da Microsoft; este projeto não é afiliado à Microsoft. Naruto e os nomes dos personagens pertencem a Masashi Kishimoto e à Shueisha; o Deidara é um projeto de fã, sem afiliação.</p>
-    <p><a href="https://github.com/tiagocardosobezerra/deidara">GitHub</a> · <a href="https://github.com/tiagocardosobezerra/deidara/blob/main/README.en.md">English</a> · <a href="https://github.com/tiagocardosobezerra/deidara/blob/main/LICENCAS-DE-TERCEIROS.md">Licenças de terceiros</a></p>
+    <p><b style="color:var(--paper)">Deidara</b>, primeiro a escultura, depois a explosão. Criado por <a href="https://github.com/tiagocardosobezerra">Tiago Cardoso Bezerra</a>. Licença MIT. Modelos de layout a partir do <a href="https://github.com/Dashboard-Design/Power-BI-Design-Files">Power BI Design Files</a>, de Sajjad Ahmadi (MIT). Power BI é marca da Microsoft; este projeto não é afiliado à Microsoft. Naruto e os nomes dos personagens pertencem a Masashi Kishimoto e à Shueisha; o Deidara é um projeto de fã, sem afiliação. · <a href="https://github.com/tiagocardosobezerra/deidara/blob/main/README.en.md">English</a></p>
+    <button class="mode" id="mode" type="button" aria-pressed="false">Modo Katsu: clique em qualquer lugar</button>
   </div>
 </footer>
 
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
 <script>
-document.documentElement.classList.add('js');
 (function(){
-  var reduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  var reduce = matchMedia('(prefers-reduced-motion: reduce)').matches;
+  var $ = function(s){ return document.querySelector(s); };
 
-  // barra
-  var nav = document.getElementById('nav');
-  addEventListener('scroll', function(){ nav.classList.toggle('sc', scrollY > 8); }, {passive:true});
+  // ---------- carregando ----------
+  function ready(){ $('#load').classList.add('off'); document.body.classList.add('ready'); }
+  addEventListener('DOMContentLoaded', function(){ setTimeout(ready, reduce ? 0 : 700); });
+  setTimeout(ready, 1800);
+  if (/[?&]captura/.test(location.search)){ document.getElementById('load').style.display = 'none'; document.body.classList.add('ready','og'); }
 
-  // iframes em escala
-  function fit(){
-    document.querySelectorAll('[data-scale]').forEach(function(v){
-      var f = v.querySelector('iframe'); if(!f) return;
-      f.style.transform = 'scale(' + (v.clientWidth / 1280) + ')';
+  // ---------- aparecer ao rolar ----------
+  var io = new IntersectionObserver(function(es){ es.forEach(function(e){ if(e.isIntersecting){ e.target.classList.add('in'); io.unobserve(e.target); if(e.target.querySelectorAll) count(e.target); } }); }, {threshold:.12});
+  document.querySelectorAll('.reveal,.panel').forEach(function(el){ io.observe(el); });
+  function count(el){
+    el.querySelectorAll('[data-count]').forEach(function(n){
+      var to = +n.dataset.count, t0 = null; if (reduce) return;
+      (function f(t){ if(!t0) t0 = t; var p = Math.min((t - t0)/1400, 1), v = Math.round(to * (1 - Math.pow(1 - p, 3)));
+        n.textContent = v.toLocaleString('pt-BR'); if (p < 1) requestAnimationFrame(f); })(performance.now());
     });
   }
-  addEventListener('resize', fit); fit();
-  if (window.ResizeObserver) document.querySelectorAll('[data-scale]').forEach(function(v){ new ResizeObserver(fit).observe(v); });
 
-  // aparecer ao rolar
-  var io = new IntersectionObserver(function(es){
-    es.forEach(function(e){ if(e.isIntersecting){ e.target.classList.add('in'); io.unobserve(e.target); } });
-  }, {threshold:.12});
-  document.querySelectorAll('.reveal,#ring').forEach(function(el){ io.observe(el); });
-  // garantia: nada fica escondido se o observador falhar
-  setTimeout(function(){ document.querySelectorAll('.reveal').forEach(function(el){ var r = el.getBoundingClientRect(); if (r.top < innerHeight) el.classList.add('in'); }); }, 1500);
-
-  // conversa
-  var chat = document.getElementById('chat');
-  var msgs = chat.querySelectorAll('.msg');
-  var cio = new IntersectionObserver(function(es){
-    if(!es[0].isIntersecting) return; cio.disconnect();
-    msgs.forEach(function(m,i){ setTimeout(function(){ m.classList.add('in'); }, reduce ? 0 : i*650); });
-  }, {threshold:.25});
-  cio.observe(chat);
-
-  // passos (saídas reais do exemplo do repositório, encurtadas nos caminhos)
-  var S = [
-    {t:'Briefing', s:'a pasta do painel e as perguntas', c:'novo meu --projeto "Turnover RH"',
-     d:'Poucas perguntas, com as palavras do gestor: a decisão, o público, os indicadores (definição, polaridade, meta), os cortes e de onde vem cada dado.',
-     o:'<span class="k">Pasta do painel criada:</span> meu\n  receitas/   as três receitas, prontas para mandar a quem tem acesso às fontes\n  colado/     onde vão os resultados colados\n  catalogos/  onde o `catalogar` grava\n  ROTEIRO.md  o passo a passo deste painel\n  painel.json o briefing: as respostas do gestor (indicadores, definição, meta, cortes)\n<span class="p">Próximo passo:</span> preencha o briefing e mande a receita de cada fonte.'},
-    {t:'Fontes', s:'receita, resultado colado, catálogo', c:'catalogar --de meu/colado/erp.txt --fonte erp',
-     d:'Quem tem acesso roda a receita onde os dados estão e cola o resultado. Volta só a estrutura: tabelas, colunas, tipos, chaves e ligações.',
-     o:'Fonte erp (sqlserver, receita sql): <span class="k">5 tabela(s), 17 coluna(s), 4 ligação(ões)</span>, 0 expressão(ões) auxiliar(es)\nCatálogo: meu/catalogos/erp.json\n<span class="p">Próximo passo:</span> `deidara.py esbocar meu --pedido "..."`'},
-    {t:'Esboçar', s:'o primeiro argila.json', c:'esbocar meu --pedido "desligamentos por motivo e cargo, com turnover por empresa"',
-     d:'A partir do pedido, ele escolhe as tabelas, separa fatos e dimensões, cria o calendário e traz o indicador com a cadeia inteira. E avisa o que não daria certo.',
-     o:'Esboço em meu/argila.json: <span class="k">5 tabela(s) + calendário, 4 ligação(ões), 6 medida(s), 1 página</span>\n  · padrão "turnover": a cadeia inteira entrou (Desligamentos, Headcount, HC Médio, Turnover)\n  · <span class="w">segmentador dMotivoDesligamento[Motivo] fora do esboço: ele filtra só parte de\n    HC Médio, Headcount, Turnover (o número ficaria distorcido)</span>\n  · gráfico por dMotivoDesligamento[Motivo] mostra "Desligamentos" em vez de "Turnover"\n  · C2 escolheu pela pergunta: a frase do Tobi (o que o indicador fez e quem puxou)'},
-    {t:'Validar', s:'nomes, funções e filtros', c:'validar meu/argila.json',
-     d:'Até zerar os erros. Os avisos são decisões do usuário, ditas em linguagem de negócio, por tema.',
-     o:'Turnover RH · 6 tabelas · 5 relações · 6 medidas · 1 página · 12 visuais\n\n<span class="w">! 4 aviso(s) para decidir com o usuário:</span>\n  [Definições] painel publico: definição pendente: escreva para quem é o painel\n    (aparece no protótipo e no Memory Card); o aprovar recusa sem ela\n  [Fontes] fonte erp: servidor/banco ainda de exemplo (SEU_SERVIDOR/SEU_BANCO)\n  [Modelagem] dCargo e dEmpresa chegam em fDesligamento através de dColaborador:\n    o corte mostra o valor ATUAL do cadastro de dColaborador, não o da data do\n    evento. Se a fato tiver o código histórico, ligue direto nela'},
-    {t:'Protótipo', s:'a escultura, para o gestor', c:'prototipar meu/argila.json',
-     d:'Um HTML com números fictícios coerentes, um ⓘ em cada visual explicando o número e a aba “Para aprovar”, com checklist, comentários e o resumo do aceite.',
-     o:'<span class="k">Protótipo:</span> meu/argila.prototipo.html\n<span class="d">LEMBRETE: mostre o protótipo ao usuário e peça o aceite explícito; só com o "sim"\nrode `deidara.py aprovar argila.json --por NOME`.</span>'},
-    {t:'Aceite', s:'o “sim”, registrado', c:'aprovar meu/argila.json --por "Gestor de RH"',
-     d:'Sem protótipo, não há aceite. Mudou algo depois da aprovação? Novo protótipo, novo aceite: o gerar recusa.',
-     o:'<span class="r">Não dá para aprovar:</span> o protótipo não existe ou é anterior a esta versão do argila.json,\ne o gestor estaria aprovando algo que não viu.\n\n<span class="d">(depois do protótipo mostrado)</span>\n<span class="p">Katsu!</span> <span class="k">Aprovado por Gestor de RH</span> (4 aviso(s) aceito(s)). A geração (`gerar`) está liberada.'},
-    {t:'Gerar', s:'o projeto Power BI completo', c:'gerar meu/argila.json -o C:/paineis/turnover',
-     d:'O .pbip com TMDL e PBIR, as views SQL, a conferência, a qualidade, o LEIA-ME e a folha de homologação, com quem faz o quê. Saída do exemplo Aurora do repositório.',
-     o:'<span class="p">C3!</span> <span class="k">Projeto gerado</span> em C:/paineis/turnover\n  Quadro_e_Turnover.pbip  ·  LEIA-ME.md  ·  HOMOLOGACAO.md  ·  sql/erp/\nAgora:\n  1. [DBA] rodar sql/erp/01_views.sql no banco AURORA\n  2. [Analista] abrir Quadro_e_Turnover.pbip no Power BI Desktop, Atualizar\n  3. [Analista + dono do indicador] preencher HOMOLOGACAO.md\n  4. [Analista] Salvar como .pbix e publicar'},
-    {t:'Memory Card', s:'o painel guardado pelo time', c:'memory-card enviar meu/argila.json --categoria RH',
-     d:'Cada painel e indicador aprovado fica num repositório privado do time, com versão, motivo de cada mudança e definição oficial. Prévia primeiro; envio só com o “sim”.',
-     o:'<span class="d">Antes de um indicador novo:</span>  memory-card buscar turnover\n<span class="d">Depois do gerar:</span>            memory-card enviar ... <span class="d">(prévia; --confirmar só com o "sim")</span>\n<span class="d">Quando a fonte muda:</span>         memory-card conferir\n\n<span class="b">Indicador oficial não é reescrito por um painel.</span>'}
-  ];
-  var ol = document.getElementById('steps'), tt = document.getElementById('term-title'),
-      td = document.getElementById('term-desc'), tp = document.getElementById('term-pre');
-  S.forEach(function(s,i){
-    var li = document.createElement('li'), b = document.createElement('button');
-    b.type='button'; b.setAttribute('role','tab'); b.setAttribute('aria-selected', i===0?'true':'false');
-    b.innerHTML = '<span class="n">'+(i+1)+'</span><span class="t">'+s.t+'<small>'+s.s+'</small></span>';
-    b.addEventListener('click', function(){ show(i); });
-    li.appendChild(b); ol.appendChild(li);
-  });
-  function show(i){
-    ol.querySelectorAll('button').forEach(function(b,j){ b.setAttribute('aria-selected', j===i?'true':'false'); });
-    var s = S[i];
-    tt.textContent = 'passo ' + (i+1) + ' de 8 · ' + s.t.toLowerCase();
-    td.textContent = s.d;
-    tp.innerHTML = '<span class="p">$</span> python deidara.py ' + s.c.replace(/</g,'&lt;') + '\n\n' + s.o;
-  }
-  show(0);
-
-  // modelos
+  // ---------- galeria ----------
   var M = [
-    ['faixa-de-kpis','Trilho de ícones, título com filtros no canto, linha de KPIs, gráficos ao lado da tabela.'],
-    ['coluna-de-kpis','Barra de filtros, coluna de KPIs à esquerda, grade de gráficos e abas no rodapé.'],
-    ['secoes-com-rolagem','Barra lateral com KPIs e filtros; resumo e seções com rolagem.'],
-    ['trilho-escuro','Trilho escuro de páginas, faixa única de KPIs, dois painéis e tabela larga.'],
-    ['kpis-clicaveis','Menu lateral e KPIs clicáveis: o KPI escolhido muda o gráfico e a tabela.'],
-    ['historia-longa','Uma página longa, lida como história, seção por seção.'],
-    ['executivo','Linha de até cinco KPIs e um gráfico principal em largura total, o resto embaixo.'],
-    ['mapa-central','O mapa (ou o gráfico principal) no centro, KPIs à esquerda, minigráficos à direita, tabelas embaixo.'],
-    ['causa-raiz','Coluna de filtros, linha de KPIs e a árvore de decomposição em destaque, com o detalhe embaixo.'],
-    ['tabela-lateral','Faixa de KPIs, gráficos à esquerda e uma tabela alta à direita.'],
-    ['equipes','Painel lateral com KPIs, filtros e páginas; minigráficos no topo e um gráfico principal grande.']
+    ['faixa-de-kpis','Faixa de KPIs','Trilho de ícones, título com filtros no canto, linha de KPIs, gráficos ao lado da tabela.'],
+    ['coluna-de-kpis','Coluna de KPIs','Barra de filtros, coluna de KPIs à esquerda, grade de gráficos e abas no rodapé.'],
+    ['secoes-com-rolagem','Seções com rolagem','Barra lateral com KPIs e filtros; resumo e seções com rolagem.'],
+    ['trilho-escuro','Trilho escuro','Trilho escuro de páginas, faixa única de KPIs, dois painéis e tabela larga.'],
+    ['kpis-clicaveis','KPIs clicáveis','Menu lateral e KPIs clicáveis: o KPI escolhido muda o gráfico e a tabela.'],
+    ['historia-longa','História longa','Uma página longa, lida como história, seção por seção.'],
+    ['executivo','Executivo','Linha de até cinco KPIs e um gráfico principal em largura total, o resto embaixo.'],
+    ['mapa-central','Mapa central','O mapa (ou o gráfico principal) no centro, KPIs à esquerda, minigráficos à direita, tabelas embaixo.'],
+    ['causa-raiz','Causa raiz','Coluna de filtros, linha de KPIs e a árvore de decomposição em destaque, com o detalhe embaixo.'],
+    ['tabela-lateral','Tabela lateral','Faixa de KPIs, gráficos à esquerda e uma tabela alta à direita.'],
+    ['equipes','Equipes','Painel lateral com KPIs, filtros e páginas; minigráficos no topo e um gráfico principal grande.']
   ];
-  var ml = document.getElementById('mlist'), mf = document.getElementById('mframe'),
-      mb = document.getElementById('mbar'), md = document.getElementById('mdesc');
-  M.forEach(function(m,i){
-    var li = document.createElement('li'), b = document.createElement('button');
-    b.type='button'; b.setAttribute('role','tab'); b.setAttribute('aria-selected', i===0?'true':'false');
-    b.innerHTML = '<i>'+String(i+1).padStart(2,'0')+'</i>'+m[0];
-    b.addEventListener('click', function(){ pick(i); });
-    li.appendChild(b); ml.appendChild(li);
+  var strip = $('#strip'), mf = $('#mframe'), vp = $('#vp');
+  M.forEach(function(m, i){
+    var b = document.createElement('button'); b.type = 'button'; b.setAttribute('role','tab'); b.setAttribute('aria-selected', i ? 'false' : 'true');
+    b.innerHTML = '<img src="img/modelos/' + m[0] + '.webp" alt="" loading="lazy" width="960" height="480"><span>' + String(i+1).padStart(2,'0') + ' <b>' + m[0] + '</b></span>';
+    b.addEventListener('click', function(){ pick(i); }); strip.appendChild(b);
   });
+  function fit(){ mf.style.transform = 'scale(' + (vp.clientWidth / 1280) + ')'; }
+  addEventListener('resize', fit); if (window.ResizeObserver) new ResizeObserver(fit).observe(vp);
   function pick(i){
-    ml.querySelectorAll('button').forEach(function(b,j){ b.setAttribute('aria-selected', j===i?'true':'false'); });
+    strip.querySelectorAll('button').forEach(function(b, j){ b.setAttribute('aria-selected', j === i ? 'true' : 'false'); });
     mf.src = 'prototipos/' + M[i][0] + '.html';
-    mb.textContent = '"modelo": "' + M[i][0] + '"';
-    md.innerHTML = '<code>' + M[i][0] + '</code>: ' + M[i][1];
-    fit();
+    $('#mtitle').innerHTML = '<code>"modelo": "' + M[i][0] + '"</code>' + M[i][1];
+    $('#mdesc').textContent = M[i][2]; fit();
   }
-  var mio = new IntersectionObserver(function(es){ if(es[0].isIntersecting){ mio.disconnect(); pick(0); } }, {rootMargin:'300px'});
-  mio.observe(document.getElementById('modelos'));
+  var gio = new IntersectionObserver(function(es){ if (es[0].isIntersecting){ gio.disconnect(); pick(0); } }, {rootMargin:'400px'});
+  gio.observe($('#galeria'));
 
-  // sistema na instalação
-  document.querySelectorAll('.os button').forEach(function(b){
-    b.addEventListener('click', function(){
-      document.querySelectorAll('.os button').forEach(function(x){ x.setAttribute('aria-selected', x===b?'true':'false'); });
-      document.querySelectorAll('[data-os-cmd]').forEach(function(c){ c.hidden = c.getAttribute('data-os-cmd') !== b.dataset.os; });
-    });
-  });
-  if (!/Win/i.test(navigator.platform || navigator.userAgent)) { var nx = document.querySelector('.os [data-os="nix"]'); if (nx) nx.click(); }
+  // ---------- técnicas ----------
+  var J = [['望','Luneta','receitas e descoberta: vê a fonte sem tocar nela'],['口','Te no Kuchi','o esboço do argila.json a partir do pedido'],['壱','C1','o protótipo HTML e o tour guiado'],['弐','C2','escolhe os visuais pela pergunta do painel'],
+           ['爆','Katsu!','o “sim” do gestor, que libera a geração'],['参','C3','o projeto Power BI, as views SQL e a documentação'],['肆','C4 Karura','a estatística: sinal ou ruído, fora da curva, tendência'],['零','C0','desmonta o painel que já existe, dá nota e o refaz'],
+           ['話','Tobi','a frase de leitura: o que o número fez e quem puxou'],['分','Bunshin','os números fictícios e o projeto de demonstração'],['傀','Sasori','dicionário de funções e padrões conferidos'],['雲','Akatsuki','a galeria: modelos e funções MIT da comunidade']];
+  var jz = $('#jutsu');
+  J.forEach(function(j){ var d = document.createElement('div'); d.className = 'card'; d.tabIndex = 0;
+    d.innerHTML = '<div class="in2"><div class="f"><i>' + j[0] + '</i><b>' + j[1] + '</b></div><div class="b"><b>' + j[1] + '</b><span>' + j[2] + '</span></div></div>'; jz.appendChild(d); });
 
-  // copiar
-  document.querySelectorAll('.cmd button').forEach(function(b){
-    b.addEventListener('click', function(){
-      var t = b.parentElement.querySelector('span').textContent;
-      var done = function(){ b.style.color='var(--green)'; setTimeout(function(){ b.style.color=''; }, 1200); };
-      if (navigator.clipboard) navigator.clipboard.writeText(t).then(done, function(){});
-    });
-  });
-
-  // Katsu!
-  var btn = document.getElementById('katsu'), out = document.getElementById('out'), cv = document.getElementById('boom');
-  btn.addEventListener('click', function(){
-    btn.disabled = true; btn.textContent = '✓ Aprovado';
-    burst();
-    setTimeout(function(){
-      out.classList.add('on');
-      out.querySelectorAll('li').forEach(function(li,i){ li.style.transitionDelay = (reduce?0:(.1 + i*.12)) + 's'; });
-    }, reduce ? 0 : 350);
-  });
-  function burst(){
-    if (reduce || !cv.getContext) return;
-    var r = cv.getBoundingClientRect(), dpr = Math.min(devicePixelRatio||1, 2);
-    cv.width = r.width*dpr; cv.height = r.height*dpr;
-    var ctx = cv.getContext('2d'); ctx.scale(dpr,dpr);
-    var br = btn.getBoundingClientRect(), x0 = br.left - r.left + br.width/2, y0 = br.top - r.top + br.height/2;
-    var cols = ['#F59E0B','#FB923C','#FCD34D','#F87171','#FDE68A'], P = [];
-    for (var i=0;i<120;i++){ var a = Math.random()*Math.PI*2, v = 2 + Math.random()*7;
-      P.push({x:x0,y:y0,vx:Math.cos(a)*v,vy:Math.sin(a)*v - 2,s:2 + Math.random()*4,c:cols[i%cols.length],l:1}); }
-    var ring = 0;
+  // ---------- terminal ----------
+  var CMD = { win: 'git clone https://github.com/tiagocardosobezerra/deidara.git "$env:USERPROFILE\\.claude\\skills\\deidara"',
+              nix: 'git clone https://github.com/tiagocardosobezerra/deidara.git ~/.claude/skills/deidara' };
+  var os = /Win/i.test(navigator.platform || navigator.userAgent) ? 'win' : 'nix', tpre = $('#tpre'), typing = 0;
+  function esc(s){ return s.replace(/&/g,'&amp;').replace(/</g,'&lt;'); }
+  function script(){
+    return [
+      ['p', '$ '], ['t', CMD[os]], ['n'], ['d', "Cloning into 'deidara'... done."], ['n'], ['n'],
+      ['p', '$ '], ['t', 'claude'], ['n'], ['d', '> quero um painel de turnover por motivo e cargo, com meta por empresa'], ['n'], ['n'],
+      ['d', '# o Claude roda os comandos; as saídas abaixo são do exemplo do repositório'], ['n'],
+      ['p', '$ '], ['t', 'python deidara.py prototipar meu/argila.json'], ['n'], ['k', 'Protótipo: meu/argila.prototipo.html'], ['n'],
+      ['p', '$ '], ['t', 'python deidara.py aprovar meu/argila.json --por "Gestor de RH"'], ['n'], ['e', 'Katsu!'], ['o', ' Aprovado por Gestor de RH. A geração (`gerar`) está liberada.'], ['n'],
+      ['p', '$ '], ['t', 'python deidara.py gerar meu/argila.json -o C:/paineis/turnover'], ['n'], ['e', 'C3!'], ['o', ' Projeto gerado  ·  Quadro_e_Turnover.pbip  ·  LEIA-ME.md  ·  HOMOLOGACAO.md  ·  sql/erp/']
+    ];
+  }
+  function runTerm(){
+    var id = ++typing, parts = script(), html = '', i = 0;
+    if (reduce){ parts.forEach(function(p){ html += p[0]==='n' ? '\n' : p[0]==='t'||p[0]==='o' ? esc(p[1]) : '<span class="'+p[0]+'">'+esc(p[1])+'</span>'; }); tpre.innerHTML = html; return; }
     (function step(){
-      ctx.clearRect(0,0,r.width,r.height);
-      ring += 9;
-      if (ring < 260){ ctx.beginPath(); ctx.arc(x0,y0,ring,0,Math.PI*2); ctx.strokeStyle='rgba(245,158,11,'+(1-ring/260)*.6+')'; ctx.lineWidth=3; ctx.stroke(); }
-      var alive = false;
-      P.forEach(function(p){ if(p.l<=0) return; alive = true;
-        p.x+=p.vx; p.y+=p.vy; p.vy+=.16; p.vx*=.985; p.l-=.016;
-        ctx.globalAlpha = Math.max(p.l,0); ctx.fillStyle = p.c; ctx.fillRect(p.x,p.y,p.s,p.s); });
-      ctx.globalAlpha = 1;
-      if (alive || ring < 260) requestAnimationFrame(step); else ctx.clearRect(0,0,r.width,r.height);
+      if (id !== typing) return;
+      if (i >= parts.length){ tpre.innerHTML = html + '<span class="cur"></span>'; return; }
+      var p = parts[i];
+      if (p[0] === 't'){ var k = 0; (function ty(){ if (id !== typing) return; if (k <= p[1].length){ tpre.innerHTML = html + esc(p[1].slice(0,k)) + '<span class="cur"></span>'; k += 2; setTimeout(ty, 16); } else { html += esc(p[1]); i++; setTimeout(step, 240); } })(); return; }
+      html += p[0]==='n' ? '\n' : p[0]==='o' ? esc(p[1]) : '<span class="'+p[0]+'">'+esc(p[1])+'</span>';
+      tpre.innerHTML = html + '<span class="cur"></span>'; i++; setTimeout(step, p[0]==='n' ? 60 : 140);
     })();
   }
+  document.querySelectorAll('.os [data-os]').forEach(function(b){
+    b.setAttribute('aria-selected', b.dataset.os === os ? 'true' : 'false');
+    b.addEventListener('click', function(){ os = b.dataset.os; document.querySelectorAll('.os [data-os]').forEach(function(x){ x.setAttribute('aria-selected', x === b ? 'true' : 'false'); }); runTerm(); });
+  });
+  $('#copy').addEventListener('click', function(){ var b = this; if (navigator.clipboard) navigator.clipboard.writeText(CMD[os]).then(function(){ b.textContent = 'Copiado ✓'; setTimeout(function(){ b.textContent = 'Copiar comando'; }, 1400); }); });
+  var tio = new IntersectionObserver(function(es){ if (es[0].isIntersecting){ tio.disconnect(); runTerm(); } }, {threshold:.3});
+  tio.observe($('#tpre'));
+
+  // ---------- partículas de explosão (2D, página toda) ----------
+  var fx = $('#fx'), fctx = fx.getContext('2d'), P = [], fxOn = false;
+  function fxSize(){ var d = Math.min(devicePixelRatio || 1, 2); fx.width = innerWidth * d; fx.height = innerHeight * d; fctx.setTransform(d,0,0,d,0,0); }
+  fxSize(); addEventListener('resize', fxSize);
+  function boom(x, y, n){
+    if (reduce) return;
+    var cols = ['#FFB020','#FF5A1F','#E8B48A','#C8693E','#FBF5EC'];
+    for (var i = 0; i < (n || 90); i++){ var a = Math.random()*Math.PI*2, v = 2 + Math.random()*9;
+      P.push({x:x, y:y, vx:Math.cos(a)*v, vy:Math.sin(a)*v - 2, s:2 + Math.random()*5, c:cols[i % cols.length], l:1, r:Math.random()*6}); }
+    P.push({ring:0, x:x, y:y, l:1});
+    if (!fxOn){ fxOn = true; requestAnimationFrame(fxLoop); }
+  }
+  function fxLoop(){
+    fctx.clearRect(0,0,innerWidth,innerHeight);
+    P = P.filter(function(p){ return p.l > 0; });
+    P.forEach(function(p){
+      if (p.ring !== undefined){ p.ring += 14; p.l -= .04; fctx.beginPath(); fctx.arc(p.x,p.y,p.ring,0,7); fctx.strokeStyle = 'rgba(255,176,32,'+Math.max(p.l,0)*.7+')'; fctx.lineWidth = 4; fctx.stroke(); return; }
+      p.x += p.vx; p.y += p.vy; p.vy += .22; p.vx *= .985; p.l -= .014; p.r += .1;
+      fctx.save(); fctx.globalAlpha = Math.max(p.l,0); fctx.fillStyle = p.c; fctx.translate(p.x,p.y); fctx.rotate(p.r); fctx.fillRect(-p.s/2,-p.s/2,p.s,p.s); fctx.restore();
+    });
+    if (P.length) requestAnimationFrame(fxLoop); else { fxOn = false; fctx.clearRect(0,0,innerWidth,innerHeight); }
+  }
+
+  // ---------- KATSU! final ----------
+  document.querySelectorAll('#boomword span').forEach(function(s){
+    s.addEventListener('mouseenter', function(){ if (reduce) return;
+      s.style.transform = 'translate(' + (Math.random()*60-30) + 'px,' + (Math.random()*-80-20) + 'px) rotate(' + (Math.random()*50-25) + 'deg) scale(1.15)';
+      var r = s.getBoundingClientRect(); boom(r.left + r.width/2, r.top + r.height/2, 30);
+      setTimeout(function(){ s.style.transform = ''; }, 700); });
+  });
+
+  // ---------- modo Katsu ----------
+  var mode = false, mb = $('#mode');
+  mb.addEventListener('click', function(e){ e.stopPropagation(); mode = !mode; mb.setAttribute('aria-pressed', mode); mb.textContent = mode ? 'Modo Katsu ligado ✺' : 'Modo Katsu: clique em qualquer lugar'; if (mode) boom(e.clientX, e.clientY, 140); });
+  addEventListener('click', function(e){
+    if (!mode || e.target.closest('a,button,iframe,input')) return;
+    boom(e.clientX, e.clientY, 110); document.body.classList.remove('katsu-mode'); void document.body.offsetWidth; document.body.classList.add('katsu-mode');
+  });
+
+  // ---------- a argila (three.js) ----------
+  var canvas = $('#clay'), hero = $('#topo'), btn = $('#katsu'), status = $('#status'), files = $('#files');
+  var FILES = ['Painel.pbip','TMDL · modelo','PBIR · páginas','views SQL','HOMOLOGACAO.md','LEIA-ME.md','dicionário de indicadores'];
+  var gl = null; try { gl = canvas.getContext('webgl') || canvas.getContext('experimental-webgl'); } catch(e){}
+  if (!window.THREE || !gl){ document.documentElement.classList.add('no3d'); btn.addEventListener('click', function(){ var r = btn.getBoundingClientRect(); boom(r.left+r.width/2, r.top+r.height/2, 160); showFiles(); }); return; }
+
+  var renderer = new THREE.WebGLRenderer({canvas:canvas, antialias:true, alpha:true});
+  renderer.setPixelRatio(Math.min(devicePixelRatio || 1, 2));
+  var scene = new THREE.Scene(), camera = new THREE.PerspectiveCamera(32, 1, .1, 100);
+  camera.position.set(0, 0, 9);
+
+  var NOISE = [
+    'vec3 mod289(vec3 x){return x-floor(x*(1./289.))*289.;}vec4 mod289(vec4 x){return x-floor(x*(1./289.))*289.;}',
+    'vec4 permute(vec4 x){return mod289(((x*34.)+1.)*x);}vec4 taylorInvSqrt(vec4 r){return 1.79284291400159-.85373472095314*r;}',
+    'float snoise(vec3 v){const vec2 C=vec2(1./6.,1./3.);const vec4 D=vec4(0.,.5,1.,2.);vec3 i=floor(v+dot(v,C.yyy));vec3 x0=v-i+dot(i,C.xxx);',
+    'vec3 g=step(x0.yzx,x0.xyz);vec3 l=1.-g;vec3 i1=min(g.xyz,l.zxy);vec3 i2=max(g.xyz,l.zxy);vec3 x1=x0-i1+C.xxx;vec3 x2=x0-i2+C.yyy;vec3 x3=x0-D.yyy;',
+    'i=mod289(i);vec4 p=permute(permute(permute(i.z+vec4(0.,i1.z,i2.z,1.))+i.y+vec4(0.,i1.y,i2.y,1.))+i.x+vec4(0.,i1.x,i2.x,1.));',
+    'float n_=.142857142857;vec3 ns=n_*D.wyz-D.xzx;vec4 j=p-49.*floor(p*ns.z*ns.z);vec4 x_=floor(j*ns.z);vec4 y_=floor(j-7.*x_);',
+    'vec4 x=x_*ns.x+ns.yyyy;vec4 y=y_*ns.x+ns.yyyy;vec4 h=1.-abs(x)-abs(y);vec4 b0=vec4(x.xy,y.xy);vec4 b1=vec4(x.zw,y.zw);',
+    'vec4 s0=floor(b0)*2.+1.;vec4 s1=floor(b1)*2.+1.;vec4 sh=-step(h,vec4(0.));vec4 a0=b0.xzyw+s0.xzyw*sh.xxyy;vec4 a1=b1.xzyw+s1.xzyw*sh.zzww;',
+    'vec3 p0=vec3(a0.xy,h.x);vec3 p1=vec3(a0.zw,h.y);vec3 p2=vec3(a1.xy,h.z);vec3 p3=vec3(a1.zw,h.w);',
+    'vec4 norm=taylorInvSqrt(vec4(dot(p0,p0),dot(p1,p1),dot(p2,p2),dot(p3,p3)));p0*=norm.x;p1*=norm.y;p2*=norm.z;p3*=norm.w;',
+    'vec4 m=max(.6-vec4(dot(x0,x0),dot(x1,x1),dot(x2,x2),dot(x3,x3)),0.);m=m*m;return 42.*dot(m*m,vec4(dot(p0,x0),dot(p1,x1),dot(p2,x2),dot(p3,x3)));}'
+  ].join('\n');
+
+  var U = { uT:{value:0}, uDent:{value:new THREE.Vector3(0,0,5)}, uDentAmt:{value:0}, uSquash:{value:0}, uGlow:{value:0} };
+  var mat = new THREE.ShaderMaterial({
+    uniforms: U,
+    vertexShader: NOISE + [
+      'uniform float uT; uniform vec3 uDent; uniform float uDentAmt; uniform float uSquash;',
+      'varying vec3 vN; varying vec3 vP; varying float vD;',
+      'vec3 shape(vec3 p){',
+      '  vec3 n = normalize(p);',
+      '  float d = snoise(n*1.1 + vec3(uT*.12)) * .14 + snoise(n*2.6 - vec3(uT*.07)) * .035;',
+      '  float dist = distance(n*1.5, uDent);',
+      '  float dent = exp(-dist*dist*5.) * uDentAmt;',
+      '  vec3 q = n * (1.5 + d - dent*.42);',
+      '  q.y *= 1. - uSquash*.35; q.xz *= 1. + uSquash*.22;',
+      '  return q;',
+      '}',
+      'void main(){',
+      '  vec3 p = shape(position);',
+      '  vec3 t = normalize(cross(normal, vec3(.1,1.,.2)));',
+      '  vec3 bt = normalize(cross(normal, t));',
+      '  vec3 pa = shape(position + t*.01); vec3 pb = shape(position + bt*.01);',
+      '  vec3 nn = normalize(cross(pa - p, pb - p));',
+      '  if (dot(nn, p) < 0.) nn = -nn;',
+      '  vN = normalize(normalMatrix * nn); vP = (modelViewMatrix * vec4(p,1.)).xyz; vD = length(p);',
+      '  gl_Position = projectionMatrix * vec4(vP,1.);',
+      '}'].join('\n'),
+    fragmentShader: NOISE + [
+      'uniform float uT; uniform float uGlow; varying vec3 vN; varying vec3 vP; varying float vD;',
+      'void main(){',
+      '  vec3 n = normalize(vN);',
+      '  float grain = snoise(vP*14.)*.5 + snoise(vP*40.)*.25;',
+      '  n = normalize(n + vec3(grain*.035));',
+      '  vec3 L = normalize(vec3(-.5,.8,.7)); vec3 V = normalize(-vP);',
+      '  float dif = max(dot(n,L),0.);',
+      '  float wrap = max((dot(n,L)+.45)/1.45,0.);',
+      '  float rim = pow(1.-max(dot(n,V),0.), 2.6);',
+      '  float spec = pow(max(dot(reflect(-L,n),V),0.), 22.) * .12;',
+      '  vec3 base = mix(vec3(.48,.20,.09), vec3(.80,.42,.24), wrap);',
+      '  base = mix(base, vec3(.93,.70,.53), pow(dif,3.)*.55);',
+      '  base += vec3(1.,.69,.13) * rim * (.35 + uGlow*1.4);',
+      '  base += spec + grain*.025;',
+      '  base = mix(base, vec3(1.,.42,.12), uGlow*.55);',
+      '  gl_FragColor = vec4(base, 1.);',
+      '}'].join('\n')
+  });
+  var geo = new THREE.IcosahedronGeometry(1, 64);
+  var blob = new THREE.Mesh(geo, mat);
+  scene.add(blob);
+
+  // pontos: esfera -> explosão -> painel
+  var N = 5200, pos = new Float32Array(N*3), from = new Float32Array(N*3), vel = new Float32Array(N*3), to = new Float32Array(N*3), col = new Float32Array(N*3);
+  (function(){
+    var k = 0;
+    function put(x, y){ if (k >= N) return; to[k*3] = x; to[k*3+1] = y; to[k*3+2] = (Math.random()-.5)*.05; k++; }
+    function rect(x, y, w, h, n){ for (var i = 0; i < n; i++){ var t = Math.random()*2*(w+h), px, py;
+      if (t < w){ px = x + t; py = y; } else if (t < w+h){ px = x + w; py = y + (t-w); } else if (t < 2*w+h){ px = x + (t-w-h); py = y + h; } else { px = x; py = y + (t-2*w-h); } put(px, py); } }
+    function fill(x, y, w, h, n){ for (var i = 0; i < n; i++) put(x + Math.random()*w, y + Math.random()*h); }
+    var W = 4.6, H = 2.7, X = -W/2, Y = -H/2;
+    rect(X, Y, W, H, 700);
+    fill(X+.12, Y+H-.32, 1.2, .14, 160);
+    for (var i = 0; i < 4; i++){ rect(X+.12 + i*1.12, Y+H-1.02, 1.0, .58, 170); fill(X+.32 + i*1.12, Y+H-.8, .5, .16, 110); }
+    rect(X+.12, Y+.12, 2.6, 1.42, 280);
+    var hs = [.55,.8,.62,1.05,.9,1.18,.74,1.0,1.24,.96];
+    for (var b = 0; b < 10; b++) fill(X+.28 + b*.24, Y+.24, .14, hs[b], 120);
+    rect(X+2.86, Y+.12, 1.62, 1.42, 240);
+    for (var r = 0; r < 6; r++){ fill(X+2.98, Y+1.32 - r*.2, .5, .05, 30); fill(X+3.58, Y+1.32 - r*.2, .2 + Math.random()*.6, .07, 50); }
+    while (k < N) fill(X, Y, W, H, 1);
+  })();
+  var amber = new THREE.Color('#FFB020'), ember = new THREE.Color('#FF5A1F'), cl = new THREE.Color('#E8B48A');
+  for (var i = 0; i < N; i++){ var c = Math.random() < .55 ? amber : (Math.random() < .5 ? ember : cl); col[i*3] = c.r; col[i*3+1] = c.g; col[i*3+2] = c.b; }
+  var pgeo = new THREE.BufferGeometry();
+  pgeo.setAttribute('position', new THREE.BufferAttribute(pos, 3));
+  pgeo.setAttribute('color', new THREE.BufferAttribute(col, 3));
+  var pmat = new THREE.PointsMaterial({size:.048, vertexColors:true, transparent:true, opacity:0, depthWrite:false, blending:THREE.AdditiveBlending});
+  var pts = new THREE.Points(pgeo, pmat); scene.add(pts);
+
+  function size(){ var w = hero.clientWidth, h = hero.clientHeight; renderer.setSize(w, h, false); camera.aspect = w/h; camera.updateProjectionMatrix();
+    var s = w < 760 ? .6 : 1; blob.scale.setScalar(s); blob.position.y = w < 760 ? .55 : 0; hitSphere && hitSphere.position.copy(blob.position); pts.scale.setScalar(w < 760 ? .5 : 1); pts.position.y = w < 760 ? .55 : 0; }
+  size(); addEventListener('resize', size);
+
+  // interação: amassar
+  var ray = new THREE.Raycaster(), mouse = new THREE.Vector2(), hitSphere = new THREE.Mesh(new THREE.SphereGeometry(1.55, 32, 32), new THREE.MeshBasicMaterial({visible:false}));
+  scene.add(hitSphere); hitSphere.position.copy(blob.position);
+  var dentTarget = 0, rotT = {x:0, y:0}, pressing = false, pokes = 0;
+  function onMove(e){
+    var r = canvas.getBoundingClientRect(), p = e.touches ? e.touches[0] : e;
+    mouse.x = ((p.clientX - r.left)/r.width)*2 - 1; mouse.y = -((p.clientY - r.top)/r.height)*2 + 1;
+    rotT.y = mouse.x * .5; rotT.x = -mouse.y * .3;
+    ray.setFromCamera(mouse, camera);
+    hitSphere.scale.copy(blob.scale);
+    var hit = ray.intersectObject(hitSphere);
+    if (hit.length && phase === 0){
+      var lp = blob.worldToLocal(hit[0].point.clone()).normalize().multiplyScalar(1.5);
+      U.uDent.value.lerp(lp, .35); dentTarget = pressing ? 1.25 : .7;
+      if (pokes++ === 20) status.innerHTML = 'Argila · <b>clique e segure para apertar</b>';
+    } else dentTarget = 0;
+  }
+  canvas.addEventListener('pointermove', onMove);
+  canvas.addEventListener('pointerdown', function(e){ pressing = true; onMove(e); });
+  addEventListener('pointerup', function(){ pressing = false; });
+  canvas.addEventListener('pointerleave', function(){ dentTarget = 0; });
+
+  // fases: 0 argila · 1 explodindo · 2 painel · 3 voltando
+  var phase = 0, pt0 = 0, clock = new THREE.Clock();
+  function showFiles(){
+    files.innerHTML = ''; var w = hero.clientWidth, h = hero.clientHeight;
+    FILES.forEach(function(f, i){ var s = document.createElement('span'); if (i > 3) s.className = 'ok'; s.textContent = f;
+      var a = (i / FILES.length) * Math.PI * 2 - Math.PI/2, rx = Math.min(w*.36, 520), ry = Math.min(h*.34, 300);
+      s.style.left = (w/2 + Math.cos(a)*rx) + 'px'; s.style.top = (h/2 + Math.sin(a)*ry) + 'px';
+      s.style.transitionDelay = (.08*i) + 's'; files.appendChild(s); });
+    requestAnimationFrame(function(){ files.classList.add('on'); files.querySelectorAll('span').forEach(function(s, i){ s.style.transform = 'translate(-50%,-50%) scale(1) rotate(' + (i%2 ? 3 : -3) + 'deg)'; }); });
+  }
+  function hideFiles(){ files.classList.remove('on'); files.querySelectorAll('span').forEach(function(s){ s.style.transform = 'translate(-50%,-50%) scale(.4)'; }); }
+
+  btn.addEventListener('click', function(){
+    if (phase === 0){
+      var p = geo.attributes.position, n = p.count;
+      for (var i = 0; i < N; i++){ var j = (Math.random()*n)|0; var v = new THREE.Vector3(p.getX(j), p.getY(j), p.getZ(j)).normalize().multiplyScalar(1.5);
+        from[i*3] = v.x; from[i*3+1] = v.y; from[i*3+2] = v.z; var s = 2.5 + Math.random()*5.5;
+        vel[i*3] = v.x*s + (Math.random()-.5)*2; vel[i*3+1] = v.y*s + (Math.random()-.5)*2; vel[i*3+2] = v.z*s; }
+      phase = 1; pt0 = clock.getElapsedTime(); blob.visible = false; pmat.opacity = 1; hero.classList.add('boomed');
+      var r = btn.getBoundingClientRect(); boom(innerWidth/2, innerHeight/2, 160);
+      btn.innerHTML = '承認<small>Moldar de novo</small>';
+      status.innerHTML = 'Aprovado · <b>Katsu! O projeto saiu</b>';
+      setTimeout(showFiles, reduce ? 0 : 900);
+    } else if (phase === 2){
+      phase = 3; pt0 = clock.getElapsedTime(); hideFiles(); hero.classList.remove('boomed');
+      btn.innerHTML = '喝!<small>Aprovar</small>'; status.innerHTML = 'Argila · <b>passe o mouse para amassar</b>';
+    }
+  });
+
+  var visible = true;
+  new IntersectionObserver(function(es){ visible = es[0].isIntersecting; }, {threshold:0}).observe(hero);
+  function ease(t){ return t < .5 ? 4*t*t*t : 1 - Math.pow(-2*t + 2, 3)/2; }
+  (function loop(){
+    requestAnimationFrame(loop);
+    if (!visible) return;
+    var t = clock.getElapsedTime();
+    U.uT.value = reduce ? 0 : t;
+    U.uDentAmt.value += (dentTarget - U.uDentAmt.value) * .12;
+    U.uSquash.value += ((pressing && phase === 0 ? .25 : 0) - U.uSquash.value) * .1;
+    blob.rotation.y += (rotT.y + t*.08 - blob.rotation.y) * .04;
+    blob.rotation.x += (rotT.x - blob.rotation.x) * .05;
+    if (phase === 1 || phase === 2){
+      var e = t - pt0, a = pgeo.attributes.position.array;
+      for (var i = 0; i < N; i++){ var k = i*3;
+        if (e < .7){ var u = e; a[k] = from[k] + vel[k]*u - .0; a[k+1] = from[k+1] + vel[k+1]*u - 1.2*u*u; a[k+2] = from[k+2] + vel[k+2]*u; }
+        else { var q = ease(Math.min((e - .7 - (i % 50)*.006)/1.4, 1)); if (q < 0) q = 0;
+          var bx = from[k] + vel[k]*.7, by = from[k+1] + vel[k+1]*.7 - .59, bz = from[k+2] + vel[k+2]*.7;
+          a[k] = bx + (to[k]-bx)*q; a[k+1] = by + (to[k+1]-by)*q; a[k+2] = bz + (to[k+2]-bz)*q; } }
+      pgeo.attributes.position.needsUpdate = true;
+      pts.rotation.y = Math.sin(t*.5)*.12; pts.rotation.x = Math.sin(t*.37)*.05;
+      if (e > 2.4) phase = 2;
+      U.uGlow.value = 0;
+    } else if (phase === 3){
+      var e3 = (t - pt0)/1.1, a3 = pgeo.attributes.position.array, q3 = ease(Math.min(e3, 1));
+      for (var i3 = 0; i3 < N; i3++){ var k3 = i3*3; a3[k3] = to[k3] + (from[k3]-to[k3])*q3; a3[k3+1] = to[k3+1] + (from[k3+1]-to[k3+1])*q3; a3[k3+2] = to[k3+2] + (from[k3+2]-to[k3+2])*q3; }
+      pgeo.attributes.position.needsUpdate = true;
+      if (e3 >= 1){ phase = 0; blob.visible = true; pmat.opacity = 0; U.uGlow.value = 1; }
+    } else {
+      U.uGlow.value *= .94;
+      var hover = U.uDentAmt.value; hero.style.cursor = hover > .3 ? 'grab' : '';
+    }
+    renderer.render(scene, camera);
+  })();
+
+  addEventListener('scroll', function(){ $('#hint').style.opacity = scrollY > 40 ? 0 : 1; }, {passive:true});
 })();
 </script>
 </body>
