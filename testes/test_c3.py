@@ -769,3 +769,60 @@ class TestDicaDeAjuda(unittest.TestCase):
         self.assertEqual(sem, set())
         self.assertEqual(validar_pbip.conferir(saida), [])
         shutil.rmtree(d, ignore_errors=True)
+
+
+class TestAcessibilidade(unittest.TestCase):
+    """Eixo das barras no zero, status que não depende só da cor e texto alternativo em cada visual."""
+
+    def test_guarda_tira_inicio_fora_do_zero_e_escala_log_das_barras(self):
+        from tecnicas.c3 import guarda
+        lit = lambda x: {'expr': {'Literal': {'Value': x}}}   # noqa: E731
+        for tipo in ('clusteredBarChart', 'clusteredColumnChart'):
+            vis = {'objects': {'valueAxis': [{'properties': {'start': lit('500D'), 'axisScale': lit("'log'"),
+                                                             'show': lit('true')}}]}}
+            props = guarda.aplicar(tipo, vis)['objects']['valueAxis'][0]['properties']
+            self.assertNotIn('start', props)
+            self.assertNotIn('axisScale', props)
+            self.assertIn('show', props)
+            zero = {'objects': {'valueAxis': [{'properties': {'start': lit('0D')}}]}}
+            self.assertIn('start', guarda.aplicar(tipo, zero)['objects']['valueAxis'][0]['properties'])
+        linha = {'objects': {'valueAxis': [{'properties': {'start': lit('500D')}}]}}   # linha pode começar fora do zero
+        self.assertIn('start', guarda.aplicar('lineChart', linha)['objects']['valueAxis'][0]['properties'])
+
+    def test_todo_visual_tem_texto_alternativo_do_painel(self):
+        from tecnicas.c3 import pbir
+        a = _base()
+        a['modelo'] = 'historia-longa'            # o estilo de origem traz o texto alternativo do dashboard de filmes
+        m, _ = _resolver(a)
+        for pg in m['paginas']:
+            for v in pg['visuais']:
+                cont = pbir.visual(m, v, {'x': 0, 'y': 0, 'w': 300, 'h': 200}, 'x', 0)['visual']['visualContainerObjects']
+                alt = cont['general'][0]['properties']['altText']['expr']['Literal']['Value']
+                self.assertLessEqual(len(alt), 252)                  # 250 e as aspas do literal
+                self.assertNotIn('revenue', alt.lower())
+                if v.get('titulo'):
+                    self.assertIn(v['titulo'].replace("'", "''"), alt)
+
+    def test_status_so_pela_cor_vira_aviso(self):
+        m, p = _resolver(_base())
+        avisos = [x for x in p.avisos if '[Acessibilidade]' in x]
+        self.assertTrue(any('"Turnover" mostra o status só pela cor' in x for x in avisos))
+        a = _base()                               # com a pílula "Na meta / Fora da meta" ao lado, o aviso some
+        a['medidas'].append({'nome': 'Status Turnover', 'tipo': 'svg_pilula', 'medida': 'Turnover',
+                             'categoria': 'dCargo[Cargo]', 'descricao': 'x'})
+        tabela = next(v for v in a['paginas'][1]['visuais'] if 'Turnover' in (v.get('campos') or []))
+        tabela['campos'].append('Status Turnover')
+        _, p2 = _resolver(a)
+        self.assertFalse(any('"Turnover" mostra o status só pela cor' in x for x in p2.avisos))
+
+    def test_barra_colorida_pelo_status_pede_a_meta(self):
+        m, _ = _resolver(_base())
+        cor = _md(m, 'Turnover')['cor_medida']
+        a = _base()
+        a['paginas'][1]['visuais'].append({'tipo': 'barras', 'categoria': 'dCargo[Cargo]', 'valores': ['Turnover'],
+                                           'cor': cor})
+        _, p = _resolver(a)
+        self.assertTrue(any('única pista do status' in x for x in p.avisos))
+        a['paginas'][1]['visuais'][-1]['meta'] = True
+        _, p = _resolver(a)
+        self.assertFalse(any('única pista do status' in x for x in p.avisos))

@@ -276,6 +276,29 @@ def texto_de_ajuda(m, v):
     return '\n'.join(linhas)
 
 
+_NOME_DO_TIPO = {'barras': 'Gráfico de barras', 'colunas': 'Gráfico de colunas', 'linha': 'Gráfico de linha',
+                 'area': 'Gráfico de área', 'rosca': 'Gráfico de rosca', 'cartao': 'Cartão', 'cartoes': 'Cartões',
+                 'tabela': 'Tabela', 'matriz': 'Matriz', 'dispersao': 'Dispersão', 'medidor': 'Medidor',
+                 'segmentador': 'Filtro', 'botoes': 'Filtro em botões', 'mapa': 'Mapa'}
+
+
+def texto_alternativo(m, v):
+    """O que o leitor de tela diz do visual no Power BI (WCAG 1.1.1): o tipo, o título, as medidas, o corte e a
+    meta, em até 250 caracteres (o limite do texto alternativo no Power BI)."""
+    tipo = _NOME_DO_TIPO.get(v['tipo'], 'Visual')
+    if v['tipo'] in ('segmentador', 'botoes') and v.get('categoria'):
+        texto = f'{tipo} por {v["categoria"]["nome"]}: escolha um valor e a página responde a ele.'
+    else:
+        itens = itens_de_ajuda(m, v)
+        partes = [f'{tipo}: {v["titulo"]}' if v.get('titulo') else tipo]
+        titulo = (v.get('titulo') or '').casefold()
+        if itens and not all(i['nome'].casefold() in titulo for i in itens):   # o título já diz o que mostra
+            partes.append(', '.join(i['nome'] for i in itens) + (f' por {v["categoria"]["nome"]}' if v.get('categoria') else ''))
+        partes += [i['meta'] for i in itens if i['meta']][:1]
+        texto = '. '.join(partes) + '.'
+    return texto if len(texto) <= 250 else texto[:249].rstrip() + '…'
+
+
 def _botao_info(m, v, pagina=None):
     itens = itens_de_ajuda(m, v)
     excecoes = _excecoes_do_filtro(m, v, pagina) if pagina else []

@@ -13,7 +13,7 @@ import os
 from kibaku_nendo.especificacao import TIPOS_VISUAL, medida
 from kibaku_nendo.relato import nota_de_ajuda
 from tecnicas.arte.modelos import montar, paginas_do_relatorio
-from tecnicas.c1.prototipo import texto_de_ajuda, titulo_do_cartao
+from tecnicas.c1.prototipo import texto_alternativo, texto_de_ajuda, titulo_do_cartao
 from kibaku_nendo.util import curto, gravar_json
 from tecnicas.sasori import estilos
 from tecnicas.arte.contrato import PAPEIS, grade_dos_botoes, letra_do_cartao, ordem as ordem_do_visual
@@ -385,6 +385,7 @@ def visual(m, v, pos, nome, ordem, transparente=False):
     if ajuda:                                # o ⓘ do protótipo: dica de ajuda no cabeçalho do visual (referencias/experiencia.md)
         container['visualHeader'] = [{'properties': {'show': _lit(True), 'showTooltipButton': _lit(True)}}]
         container['visualHeaderTooltip'] = [{'properties': {'text': _lit(ajuda)}}]
+    container['general'] = [{'properties': {'altText': _lit(texto_alternativo(m, v))}}]   # o leitor de tela (WCAG 1.1.1)
     _tecnicas(m, v, vis, container, pos)
     est = _estilo(m, tipo)
     if est:                                  # a formatação do dashboard de origem do modelo (terceiros/power-bi-design-files/estilos.json)
@@ -395,12 +396,14 @@ def visual(m, v, pos, nome, ordem, transparente=False):
             vis['objects'] = objetos
         cont = copy.deepcopy(est['container'])
         cont.pop('visualHeaderTooltip', None)    # a dica do dashboard de origem ("ABC class is based on...") não é deste painel
+        for g in cont.get('general', []):        # nem o texto alternativo dele ("Bar chart of revenue by genre...")
+            g.get('properties', {}).pop('altText', None)
         for k, valor in container.items():
             if k == 'title' and cont.get('title'):
                 props = dict(cont['title'][0]['properties'])
                 props.update(valor[0]['properties'])
                 cont['title'] = [{'properties': props}]
-            elif k in ('visualHeader', 'visualHeaderTooltip'):   # o estilo costuma esconder o cabeçalho: a dica
+            elif k in ('visualHeader', 'visualHeaderTooltip', 'general'):   # o estilo costuma esconder o cabeçalho: a dica
                 cont[k] = _fundir(cont.get(k), valor)            # liga só o botão dela e mantém os outros como estão
             else:
                 cont[k] = valor

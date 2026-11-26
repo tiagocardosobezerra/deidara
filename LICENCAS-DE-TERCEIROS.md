@@ -65,7 +65,13 @@ drillthrough, dicas e indicadores do Power BI);
 de Jakob Nielsen (Nielsen Norman Group), com o crédito e o link que a página pede a quem usa as heurísticas;
 [IBCS](https://www.ibcs.com/); *Storytelling with Data*, de Cole Nussbaumer Knaflic
 ([storytellingwithdata.com](https://www.storytellingwithdata.com/books)), só como referência de leitura; e os
-critérios 1.4.1 e 1.4.3 do [WCAG 2.2](https://www.w3.org/WAI/WCAG22/Understanding/use-of-color.html) (W3C).
+critérios 1.1.1, 1.4.1 e 1.4.3 do [WCAG 2.2](https://www.w3.org/WAI/WCAG22/Understanding/use-of-color.html) (W3C, só citados
+pelo número e com link). A regra do eixo das barras no zero (`tecnicas/c3/guarda.py`) cita o
+[FT Visual Vocabulary](https://github.com/Financial-Times/chart-doctor/tree/main/visual-vocabulary), cujo texto é da
+Financial Times com todos os direitos reservados, apesar da MIT do repositório; o
+[guia do Urban Institute](https://urbaninstitute.github.io/graphics-styleguide/); e o
+[guia de gráficos do GOV.UK Analysis Function](https://analysisfunction.civilservice.gov.uk/policy-store/data-visualisation-charts/).
+Nenhuma das três tem licença confirmada para o texto, por isso só são citadas.
 
 ## JSON Schemas do Power BI (Microsoft)
 

@@ -93,8 +93,24 @@ e as regras do WCAG 2.2:
   ([WCAG 1.4.3, contraste mínimo](https://www.w3.org/WAI/WCAG22/Understanding/contrast-minimum.html)):
   texto com pelo menos 4,5:1 contra o fundo, e 3:1 para texto grande. O Deidara confere o contraste
   do tema no protótipo ([design.md](design.md), "Cor").
+  O `validar` avisa (`[Acessibilidade]`) em dois casos. O primeiro é a coluna de tabela ou matriz que
+  mostra o status só pela cor da letra, sem a meta nem uma medida de status ao lado (`svg_pilula`,
+  `svg_seta`, `svg_barra_meta`, `svg_variacao`, `svg_progresso`). O segundo é a barra colorida pelo
+  status sem a linha da meta.
+- **Eixo das barras no zero**: o comprimento da barra é o número. Uma barra que não nasce no zero
+  exagera a diferença, e o FT Visual Vocabulary, o guia do Urban Institute e o guia do GOV.UK Analysis
+  Function dizem o mesmo (links nas fontes). A `guarda` (`tecnicas/c3/guarda.py`) tira das barras e
+  colunas o início fixo fora do zero e a escala logarítmica que venham do estilo de origem. Sem início
+  fixo, o Power BI põe o zero no eixo das barras sozinho. Um tema de arquivo (`"tema": {"arquivo": ...}`)
+  que fixe o eixo não passa pela `guarda`.
+- **Texto alternativo**
+  ([WCAG 1.1.1, conteúdo não textual](https://www.w3.org/WAI/WCAG22/Understanding/non-text-content.html)):
+  cada visual do `.pbip` sai com `altText`, o que o leitor de tela diz dele. O texto traz o tipo, o
+  título, as medidas e o corte, e a meta quando houver, em até 250 caracteres (`texto_alternativo` em
+  `tecnicas/c1/prototipo.py`). O texto alternativo do dashboard de origem do estilo (em inglês, de outro
+  assunto) é descartado.
 - **Ordem de leitura**: a ordem de tabulação segue a ordem visual (o PBIR grava `tabOrder` na mesma
-  ordem do protótipo). Todo visual tem título, ou texto alternativo quando o título fica escondido.
+  ordem do protótipo).
 - **Paleta para daltonismo**: no máximo 5 ou 6 cores de categoria. Para "bom" e "ruim", use o par
   azul e laranja em vez de verde e vermelho quando o público for amplo.
 
@@ -105,6 +121,7 @@ e as regras do WCAG 2.2:
 - [ ] Do resumo ao detalhe há no máximo dois cliques, e há como voltar.
 - [ ] Toda medida em visual tem `descricao` para o ⓘ e para a dica do Power BI.
 - [ ] Nenhuma informação depende só da cor, e o contraste passa.
+- [ ] O `validar` não traz nenhum aviso `[Acessibilidade]`.
 
 ## Fontes
 
@@ -117,5 +134,11 @@ e as regras do WCAG 2.2:
   (Nielsen Norman Group). O uso é citado com o crédito e o link que a página pede.
 - [IBCS, International Business Communication Standards](https://www.ibcs.com/).
 - Cole Nussbaumer Knaflic, [*Storytelling with Data*](https://www.storytellingwithdata.com/books) (Wiley, 2015).
-- W3C, WCAG 2.2: [1.4.1 Use of Color](https://www.w3.org/WAI/WCAG22/Understanding/use-of-color.html),
+- W3C, WCAG 2.2: [1.1.1 Non-text Content](https://www.w3.org/WAI/WCAG22/Understanding/non-text-content.html),
+  [1.4.1 Use of Color](https://www.w3.org/WAI/WCAG22/Understanding/use-of-color.html),
   [1.4.3 Contrast (Minimum)](https://www.w3.org/WAI/WCAG22/Understanding/contrast-minimum.html).
+- Eixo das barras no zero: [FT Visual Vocabulary](https://github.com/Financial-Times/chart-doctor/tree/main/visual-vocabulary)
+  (Financial Times, texto com todos os direitos reservados: só o link),
+  [Urban Institute Data Visualization Style Guide](https://urbaninstitute.github.io/graphics-styleguide/),
+  [GOV.UK Analysis Function, gráficos](https://analysisfunction.civilservice.gov.uk/policy-store/data-visualisation-charts/).
+  As três são só citadas, e as regras foram escritas pelo Deidara.

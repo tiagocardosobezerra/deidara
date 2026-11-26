@@ -19,8 +19,8 @@ import datetime
 from kibaku_nendo.registro import usar
 from kibaku_nendo.util import (FORMATOS, SQL_POR_FAMILIA, chave, sql_tipo)
 from kibaku_nendo.medidas import garantir_corte, resolver_medidas
-from kibaku_nendo.paginas import (conferir_design, resolver_grupo_calculo, resolver_layout, resolver_paginas,
-                                  resolver_tours)
+from kibaku_nendo.paginas import (conferir_cor_sozinha, conferir_design, resolver_grupo_calculo, resolver_layout,
+                                  resolver_paginas, resolver_tours)
 # a API pública do motor continua saindo daqui (quem já importa de kibaku_nendo.especificacao)
 from kibaku_nendo.desenhos import (COR_BOA, COR_ESTRELA, COR_MARCA, COR_RUIM, COR_TRILHO, ESTRELA, FORMATO_DAX,
                                    PREFIXO_SVG, conferir_svg, html_kpis_dax, literais_dax, svg_barra_meta,
@@ -87,6 +87,7 @@ def resolver(argila, catalogos):
     resolver_paginas(argila, m, p)
     _privacidade(m, p)
     conferir_design(argila, m, p)
+    conferir_cor_sozinha(m, p)
     resolver_tours(m, p)
     if not m['versao']:
         p.aviso('versao', 'sem "versao" no argila.json: informe (ex.: "1.0") para o histórico de mudanças')
