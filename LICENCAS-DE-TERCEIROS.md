@@ -55,6 +55,18 @@ Nomes, categorias, assinaturas e links do dicionário de funções DAX e Power
 Query vêm da referência oficial da Microsoft; as descrições em pt-BR são do
 Deidara e o texto da Microsoft não é copiado (ver [AVISO.md](AVISO.md)).
 
+## Referências de experiência do painel (só citadas)
+
+O guia [referencias/experiencia.md](referencias/experiencia.md) foi escrito para o Deidara. Ele cita, com link,
+estas fontes e não copia texto nem imagem de nenhuma delas:
+[Microsoft Learn](https://learn.microsoft.com/en-us/power-bi/create-reports/service-dashboards-design-tips) (design, acessibilidade,
+drillthrough, dicas e indicadores do Power BI);
+[10 Usability Heuristics for User Interface Design](https://www.nngroup.com/articles/ten-usability-heuristics/),
+de Jakob Nielsen (Nielsen Norman Group), com o crédito e o link que a página pede a quem usa as heurísticas;
+[IBCS](https://www.ibcs.com/); *Storytelling with Data*, de Cole Nussbaumer Knaflic
+([storytellingwithdata.com](https://www.storytellingwithdata.com/books)), só como referência de leitura; e os
+critérios 1.4.1 e 1.4.3 do [WCAG 2.2](https://www.w3.org/WAI/WCAG22/Understanding/use-of-color.html) (W3C).
+
 ## JSON Schemas do Power BI (Microsoft)
 
 Os schemas em `ferramentas/schemas/` são cópias dos publicados em
