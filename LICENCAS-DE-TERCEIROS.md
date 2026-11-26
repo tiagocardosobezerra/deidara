@@ -55,6 +55,24 @@ Nomes, categorias, assinaturas e links do dicionário de funções DAX e Power
 Query vêm da referência oficial da Microsoft; as descrições em pt-BR são do
 Deidara e o texto da Microsoft não é copiado (ver [AVISO.md](AVISO.md)).
 
+## Referências de experiência do painel (só citadas)
+
+O guia [referencias/experiencia.md](referencias/experiencia.md) foi escrito para o Deidara. Ele cita, com link,
+estas fontes e não copia texto nem imagem de nenhuma delas:
+[Microsoft Learn](https://learn.microsoft.com/en-us/power-bi/create-reports/service-dashboards-design-tips) (design, acessibilidade,
+drillthrough, dicas e indicadores do Power BI);
+[10 Usability Heuristics for User Interface Design](https://www.nngroup.com/articles/ten-usability-heuristics/),
+de Jakob Nielsen (Nielsen Norman Group), com o crédito e o link que a página pede a quem usa as heurísticas;
+[IBCS](https://www.ibcs.com/); *Storytelling with Data*, de Cole Nussbaumer Knaflic
+([storytellingwithdata.com](https://www.storytellingwithdata.com/books)), só como referência de leitura; e os
+critérios 1.1.1, 1.4.1 e 1.4.3 do [WCAG 2.2](https://www.w3.org/WAI/WCAG22/Understanding/use-of-color.html) (W3C, só citados
+pelo número e com link). A regra do eixo das barras no zero (`tecnicas/c3/guarda.py`) cita o
+[FT Visual Vocabulary](https://github.com/Financial-Times/chart-doctor/tree/main/visual-vocabulary), cujo texto é da
+Financial Times com todos os direitos reservados, apesar da MIT do repositório; o
+[guia do Urban Institute](https://urbaninstitute.github.io/graphics-styleguide/); e o
+[guia de gráficos do GOV.UK Analysis Function](https://analysisfunction.civilservice.gov.uk/policy-store/data-visualisation-charts/).
+Nenhuma das três tem licença confirmada para o texto, por isso só são citadas.
+
 ## JSON Schemas do Power BI (Microsoft)
 
 Os schemas em `ferramentas/schemas/` são cópias dos publicados em

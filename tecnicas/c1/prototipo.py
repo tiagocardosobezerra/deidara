@@ -250,13 +250,57 @@ def _excecoes_do_filtro(m, v, pagina):
                   if not all(chega(m, g, v['categoria']['tabela'], a, n) for a in tabelas_da_medida(m, n)))
 
 
-def _botao_info(m, v, pagina=None):
+def itens_de_ajuda(m, v):
+    """O que o ⓘ explica de um visual: nome, definição e meta de cada medida dele. Fonte única do ⓘ do protótipo
+    e da dica de ajuda do cabeçalho do visual no PBIR (tecnicas/c3/pbir.py), para os dois nunca divergirem."""
     nomes = [x['nome'] for x in v['valores'] + v['campos'] + ([v['meta']] if v.get('meta') else []) if x and x['tipo'] == 'medida']
     itens = []
     for n in dict.fromkeys(nomes):
         md = medida(m, n)
         if md and md['tipo'] not in ('cor', 'corte'):
             itens.append({'nome': md['nome'], 'definicao': md['descricao'], 'meta': _texto_meta(m, md)})
+    return itens
+
+
+def texto_de_ajuda(m, v):
+    """O ⓘ em texto corrido, para a dica do cabeçalho do visual no Power BI. Vazio quando não há o que explicar
+    (segmentador e visual sem medida)."""
+    if v['tipo'] == 'segmentador':
+        return ''
+    itens = itens_de_ajuda(m, v)
+    if not itens:
+        return ''
+    linhas = [v['titulo']] if v.get('titulo') and v['titulo'] not in {i['nome'] for i in itens} else []
+    for i in itens:
+        linhas.append(f'{i["nome"]}: {i["definicao"] or "Sem definição ainda."}' + (f' {i["meta"]}.' if i['meta'] else ''))
+    return '\n'.join(linhas)
+
+
+_NOME_DO_TIPO = {'barras': 'Gráfico de barras', 'colunas': 'Gráfico de colunas', 'linha': 'Gráfico de linha',
+                 'area': 'Gráfico de área', 'rosca': 'Gráfico de rosca', 'cartao': 'Cartão', 'cartoes': 'Cartões',
+                 'tabela': 'Tabela', 'matriz': 'Matriz', 'dispersao': 'Dispersão', 'medidor': 'Medidor',
+                 'segmentador': 'Filtro', 'botoes': 'Filtro em botões', 'mapa': 'Mapa'}
+
+
+def texto_alternativo(m, v):
+    """O que o leitor de tela diz do visual no Power BI (WCAG 1.1.1): o tipo, o título, as medidas, o corte e a
+    meta, em até 250 caracteres (o limite do texto alternativo no Power BI)."""
+    tipo = _NOME_DO_TIPO.get(v['tipo'], 'Visual')
+    if v['tipo'] in ('segmentador', 'botoes') and v.get('categoria'):
+        texto = f'{tipo} por {v["categoria"]["nome"]}: escolha um valor e a página responde a ele.'
+    else:
+        itens = itens_de_ajuda(m, v)
+        partes = [f'{tipo}: {v["titulo"]}' if v.get('titulo') else tipo]
+        titulo = (v.get('titulo') or '').casefold()
+        if itens and not all(i['nome'].casefold() in titulo for i in itens):   # o título já diz o que mostra
+            partes.append(', '.join(i['nome'] for i in itens) + (f' por {v["categoria"]["nome"]}' if v.get('categoria') else ''))
+        partes += [i['meta'] for i in itens if i['meta']][:1]
+        texto = '. '.join(partes) + '.'
+    return texto if len(texto) <= 250 else texto[:249].rstrip() + '…'
+
+
+def _botao_info(m, v, pagina=None):
+    itens = itens_de_ajuda(m, v)
     excecoes = _excecoes_do_filtro(m, v, pagina) if pagina else []
     dados = json.dumps({'titulo': v['titulo'], 'itens': itens, 'excecoes': excecoes}, ensure_ascii=False)
     return f'<button type="button" class="info" aria-label="O que é: {_e(v["titulo"])}" data-info="{_e(dados)}">i</button>'

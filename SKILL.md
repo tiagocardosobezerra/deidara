@@ -179,6 +179,10 @@ São 8 passos, os mesmos do `deidara.py` sem argumentos e do `ROTEIRO.md` da pas
   (`visuais meta`; à mão, [svg.md](referencias/svg.md)). Causa raiz: árvore de
   decomposição, espinha de peixe, jitter e impacto (`visuais causa`). Rosca só
   com até 5 fatias; acima disso, barras ordenadas.
+- **Conduza o leitor** ([experiencia.md](referencias/experiencia.md)): jornada por
+  persona, títulos que são perguntas com frase de leitura, atos (diagnóstico, causa,
+  ação, resultado), detalhamento, cor nunca como única pista. O ⓘ de cada visual vem
+  da `descricao` das medidas e vira a dica de ajuda nativa do visual no `.pbip`.
 - **Galeria da comunidade** (`deidara.py galeria <assunto>`, em português:
   cascata, minigráfico, ibcs, bullet, ranking no tempo, distribuição, feriado):
   158 modelos Deneb, 66 pacotes de funções DAX (daxlib), calendários e feriados
@@ -205,6 +209,7 @@ São 8 passos, os mesmos do `deidara.py` sem argumentos e do `ROTEIRO.md` da pas
 - [referencias/argila.md](referencias/argila.md): formato do argila.json
 - [referencias/metricas.md](referencias/metricas.md): onde criar cada métrica, padrões, dicionário de funções
 - [referencias/design.md](referencias/design.md): princípios de design, página, cor, tema e técnicas de visual
+- [referencias/experiencia.md](referencias/experiencia.md): jornada, storytelling, navegação, dica de ajuda e acessibilidade
 - [referencias/estatistica.md](referencias/estatistica.md): C4 Karura, sinal ou ruído, meta x faixa, tendência
 - [referencias/svg.md](referencias/svg.md): medidas que desenham (SVG em DAX), regras e conferência
 - [referencias/modelos.md](referencias/modelos.md): os onze modelos de layout (fundo desenhado, navegação)

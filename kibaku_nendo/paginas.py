@@ -97,6 +97,31 @@ def conferir_design(argila, m, p):
                             f'{", ".join(fracas)}; elas somem em barras finas e linhas')
 
 
+# medidas que dizem o status sem depender da cor: texto, seta, barra contra a meta (WCAG 1.4.1)
+PISTAS_SEM_COR = ('svg_pilula', 'svg_seta', 'svg_variacao', 'svg_barra_meta', 'svg_progresso')
+
+
+def conferir_cor_sozinha(m, p):
+    """Status que só aparece pela cor (verde, amarelo, vermelho) some para quem não distingue as cores e na
+    impressão em preto e branco (WCAG 1.4.1; referencias/experiencia.md, "Acessibilidade")."""
+    for pg in m['paginas']:
+        for v in pg['visuais']:
+            nomes = [x['nome'] for x in medidas_do_visual(v)]
+            mds = [medida(m, n) or {} for n in nomes]
+            pista = any(md.get('tipo') in PISTAS_SEM_COR for md in mds)
+            onde = f'página {pg["nome"]}, {v.get("titulo") or v["tipo"]}'
+            if v['tipo'] in ('tabela', 'matriz'):
+                for md in mds:
+                    if md.get('cor_medida') and not pista and md.get('meta_medida') not in nomes:
+                        p.aviso(onde, f'[Acessibilidade] "{md["nome"]}" mostra o status só pela cor da letra: ponha ao '
+                                      'lado a meta ou uma medida que diga o status em texto ou seta (svg_pilula, '
+                                      'svg_seta, svg_barra_meta; deidara.py visuais meta)')
+            elif v['tipo'] in ('barras', 'colunas') and v.get('cor') and not v.get('meta'):
+                if (medida(m, v['cor']) or {}).get('tipo') == 'cor':
+                    p.aviso(onde, f'[Acessibilidade] a cor de cada barra vem de "{v["cor"]}" e é a única pista do '
+                                  'status: ligue a linha da meta ("meta": true) ou mostre o status em texto')
+
+
 def resolver_paginas(argila, m, p):
     if not argila.get('paginas'):
         p.erro('paginas', 'nenhuma página no painel')

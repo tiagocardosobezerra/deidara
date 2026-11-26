@@ -11,7 +11,10 @@ de terceiros:
 - o seletor de estado antigo no segmentador de botões ("selected", "hover"), que passa no schema e o Desktop
   ignora calado (o texto do botão escolhido ficava branco no branco);
 - o texto do botão 100% transparente (o dashboard do kpis-clicaveis usava imagem no botão): os botões de
-  período e as abas saíam vazios.
+  período e as abas saíam vazios;
+- o eixo de valor das barras e colunas fora do zero ou em escala logarítmica: o comprimento da barra é o número,
+  e uma barra que não nasce no zero exagera a diferença (FT Visual Vocabulary, Urban Institute, GOV.UK Analysis
+  Function; referencias/experiencia.md). Sem início fixo, o Power BI põe o zero no eixo das barras sozinho.
 """
 
 import copy
@@ -67,7 +70,15 @@ def aplicar(tipo, vis):
         eixo['show'] = _lit(True)                     # barra sem o nome do item não se lê (tabela-lateral escondia)
         eixo['maxMarginFactor'] = {'expr': {'Literal': {'Value': '45L'}}}
         eixo['fontSize'] = _lit(11)
-    elif tipo == 'advancedSlicerVisual':
+    if tipo in ('clusteredBarChart', 'clusteredColumnChart'):
+        for e in objetos.get('valueAxis', []):
+            props = e.get('properties', {})
+            inicio = ((props.get('start') or {}).get('expr') or {}).get('Literal', {}).get('Value')
+            if inicio is not None and inicio.rstrip('DL') not in ('0', '0.0'):
+                props.pop('start')
+            if ((props.get('axisScale') or {}).get('expr') or {}).get('Literal', {}).get('Value') == "'log'":
+                props.pop('axisScale')
+    if tipo == 'advancedSlicerVisual':
         _estados(objetos)
         for e in objetos.get('value', []):          # texto do botão sempre visível
             e.get('properties', {}).pop('transparency', None)

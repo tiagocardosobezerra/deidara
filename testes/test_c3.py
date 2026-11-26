@@ -670,3 +670,159 @@ class TestMelhoriasDaAvaliacao(unittest.TestCase):
         with mock.patch.object(desktop, '_rodar', side_effect=[base, resp]):
             r = desktop.conferir(['Tempo de Casa', 'Turnover'])
         self.assertEqual(r['lentas'], [('Tempo de Casa', 4200)])
+
+
+class TestDicaDeAjuda(unittest.TestCase):
+    """O ⓘ do protótipo vira a dica de ajuda nativa no cabeçalho de cada visual do PBIR, com o mesmo conteúdo."""
+
+    POS = {'x': 0, 'y': 0, 'w': 300, 'h': 200}
+
+    def _m(self, modelo=None):
+        a = _base()
+        _md(a, 'Remuneração Média').update({'meta': 9000, 'polaridade': 'menor_melhor', 'descricao': 'Salário médio.'})
+        a['paginas'][1]['visuais'].append({'tipo': 'area', 'categoria': 'dCalendario[Mês/Ano]', 'valores': ['Desligamentos']})
+        if modelo:
+            a['modelo'] = modelo
+        m, _ = _resolver(a)
+        return m
+
+    def _visual(self, m, tipo):
+        return next(v for pg in m['paginas'] for v in pg['visuais'] if v['tipo'] == tipo)
+
+    @staticmethod
+    def _valor(entrada, prop):
+        return entrada[0]['properties'][prop]['expr']['Literal']['Value']
+
+    def test_visual_com_medida_ganha_a_dica_do_info(self):
+        from tecnicas.c1 import prototipo
+        from tecnicas.c3 import pbir
+        m = self._m()
+        v = next(v for pg in m['paginas'] for v in pg['visuais']
+                 if any(x and x['nome'] == 'Remuneração Média' for x in v['valores'] + v['campos']))
+        cont = pbir.visual(m, v, self.POS, 'x', 0)['visual']['visualContainerObjects']
+        self.assertEqual(self._valor(cont['visualHeader'], 'show'), 'true')
+        self.assertEqual(self._valor(cont['visualHeader'], 'showTooltipButton'), 'true')
+        texto = self._valor(cont['visualHeaderTooltip'], 'text')
+        self.assertIn('Remuneração Média: Salário médio.', texto)
+        self.assertIn('quanto menor, melhor', texto)                     # a meta, como no ⓘ
+        self.assertEqual(texto, "'" + prototipo.texto_de_ajuda(m, v).replace("'", "''") + "'")
+        for i in prototipo.itens_de_ajuda(m, v):                         # o ⓘ do protótipo sai da mesma fonte
+            self.assertIn(i['nome'], texto)
+            self.assertIn(i['definicao'], texto)
+
+    def test_segmentador_e_visual_sem_medida_ficam_sem_dica(self):
+        from tecnicas.c1 import prototipo
+        from tecnicas.c3 import pbir
+        m = self._m()
+        seg = self._visual(m, 'segmentador')
+        self.assertEqual(prototipo.texto_de_ajuda(m, seg), '')
+        cont = pbir.visual(m, seg, self.POS, 'x', 0)['visual']['visualContainerObjects']
+        self.assertNotIn('visualHeaderTooltip', cont)
+        self.assertNotIn('visualHeader', cont)
+        sem = dict(self._visual(m, 'barras'), valores=[], campos=[], meta=None)
+        self.assertEqual(prototipo.texto_de_ajuda(m, sem), '')
+
+    def test_estilo_que_esconde_o_cabecalho_liga_so_a_dica(self):
+        from tecnicas.c3 import pbir
+        m = self._m('tabela-lateral')                    # o estilo de origem esconde o cabeçalho das barras
+        v = self._visual(m, 'barras')
+        est = pbir._estilo(m, 'clusteredBarChart')['container']['visualHeader'][0]['properties']
+        self.assertEqual(est['show']['expr']['Literal']['Value'], 'false')
+        cont = pbir.visual(m, v, self.POS, 'x', 0)['visual']['visualContainerObjects']
+        props = cont['visualHeader'][0]['properties']
+        self.assertEqual(props['show']['expr']['Literal']['Value'], 'true')
+        self.assertEqual(props['showTooltipButton']['expr']['Literal']['Value'], 'true')
+        for k in set(est) - {'show', 'showTooltipButton'}:   # os outros botões continuam como o autor deixou
+            self.assertEqual(props[k], est[k])
+
+    def test_dica_do_dashboard_de_origem_nao_vaza(self):
+        from tecnicas.c3 import pbir
+        m = self._m('trilho-escuro')
+        area = self._visual(m, 'area')                   # o estilo do areaChart traz a dica do dashboard de origem
+        self.assertIn('ABC class', json.dumps(pbir._estilo(m, 'areaChart')['container']))
+        for v in (area, dict(area, valores=[], campos=[], meta=None)):
+            cont = pbir.visual(m, v, self.POS, 'x', 0)['visual']['visualContainerObjects']
+            self.assertNotIn('ABC class', json.dumps(cont))
+
+    def test_pbip_gerado_traz_a_dica_e_passa_no_schema(self):
+        d = tempfile.mkdtemp(prefix='ddh')
+        shutil.copytree(os.path.join(EXEMPLO, 'catalogos'), os.path.join(d, 'catalogos'))
+        arq = os.path.join(d, 'argila.json')
+        a = _base()
+        a['modelo'] = 'trilho-escuro'
+        with open(arq, 'w', encoding='utf-8') as f:
+            json.dump(a, f, ensure_ascii=False)
+        self.assertEqual(_calado(_aprovar_com_prototipo, ['aprovar', arq, '--por', 'T'])[0], 0)
+        saida = os.path.join(d, 'o')
+        self.assertEqual(_calado(deidara.main, ['gerar', arq, '-o', saida])[0], 0)
+        com, sem = 0, set()
+        for raiz, _, fs in os.walk(saida):
+            if 'visual.json' in fs:
+                v = _json(os.path.join(raiz, 'visual.json'))['visual']
+                medidas = [p for papel in (v.get('query') or {}).get('queryState', {}).values()
+                           for p in papel.get('projections', []) if 'Measure' in p['field']]
+                if 'visualHeaderTooltip' in v.get('visualContainerObjects', {}):
+                    com += 1
+                elif medidas and v['visualType'] not in ('slicer', 'advancedSlicerVisual'):
+                    sem.add(v['visualType'])
+        self.assertGreater(com, 0)
+        self.assertEqual(sem, set())
+        self.assertEqual(validar_pbip.conferir(saida), [])
+        shutil.rmtree(d, ignore_errors=True)
+
+
+class TestAcessibilidade(unittest.TestCase):
+    """Eixo das barras no zero, status que não depende só da cor e texto alternativo em cada visual."""
+
+    def test_guarda_tira_inicio_fora_do_zero_e_escala_log_das_barras(self):
+        from tecnicas.c3 import guarda
+        lit = lambda x: {'expr': {'Literal': {'Value': x}}}   # noqa: E731
+        for tipo in ('clusteredBarChart', 'clusteredColumnChart'):
+            vis = {'objects': {'valueAxis': [{'properties': {'start': lit('500D'), 'axisScale': lit("'log'"),
+                                                             'show': lit('true')}}]}}
+            props = guarda.aplicar(tipo, vis)['objects']['valueAxis'][0]['properties']
+            self.assertNotIn('start', props)
+            self.assertNotIn('axisScale', props)
+            self.assertIn('show', props)
+            zero = {'objects': {'valueAxis': [{'properties': {'start': lit('0D')}}]}}
+            self.assertIn('start', guarda.aplicar(tipo, zero)['objects']['valueAxis'][0]['properties'])
+        linha = {'objects': {'valueAxis': [{'properties': {'start': lit('500D')}}]}}   # linha pode começar fora do zero
+        self.assertIn('start', guarda.aplicar('lineChart', linha)['objects']['valueAxis'][0]['properties'])
+
+    def test_todo_visual_tem_texto_alternativo_do_painel(self):
+        from tecnicas.c3 import pbir
+        a = _base()
+        a['modelo'] = 'historia-longa'            # o estilo de origem traz o texto alternativo do dashboard de filmes
+        m, _ = _resolver(a)
+        for pg in m['paginas']:
+            for v in pg['visuais']:
+                cont = pbir.visual(m, v, {'x': 0, 'y': 0, 'w': 300, 'h': 200}, 'x', 0)['visual']['visualContainerObjects']
+                alt = cont['general'][0]['properties']['altText']['expr']['Literal']['Value']
+                self.assertLessEqual(len(alt), 252)                  # 250 e as aspas do literal
+                self.assertNotIn('revenue', alt.lower())
+                if v.get('titulo'):
+                    self.assertIn(v['titulo'].replace("'", "''"), alt)
+
+    def test_status_so_pela_cor_vira_aviso(self):
+        m, p = _resolver(_base())
+        avisos = [x for x in p.avisos if '[Acessibilidade]' in x]
+        self.assertTrue(any('"Turnover" mostra o status só pela cor' in x for x in avisos))
+        a = _base()                               # com a pílula "Na meta / Fora da meta" ao lado, o aviso some
+        a['medidas'].append({'nome': 'Status Turnover', 'tipo': 'svg_pilula', 'medida': 'Turnover',
+                             'categoria': 'dCargo[Cargo]', 'descricao': 'x'})
+        tabela = next(v for v in a['paginas'][1]['visuais'] if 'Turnover' in (v.get('campos') or []))
+        tabela['campos'].append('Status Turnover')
+        _, p2 = _resolver(a)
+        self.assertFalse(any('"Turnover" mostra o status só pela cor' in x for x in p2.avisos))
+
+    def test_barra_colorida_pelo_status_pede_a_meta(self):
+        m, _ = _resolver(_base())
+        cor = _md(m, 'Turnover')['cor_medida']
+        a = _base()
+        a['paginas'][1]['visuais'].append({'tipo': 'barras', 'categoria': 'dCargo[Cargo]', 'valores': ['Turnover'],
+                                           'cor': cor})
+        _, p = _resolver(a)
+        self.assertTrue(any('única pista do status' in x for x in p.avisos))
+        a['paginas'][1]['visuais'][-1]['meta'] = True
+        _, p = _resolver(a)
+        self.assertFalse(any('única pista do status' in x for x in p.avisos))
